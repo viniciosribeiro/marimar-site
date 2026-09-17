@@ -1,11 +1,18 @@
-import { auth } from "@/lib/auth"; import { redirect } from "next/navigation"; import { fetchTarifas } from "@/lib/worker"; import postgres from "postgres";
+import { auth } from "@/lib/auth"; import { redirect } from "next/navigation"; import { fetchTarifas } from "@/lib/worker"; import postgres from "postgres"; import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export default async function IntegracoesPage() {
   const s = await auth(); if (!s?.user) redirect("/admin/login");
   const apiKey = process.env.AGENT_API_KEY || "marina-agent-key-marimar-2026";
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+  // Resolve a URL base a partir do host da requisição (funciona em dev E produção),
+  // em vez de depender de NEXT_PUBLIC_SITE_URL que pode estar ausente.
+  const h = await headers();
+  const host = h.get("x-forwarded-host") || h.get("host") || "localhost:3000";
+  const proto = h.get("x-forwarded-proto") || "http";
+  const baseUrl = `${proto}://${host}`;
+
   const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
 
   // Testa Worker Desbravador

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-export async function GET() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const base = `${url.protocol}//${url.host}`;
   const spec = {
     openapi: "3.1.0",
     info: { title: "Pousada Marimar — Agent API", version: "1.0.0", description: "API para o agente Marina (WhatsApp)" },
