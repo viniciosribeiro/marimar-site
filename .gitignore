@@ -2,5 +2,9 @@ node_modules/
 .next/
 .env.local
 .env
-
-.vercel
+.open-next/
+.wrangler/
+wrangler.toml
+open-next.config.ts
+*.tsbuildinfo
+next-env.d.ts
