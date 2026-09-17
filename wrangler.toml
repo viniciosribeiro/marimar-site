@@ -1,0 +1,9 @@
+name = "marimar-site"
+main = ".open-next/worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+NEXT_PUBLIC_SITE_URL = "https://marimar-site.pages.dev"
+
+[env.production]
+vars = { NEXT_PUBLIC_SITE_URL = "https://www.pousadamarimarilhadomel.com.br" }

@@ -1,0 +1,10 @@
+import { auth } from "@/lib/auth"; import { redirect } from "next/navigation"; import postgres from "postgres"; import { criarPasseio, editarPasseio, excluirPasseio } from "@/lib/admin-actions"; import { CrudPage } from "@/components/admin/CrudPage";
+
+export const dynamic = "force-dynamic";
+export default async function PasseiosPage({ searchParams }: { searchParams: Promise<{ erro?: string; ok?: string; editar?: string; novo?: string }> }) {
+  const s=await auth(); if(!s?.user) redirect("/admin/login"); const sp=await searchParams;
+  const sql=postgres(process.env.DATABASE_URL!,{max:1}); const lista=await sql`SELECT * FROM passeios ORDER BY ordem`; await sql.end();
+  const ed=sp.editar ? lista.find((p:any)=>p.id===sp.editar) : null;
+  const ff=ed?[{name:"id",type:"hidden",defaultValue:ed.id},{name:"nome",label:"Nome",required:true,defaultValue:ed.nome},{name:"descricao",label:"Descricao",defaultValue:ed.descricao??""},{name:"duracao",label:"Duracao",defaultValue:ed.duracao??""},{name:"preco",label:"Preco Ref",type:"number",defaultValue:ed.preco_referencia??0},{name:"imagem_url",label:"URL da Imagem",defaultValue:ed.imagem_url??""},{name:"ordem",label:"Ordem",type:"number",defaultValue:ed.ordem},{name:"ativo",label:"Ativo",type:"checkbox",defaultValue:ed.ativo?1:0}]:[{name:"nome",label:"Nome",required:true},{name:"descricao",label:"Descricao"},{name:"duracao",label:"Duracao"},{name:"preco",label:"Preco Ref",type:"number",defaultValue:0},{name:"imagem_url",label:"URL da Imagem"},{name:"ordem",label:"Ordem",type:"number",defaultValue:0}];
+  return <CrudPage title="🧭 Passeios" subtitle="Cadastre os passeios que aparecem na pagina Ilha do Mel" lista={lista} columns={["nome","duracao","preco_referencia","ativo"]} fields={ff} criarAction={criarPasseio} editarAction={editarPasseio} excluirAction={excluirPasseio} editId={sp.editar} novo={sp.novo} erro={sp.erro} ok={sp.ok} basePath="/admin/passeios" />;
+}

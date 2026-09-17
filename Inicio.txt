@@ -1,0 +1,48 @@
+URL: reservas.desbravador.com.br/hotel-app/pousada-ilha-do-mel-marimar
+
+Voce vai construir um extrator de tarifas para essa pousada.
+Workspace: D:\Dev\Marimar Site
+Bibliotecas ja instaladas: openai, oxylabs-ai-studio, httpx
+
+CONTEXTO: e o motor Desbravador. O caminho /hotel-app/ indica uma
+SPA JavaScript. Provavelmente existe uma API JSON por tras que o
+front-end consome. Encontrar essa API e o objetivo principal.
+
+PASSO 1 - RECONHECIMENTO
+Abra a URL com o navegador e monitore as requisicoes de rede.
+Procure especificamente por chamadas XHR/fetch que retornem JSON.
+Me diga:
+- quais endpoints a SPA chama (metodo, URL, payload, headers)
+- qual deles retorna quartos, tarifas ou disponibilidade
+- se precisa de token, cookie de sessao ou CSRF
+- quais os seletores CSS dos campos de data e do botao de busca
+
+Salve tudo em recon.md
+
+PASSO 2 - REPLICAR FORA DO NAVEGADOR
+Pegue a requisicao que retorna os precos e replique com httpx,
+fora do navegador. Se precisar de cookie de sessao, use
+httpx.Client() para manter a sessao entre as chamadas.
+Teste com check-in 15/10/2026 e check-out 17/10/2026, 2 adultos.
+
+Se der 403 ou vier vazio, teste adicionar os headers:
+X-Requested-With: XMLHttpRequest
+Accept: application/json
+Referer: a URL do hotel-app
+
+PASSO 3 - ENTREGA
+Escreva providers/desbravador.py com:
+
+def extrair(url, check_in, check_out, adultos=2) -> dict
+
+Retornando, por quarto: id, nome, categoria, diaria, valor_adulto,
+valor_crianca, ocupacao_max, pacote, comodidades (lista),
+fotos (lista de url)
+
+Rode um teste real e me mostre o JSON de saida.
+
+REGRAS
+- Execute o codigo a cada passo, nao presuma que funcionou
+- Se der erro, corrija e rode de novo sozinho
+- Se o navegador nao conseguir abrir, tente httpx direto na URL
+- Me reporte ao fim de cada passo, um por vez
