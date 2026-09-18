@@ -1,4 +1,7 @@
-import postgres from "postgres"; import Link from "next/link";
+import postgres from "postgres";
+import Link from "next/link";
+import Image from "next/image";
+import { tituloQuarto, resumir, brl } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -14,15 +17,38 @@ export default async function HomePage() {
   const deps = await sql`SELECT * FROM depoimentos WHERE ativo = true ORDER BY ordem LIMIT 4`;
   const faqs = await sql`SELECT * FROM faq WHERE ativo = true ORDER BY ordem LIMIT 5`;
   const passeios = await sql`SELECT * FROM passeios WHERE ativo = true ORDER BY ordem LIMIT 3`;
+  // Foto do hero: prefere uma midia em destaque que NAO seja de quarto (foto da
+  // pousada/praia); cai para og_image_url e, por fim, para o gradiente.
+  const [heroMidia] = await sql`
+    SELECT url, alt FROM midias WHERE destaque = true
+    ORDER BY (quarto_id IS NULL) DESC, ordem LIMIT 1
+  `;
   await sql.end();
 
-  const wa = p?.whatsapp?.replace(/\D/g, "") || "5541999999999";
+  const heroUrl: string | null = heroMidia?.url || p?.og_image_url || null;
+
+  const wa = p?.whatsapp?.replace(/\D/g, "") || "";
 
   return (
     <div>
       {/* ─── HERO ─── */}
       <section className="relative bg-gradient-to-br from-teal-600 via-teal-700 to-emerald-800 text-white py-28 lg:py-36 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+        {heroUrl ? (
+          <>
+            <Image
+              src={heroUrl}
+              alt={heroMidia?.alt || p?.nome || "Pousada Ilha do Mel Marimar"}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+            {/* Escurece a foto para o texto continuar legivel sobre qualquer imagem */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+        )}
         <div className="relative max-w-4xl mx-auto px-4 text-center">
           <span className="inline-block text-teal-200 text-sm font-medium bg-white/10 px-4 py-1.5 rounded-full mb-6 backdrop-blur">
             🌊 Ilha do Mel • Encantadas • Paraná
@@ -58,7 +84,7 @@ export default async function HomePage() {
             <Link key={q.id} href={`/quartos/${q.slug}`} className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
               <div className="relative h-52 overflow-hidden">
                 {q.foto ? (
-                  <img src={q.foto} alt={q.nome} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <Image src={q.foto} alt={q.nome} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-teal-100 to-emerald-200 flex items-center justify-center">
                     <span className="text-5xl opacity-40">🏨</span>
@@ -71,8 +97,8 @@ export default async function HomePage() {
                 )}
               </div>
               <div className="p-5">
-                <h3 className="font-semibold text-lg text-gray-900 group-hover:text-teal-600 transition-colors">{q.nome}</h3>
-                <p className="text-sm text-gray-500 mt-1 line-clamp-2">{q.descricao || q.descricao_motor?.slice(0, 100)}</p>
+                <h3 className="font-semibold text-lg text-gray-900 group-hover:text-teal-600 transition-colors">{tituloQuarto(q.nome)}</h3>
+                <p className="text-sm text-gray-500 mt-1">{resumir(q.descricao || q.descricao_motor, 110)}</p>
                 <div className="flex items-center gap-4 mt-4 text-xs text-gray-400">
                   {q.cama && <span className="flex items-center gap-1">🛏 {q.cama}</span>}
                   <span className="flex items-center gap-1">👥 Até {q.ocupacao_max}</span>
@@ -105,7 +131,7 @@ export default async function HomePage() {
                       <span key={i} className={i < d.nota ? "text-amber-400" : "text-gray-200"}>★</span>
                     ))}
                   </div>
-                  <p className="text-sm text-gray-600 leading-relaxed">{d.texto.slice(0, 150)}...</p>
+                  <p className="text-sm text-gray-600 leading-relaxed">{resumir(d.texto, 150)}</p>
                   <div className="mt-4 pt-3 border-t border-gray-50">
                     <p className="text-sm font-semibold text-gray-800">{d.autor}</p>
                     <p className="text-xs text-gray-400">{d.origem}</p>
@@ -132,10 +158,10 @@ export default async function HomePage() {
                     {p.ordem === 1 ? "🥾" : p.ordem === 2 ? "🚤" : p.ordem === 3 ? "🌅" : "🌟"}
                   </div>
                   <h3 className="font-semibold text-gray-900">{p.nome}</h3>
-                  <p className="text-sm text-gray-500 mt-2 line-clamp-2">{p.descricao}</p>
+                  <p className="text-sm text-gray-500 mt-2">{resumir(p.descricao, 120)}</p>
                   <div className="flex items-center justify-between mt-4 text-xs text-gray-400">
                     <span>⏱ {p.duracao}</span>
-                    {p.preco_referencia && <span className="font-medium text-teal-600">R$ {p.preco_referencia}</span>}
+                    {p.preco_referencia && <span className="font-medium text-teal-600">a partir de {brl(p.preco_referencia)}</span>}
                   </div>
                 </div>
               ))}
@@ -158,9 +184,11 @@ export default async function HomePage() {
             <Link href="/reservar" className="bg-white text-teal-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-lg">
               Consultar disponibilidade
             </Link>
-            <a href={`https://wa.me/${wa}`} target="_blank" className="border-2 border-white/50 text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition-colors text-lg">
-              💬 Falar no WhatsApp
-            </a>
+            {wa && (
+              <a href={`https://wa.me/${wa}`} target="_blank" className="border-2 border-white/50 text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition-colors text-lg">
+                💬 Falar no WhatsApp
+              </a>
+            )}
           </div>
         </div>
       </section>

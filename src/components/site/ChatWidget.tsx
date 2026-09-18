@@ -4,7 +4,7 @@ export default async function ChatWidget() {
   const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
   const [p] = await sql`SELECT whatsapp, nome FROM pousada LIMIT 1`;
   await sql.end();
-  const wa = p?.whatsapp?.replace(/\D/g, "") || "5541999999999";
+  const wa = p?.whatsapp?.replace(/\D/g, "") || "";
 
   return (
     <div className="fixed bottom-24 right-6 z-50">

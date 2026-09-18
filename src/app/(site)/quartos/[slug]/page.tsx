@@ -1,3 +1,4 @@
+import { brl, tituloQuarto } from "@/lib/format";
 import postgres from "postgres"; import { notFound } from "next/navigation"; import Link from "next/link"; import { fetchTarifas } from "@/lib/worker"; import { buildDeepLink } from "@/lib/deeplink"; import { Gallery } from "@/components/site/Gallery";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
     ? fotos.map((f: any) => ({ url: f.url, alt: f.alt }))
     : [{ url: "", alt: q.nome }];
 
-  const wa = p?.whatsapp?.replace(/\D/g, "") || "5541999999999";
+  const wa = p?.whatsapp?.replace(/\D/g, "") || "";
   const waMsg = `Olá! Tenho interesse no quarto *${q.nome}* da Pousada Marimar.`;
 
   return (
@@ -91,11 +92,11 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
                 <>
                   <p className="text-sm text-gray-500 mb-1">A partir de</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-teal-700">R$ {preco.diaria}</span>
+                    <span className="text-3xl font-bold text-teal-700">{brl(preco.diaria)}</span>
                     <span className="text-sm text-gray-500">/noite</span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
-                    Total para 2 noites: <span className="font-semibold text-gray-700">R$ {preco.total}</span>
+                    Total para 2 noites: <span className="font-semibold text-gray-700">{brl(preco.total)}</span>
                   </p>
                   {preco.pacote && (
                     <p className="text-xs text-teal-600 mt-2 flex items-center gap-1">

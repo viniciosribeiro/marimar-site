@@ -26,18 +26,18 @@ async function main() {
   // ─── 1. Pousada ────────────────────────────────────────────
   await sql`INSERT INTO pousada (nome, slug, descricao_curta, endereco, cidade, uf, lat, lng, telefone, whatsapp, email, como_chegar, horario_recepcao, cor_primaria, cor_secundaria, seo_title, seo_description)
     VALUES ('Pousada Ilha do Mel Marimar', 'pousada-ilha-do-mel-marimar',
-    'Sua pousada pe na areia na Ilha do Mel — conforto, natureza e hospitalidade paranaense.',
-    'Ilha do Mel — Encantadas', 'Paranagua', 'PR', -25.5117, -48.3389,
-    '(41) 99999-9999', '(41) 99999-9999', 'contato@pousadamarimarilhadomel.com.br',
-    'Acesso por barco saindo de Pontal do Sul (30 min, R$ 30) ou Paranagua (1h30, R$ 25). Do trapiche de Encantadas, 10 min de caminhada ate a pousada.',
-    '08:00 as 22:00', '#0D9488', '#0EA5E9',
-    'Pousada Ilha do Mel Marimar — Reserva Oficial', 'Pousada na Ilha do Mel. Consulte disponibilidade e precos no site oficial.')`;
+    'Sua pousada pé na areia na Ilha do Mel — conforto, natureza e hospitalidade paranaense.',
+    'Ilha do Mel — Encantadas', 'Paranaguá', 'PR', -25.5117, -48.3389,
+    '(41) 99501-2920', '(41) 99501-2920', 'contato@pousadamarimarilhadomel.com.br',
+    'Acesso por barco saindo de Pontal do Sul (30 min, R$ 30) ou Paranaguá (1h30, R$ 25). Do trapiche de Encantadas, 10 min de caminhada até a pousada.',
+    '08:00 às 22:00', '#0D9488', '#0EA5E9',
+    'Pousada Ilha do Mel Marimar — Reserva Oficial', 'Pousada na Ilha do Mel. Consulte disponibilidade e preços no site oficial.')`;
   console.log("✅ pousada");
 
   // ─── 2. Categorias ─────────────────────────────────────────
   const cats = [
-    { nome: "Standard", slug: "standard", descricao: "Quartos standard economicos", ordem: 1 },
-    { nome: "Suite", slug: "suite", descricao: "Suites com banheiro privativo", ordem: 2 },
+    { nome: "Standard", slug: "standard", descricao: "Quartos standard econômicos", ordem: 1 },
+    { nome: "Suite", slug: "suite", descricao: "Suítes com banheiro privativo", ordem: 2 },
     { nome: "Familia", slug: "familia", descricao: "Quartos para familias", ordem: 3 },
     { nome: "Premium", slug: "premium", descricao: "Quartos premium com hidromassagem", ordem: 4 },
   ];
@@ -155,7 +155,7 @@ async function main() {
     { tipo: "quartos", titulo: "Nossos Quartos", subtitulo: "Do standard ao premium.", ordem: 3 },
     { tipo: "galeria", titulo: "Galeria", subtitulo: "Nossos espacos.", ordem: 4 },
     { tipo: "pacotes", titulo: "Pacotes", subtitulo: "Ofertas especiais.", ordem: 5 },
-    { tipo: "passeios", titulo: "Passeios", subtitulo: "Trilhas e experiencias.", ordem: 6 },
+    { tipo: "passeios", titulo: "Passeios", subtitulo: "Trilhas e experiências.", ordem: 6 },
     { tipo: "depoimentos", titulo: "Depoimentos", subtitulo: "O que dizem nossos hospedes.", ordem: 7 },
     { tipo: "mapa", titulo: "Como Chegar", subtitulo: "Localizacao e acesso.", ordem: 8 },
     { tipo: "cta", titulo: "Reserve sua Estadia", subtitulo: "Consulte disponibilidade.", ordem: 9 },

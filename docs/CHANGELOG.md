@@ -19,6 +19,79 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (2) — Camada de apresentação, imagens e limpeza de conteúdo
+
+**Autor:** Claude Opus 5 (Cowork) — revisão ao vivo do site publicado
+**Commits:** _(pendente de commit)_
+
+### Contexto: o domínio ainda é o WordPress antigo
+`www.pousadamarimarilhadomel.com.br` serve **WordPress 5.8.16** (tema Consulting,
+WooCommerce 4.7.4, Revolution Slider 5.4.8.3, Visual Composer 6.0.3). O Next.js
+está publicado apenas em `marimar-site.vercel.app`. O DNS nunca foi apontado.
+**Apontar o DNS é ação manual do Vinicios** — ver "Ação necessária".
+
+### Adicionado
+- `src/lib/format.ts` — camada de apresentação sobre os dados crus do motor:
+  - `tituloQuarto()` — "SUITE KING" → "Suíte King" (com dicionário de acentos;
+    respeita nomes que já vêm formatados do admin)
+  - `resumir()` — corta no limite de palavra + reticências, em vez de `.slice(0,N)`
+    que cortava no meio ("...viaja em grupo ou com cria")
+  - `brl()` — `Intl.NumberFormat` pt-BR: 1040 → "R$ 1.040", 350.5 → "R$ 350,50"
+  - `pluralizar()` — "2 noites" em vez de "2 noite(s)"
+  - `escassez()` — mensagem só quando o estoque real do motor justifica
+    (1 ou 2 unidades); nunca inventa urgência
+  - `dataBR()`
+- `src/db/corrigir-producao.ts` + script `npm run db:corrigir` — corrige os dados
+  já gravados no Neon (idempotente, não destrutivo)
+
+### Corrigido
+- **Telefone placeholder em produção.** `src/db/seed.ts` semeava `(41) 99999-9999`,
+  que estava no rodapé do site publicado. Real: **(41) 99501-2920** (confirmado no
+  site WordPress). Corrigido no seed e no script de produção.
+- Removidos todos os fallbacks `|| "5541999999999"` de `layout.tsx`, `page.tsx`,
+  `quartos/[slug]/page.tsx` e `ChatWidget.tsx`. Sem número configurado, o botão
+  de WhatsApp simplesmente não é renderizado — melhor que mandar o hóspede para
+  um número inexistente.
+- **Acentuação do texto visível ao hóspede.** A convenção "português sem acento"
+  vale para código/colunas/rotas e tinha vazado para a UI: "Diaria", "Ate 4
+  pessoas", "Esgotado no periodo", "pousada pe na areia", "Conheca nossas opcoes",
+  "Localizacao", "Experiencias", "Paranagua".
+- **Zod descartava campos do contrato.** `workerResponseSchema` declarava só um
+  subconjunto e o Zod descarta chaves não declaradas por padrão — então
+  `estadia_minima`, `unidades_disponiveis`, `disponibilidade_por_noite`,
+  `total_geral`, `motivo_indisponivel`, `politica_crianca` e `aviso_crianca`
+  chegavam do Worker e eram jogados fora antes da UI. Schema completo agora,
+  com campos novos `.optional()` para não quebrar em payload degradado.
+- `WORKER_TIMEOUT_MS` passou a ser respeitado (estava fixo em 12000).
+
+### Alterado
+- **Imagens via `next/image`.** As 12 fotos eram hotlink cru de
+  `reservas.desbravador.com.br` (534–921ms cada, `load` medido em **6192ms**).
+  `next.config.ts` ganhou `remotePatterns` + `minimumCacheTTL` de 7 dias, e os
+  `<img>` viraram `<Image fill sizes=...>` na home e na busca.
+- **Hero com foto.** Era um gradiente liso. Agora usa a primeira mídia em destaque
+  **sem `quarto_id`** (foto da pousada/praia), com fallback para `og_image_url` e,
+  por último, o gradiente. Overlay escuro garante legibilidade sobre qualquer foto.
+- **Página `/reservar` reescrita.** Disponíveis e esgotados agora em blocos
+  separados; card extraído para o componente `CardQuarto`; exibe estadia mínima,
+  selo de escassez, valor de criança com faixa quando variável, aviso de política
+  de criança do motor, e mensagem de erro com saída para o WhatsApp.
+- Header: nome da pousada não some mais no mobile; logo de h-8 para h-9/h-10.
+
+### Ação necessária (só o Vinicios pode fazer)
+1. **`npm run db:corrigir`** — aplica telefone real, acentos e desativa o passeio
+   de teste ("Vinicios / VR / R$ 350") que está público na home. O ambiente desta
+   sessão não tem rota de rede até o Neon.
+2. **Cadastrar a foto do hero** — Admin → Mídias → imagem com `destaque = true` e
+   **sem quarto vinculado**. Sem isso o hero continua no gradiente.
+3. **Apontar o DNS** para a Vercel e aposentar o WordPress.
+4. Verificar se o otimizador de imagem da Vercel consegue buscar de
+   `reservas.desbravador.com.br` (se o motor bloquear hotlink do datacenter, o
+   plano B é espelhar as fotos em Vercel Blob).
+5. Pendente da sessão anterior: `AGENT_API_KEY` na Vercel + OpenClaw.
+
+---
+
 ## 2026-09-18 — Correcoes pos-migracao Vercel + hardening da API do agente
 
 **Autor:** Claude Opus 5 (Cowork)

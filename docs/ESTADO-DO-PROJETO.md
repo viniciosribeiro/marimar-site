@@ -3,8 +3,9 @@
 > **Para agentes de IA:** este e o documento de entrada. Leia antes de tocar em codigo.
 > Mantenha-o atualizado ao final de cada sessao de trabalho, junto com `docs/CHANGELOG.md`.
 >
-> **Ultima atualizacao:** 18/09/2026
-> **Fase atual:** v1.0 em producao na Vercel — estabilizacao pos-migracao
+> **Ultima atualizacao:** 18/09/2026 (2ª sessão)
+> **Fase atual:** v1.0 publicada em `marimar-site.vercel.app`. **O domínio oficial
+> ainda serve o WordPress antigo** — a migração de DNS é o próximo marco.
 
 ---
 
@@ -128,6 +129,9 @@ src/
 │   ├── auth.ts          Auth.js v5: credentials, bcrypt, must_reset,
 │   │                    tentativas_falhas, bloqueado_ate
 │   ├── agent-auth.ts    ⭐ auth das rotas /api/agent/* (fail-closed)
+│   ├── format.ts        ⭐ apresentacao: tituloQuarto, resumir, brl,
+│   │                    pluralizar, escassez, dataBR — TODO texto vindo do
+│   │                    motor passa por aqui antes de virar UI
 │   ├── worker.ts        fetchTarifas() + schemas Zod do Worker
 │   ├── deeplink.ts      monta URL de reserva no Desbravador
 │   └── admin-actions.ts server actions compartilhadas dos CRUDs
@@ -159,6 +163,11 @@ src/
 - Conexao SQL: `postgres(process.env.DATABASE_URL!, { max: 1 })` + `await sql.end()`
 - **Idioma:** codigo, tabelas, colunas e rotas em **portugues sem acento**
   (`disponibilidade`, `criado_em`, `visivel_agente`). Mantenha o padrao.
+- ⚠️ **Mas todo texto que o HÓSPEDE lê vai acentuado e por extenso.** "Diária",
+  "Até 4 pessoas", "2 noites" (nunca "noite(s)"). Valores em BRL passam por
+  `brl()`, nomes de quarto por `tituloQuarto()`, textos longos por `resumir()`.
+- **Nunca invente dado de contato.** Sem `whatsapp` configurado, não renderize o
+  botão — não caia para um número fictício.
 - Resposta padrao das rotas do agente:
   `{ ok, dados, resumo_texto, fonte: "worker"|"local", consultado_em }`
   — `resumo_texto` ja vem formatado para WhatsApp, com emoji.
@@ -207,13 +216,33 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 
 ## 8. Pendencias conhecidas
 
-| # | Item | Gravidade | Status |
-|---|---|---|---|
-| 1 | Upload de midia so aceita URL — sem upload de arquivo (falta Vercel Blob ou S3) | 🔵 feature | aberto |
-| 2 | `audit_log` existe no schema mas nao e populado pelas server actions | 🔵 | aberto |
-| 3 | Producao nao validada nesta sessao (sem acesso de rede a partir do ambiente) | ⚠️ | **verificar** |
-| 4 | Sem testes automatizados | 🔵 | aberto |
-| 5 | `integracoes/page.tsx` exibe a `AGENT_API_KEY` completa nos exemplos de curl (tela autenticada, aceitavel, mas revisar) | 🟡 | aberto |
+### 🔴 Bloqueia o lançamento
+
+| # | Item | Quem resolve |
+|---|---|---|
+| 1 | **DNS ainda aponta para o WordPress 5.8.16.** O Next.js só existe em `marimar-site.vercel.app`. O WP roda tema Consulting, WooCommerce 4.7.4, RevSlider 5.4.8.3 — stack de 2021 sem atualização | Vinicios (registrador + Vercel) |
+| 2 | **Dados de produção com placeholder.** Rodar `npm run db:corrigir` (telefone real, acentos, desativar passeio de teste "Vinicios/VR/R$350" que está público) | Vinicios (precisa de rede até o Neon) |
+| 3 | **Hero sem foto.** Cadastrar em Admin → Mídias uma imagem com `destaque = true` e **sem quarto vinculado** | Vinicios |
+| 4 | Pendente da 1ª sessão: `AGENT_API_KEY` nova na Vercel + OpenClaw | Vinicios |
+
+### 🟠 Verificar após o deploy
+
+| # | Item |
+|---|---|
+| 5 | O otimizador de imagem da Vercel consegue buscar de `reservas.desbravador.com.br`? Se o motor bloquear hotlink de datacenter, espelhar as fotos em Vercel Blob |
+| 6 | Medir o `load` de novo. Era **6192ms** com 12 hotlinks crus; deve cair bastante com `next/image` |
+| 7 | `estadia_minima` e `unidades_disponiveis` agora aparecem na UI — conferir contra o motor se os números batem |
+
+### 🔵 Backlog
+
+| # | Item |
+|---|---|
+| 8 | Upload de mídia só aceita URL — sem upload de arquivo (falta Vercel Blob ou S3) |
+| 9 | `audit_log` existe no schema mas nao e populado pelas server actions |
+| 10 | Sem testes automatizados. `src/lib/format.ts` é puro e seria o primeiro bom alvo |
+| 11 | Coluna dedicada `hero_url` em `pousada` (hoje o hero deduz da tabela `midias`) |
+| 12 | Lint tem ~23 erros pré-existentes (`any`, `react-hooks/purity` com `Date.now`, aspas não escapadas) — não bloqueiam o build |
+| 13 | Seletor de crianças não pede idade, mas o motor tem faixas etárias (`politica_crianca`) |
 
 ### Verificacao pendente apos o deploy desta sessao
 
