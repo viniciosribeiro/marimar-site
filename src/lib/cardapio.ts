@@ -37,6 +37,8 @@ export function classesMarcador(cor: string): string {
   }
 }
 
+export type FotoItem = { url: string; alt: string | null };
+
 export type ItemCardapio = {
   id: string;
   nome: string;
@@ -48,6 +50,8 @@ export type ItemCardapio = {
   marcadores: string[] | null;
   destaque: boolean;
   disponivel: boolean;
+  /** Galeria própria do item, em ordem; a capa vem primeiro. */
+  fotos: FotoItem[];
 };
 
 export type CategoriaCardapio = {

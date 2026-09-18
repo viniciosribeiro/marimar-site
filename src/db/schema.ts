@@ -319,3 +319,25 @@ export const cardapioItens = pgTable("cardapio_itens", {
   criado_em: timestamp("criado_em").defaultNow().notNull(),
   atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
 });
+
+// ─── Fotos dos itens do cardapio ────────────────────────────────
+// Cada item tem galeria propria. A tabela guarda `pathname` alem da url
+// porque e ele que o Vercel Blob usa para APAGAR o arquivo — sem isso,
+// excluir um item deixaria a imagem orfa no storage, sendo cobrada para
+// sempre.
+export const cardapioFotos = pgTable("cardapio_fotos", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  item_id: uuid("item_id")
+    .references(() => cardapioItens.id, { onDelete: "cascade" })
+    .notNull(),
+  url: text("url").notNull(),
+  pathname: text("pathname").notNull(),
+  alt: text("alt"),
+  largura: integer("largura"),
+  altura: integer("altura"),
+  bytes: integer("bytes"),
+  /** Uma por item: e a que aparece na listagem e no card. */
+  capa: boolean("capa").default(false).notNull(),
+  ordem: integer("ordem").default(0).notNull(),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+});

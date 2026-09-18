@@ -19,6 +19,65 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (8) — Upload real de fotos no cardápio
+
+**Autor:** Claude Opus 5 (Cowork)
+
+O cardápio pedia o **endereço** da imagem. Isso não é upload: exige que a foto já
+esteja hospedada em algum lugar, o que ninguém da operação vai fazer. Agora o envio
+é de arquivo mesmo, e cada item tem galeria própria.
+
+### Armazenamento: Vercel Blob
+- `@vercel/blob` 2.8.0 (API conferida antes de escrever, instalando no container).
+- **O arquivo não passa pela função serverless.** O navegador envia direto para o
+  storage; a rota `/api/admin/upload` só emite o token. Isso contorna o limite de
+  ~4,5 MB de corpo de requisição — uma foto de celular passa disso com folga.
+- A checagem de sessão acontece **dentro** de `onBeforeGenerateToken`, antes de
+  qualquer token existir. Sem ela, a rota seria um upload aberto na internet.
+- O caminho vindo do cliente é validado (`cardapio/` ou `galeria/`), tipos limitados
+  a JPG/PNG/WebP/AVIF e tamanho a 12 MB.
+
+### Nova tabela `cardapio_fotos` (migration 0004)
+Guarda `pathname` além da `url`: é ele que o Blob usa para **apagar** o arquivo.
+Sem isso, excluir um item deixaria a imagem órfã no storage, sendo cobrada para
+sempre. Ao excluir uma foto, o arquivo sai junto; se a remoção no storage falhar, a
+linha sai mesmo assim — melhor um arquivo órfão do que foto fantasma no site.
+
+### Detalhe que evitaria um bug silencioso
+Não usei o callback `onUploadCompleted` do Vercel Blob para gravar no banco: a
+Vercel não consegue chamar de volta um `localhost`, então em desenvolvimento ele
+**nunca dispararia** e a foto sumiria. Quem grava é o cliente, chamando a server
+action com a URL devolvida pelo upload — funciona igual em dev e produção.
+
+### Admin
+- Arrastar-e-soltar, colar com Ctrl+V, selecionar vários de uma vez.
+- **Barra de progresso por arquivo** — no 4G da ilha um envio de 8 MB demora, e sem
+  barra parece travado.
+- Grade com definir capa, reordenar, legenda por foto e excluir. A primeira foto
+  vira capa sozinha; ao excluir a capa, a próxima é promovida.
+- A grade é server component: cada ação é um form com server action, então funciona
+  sem JavaScript e não há estado duplicado entre cliente e banco.
+- Quando falta `BLOB_READ_WRITE_TOKEN`, a tela explica como configurar em vez de
+  mostrar um botão que sempre falha.
+
+### Site
+- Miniatura abre um **lightbox** com a galeria do item. No celular: deslizar troca
+  de foto, arrastar para baixo fecha. No computador: setas e Esc. O scroll do fundo
+  é travado enquanto aberto — sem isso o toque rolava a página atrás.
+- Contador "N fotos" sobre a miniatura quando há mais de uma.
+- O lightbox vive no componente pai, não em cada card: um só por vez, e o card não
+  carrega o visualizador inteiro para mostrar uma miniatura.
+
+### Ação necessária
+```
+npm install                     # instala @vercel/blob
+npm run db:migrate              # migrations 0003 (cardápio) e 0004 (fotos)
+```
+E na Vercel: aba **Storage** → criar um Blob store → conectar ao projeto →
+`npx vercel env pull .env.local` para trazer o `BLOB_READ_WRITE_TOKEN`.
+
+---
+
 ## 2026-09-18 (7) — Segunda rodada de correções após execução real
 
 **Autor:** Claude Opus 5 (Cowork)

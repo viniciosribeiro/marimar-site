@@ -29,7 +29,12 @@ export default async function CardapioPage() {
               'preco', i.preco, 'preco_promocional', i.preco_promocional,
               'porcao', i.porcao, 'foto_url', i.foto_url,
               'marcadores', i.marcadores, 'destaque', i.destaque,
-              'disponivel', i.disponivel
+              'disponivel', i.disponivel,
+              'fotos', COALESCE((
+                SELECT json_agg(json_build_object('url', f.url, 'alt', f.alt)
+                       ORDER BY f.capa DESC, f.ordem, f.criado_em)
+                FROM cardapio_fotos f WHERE f.item_id = i.id
+              ), '[]')
             ) ORDER BY i.destaque DESC, i.ordem, i.nome
           ) FILTER (WHERE i.id IS NOT NULL),
           '[]'

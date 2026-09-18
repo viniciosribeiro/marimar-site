@@ -4,6 +4,9 @@ import Link from "next/link";
 import postgres from "postgres";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import { LISTA_MARCADORES, marcador } from "@/lib/cardapio";
+import { UploadFotos } from "@/components/admin/UploadFotos";
+import { GaleriaItem } from "@/components/admin/GaleriaItem";
+import { blobConfigurado } from "@/lib/blob";
 import { brl } from "@/lib/format";
 import {
   salvarCategoria, alternarCategoria, excluirCategoria, moverCategoria,
@@ -21,12 +24,14 @@ export default async function CardapioAdminPage({ searchParams }: { searchParams
 
   let categorias: any[] = [];
   let itens: any[] = [];
+  let fotos: any[] = [];
   let semTabela = false;
 
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     categorias = await sql`SELECT * FROM cardapio_categorias ORDER BY ordem, nome`;
     itens = await sql`SELECT * FROM cardapio_itens ORDER BY destaque DESC, ordem, nome`;
+    fotos = await sql`SELECT * FROM cardapio_fotos ORDER BY capa DESC, ordem, criado_em`;
     await sql.end();
   } catch (e) {
     semTabela = String((e as Error).message).includes("cardapio");
@@ -50,6 +55,8 @@ export default async function CardapioAdminPage({ searchParams }: { searchParams
   const criandoItem = sp.novoItem ?? null;
   const porCategoria = (id: string) => itens.filter((i) => i.categoria_id === id);
   const totalAtivos = itens.filter((i) => i.ativo).length;
+  const fotosDe = (itemId: string) => fotos.filter((f) => f.item_id === itemId);
+  const temBlob = blobConfigurado();
 
   return (
     <div className="p-5 sm:p-8 max-w-5xl">
@@ -175,7 +182,8 @@ export default async function CardapioAdminPage({ searchParams }: { searchParams
               {/* Itens */}
               <div className="divide-y divide-gray-50">
                 {meus.map((i) => (
-                  <ItemLinha key={i.id} item={i} editando={itemEditando?.id === i.id} categorias={categorias} />
+                  <ItemLinha key={i.id} item={i} editando={itemEditando?.id === i.id} categorias={categorias}
+                    fotos={fotosDe(i.id)} temBlob={temBlob} />
                 ))}
               </div>
 
@@ -198,7 +206,7 @@ export default async function CardapioAdminPage({ searchParams }: { searchParams
   );
 }
 
-function ItemLinha({ item, editando, categorias }: { item: any; editando: boolean; categorias: any[] }) {
+function ItemLinha({ item, editando, categorias, fotos, temBlob }: { item: any; editando: boolean; categorias: any[]; fotos: any[]; temBlob: boolean }) {
   const promo = item.preco_promocional && Number(item.preco_promocional) > 0;
   return (
     <div>
@@ -212,6 +220,7 @@ function ItemLinha({ item, editando, categorias }: { item: any; editando: boolea
             <span className="text-sm font-medium text-gray-900">{item.nome}</span>
             {item.destaque && <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">★ destaque</span>}
             {!item.disponivel && <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">esgotado hoje</span>}
+            {fotos.length > 0 && <span className="text-[10px] text-gray-400">📷 {fotos.length}</span>}
             {(item.marcadores ?? []).map((m: string) => {
               const info = marcador(m);
               return info ? <span key={m} className="text-[11px]" title={info.rotulo}>{info.icone}</span> : null;
@@ -246,6 +255,13 @@ function ItemLinha({ item, editando, categorias }: { item: any; editando: boolea
 
       {editando && (
         <div className="px-4 pb-4 bg-gray-50/70">
+          <div className="pt-4">
+            <p className="text-xs font-medium text-gray-600 mb-2">
+              Fotos deste item {fotos.length > 0 && <span className="text-gray-400">· a capa aparece na listagem</span>}
+            </p>
+            <GaleriaItem fotos={fotos} itemId={item.id} />
+            <UploadFotos itemId={item.id} nomeItem={item.nome} configurado={temBlob} />
+          </div>
           <FormItem categorias={categorias} item={item} />
           <form action={excluirItem} className="mt-2">
             <input type="hidden" name="id" value={item.id} />
@@ -302,12 +318,6 @@ function FormItem({ categorias, item, categoriaPadrao }: { categorias: any[]; it
         </label>
       </div>
 
-      <label className="block">
-        <span className="block text-xs font-medium text-gray-600 mb-1">Foto (endereço da imagem)</span>
-        <input name="foto_url" defaultValue={item?.foto_url ?? ""} placeholder="https://..."
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
-      </label>
-
       <fieldset>
         <legend className="text-xs font-medium text-gray-600 mb-2">Marcadores</legend>
         <div className="flex flex-wrap gap-2">
@@ -324,6 +334,12 @@ function FormItem({ categorias, item, categoriaPadrao }: { categorias: any[]; it
         <input type="checkbox" name="destaque" defaultChecked={item?.destaque ?? false} className="rounded border-gray-300" />
         Destacar no topo da seção
       </label>
+
+      {!item && (
+        <p className="text-xs text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-2">
+          Salve o item primeiro. Depois clique em <strong>Editar</strong> nele para enviar as fotos.
+        </p>
+      )}
 
       <div className="flex gap-2 pt-1">
         <SubmitButton className="bg-gray-900 hover:bg-gray-800 text-white text-sm px-4 py-2 rounded-lg font-medium">

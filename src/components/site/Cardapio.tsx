@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { LightboxCardapio } from "./LightboxCardapio";
 import Image from "next/image";
 import { brl } from "@/lib/format";
 import { marcador, classesMarcador, LISTA_MARCADORES, type CategoriaCardapio } from "@/lib/cardapio";
@@ -15,6 +16,9 @@ import { marcador, classesMarcador, LISTA_MARCADORES, type CategoriaCardapio } f
 export function Cardapio({ categorias }: { categorias: CategoriaCardapio[] }) {
   const [busca, setBusca] = useState("");
   const [filtros, setFiltros] = useState<string[]>([]);
+  // Lightbox vive aqui, nao em cada card: um so por vez, e o card nao
+  // precisa carregar o visualizador inteiro para mostrar uma miniatura.
+  const [aberto, setAberto] = useState<{ item: CategoriaCardapio["itens"][number]; i: number } | null>(null);
 
   // So oferece filtro de marcador que realmente existe no cardapio
   const marcadoresEmUso = useMemo(() => {
@@ -129,28 +133,52 @@ export function Cardapio({ categorias }: { categorias: CategoriaCardapio[] }) {
               {c.descricao && <p className="text-sm text-tinta-suave mb-6">{c.descricao}</p>}
 
               <div className="grid sm:grid-cols-2 gap-4 mt-6">
-                {c.itens.map((i) => <ItemCard key={i.id} item={i} />)}
+                {c.itens.map((i) => (
+                  <ItemCard key={i.id} item={i} aoAbrir={(idx) => setAberto({ item: i, i: idx })} />
+                ))}
               </div>
             </section>
           ))}
         </div>
       )}
+
+      <LightboxCardapio
+        fotos={aberto?.item.fotos ?? []}
+        nome={aberto?.item.nome ?? ""}
+        aberto={aberto !== null}
+        indiceInicial={aberto?.i ?? 0}
+        aoFechar={() => setAberto(null)}
+      />
     </div>
   );
 }
 
-function ItemCard({ item }: { item: CategoriaCardapio["itens"][number] }) {
+function ItemCard({ item, aoAbrir }: { item: CategoriaCardapio["itens"][number]; aoAbrir: (i: number) => void }) {
   const promo = item.preco_promocional && Number(item.preco_promocional) > 0;
   const indisponivel = !item.disponivel;
+  const fotos = item.fotos ?? [];
+  const capa = fotos[0]?.url ?? item.foto_url ?? null;
 
   return (
     <article className={`flex gap-4 bg-white rounded-marca border border-linha/70 shadow-marca p-4 ${
       indisponivel ? "opacity-60" : ""
     }`}>
-      {item.foto_url && (
-        <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-marca overflow-hidden shrink-0 bg-areia">
-          <Image src={item.foto_url} alt={item.nome} fill sizes="112px" className="object-cover" />
-        </div>
+      {capa && (
+        <button
+          type="button"
+          onClick={() => aoAbrir(0)}
+          disabled={fotos.length === 0}
+          aria-label={fotos.length > 1 ? `Ver as ${fotos.length} fotos de ${item.nome}` : `Ver foto de ${item.nome}`}
+          className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-marca overflow-hidden shrink-0 bg-areia group disabled:cursor-default"
+        >
+          <Image src={capa} alt={item.nome} fill sizes="(max-width: 640px) 96px, 112px"
+            className="object-cover transition-transform duration-300 group-enabled:group-hover:scale-105" />
+          {fotos.length > 1 && (
+            <span className="absolute bottom-1 right-1 bg-black/65 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+              {fotos.length} fotos
+            </span>
+          )}
+        </button>
       )}
 
       <div className="flex-1 min-w-0 flex flex-col">
