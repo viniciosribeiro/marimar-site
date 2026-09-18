@@ -20,6 +20,7 @@ Hermes/OpenRouter, e outras). Para nao se atropelarem, existe um protocolo.
 1. **`docs/ESTADO-DO-PROJETO.md`** — visao geral, arquitetura, mapa do codigo,
    convencoes e pendencias. **Este e o ponto de entrada.**
 2. **`docs/CHANGELOG.md`** — o que mudou por ultimo e o que ficou pendente
+2b. **`docs/HANDOFF-PROXIMO-AGENTE.md`** — se voce esta retomando o trabalho, comece por aqui
 3. `git log --oneline -15` e `git status`
 4. `docs/padrao-crud.md` — se for criar/alterar tela de admin
 5. `docs/contrato-api.md` — se for mexer em disponibilidade/tarifas

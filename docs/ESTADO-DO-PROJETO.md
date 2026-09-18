@@ -202,6 +202,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | Arquivo | Conteudo |
 |---|---|
 | `docs/ESTADO-DO-PROJETO.md` | **este arquivo** — visao geral e ponto de entrada |
+| `docs/HANDOFF-PROXIMO-AGENTE.md` | prompt pronto para retomar o trabalho e fazer o deploy |
 | `docs/CHANGELOG.md` | historico datado de mudancas |
 | `docs/contrato-api.md` | contrato completo do Worker PousadaHub (todos os campos) |
 | `docs/padrao-crud.md` | convencoes das telas de admin |
