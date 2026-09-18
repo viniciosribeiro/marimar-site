@@ -19,6 +19,63 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (6) — Correção dos scripts de banco (3 falhas reportadas)
+
+**Autor:** Claude Opus 5 (Cowork)
+**Commits:** _(pendente de commit)_
+
+Os três scripts falharam na primeira execução real. Duas causas, ambas erro meu.
+
+### 1. `db:corrigir` e `db:migrar-wp` liam o arquivo de ambiente errado
+`migrate.ts` (que já existia) usa `config({ path: ".env.local" })`. Eu escrevi os
+scripts novos com `import "dotenv/config"`, que carrega **`.env`** — arquivo que não
+existe neste projeto. Resultado: `DATABASE_URL` ficava `undefined`, o postgres.js
+tentava `localhost:5432` e o erro não dizia nada (`❌ Falhou:` com mensagem vazia).
+
+- Novo `src/db/env.ts`: carrega `.env.local` e `.env` nessa ordem, valida a variável
+  e explica onde ela deveria estar. `migrate.ts` também passou a usá-lo.
+- `explicarErro()` monta a mensagem a partir de `message`, `detail`, `hint`, `code`
+  e `cause` — um `PostgresError` costuma ter o útil fora de `.message`, que foi
+  exatamente o caso do erro vazio.
+
+### 2. Crash do Node no Windows
+`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), src\win\async.c`
+
+Consequência da mesma falha: o `catch` chamava `process.exit(1)` com a conexão
+ainda abrindo. Os três scripts agora guardam o cliente num escopo que o `catch`
+alcança e fecham antes de sair.
+
+### 3. `db:migrate` tentava reaplicar a migration 0000
+```
+CREATE TYPE "public"."escopo_comodidade" → type already exists
+```
+O banco foi criado com `drizzle-kit push`, que aplica o schema e **não registra
+nada** em `drizzle.__drizzle_migrations`. Quando o projeto passou a usar
+`db:migrate`, o migrator viu zero migrations registradas e tentou rodar a 0000
+inteira.
+
+Novo **`npm run db:baseline`**: confere que o schema realmente existe (procura as
+tabelas principais), registra a 0000 como aplicada **sem executá-la**, e deixa as
+demais para o `db:migrate`. Não cria, não altera e não apaga tabela nenhuma — só
+escreve na tabela de controle. Rodar duas vezes não faz nada na segunda.
+
+Lendo o código do drizzle em `node_modules` para escrever isso, confirmei que o
+migrator **não compara hash**: ele lê o `created_at` mais recente e aplica toda
+migration cujo `when` seja maior. Por isso o baseline registra a 0000 com o `when`
+original dela — gravar "agora" faria o drizzle pular a 0001 e a 0002. Timestamps
+do journal conferidos: 14/09 21:26 → 18/09 07:50 → 18/09 08:37, crescentes.
+
+### Ordem corrigida
+```
+npm run db:baseline    # uma vez só, resolve o histórico do push
+npm run db:migrate     # aplica 0001 (tema) e 0002 (tipos de bloco)
+npm run db:corrigir
+npm run db:migrar-wp --dry
+npm run db:migrar-wp
+```
+
+---
+
 ## 2026-09-18 (5) — A home passa a ser editável pela administração
 
 **Autor:** Claude Opus 5 (Cowork)

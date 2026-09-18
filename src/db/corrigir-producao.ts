@@ -9,13 +9,19 @@
  * Idempotente: so altera linhas que ainda estao com o valor errado.
  * Rode com:  npx tsx src/db/corrigir-producao.ts
  */
-import "dotenv/config";
+import { urlDoBanco, sair, explicarErro } from "./env";
 import postgres from "postgres";
 
 const TELEFONE_REAL = "(41) 99501-2920";
 
+// Guardado fora de main() para o catch conseguir fechar a conexao antes de
+// sair. Encerrar o processo com a conexao aberta derruba o Node no Windows
+// com: Assertion failed: !(handle->flags & UV_HANDLE_CLOSING) em async.c
+let clienteAberto: { end: () => Promise<void> } | null = null;
+
 async function main() {
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(urlDoBanco(), { max: 1 });
+  clienteAberto = sql;
 
   console.log("→ Conectado. Verificando dados da pousada...\n");
 
@@ -210,8 +216,12 @@ async function main() {
     console.log(`\n✅ ${midiasDestaque.c} mídia(s) de destaque disponível(is) para o hero`);
   }
 
-  await sql.end();
   console.log("\nPronto.");
+  await sair(sql, 0);
 }
 
-main().catch((e) => { console.error("❌ Falhou:", e.message); process.exit(1); });
+main().catch(async (e) => {
+  console.error("\n❌ Falhou:", explicarErro(e));
+  if (clienteAberto) { try { await clienteAberto.end(); } catch { /* ignora */ } }
+  process.exit(1);
+});

@@ -14,7 +14,7 @@
  *   --dry     mostra o que faria, sem gravar
  *   --textos  migra tambem o texto das paginas (padrao: so fotos)
  */
-import "dotenv/config";
+import { urlDoBanco, sair, explicarErro } from "./env";
 import postgres from "postgres";
 
 const WP = "https://pousadamarimarilhadomel.com.br/wp-json/wp/v2";
@@ -91,6 +91,11 @@ function limparHtml(html: string): string {
     .trim();
 }
 
+// Guardado fora de main() para o catch conseguir fechar a conexao antes de
+// sair. Encerrar o processo com a conexao aberta derruba o Node no Windows
+// com: Assertion failed: !(handle->flags & UV_HANDLE_CLOSING) em async.c
+let clienteAberto: { end: () => Promise<void> } | null = null;
+
 async function main() {
   console.log(DRY ? "🔍 MODO DRY-RUN — nada será gravado\n" : "🚚 Migrando do WordPress para o Neon\n");
 
@@ -101,7 +106,8 @@ async function main() {
   const imagens = midiasWp.filter((m) => m.mime_type?.startsWith("image/"));
   console.log(`  ${imagens.length} imagens encontradas\n`);
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(urlDoBanco(), { max: 1 });
+  clienteAberto = sql;
 
   const existentes = new Set(
     (await sql`SELECT url FROM midias`).map((r: any) => r.url as string)
@@ -183,8 +189,12 @@ async function main() {
     console.log("\n(Para migrar também os textos das páginas, rode com --textos)");
   }
 
-  await sql.end();
   console.log("\nPronto.");
+  await sair(sql, 0);
 }
 
-main().catch((e) => { console.error("❌ Falhou:", e.message); process.exit(1); });
+main().catch(async (e) => {
+  console.error("\n❌ Falhou:", explicarErro(e));
+  if (clienteAberto) { try { await clienteAberto.end(); } catch { /* ignora */ } }
+  process.exit(1);
+});
