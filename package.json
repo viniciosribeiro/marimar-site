@@ -13,7 +13,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
     "db:seed:admin": "tsx src/db/seed-admin.ts",
-    "db:corrigir": "tsx src/db/corrigir-producao.ts"
+    "db:corrigir": "tsx src/db/corrigir-producao.ts",
+    "db:migrar-wp": "tsx src/db/migrar-wordpress.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

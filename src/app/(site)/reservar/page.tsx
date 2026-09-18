@@ -161,7 +161,7 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2 mb-1">
           <h3 className="font-semibold text-lg leading-tight">{r.nomeLocal}</h3>
-          {r.catNome && <span className="text-xs text-marca-ativa bg-marca-sutil px-2 py-0.5 rounded shrink-0">{r.catNome}</span>}
+          {r.catNome && <span className="text-xs text-marca-ativa bg-marca-sutil px-2 py-0.5 rounded shrink-0">{tituloQuarto(r.catNome)}</span>}
         </div>
 
         <p className="text-xs text-gray-500 mb-2 leading-relaxed">{resumir(r.descricaoLocal, 120)}</p>

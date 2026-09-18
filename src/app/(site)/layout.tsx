@@ -56,9 +56,9 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   let p: Record<string, any> = FALLBACK;
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5 });
-    const [row] = await sql`SELECT * FROM pousada LIMIT 1`;
+    const [row] = await sql`SELECT to_jsonb(x) AS dados FROM pousada x LIMIT 1`;
     await sql.end();
-    if (row) p = row;
+    if (row?.dados) p = row.dados as Record<string, any>;
   } catch (e) {
     console.error("[SiteLayout] banco indisponivel, usando fallback:", (e as Error).message);
   }
@@ -66,8 +66,23 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const wa = p?.whatsapp?.replace(/\D/g, "") || "";
   const nome = p?.nome || FALLBACK.nome;
 
+  // Faixa de aviso configurada em Admin -> Identidade visual -> Banner.
+  // Sem isto o editor salvaria e nada apareceria — que era exatamente o
+  // problema do editor antigo.
+  const banner = p?.tema?.banner;
+  const mostrarBanner = banner?.ativo === true && !!banner?.texto;
+
   return (
     <div className="min-h-screen flex flex-col bg-fundo">
+      {mostrarBanner && (
+        <div className="bg-acento text-white text-center text-sm px-4 py-2.5">
+          <span className={banner.animado !== false ? "inline-block animate-pulse" : ""}>
+            {banner.texto}
+          </span>
+          {banner.subtexto && <span className="opacity-85"> · {banner.subtexto}</span>}
+        </div>
+      )}
+
       {/* Fundo solido de proposito: o briefing pede leitura clara, sem
           transparencia que atrapalhe a visualizacao sobre a foto do hero. */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">

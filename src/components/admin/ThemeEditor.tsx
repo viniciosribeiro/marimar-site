@@ -1,350 +1,321 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { salvarTema } from "@/app/(admin)/admin/identidade-visual/actions";
 
-const FONTES = ["Inter","Geist","Roboto","Open Sans","Lato","Montserrat","Playfair Display","Merriweather","Poppins","Nunito","Raleway"];
+const FONTES = ["Geist", "Inter", "Roboto", "Open Sans", "Lato", "Montserrat", "Playfair Display", "Merriweather", "Poppins", "Nunito", "Raleway"];
+
 const PALETAS = [
-  { n:"Oceano", p:"#0D9488", s:"#0EA5E9" },{ n:"Tropical", p:"#059669", s:"#D97706" },
-  { n:"Praia", p:"#0891B2", s:"#F59E0B" },{ n:"Elegante", p:"#1E293B", s:"#B45309" },
-  { n:"Verão", p:"#2563EB", s:"#F97316" },{ n:"Natureza", p:"#166534", s:"#CA8A04" },
-  { n:"Rosa", p:"#BE185D", s:"#EC4899" },{ n:"Âmbar", p:"#B45309", s:"#F59E0B" },
+  { n: "Oceano", p: "#0D9488", s: "#0EA5E9" }, { n: "Tropical", p: "#059669", s: "#D97706" },
+  { n: "Praia", p: "#0891B2", s: "#F59E0B" },  { n: "Elegante", p: "#1E293B", s: "#B45309" },
+  { n: "Verão", p: "#2563EB", s: "#F97316" },  { n: "Natureza", p: "#166534", s: "#CA8A04" },
+  { n: "Rosa", p: "#BE185D", s: "#EC4899" },   { n: "Âmbar", p: "#B45309", s: "#F59E0B" },
+];
+
+const ABAS = [
+  { id: "cores", label: "Cores" },
+  { id: "tipografia", label: "Fontes" },
+  { id: "forma", label: "Forma" },
+  { id: "imagens", label: "Imagens" },
+  { id: "banner", label: "Banner" },
+  { id: "seo", label: "SEO" },
 ];
 
 export function ThemeEditor({ initial }: { initial: any }) {
-  const [tab, setTab] = useState("cores");
-  const [primaria, setPrimaria] = useState(initial?.cor_primaria||"#0D9488");
-  const [secundaria, setSecundaria] = useState(initial?.cor_secundaria||"#0EA5E9");
-  const [fonteT, setFonteT] = useState(initial?.fonte_titulo||"Inter");
-  const [fonteC, setFonteC] = useState(initial?.fonte_corpo||"Inter");
-  const [logo, setLogo] = useState(initial?.logo_url||"");
-  const [favicon, setFavicon] = useState(initial?.favicon_url||"");
-  const [seoTitle, setSeoTitle] = useState(initial?.seo_title||"");
-  const [seoDesc, setSeoDesc] = useState(initial?.seo_description||"");
-  const [arredondamento, setArredondamento] = useState("12");
-  const [sombra, setSombra] = useState("sm");
-  const [animacoes, setAnimacoes] = useState(true);
-  const [bannerAtivo, setBannerAtivo] = useState(true);
-  const [bannerTexto, setBannerTexto] = useState("Bem-vindo à Pousada Marimar");
-  const [bannerSubtexto, setBannerSubtexto] = useState("Seu refúgio na Ilha do Mel");
-  const [bannerAnimado, setBannerAnimado] = useState(true);
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const favInputRef = useRef<HTMLInputElement>(null);
+  const t = initial?.tema ?? {};
+  const banner = t.banner ?? {};
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setLogo(ev.target?.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
+  const [aba, setAba] = useState("cores");
+  const [primaria, setPrimaria] = useState(initial?.cor_primaria || "#0D9488");
+  const [secundaria, setSecundaria] = useState(initial?.cor_secundaria || "#0EA5E9");
+  const [fonteT, setFonteT] = useState(initial?.fonte_titulo || "Geist");
+  const [fonteC, setFonteC] = useState(initial?.fonte_corpo || "Geist");
+  const [logo, setLogo] = useState(initial?.logo_url || "");
+  const [favicon, setFavicon] = useState(initial?.favicon_url || "");
+  const [ogImage, setOgImage] = useState(initial?.og_image_url || "");
+  const [seoTitle, setSeoTitle] = useState(initial?.seo_title || "");
+  const [seoDesc, setSeoDesc] = useState(initial?.seo_description || "");
+  const [raio, setRaio] = useState(String(t.raio ?? "12"));
+  const [sombra, setSombra] = useState(t.sombra ?? "sm");
+  const [animacoes, setAnimacoes] = useState(t.animacoes !== false);
+  const [bannerAtivo, setBannerAtivo] = useState(banner.ativo === true);
+  const [bannerTexto, setBannerTexto] = useState(banner.texto || "");
+  const [bannerSubtexto, setBannerSubtexto] = useState(banner.subtexto || "");
+  const [bannerAnimado, setBannerAnimado] = useState(banner.animado !== false);
 
-  const handleFavUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setFavicon(ev.target?.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const tabs = [
-    { id:"cores", label:"🎨 Cores", icon:"🎨" },
-    { id:"tipografia", label:"🔤 Fontes", icon:"🔤" },
-    { id:"logos", label:"🖼️ Logos", icon:"🖼️" },
-    { id:"banner", label:"🎬 Banner", icon:"🎬" },
-    { id:"avancado", label:"⚙️ Avançado", icon:"⚙️" },
-    { id:"seo", label:"🔍 SEO", icon:"🔍" },
-  ];
+  const temaFaltando = initial && initial.tema === undefined;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-      {/* Editor */}
-      <div className="lg:col-span-3">
-        {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xl">
-          {tabs.map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
-                tab === t.id ? "bg-white shadow text-gray-800" : "text-gray-500 hover:text-gray-700"
-              }`}>{t.label}</button>
+    <form action={salvarTema} className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+      {/* ─────────── EDITOR ─────────── */}
+      <div className="xl:col-span-3">
+        {temaFaltando && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-sm text-amber-900">
+            A coluna <code className="bg-amber-100 px-1 rounded">tema</code> ainda não existe no banco.
+            Rode <code className="bg-amber-100 px-1 rounded">npm run db:migrate</code> — sem ela, Forma e Banner não salvam.
+          </div>
+        )}
+
+        <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xl overflow-x-auto">
+          {ABAS.map((a) => (
+            <button key={a.id} type="button" onClick={() => setAba(a.id)}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                aba === a.id ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+              }`}>
+              {a.label}
+            </button>
           ))}
         </div>
 
-        {/* Tab: Cores */}
-        {tab === "cores" && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-sm p-5">
-              <h3 className="font-semibold text-sm mb-3">Paletas prontas</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {PALETAS.map((p) => (
-                  <button key={p.n} onClick={() => { setPrimaria(p.p); setSecundaria(p.s); }}
-                    className="p-2 rounded-xl border-2 hover:border-teal-400 transition-all text-center"
-                    style={{ borderColor: primaria===p.p ? p.p : "transparent" }}>
-                    <div className="flex rounded-lg overflow-hidden h-8 mb-1">
-                      <div className="flex-1" style={{backgroundColor:p.p}}/>
-                      <div className="flex-1" style={{backgroundColor:p.s}}/>
-                    </div>
-                    <span className="text-2xs text-gray-500">{p.n}</span>
-                  </button>
-                ))}
-              </div>
+        {aba === "cores" && (
+          <Card titulo="Cores da marca" ajuda="A cor principal gera sozinha os tons de hover, fundo e borda usados em todo o site.">
+            <p className="text-xs font-medium text-gray-500 mb-2">Paletas prontas</p>
+            <div className="grid grid-cols-4 gap-2 mb-5">
+              {PALETAS.map((pl) => (
+                <button key={pl.n} type="button" onClick={() => { setPrimaria(pl.p); setSecundaria(pl.s); }}
+                  className={`p-2 rounded-lg border-2 transition-all ${primaria === pl.p ? "border-gray-900" : "border-transparent hover:border-gray-200"}`}>
+                  <div className="flex gap-1 mb-1.5">
+                    <span className="flex-1 h-6 rounded" style={{ background: pl.p }} />
+                    <span className="w-3 h-6 rounded" style={{ background: pl.s }} />
+                  </div>
+                  <span className="text-[10px] text-gray-600">{pl.n}</span>
+                </button>
+              ))}
             </div>
-            <div className="bg-white rounded-xl shadow-sm p-5">
-              <h3 className="font-semibold text-sm mb-4">Cores personalizadas</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Primária</label>
-                  <div className="flex items-center gap-2">
-                    <input type="color" value={primaria} onChange={(e) => setPrimaria(e.target.value)} className="w-10 h-10 rounded-lg border cursor-pointer"/>
-                    <input type="text" value={primaria} onChange={(e) => setPrimaria(e.target.value)} className="flex-1 border rounded-lg px-3 py-2 text-sm font-mono"/>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Secundária</label>
-                  <div className="flex items-center gap-2">
-                    <input type="color" value={secundaria} onChange={(e) => setSecundaria(e.target.value)} className="w-10 h-10 rounded-lg border cursor-pointer"/>
-                    <input type="text" value={secundaria} onChange={(e) => setSecundaria(e.target.value)} className="flex-1 border rounded-lg px-3 py-2 text-sm font-mono"/>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-5 gap-1">
-                {["50","100","200","300","400","500","600","700","800","900"].map((s,i) => (
-                  <div key={s} className="text-center">
-                    <div className="h-8 rounded" style={{backgroundColor:primaria, opacity:0.1+(i*0.1)}}/>
-                    <span className="text-2xs text-gray-400">{s}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+            <Cor rotulo="Cor principal" valor={primaria} onChange={setPrimaria} nome="cor_primaria" />
+            <Cor rotulo="Cor de destaque" valor={secundaria} onChange={setSecundaria} nome="cor_secundaria" />
+          </Card>
         )}
 
-        {/* Tab: Fontes */}
-        {tab === "tipografia" && (
-          <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Fonte dos Títulos</label>
-              <select value={fonteT} onChange={(e) => setFonteT(e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                {FONTES.map((f) => <option key={f}>{f}</option>)}
-              </select>
-              <p className="mt-2 text-lg font-bold" style={{fontFamily:fonteT}}>Título de Exemplo — 28px Bold</p>
+        {aba === "tipografia" && (
+          <Card titulo="Fontes" ajuda="Geist já vem no site. As demais são buscadas no Google Fonts só quando escolhidas.">
+            <Select rotulo="Títulos" nome="fonte_titulo" valor={fonteT} onChange={setFonteT} opcoes={FONTES} />
+            <div style={{ fontFamily: fonteT }} className="text-2xl font-bold text-gray-900 my-3 py-3 border-y border-gray-100">
+              Pousada Marimar
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Fonte do Corpo</label>
-              <select value={fonteC} onChange={(e) => setFonteC(e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                {FONTES.map((f) => <option key={f}>{f}</option>)}
-              </select>
-              <p className="mt-2 text-sm" style={{fontFamily:fonteC}}>Texto de exemplo para corpo. Lorem ipsum dolor sit amet consectetur.</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Tamanhos</label>
-              <div className="space-y-1">
-                <p className="text-xs text-gray-500">Texto pequeno (xs) — 12px</p>
-                <p className="text-sm text-gray-600">Texto normal (sm) — 14px</p>
-                <p className="text-base text-gray-700">Texto base — 16px</p>
-                <p className="text-lg text-gray-800">Texto grande (lg) — 18px</p>
-                <p className="text-xl font-bold text-gray-900">Título (xl) — 20px</p>
-              </div>
-            </div>
-          </div>
+            <Select rotulo="Corpo do texto" nome="fonte_corpo" valor={fonteC} onChange={setFonteC} opcoes={FONTES} />
+            <p style={{ fontFamily: fonteC }} className="text-sm text-gray-600 mt-3">
+              O Marimar Café Bistrô Bar fica em frente ao mar, e a pousada logo aos fundos.
+            </p>
+          </Card>
         )}
 
-        {/* Tab: Logos */}
-        {tab === "logos" && (
-          <div className="bg-white rounded-xl shadow-sm p-5 space-y-6">
-            <div>
-              <label className="text-sm font-medium mb-3 block">Logo Principal</label>
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-teal-400 transition-colors cursor-pointer"
-                onClick={() => logoInputRef.current?.click()}>
-                {logo ? (
-                  <img src={logo} alt="Logo preview" className="max-h-20 mx-auto" />
-                ) : (
-                  <div className="text-gray-400">
-                    <span className="text-3xl block mb-2">🖼️</span>
-                    <span className="text-sm">Clique para fazer upload</span>
-                    <p className="text-xs text-gray-300 mt-1">PNG, SVG ou JPG • máx 2MB</p>
-                  </div>
-                )}
-                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-              </div>
-              {logo && <button onClick={() => setLogo("")} className="text-xs text-red-500 mt-2 hover:underline">Remover logo</button>}
+        {aba === "forma" && (
+          <Card titulo="Forma dos elementos" ajuda="Vale para cartões, botões e campos do site inteiro.">
+            <p className="text-xs font-medium text-gray-500 mb-2">Arredondamento das bordas</p>
+            <div className="flex gap-2 mb-5">
+              {["0", "6", "12", "20"].map((v) => (
+                <button key={v} type="button" onClick={() => setRaio(v)}
+                  className={`flex-1 py-3 text-xs border-2 transition-all ${raio === v ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"}`}
+                  style={{ borderRadius: `${v}px` }}>
+                  {v === "0" ? "Reto" : v === "6" ? "Suave" : v === "12" ? "Médio" : "Redondo"}
+                </button>
+              ))}
             </div>
-            <div>
-              <label className="text-sm font-medium mb-3 block">Favicon</label>
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-teal-400 transition-colors cursor-pointer"
-                onClick={() => favInputRef.current?.click()}>
-                {favicon ? (
-                  <img src={favicon} alt="Favicon preview" className="w-12 h-12 mx-auto rounded" />
-                ) : (
-                  <div className="text-gray-400">
-                    <span className="text-2xl block mb-1">🔖</span>
-                    <span className="text-sm">Upload do favicon</span>
-                    <p className="text-xs text-gray-300 mt-1">ICO ou PNG • 32x32px</p>
-                  </div>
-                )}
-                <input ref={favInputRef} type="file" accept="image/*" onChange={handleFavUpload} className="hidden" />
-              </div>
-            </div>
-          </div>
+            <input type="hidden" name="raio" value={raio} />
+
+            <Select rotulo="Sombra dos cartões" nome="sombra" valor={sombra} onChange={setSombra}
+              opcoes={[["none", "Sem sombra"], ["sm", "Leve"], ["md", "Média"], ["lg", "Forte"]]} />
+
+            <Toggle rotulo="Animações e transições" descricao="Desligue para um site mais direto e rápido."
+              nome="animacoes" ligado={animacoes} onChange={setAnimacoes} />
+          </Card>
         )}
 
-        {/* Tab: Banner */}
-        {tab === "banner" && (
-          <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm">Banner da Home</h3>
-              <button onClick={() => setBannerAtivo(!bannerAtivo)}
-                className={`w-10 h-5 rounded-full transition-colors ${bannerAtivo?"bg-teal-500":"bg-gray-300"}`}>
-                <div className={`w-4 h-4 bg-white rounded-full transition-transform m-0.5 ${bannerAtivo?"translate-x-5":""}`}/>
-              </button>
-            </div>
-            {bannerAtivo && (
-              <>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Texto principal</label>
-                  <input value={bannerTexto} onChange={(e) => setBannerTexto(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Subtexto</label>
-                  <input value={bannerSubtexto} onChange={(e) => setBannerSubtexto(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Animação do banner</span>
-                  <button onClick={() => setBannerAnimado(!bannerAnimado)}
-                    className={`w-10 h-5 rounded-full transition-colors ${bannerAnimado?"bg-teal-500":"bg-gray-300"}`}>
-                    <div className={`w-4 h-4 bg-white rounded-full transition-transform m-0.5 ${bannerAnimado?"translate-x-5":""}`}/>
-                  </button>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs text-gray-400 mb-2">Preview do banner:</p>
-                  <div className={`rounded-xl p-6 text-center text-white ${bannerAnimado?"animate-pulse":""}`}
-                    style={{background:`linear-gradient(135deg,${primaria},${secundaria})`}}>
-                    <h2 className="text-xl font-bold" style={{fontFamily:fonteT}}>{bannerTexto}</h2>
-                    <p className="text-sm opacity-80 mt-1">{bannerSubtexto}</p>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+        {aba === "imagens" && (
+          <Card titulo="Logo e imagens" ajuda="Informe o endereço (URL) da imagem já hospedada. Enviar arquivo direto ainda não está disponível.">
+            <Url rotulo="Logo" nome="logo_url" valor={logo} onChange={setLogo} preview="h-12" />
+            <Url rotulo="Favicon (ícone da aba)" nome="favicon_url" valor={favicon} onChange={setFavicon} preview="h-8 w-8" />
+            <Url rotulo="Imagem de compartilhamento" nome="og_image_url" valor={ogImage} onChange={setOgImage} preview="h-20" />
+            <p className="text-xs text-gray-400 mt-3 leading-relaxed">
+              A foto grande do topo do site não sai daqui: ela vem de <strong>Fotos</strong>, da imagem marcada
+              como destaque e <strong>sem quarto vinculado</strong>.
+            </p>
+          </Card>
         )}
 
-        {/* Tab: Avançado */}
-        {tab === "avancado" && (
-          <div className="bg-white rounded-xl shadow-sm p-5 space-y-6">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Arredondamento dos elementos</label>
-              <div className="flex gap-2">
-                {["4","8","12","16","24"].map((v) => (
-                  <button key={v} onClick={() => setArredondamento(v)}
-                    className={`w-10 h-10 rounded-${v} border-2 flex items-center justify-center text-xs ${
-                      arredondamento===v?"border-teal-500 bg-teal-50":"border-gray-200"
-                    }`}>{v}px</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Sombras</label>
-              <select value={sombra} onChange={(e) => setSombra(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm">
-                <option value="none">Sem sombra</option>
-                <option value="sm">Suave</option>
-                <option value="md">Média</option>
-                <option value="lg">Forte</option>
-                <option value="xl">Extra</option>
-              </select>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm font-medium block">Animações no site</span>
-                <span className="text-xs text-gray-400">Transições, hover effects, loading</span>
-              </div>
-              <button onClick={() => setAnimacoes(!animacoes)}
-                className={`w-10 h-5 rounded-full transition-colors ${animacoes?"bg-teal-500":"bg-gray-300"}`}>
-                <div className={`w-4 h-4 bg-white rounded-full transition-transform m-0.5 ${animacoes?"translate-x-5":""}`}/>
-              </button>
-            </div>
-          </div>
+        {aba === "banner" && (
+          <Card titulo="Faixa de aviso" ajuda="Aparece acima do menu, no site inteiro. Útil para avisos temporários.">
+            <Toggle rotulo="Exibir a faixa" descricao="Quando desligada, nada aparece no site."
+              nome="banner_ativo" ligado={bannerAtivo} onChange={setBannerAtivo} />
+            <Campo rotulo="Texto" nome="banner_texto" valor={bannerTexto} onChange={setBannerTexto}
+              placeholder="Ex.: Reservas de fim de ano abertas" />
+            <Campo rotulo="Texto secundário" nome="banner_subtexto" valor={bannerSubtexto} onChange={setBannerSubtexto}
+              placeholder="Opcional" />
+            <Toggle rotulo="Efeito de movimento" descricao="Uma animação sutil para chamar atenção."
+              nome="banner_animado" ligado={bannerAnimado} onChange={setBannerAnimado} />
+          </Card>
         )}
 
-        {/* Tab: SEO */}
-        {tab === "seo" && (
-          <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Título SEO ({seoTitle.length}/60)</label>
-              <input value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)}
-                maxLength={60} className="w-full border rounded-lg px-3 py-2 text-sm" />
+        {aba === "seo" && (
+          <Card titulo="Busca e compartilhamento" ajuda="É o que aparece no Google e ao enviar o link no WhatsApp.">
+            <Campo rotulo="Título da página" nome="seo_title" valor={seoTitle} onChange={setSeoTitle}
+              placeholder="Pousada Marimar — Reserva Oficial" max={60} />
+            <Campo rotulo="Descrição" nome="seo_description" valor={seoDesc} onChange={setSeoDesc}
+              placeholder="Pousada em Encantadas, Ilha do Mel..." max={160} textarea />
+            <div className="mt-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
+              <p className="text-[10px] text-gray-400 mb-1">Prévia no Google</p>
+              <p className="text-[#1a0dab] text-sm truncate">{seoTitle || "Pousada Marimar — Reserva Oficial"}</p>
+              <p className="text-[#006621] text-xs">pousadamarimarilhadomel.com.br</p>
+              <p className="text-gray-600 text-xs line-clamp-2">{seoDesc || "Adicione uma descrição."}</p>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Descrição SEO ({seoDesc.length}/160)</label>
-              <textarea value={seoDesc} onChange={(e) => setSeoDesc(e.target.value)}
-                maxLength={160} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs text-gray-400 mb-2">Preview no Google:</p>
-              <p className="text-sm font-medium text-blue-700" style={{fontFamily:fonteT}}>{seoTitle||"Pousada Ilha do Mel Marimar"}</p>
-              <p className="text-xs text-green-700">https://www.pousadamarimarilhadomel.com.br</p>
-              <p className="text-xs text-gray-600 mt-1">{seoDesc||"Sua pousada na Ilha do Mel..."}</p>
-            </div>
-          </div>
+          </Card>
         )}
-
-        {/* Form escondido */}
-        <form id="theme-form" className="hidden">
-          <input type="hidden" name="cor_primaria" value={primaria} />
-          <input type="hidden" name="cor_secundaria" value={secundaria} />
-          <input type="hidden" name="fonte_titulo" value={fonteT} />
-          <input type="hidden" name="fonte_corpo" value={fonteC} />
-          <input type="hidden" name="logo_url" value={logo} />
-          <input type="hidden" name="favicon_url" value={favicon} />
-          <input type="hidden" name="seo_title" value={seoTitle} />
-          <input type="hidden" name="seo_description" value={seoDesc} />
-        </form>
       </div>
 
-      {/* Preview */}
-      <div className="lg:col-span-2">
-        <div className="sticky top-24 space-y-4">
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <h3 className="font-semibold text-sm mb-3">👁️ Preview ao vivo</h3>
-            <div className="rounded-xl overflow-hidden border shadow-sm text-xs" style={{fontFamily:fonteC}}>
-              {/* Header */}
-              <div className="p-2 flex items-center justify-between" style={{backgroundColor:primaria}}>
-                {logo?<img src={logo} className="h-5"/>:<span className="text-white font-bold" style={{fontFamily:fonteT}}>🏝️ Marimar</span>}
-                <span className="text-white/60">Home • Quartos • Contato</span>
-              </div>
-              {/* Hero */}
-              <div className="p-5 text-center text-white" style={{background:`linear-gradient(135deg,${primaria},${secundaria})`}}>
-                <h2 className="font-bold mb-1" style={{fontFamily:fonteT}}>{bannerTexto}</h2>
-                <p className="opacity-80">{bannerSubtexto}</p>
-                <button className="mt-2 bg-white px-3 py-1 rounded-lg font-medium" style={{color:primaria}}>Reservar</button>
-              </div>
-              {/* Cards */}
-              <div className="p-2 grid grid-cols-3 gap-1.5">
-                {[1,2,3].map((i) => (
-                  <div key={i} className="border rounded-lg p-1.5 text-center">
-                    <div className="h-10 rounded mb-1" style={{background:`linear-gradient(135deg,${primaria}20,${secundaria}20)`}}/>
-                    <div className="font-medium" style={{fontFamily:fonteT}}>Suíte</div>
-                    <div style={{color:primaria}}>R$ 390</div>
-                  </div>
-                ))}
-              </div>
-              {/* Buttons */}
-              <div className="p-2 flex gap-1.5">
-                <button className="flex-1 py-1.5 rounded-lg text-white font-medium" style={{backgroundColor:primaria}}>Primário</button>
-                <button className="flex-1 py-1.5 rounded-lg font-medium border-2" style={{borderColor:primaria,color:primaria}}>Outline</button>
-              </div>
-            </div>
-          </div>
-          <button type="submit" form="theme-form" formAction={salvarTema as any}
-            className="w-full py-3 rounded-xl text-white font-medium hover:opacity-90 transition-opacity"
-            style={{backgroundColor:primaria}}>
-            💾 Aplicar tema ao site
+      {/* ─────────── PRÉVIA AO VIVO ─────────── */}
+      <div className="xl:col-span-2">
+        <div className="sticky top-6">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Prévia</p>
+          <Previa primaria={primaria} secundaria={secundaria} fonteT={fonteT} fonteC={fonteC}
+            raio={raio} sombra={sombra} logo={logo}
+            banner={bannerAtivo ? { texto: bannerTexto, subtexto: bannerSubtexto } : null} />
+
+          <button type="submit"
+            className="w-full mt-4 bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-xl font-semibold text-sm transition-colors">
+            Aplicar ao site
           </button>
+          <p className="text-[11px] text-gray-400 text-center mt-2 leading-relaxed">
+            Todas as abas são salvas de uma vez.
+          </p>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+/* ─────────── Prévia ─────────── */
+function Previa({ primaria, secundaria, fonteT, fonteC, raio, sombra, logo, banner }: any) {
+  const sombras: Record<string, string> = {
+    none: "none", sm: "0 1px 3px rgb(0 0 0 / .08)",
+    md: "0 4px 6px -1px rgb(0 0 0 / .1)", lg: "0 10px 15px -3px rgb(0 0 0 / .1)",
+  };
+  const r = `${raio}px`;
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white" style={{ fontFamily: fonteC }}>
+      {banner && (
+        <div className="px-3 py-2 text-center text-[11px] text-white" style={{ background: secundaria }}>
+          {banner.texto || "Texto da faixa"}
+          {banner.subtexto && <span className="opacity-80"> · {banner.subtexto}</span>}
+        </div>
+      )}
+      <div className="h-12 border-b border-gray-100 flex items-center justify-between px-3">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {logo && !logo.startsWith("data:")
+            ? <img src={logo} alt="" className="h-5 w-auto" />
+            : <span className="text-base">🏝️</span>}
+          <span className="font-bold text-[11px] truncate" style={{ fontFamily: fonteT }}>Pousada Marimar</span>
+        </div>
+        <span className="text-[10px] text-white px-2.5 py-1" style={{ background: primaria, borderRadius: r }}>Reservar</span>
+      </div>
+
+      <div className="px-4 py-6 text-center text-white" style={{ background: `linear-gradient(135deg, ${primaria}, ${secundaria})` }}>
+        <p className="font-bold text-sm mb-1" style={{ fontFamily: fonteT }}>Pousada Marimar</p>
+        <p className="text-[10px] opacity-90">Encantadas · Ilha do Mel</p>
+      </div>
+
+      <div className="p-3 space-y-2" style={{ background: "#f8fafc" }}>
+        <div className="bg-white p-2.5" style={{ borderRadius: r, boxShadow: sombras[sombra] }}>
+          <div className="h-10 mb-2" style={{ background: `${primaria}22`, borderRadius: `calc(${r} / 1.5)` }} />
+          <p className="text-[11px] font-semibold" style={{ fontFamily: fonteT }}>Suíte King</p>
+          <p className="text-[10px] text-gray-500">Até 2 pessoas</p>
+          <p className="text-[11px] font-bold mt-1" style={{ color: primaria }}>R$ 550</p>
+        </div>
+        <div className="text-center text-[10px] text-white py-2" style={{ background: primaria, borderRadius: r }}>
+          Ver disponibilidade
         </div>
       </div>
     </div>
+  );
+}
+
+/* ─────────── Campos ─────────── */
+function Card({ titulo, ajuda, children }: { titulo: string; ajuda?: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <h3 className="font-semibold text-gray-900 mb-1">{titulo}</h3>
+      {ajuda && <p className="text-xs text-gray-500 mb-4 leading-relaxed">{ajuda}</p>}
+      {children}
+    </div>
+  );
+}
+
+function Cor({ rotulo, valor, onChange, nome }: any) {
+  return (
+    <div className="flex items-center gap-3 mb-3">
+      <input type="color" value={valor} onChange={(e) => onChange(e.target.value)}
+        className="w-11 h-11 rounded-lg border border-gray-200 cursor-pointer shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-gray-600 mb-1">{rotulo}</p>
+        <input name={nome} value={valor} onChange={(e) => onChange(e.target.value)}
+          className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-mono" />
+      </div>
+    </div>
+  );
+}
+
+function Select({ rotulo, nome, valor, onChange, opcoes }: any) {
+  const norm: [string, string][] = opcoes.map((o: any) => Array.isArray(o) ? o : [o, o]);
+  return (
+    <div className="mb-3">
+      <label className="block text-xs font-medium text-gray-600 mb-1">{rotulo}</label>
+      <select name={nome} value={valor} onChange={(e) => onChange(e.target.value)}
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+        {norm.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function Campo({ rotulo, nome, valor, onChange, placeholder, max, textarea }: any) {
+  const Tag: any = textarea ? "textarea" : "input";
+  return (
+    <div className="mb-3">
+      <div className="flex justify-between items-baseline mb-1">
+        <label className="text-xs font-medium text-gray-600">{rotulo}</label>
+        {max && <span className={`text-[10px] ${valor.length > max ? "text-red-500 font-medium" : "text-gray-400"}`}>{valor.length}/{max}</span>}
+      </div>
+      <Tag name={nome} value={valor} onChange={(e: any) => onChange(e.target.value)} placeholder={placeholder}
+        rows={textarea ? 3 : undefined}
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+    </div>
+  );
+}
+
+function Url({ rotulo, nome, valor, onChange, preview }: any) {
+  const base64 = valor.startsWith("data:");
+  return (
+    <div className="mb-4">
+      <label className="block text-xs font-medium text-gray-600 mb-1">{rotulo}</label>
+      <input name={nome} value={valor} onChange={(e) => onChange(e.target.value)}
+        placeholder="https://..."
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+      {base64 && (
+        <p className="text-[11px] text-red-600 mt-1.5 leading-relaxed">
+          Esta imagem está gravada dentro do banco (base64). Isso deixa o site lento — ela é carregada
+          em toda página. Substitua por um endereço de imagem e salve.
+        </p>
+      )}
+      {valor && !base64 && (
+        <div className="mt-2 p-2 bg-gray-50 rounded-lg flex justify-center">
+          <img src={valor} alt="" className={`${preview} object-contain`} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Toggle({ rotulo, descricao, nome, ligado, onChange }: any) {
+  return (
+    <label className="flex items-start justify-between gap-4 py-3 cursor-pointer">
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-gray-800">{rotulo}</span>
+        {descricao && <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">{descricao}</span>}
+      </span>
+      <input type="checkbox" name={nome} checked={ligado} onChange={(e) => onChange(e.target.checked)} className="sr-only" />
+      <span className={`w-11 h-6 rounded-full transition-colors relative shrink-0 mt-0.5 ${ligado ? "bg-gray-900" : "bg-gray-300"}`}>
+        <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all ${ligado ? "left-[22px]" : "left-0.5"}`} />
+      </span>
+    </label>
   );
 }

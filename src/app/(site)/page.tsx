@@ -161,7 +161,7 @@ export default async function HomePage() {
                   )}
                   {q.cat_nome && (
                     <span className="absolute top-3 left-3 bg-white/95 text-xs font-medium text-marca-ativa px-3 py-1 rounded-full shadow-sm">
-                      {q.cat_nome}
+                      {tituloQuarto(q.cat_nome)}
                     </span>
                   )}
                 </div>

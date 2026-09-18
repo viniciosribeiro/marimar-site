@@ -19,6 +19,80 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (4) — Admin reorganizado, editor visual funcional e migração do WordPress
+
+**Autor:** Claude Opus 5 (Cowork)
+**Commits:** _(pendente de commit)_
+
+### Corrigido: /quartos nunca mostrou foto nenhuma
+A página de acomodações **não consultava a tabela `midias`**. O card tinha
+`<span className="text-5xl">🏨</span>` fixo no lugar da imagem. Agora a query traz
+a mídia em destaque do quarto (com fallback para a primeira por ordem), renderiza
+com `next/image` e mostra o contador de fotos. Verificado: 7 de 7 cards com foto
+real do motor.
+
+Os selos de categoria também não passavam por `tituloQuarto()` — apareciam como
+"Familia" e "Suite" sem acento em `/quartos`, na home e em `/reservar`. Corrigido
+nos três.
+
+### Novo: `npm run db:migrar-wp`
+Script que traz as 68 imagens e os textos do WordPress legado (a API REST dele
+está aberta). Idempotente, não apaga nada, aceita `--dry` e `--textos`.
+
+- **Classifica por slug** e descarta 7 imagens que são do tema/demo do WordPress
+  (`macbook-png`, `woocommerce-placeholder`, `about-jpg`…), além de logos e favicons.
+- **Gera `alt` para todas.** Nenhuma imagem do WP tem `alt_text` preenchido, e a
+  coluna é `NOT NULL` — além de ser barreira de acessibilidade.
+- **Encontrou 6 fotos aéreas de drone** (`created-by-dji-camera`, 1600×750). A
+  primeira é marcada como `destaque = true` **sem** `quarto_id`, que é exatamente o
+  que a home procura para o hero. Resolve a foto de beliche no topo do site.
+
+### Admin reorganizado
+- **Sidebar agrupada em 6 módulos** (Visão geral, Acomodações, Conteúdo do site,
+  Aparência, Hóspedes, Sistema). Eram 15 itens chapados numa lista única.
+- **Passou a funcionar no celular.** Era `w-56` fixa dentro de um `flex h-screen`,
+  sem nenhuma alternativa mobile — o painel ficava inutilizável. Agora tem barra
+  superior, drawer, trava de scroll e marca a página ativa.
+- Rótulos reescritos para a operação ("Fotos" em vez de "Mídias", "Contatos
+  recebidos" em vez de "Leads").
+
+### Dashboard real
+Eram 3 cartões, um deles com `Status Worker: "—"` hardcoded. Agora:
+- **Testa o motor de verdade** com `fetchTarifas()` para daqui a 7 dias e mostra
+  latência e quantos tipos voltaram (medido: 1380ms, 6 tipos).
+- **Avisos acionáveis**: sem foto de topo, quartos sem foto, motor fora do ar,
+  contatos não lidos — cada um com link direto para resolver.
+- Últimos contatos recebidos e a lista de pendências do briefing.
+
+### Editor visual: agora salva o que mostra
+- **Abas "Banner" e "Forma" passaram a persistir** em `pousada.tema` (jsonb). Antes
+  eram `useState` que nunca chegava no `salvarTema` — a Cecília editava, via
+  "Tema aplicado ao site" e nada acontecia.
+- **A faixa de aviso é renderizada no site.** Salvar sem renderizar seria repetir o
+  mesmo bug de outra forma.
+- **Upload base64 bloqueado.** O editor antigo lia o arquivo com `FileReader` e
+  gravava a imagem inteira em base64 na coluna `logo_url`; como o layout do site faz
+  `SELECT *` em toda página, a logo trafegava inteira a cada request. A server action
+  agora rejeita `data:` URL e a tela explica o porquê quando encontra uma já gravada.
+- **Prévia ao vivo** refletindo cor, fonte, arredondamento, sombra, logo e faixa.
+- A server action valida sessão, trata erro e diz para rodar a migration quando a
+  coluna `tema` não existe. A tela detecta isso sozinha e avisa no topo.
+- Nova aba **SEO** com prévia do resultado no Google e contador de caracteres.
+
+### Pendência nova descoberta
+O banco local tem **7 quartos ativos**, o motor Desbravador retorna **10** tipos.
+O briefing já apontava divergência (histórico 24 · agregador 18 · site 11 categorias
+· Expedia 13 opções) e isso confirma: o cadastro local está incompleto. Um tipo que
+o motor tem e o banco não some do site, mesmo aparecendo em `/reservar`.
+
+### Ação necessária
+1. `npm run db:migrate` — cria a coluna `tema` (sem ela, Forma e Banner não salvam)
+2. `npm run db:migrar-wp --dry` para conferir, depois sem `--dry` para importar
+3. `npm run db:corrigir`
+4. Conferir os 3 quartos que existem no motor e não no banco local
+
+---
+
 ## 2026-09-18 (3) — Design tokens, redesign do site e conteúdo real da pousada
 
 **Autor:** Claude Opus 5 (Cowork) — sessão ao vivo com dev server + briefing da administração
