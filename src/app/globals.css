@@ -1,26 +1,110 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Pousada Marimar
+
+   Fonte da verdade: a tabela `pousada` (cor_primaria, cor_secundaria,
+   fonte_titulo, fonte_corpo, tema jsonb). O src/app/layout.tsx le do
+   banco e injeta os valores crus abaixo como variaveis CSS no :root.
+
+   Aqui esses valores crus viram (a) uma escala derivada com color-mix e
+   (b) utilities do Tailwind. Por isso `bg-marca`, `text-marca`,
+   `from-marca` etc. respondem ao que o admin salvou, em tempo real,
+   sem rebuild.
+
+   REGRA: nenhum componente deve escrever `bg-teal-600`, `#0D9488` ou
+   style={{backgroundColor: ...}} para cor de marca. Use os tokens —
+   senao o editor visual volta a mudar so metade do site.
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Valores crus — sobrescritos em runtime pelo layout raiz */
+  --marca: #0D9488;
+  --acento: #0EA5E9;
+  --fonte-titulo: var(--font-geist-sans), system-ui, sans-serif;
+  --fonte-corpo: var(--font-geist-sans), system-ui, sans-serif;
+
+  /* Escala derivada da cor de marca. Uma cor de entrada, tom completo.
+     oklab mantem a luminosidade percebida coerente entre matizes. */
+  --marca-hover:    color-mix(in oklab, var(--marca), black 12%);
+  --marca-ativa:    color-mix(in oklab, var(--marca), black 22%);
+  --marca-escura:   color-mix(in oklab, var(--marca), black 38%);
+  --marca-suave:    color-mix(in oklab, var(--marca), white 88%);
+  --marca-borda:    color-mix(in oklab, var(--marca), white 72%);
+  --marca-sutil:    color-mix(in oklab, var(--marca), white 95%);
+
+  --acento-hover:   color-mix(in oklab, var(--acento), black 12%);
+  --acento-suave:   color-mix(in oklab, var(--acento), white 88%);
+
+  /* Superficies */
+  --fundo: #ffffff;
+  --texto: #171717;
+  --fundo-suave: #f8fafc;
+
+  /* Forma — controlado pela aba "Avancado" do editor visual */
+  --raio: 0.75rem;
+  --sombra: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+  --sombra-forte: 0 10px 25px -5px rgb(0 0 0 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+
+  /* Movimento — respeitado por transicoes; vira 0s quando o admin
+     desliga animacoes ou quando o sistema pede menos movimento */
+  --duracao: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --duracao: 0.01ms; }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Marca */
+  --color-marca: var(--marca);
+  --color-marca-hover: var(--marca-hover);
+  --color-marca-ativa: var(--marca-ativa);
+  --color-marca-escura: var(--marca-escura);
+  --color-marca-suave: var(--marca-suave);
+  --color-marca-borda: var(--marca-borda);
+  --color-marca-sutil: var(--marca-sutil);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Acento */
+  --color-acento: var(--acento);
+  --color-acento-hover: var(--acento-hover);
+  --color-acento-suave: var(--acento-suave);
+
+  /* Superficies */
+  --color-fundo: var(--fundo);
+  --color-texto: var(--texto);
+  --color-fundo-suave: var(--fundo-suave);
+
+  /* Tipografia */
+  --font-titulo: var(--fonte-titulo);
+  --font-corpo: var(--fonte-corpo);
+
+  /* Forma */
+  --radius-marca: var(--raio);
+  --shadow-marca: var(--sombra);
+  --shadow-marca-forte: var(--sombra-forte);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--fonte-corpo);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--fonte-titulo);
+}
+
+/* O site e desenhado em tema claro (cards brancos, texto escuro).
+   Sem isto, um aparelho em modo escuro deixava o body quase preto por
+   baixo de componentes claros. Dark mode de verdade e item de backlog —
+   ate la, o site se declara claro e fica legivel em qualquer aparelho. */
+:root { color-scheme: light; }
+
+/* Transicoes usam o token de duracao, entao o editor consegue
+   desligar animacoes de verdade em vez de so fingir. */
+@media (prefers-reduced-motion: no-preference) {
+  a, button, .transition-marca {
+    transition-duration: var(--duracao);
+  }
 }

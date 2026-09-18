@@ -6,7 +6,7 @@ export default function ContatoPage({ searchParams }: { searchParams: Promise<{ 
       <h1 className="text-3xl font-bold mb-2">Contato</h1>
       <p className="text-gray-500 mb-8">Entre em contato conosco</p>
 
-      <form action={enviarContato} className="bg-white rounded-xl shadow p-6 space-y-4">
+      <form action={enviarContato} className="bg-white rounded-marca shadow p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Nome</label>
           <input name="nome" required className="w-full border rounded p-2" />
@@ -23,7 +23,7 @@ export default function ContatoPage({ searchParams }: { searchParams: Promise<{ 
           <label className="block text-sm font-medium mb-1">Mensagem</label>
           <textarea name="mensagem" rows={4} className="w-full border rounded p-2" />
         </div>
-        <button type="submit" className="w-full bg-teal-600 text-white rounded p-2 hover:bg-teal-700">Enviar</button>
+        <button type="submit" className="w-full bg-marca text-white rounded p-2 hover:bg-marca-hover">Enviar</button>
       </form>
     </div>
   );

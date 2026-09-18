@@ -34,9 +34,9 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <Link href="/" className="hover:text-teal-600">Home</Link>
+        <Link href="/" className="hover:text-marca">Home</Link>
         <span>/</span>
-        <Link href="/quartos" className="hover:text-teal-600">Quartos</Link>
+        <Link href="/quartos" className="hover:text-marca">Quartos</Link>
         <span>/</span>
         <span className="text-gray-600">{q.nome}</span>
       </nav>
@@ -52,7 +52,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
           <div className="sticky top-24 space-y-6">
             <div>
               {q.cat_nome && (
-                              <span className="text-sm text-teal-600 font-medium mb-2 block">{q.cat_nome}</span>
+                              <span className="text-sm text-marca font-medium mb-2 block">{q.cat_nome}</span>
                             )}
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">{q.nome}</h1>
               {q.descricao_motor && (
@@ -87,19 +87,19 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
             )}
 
             {/* Preço */}
-            <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-2xl p-6 border border-teal-100">
+            <div className="bg-gradient-to-br from-marca-sutil to-marca-suave/50 rounded-marca p-6 border border-marca-borda">
               {preco ? (
                 <>
                   <p className="text-sm text-gray-500 mb-1">A partir de</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-teal-700">{brl(preco.diaria)}</span>
+                    <span className="text-3xl font-bold text-marca-ativa">{brl(preco.diaria)}</span>
                     <span className="text-sm text-gray-500">/noite</span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
                     Total para 2 noites: <span className="font-semibold text-gray-700">{brl(preco.total)}</span>
                   </p>
                   {preco.pacote && (
-                    <p className="text-xs text-teal-600 mt-2 flex items-center gap-1">
+                    <p className="text-xs text-marca mt-2 flex items-center gap-1">
                       <span>🎁</span> {preco.pacote}
                     </p>
                   )}
@@ -107,14 +107,14 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
                     <a
                       href={buildDeepLink({ checkIn: "2026-10-15", checkOut: "2026-10-17", adultos: 2 })}
                       target="_blank"
-                      className="block text-center bg-teal-600 text-white py-3 rounded-xl font-medium hover:bg-teal-700 transition-colors"
+                      className="block text-center bg-marca text-white py-3 rounded-marca font-medium hover:bg-marca-hover transition-colors"
                     >
                       Reservar no site oficial
                     </a>
                     <a
                       href={`https://wa.me/${wa}?text=${encodeURIComponent(waMsg)}`}
                       target="_blank"
-                      className="block text-center border-2 border-green-500 text-green-600 py-3 rounded-xl font-medium hover:bg-green-50 transition-colors"
+                      className="block text-center border-2 border-green-500 text-green-600 py-3 rounded-marca font-medium hover:bg-green-50 transition-colors"
                     >
                       💬 Falar no WhatsApp
                     </a>
@@ -125,7 +125,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
                   <p className="text-gray-500 text-sm mb-4">Consulte a disponibilidade para ver os preços em tempo real.</p>
                   <Link
                     href="/reservar"
-                    className="block text-center bg-teal-600 text-white py-3 rounded-xl font-medium hover:bg-teal-700 transition-colors"
+                    className="block text-center bg-marca text-white py-3 rounded-marca font-medium hover:bg-marca-hover transition-colors"
                   >
                     Consultar disponibilidade
                   </Link>
@@ -141,7 +141,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
 
 function Spec({ label, value, icon }: { label: string; value: string; icon: string }) {
   return (
-    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-marca">
       <span className="text-lg">{icon}</span>
       <div>
         <p className="text-xs text-gray-400">{label}</p>

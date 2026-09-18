@@ -19,6 +19,101 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (3) — Design tokens, redesign do site e conteúdo real da pousada
+
+**Autor:** Claude Opus 5 (Cowork) — sessão ao vivo com dev server + briefing da administração
+**Commits:** _(pendente de commit)_
+
+### ERRO FACTUAL CORRIGIDO
+O site afirmava **"Sua pousada pé na areia na Ilha do Mel"**. Pelo briefing da
+administração, quem está pé na areia é o **Marimar Café Bistrô Bar**, na parte da
+frente do complexo. As acomodações ficam **anexadas aos fundos** e não devem ser
+apresentadas como se estivessem sobre a areia. Corrigido no código, no seed e no
+script de produção. A frase canônica passa a aparecer na home, no rodapé, no FAQ,
+em "A Pousada", no restaurante, em eventos e em como chegar.
+
+**Coordenadas também estavam erradas:** o banco tinha `-25.5117, -48.3389`.
+O correto é `-25.5684375, -48.3151875` (Plus Code CMJM+JW), que é o ponto do
+restaurante, usado como referência para acessar a pousada aos fundos.
+
+### O editor visual nunca esteve ligado ao site
+Descoberto ao subir o dev server: o banco já tinha `cor_primaria = #B45309`
+(paleta Âmbar) e `fonte_titulo = Montserrat` salvos, e o site **ignorava os dois** —
+pintava `bg-teal-600` hardcoded em 11 arquivos e tinha `font-family: Arial` fixo
+no `body`, por cima do Geist que era carregado e nunca usado.
+
+Sistema de tokens instalado:
+- `src/app/globals.css` — `--marca` e `--acento` viram uma escala completa via
+  `color-mix(in oklab, ...)`: hover, ativa, escura, suave, borda, sutil. Uma cor
+  de entrada gera o tom inteiro. Mapeados em `@theme inline`, então `bg-marca`,
+  `text-marca`, `from-marca` respondem ao banco em tempo real, sem rebuild.
+- `src/app/layout.tsx` — lê a pousada com `to_jsonb` (funciona antes e depois da
+  migration), emite os tokens, e busca no Google Fonts **apenas** a fonte que o
+  admin escolheu. Tokens de raio, sombra e duração de animação também saem daqui.
+- 11 arquivos convertidos. Zero cor de marca hardcoded restante.
+
+### Novo: coluna `tema jsonb` + migration `0001_tema_jsonb.sql`
+As abas "Banner" e "Avançado" do editor tinham controles que **não salvavam nada** —
+`useState` que nunca chegava no `salvarTema`. Não havia onde gravar. A coluna
+`tema` resolve isso sem exigir migration a cada opção nova.
+
+### Novo: `src/lib/conteudo-pousada.ts`
+Fonte canônica do conteúdo da pousada, com separação explícita entre o que está
+**confirmado** e o que está **pendente de confirmação** interna. O que não está
+confirmado não renderiza (`RESTAURANTE.horarios = null`, `EVENTOS.capacidade = null`,
+`CONTATO.telefoneRestaurante = null`). Guarda também os telefones históricos e o
+CNPJ baixado, marcados para que ninguém os reintroduza por engano.
+
+### Páginas novas
+`/restaurante` · `/cafe-da-manha` · `/eventos` · `/como-chegar` · `/avaliacoes` · `/galeria`
+
+Reescritas: `/` (home), `/a-pousada`, `/ilha-do-mel`, `/faq`, `/politicas`.
+
+- **Home** — o complexo explicado visualmente (restaurante na frente ↔ pousada aos
+  fundos), busca com campo de crianças, diferenciais, avaliações reais com barra por
+  critério, localização e atrações.
+- **Como chegar** — as 3 etapas do briefing, terminais, valores da travessia com
+  data de consulta e link da ABALINE, aviso destacado sobre Encantadas ≠ Nova
+  Brasília, Plus Code e links para Google Maps e OpenStreetMap.
+- **Avaliações** — notas reais das 5 plataformas (1.691 avaliações somadas), com
+  data de consulta e link para a origem. Inclui as subnotas baixas do Booking
+  (Wi-Fi 6,0; custo-benefício 7,4) de propósito.
+- **FAQ** — conjunto canônico agrupado em 4 temas cobrindo o que o briefing exige,
+  mesclado sem duplicar com o que a administração cadastrar no admin.
+
+### Corrigido
+- **Menu mobile não existia.** O header era `hidden md:flex` sem alternativa: no
+  celular não havia navegação nenhuma. Novo `MobileNav` com drawer, trava de
+  scroll, fecha ao navegar e marca a página ativa.
+- **Hover do menu era código morto.** `style={{ ":hover": {...} } as any}` — React
+  não aplica pseudo-seletor em style inline, e o `as any` silenciava o TypeScript.
+- **Header com fundo sólido**, conforme o briefing pede (era `bg-white/85` translúcido).
+- `tituloQuarto()` agora repõe acento também em capitalização mista ("Familia" →
+  "Família"), não só em CAIXA ALTA. 10 casos validados.
+- Rodapé com a frase estrutural obrigatória e a arquitetura completa de navegação.
+
+### Impacto do schema Zod corrigido (sessão anterior), agora visível
+Com os campos do contrato deixando de ser descartados, a página de reserva passou
+a exibir o `aviso_crianca` vindo do próprio motor ("Faixas etárias de criança não
+configuradas...") e o selo de escassez a partir de `unidades_disponiveis`.
+
+### Ação necessária
+1. `npm run db:migrate` — cria a coluna `tema`
+2. `npm run db:corrigir` — agora também aplica descrição correta do complexo,
+   coordenadas, endereço, Instagram, políticas (check-in 14h, check-out 11h,
+   **pets NÃO aceitos**) e **desativa os depoimentos do seed**, que não
+   identificam plataforma de origem — o briefing proíbe depoimento sem atribuição
+3. Cadastrar foto do hero (mídia com `destaque = true` e **sem** quarto vinculado).
+   Hoje o hero cai numa foto de beliche
+4. Migrar as 68 fotos e os textos do WordPress (API REST aberta)
+
+### Pendente de confirmação da administração
+Ver `PENDENTE_CONFIRMACAO` em `src/lib/conteudo-pousada.ts` — 13 itens, incluindo
+razão social e CNPJ vigentes, número físico de suítes, horários do restaurante,
+telefone próprio do restaurante e capacidade para eventos.
+
+---
+
 ## 2026-09-18 (2) — Camada de apresentação, imagens e limpeza de conteúdo
 
 **Autor:** Claude Opus 5 (Cowork) — revisão ao vivo do site publicado

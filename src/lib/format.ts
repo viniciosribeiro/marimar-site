@@ -35,8 +35,19 @@ export function tituloQuarto(nome: string | null | undefined): string {
   if (!nome) return "";
   const limpo = nome.trim().replace(/\s+/g, " ");
 
-  // Ja vem com capitalizacao mista? Confia na fonte (veio do admin, nao do motor).
-  if (limpo !== limpo.toUpperCase()) return limpo;
+  // Capitalizacao mista = veio do admin, nao do motor. Preserva a escolha de
+  // quem digitou, mas ainda assim repoe acento em palavras que so tem uma
+  // grafia correta ("Familia" -> "Família"). Palavras fora do dicionario
+  // passam intactas.
+  if (limpo !== limpo.toUpperCase()) {
+    return limpo
+      .split(" ")
+      .map((palavra) => {
+        const certo = ACENTOS[palavra.toLowerCase()];
+        return certo && palavra.toLowerCase() !== certo.toLowerCase() ? certo : palavra;
+      })
+      .join(" ");
+  }
 
   return limpo
     .toLowerCase()

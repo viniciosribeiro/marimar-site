@@ -10,7 +10,7 @@ export function Gallery({ images }: { images: { url: string; alt: string }[] }) 
   return (
     <div className="space-y-3">
       {/* Imagem principal */}
-      <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-gray-100">
+      <div className="relative aspect-[16/10] rounded-marca overflow-hidden bg-gray-100">
         <img
           src={images[selected]?.url}
           alt={images[selected]?.alt}
@@ -39,7 +39,7 @@ export function Gallery({ images }: { images: { url: string; alt: string }[] }) 
               key={i}
               onClick={() => setSelected(i)}
               className={`aspect-[4/3] rounded-lg overflow-hidden border-2 transition-all ${
-                i === selected ? "border-teal-500 opacity-100" : "border-transparent opacity-60 hover:opacity-80"
+                i === selected ? "border-marca opacity-100" : "border-transparent opacity-60 hover:opacity-80"
               }`}
             >
               <img src={img.url} alt={img.alt} className="w-full h-full object-cover" />

@@ -44,6 +44,15 @@ export const pousada = pgTable("pousada", {
   seo_title: text("seo_title"),
   seo_description: text("seo_description"),
   og_image_url: text("og_image_url"),
+  /**
+   * Configuracoes do editor visual que nao merecem coluna propria:
+   * { raio, sombra, animacoes, banner: { ativo, texto, subtexto, animado } }
+   *
+   * Existe para que uma opcao nova no editor NAO exija uma migration. Antes
+   * disso, as abas "Banner" e "Avancado" tinham controles que nao tinham
+   * onde ser gravados — e por isso simplesmente nao salvavam nada.
+   */
+  tema: jsonb("tema").$type<Record<string, any>>().default({}),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
   atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
 });

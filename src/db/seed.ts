@@ -26,8 +26,8 @@ async function main() {
   // ─── 1. Pousada ────────────────────────────────────────────
   await sql`INSERT INTO pousada (nome, slug, descricao_curta, endereco, cidade, uf, lat, lng, telefone, whatsapp, email, como_chegar, horario_recepcao, cor_primaria, cor_secundaria, seo_title, seo_description)
     VALUES ('Pousada Ilha do Mel Marimar', 'pousada-ilha-do-mel-marimar',
-    'Sua pousada pé na areia na Ilha do Mel — conforto, natureza e hospitalidade paranaense.',
-    'Ilha do Mel — Encantadas', 'Paranaguá', 'PR', -25.5117, -48.3389,
+    'O Marimar Café Bistrô Bar fica em frente ao mar. A Pousada Marimar está anexada logo aos fundos do restaurante, a poucos passos do trapiche de Encantadas.',
+    'Praia de Encantadas, s/n — Ilha do Mel', 'Paranaguá', 'PR', -25.5684375, -48.3151875,
     '(41) 99501-2920', '(41) 99501-2920', 'contato@pousadamarimarilhadomel.com.br',
     'Acesso por barco saindo de Pontal do Sul (30 min, R$ 30) ou Paranaguá (1h30, R$ 25). Do trapiche de Encantadas, 10 min de caminhada até a pousada.',
     '08:00 às 22:00', '#0D9488', '#0EA5E9',

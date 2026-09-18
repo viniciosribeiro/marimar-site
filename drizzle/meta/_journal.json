@@ -8,6 +8,13 @@
       "when": 1789421160265,
       "tag": "0000_messy_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789717805194,
+      "tag": "0001_tema_jsonb",
+      "breakpoints": true
     }
   ]
 }

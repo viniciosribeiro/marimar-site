@@ -65,7 +65,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       <h1 className="text-3xl font-bold mb-2">Reservar</h1>
       <p className="text-gray-500 mb-8">Consulte disponibilidade em tempo real</p>
 
-      <form className="bg-white rounded-xl shadow p-4 mb-8 flex flex-col sm:flex-row gap-3 max-w-3xl">
+      <form className="bg-white rounded-marca shadow p-4 mb-8 flex flex-col sm:flex-row gap-3 max-w-3xl">
         <label className="flex-1 min-w-0">
           <span className="block text-xs text-gray-500 mb-1">Check-in</span>
           <input type="date" name="check_in" defaultValue={ci} required className="w-full border rounded-lg px-3 py-2 text-sm" />
@@ -82,7 +82,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           <span className="block text-xs text-gray-500 mb-1">Crianças</span>
           <select name="criancas" defaultValue={criancas} className="border rounded-lg px-3 py-2 text-sm"><option>0</option><option>1</option><option>2</option><option>3</option></select>
         </label>
-        <button type="submit" className="bg-teal-600 text-white px-6 rounded-lg hover:bg-teal-700 font-medium self-end py-2">Buscar</button>
+        <button type="submit" className="bg-marca text-white px-6 rounded-lg hover:bg-marca-hover font-medium self-end py-2">Buscar</button>
       </form>
 
       {erro && (
@@ -138,8 +138,8 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
 
 function CardQuarto({ r, noites }: { r: any; noites: number }) {
   return (
-    <div className={`bg-white rounded-xl shadow overflow-hidden flex flex-col ${!r.disponivel ? "opacity-60" : ""}`}>
-      <div className="relative h-48 bg-gradient-to-br from-teal-100 to-teal-200">
+    <div className={`bg-white rounded-marca shadow overflow-hidden flex flex-col ${!r.disponivel ? "opacity-60" : ""}`}>
+      <div className="relative h-48 bg-gradient-to-br from-marca-borda to-marca-suave">
         {r.fotoCapa ? (
           <Image
             src={r.fotoCapa}
@@ -161,7 +161,7 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2 mb-1">
           <h3 className="font-semibold text-lg leading-tight">{r.nomeLocal}</h3>
-          {r.catNome && <span className="text-xs text-teal-700 bg-teal-50 px-2 py-0.5 rounded shrink-0">{r.catNome}</span>}
+          {r.catNome && <span className="text-xs text-marca-ativa bg-marca-sutil px-2 py-0.5 rounded shrink-0">{r.catNome}</span>}
         </div>
 
         <p className="text-xs text-gray-500 mb-2 leading-relaxed">{resumir(r.descricaoLocal, 120)}</p>
@@ -175,11 +175,11 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
         <div className="border-t pt-3 mb-3 mt-auto">
           <div className="flex items-baseline gap-1">
             <span className="text-sm text-gray-500">Diária:</span>
-            <span className="text-xl font-bold text-teal-600">{brl(r.diaria)}</span>
+            <span className="text-xl font-bold text-marca">{brl(r.diaria)}</span>
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-sm text-gray-500">Total {pluralizar(noites, "noite")}:</span>
-            <span className="text-xl font-bold text-teal-600">{brl(r.total_geral ?? r.total)}</span>
+            <span className="text-xl font-bold text-marca">{brl(r.total_geral ?? r.total)}</span>
           </div>
           {r.valor_adulto > 0 && <p className="text-xs text-gray-400 mt-1">Por adulto: {brl(r.valor_adulto)}/noite</p>}
           {r.total_criancas > 0 && (
@@ -200,7 +200,7 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
           </span>
         ) : (
           <div className="space-y-2">
-            <a href={r.deepLink} target="_blank" className="block text-center bg-teal-600 text-white text-sm px-4 py-2.5 rounded-lg hover:bg-teal-700 font-medium">
+            <a href={r.deepLink} target="_blank" className="block text-center bg-marca text-white text-sm px-4 py-2.5 rounded-lg hover:bg-marca-hover font-medium">
               Reservar no site oficial
             </a>
             {r.whatsappUrl && (
@@ -209,7 +209,7 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
               </a>
             )}
             {r.slugLocal && (
-              <Link href={`/quartos/${r.slugLocal}`} className="block text-center text-teal-600 text-xs hover:underline">Ver detalhes do quarto</Link>
+              <Link href={`/quartos/${r.slugLocal}`} className="block text-center text-marca text-xs hover:underline">Ver detalhes do quarto</Link>
             )}
           </div>
         )}

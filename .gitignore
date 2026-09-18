@@ -8,3 +8,16 @@ wrangler.toml
 open-next.config.ts
 *.tsbuildinfo
 next-env.d.ts
+
+# ─── Segredos e anotações locais ───
+# Arquivos soltos com chave de API já apareceram nesta pasta ("openai api.txt").
+# Bloqueio amplo para que nenhum deles chegue ao GitHub por descuido.
+*.key
+*.pem
+*secret*
+*segredo*
+*api*.txt
+*API*.txt
+*.local.txt
+credenciais*
+notas-*.txt
