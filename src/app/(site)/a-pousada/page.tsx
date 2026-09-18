@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default async function APousadaPage() {
   let p: any = null;
   try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     [p] = await sql`SELECT * FROM pousada LIMIT 1`;
     await sql.end();
   } catch (e) {

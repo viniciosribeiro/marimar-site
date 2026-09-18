@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const workerData = await fetchTarifas(checkIn, checkOut, adultos, criancas);
 
     // Merge com dados locais
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
     const allIds = [...workerData.quartos, ...workerData.indisponiveis].map(r => r.id);
     const locais = allIds.length > 0
       ? await sql`SELECT id, nome, slug, descricao, cama, metragem, desbravador_room_id, diaria_minima FROM quartos WHERE desbravador_room_id = ANY(${allIds})`

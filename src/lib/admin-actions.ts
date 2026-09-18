@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import postgres from "postgres";
-const db = () => postgres(process.env.DATABASE_URL!, { max: 1 });
+const db = () => postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
 
 export async function criarMidia(f: FormData) {
   const url=f.get("url") as string; const alt=f.get("alt") as string; const quarto=f.get("quarto_id") as string;

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Minimo 12 caracteres" }, { status: 400 });
   }
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const hash = await bcrypt.hash(senha, 12);
 
   await sql`

@@ -2,7 +2,7 @@ import { config } from "dotenv"; config({ path: ".env.local" });
 import postgres from "postgres";
 
 async function main() {
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
 
   await sql`INSERT INTO depoimentos (autor, origem, nota, texto, ativo, ordem) VALUES 
     ('Maria S.', 'Google', 5, 'Lugar magico! A pousada e um sonho.', true, 1),

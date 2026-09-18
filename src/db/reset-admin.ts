@@ -3,7 +3,7 @@ import postgres from "postgres";
 import bcrypt from "bcryptjs";
 
 async function main() {
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const users = await sql`SELECT email, nome, papel, must_reset FROM usuarios`;
   for (const u of users) console.log(u.email, "|", u.nome, "|", u.papel, "| must_reset:", u.must_reset);
 

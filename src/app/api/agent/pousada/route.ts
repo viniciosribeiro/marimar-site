@@ -15,7 +15,7 @@ function agentErr(msg: string, status = 400) {
 
 export async function GET(request: NextRequest) {
   if (!checkAuth(request)) return agentErr("Nao autorizado", 401);
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const [p] = await sql`SELECT * FROM pousada LIMIT 1`;
   const politicas = await sql`SELECT * FROM politicas LIMIT 1`;
   await sql.end();
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   if (!checkAuth(request)) return agentErr("Nao autorizado", 401);
   const { nome, telefone, email, mensagem } = await request.json();
   if (!nome) return agentErr("Nome obrigatorio");
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   await sql`INSERT INTO leads (nome, telefone, email, mensagem, origem) VALUES (${nome}, ${telefone || null}, ${email || null}, ${mensagem || null}, 'agente')`;
   await sql.end();
   return agentOk({}, "Lead registrado com sucesso");

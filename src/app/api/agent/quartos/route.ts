@@ -5,7 +5,7 @@ import postgres from "postgres";
 export async function GET(request: NextRequest) {
   if (!checkAgentAuth(request)) return agentUnauthorized();
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const lista = await sql`
     SELECT q.*, c.nome as cat_nome
     FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id

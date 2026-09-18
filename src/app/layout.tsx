@@ -29,7 +29,7 @@ const SOMBRAS: Record<string, string> = {
 
 async function lerPousada(): Promise<Record<string, any> | null> {
   try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 3 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 3, prepare: false });
     // to_jsonb evita nomear colunas: funciona antes e depois da migration
     // que adiciona `tema`, sem quebrar o site no meio do caminho.
     const [row] = await sql`SELECT to_jsonb(p) AS dados FROM pousada p LIMIT 1`;

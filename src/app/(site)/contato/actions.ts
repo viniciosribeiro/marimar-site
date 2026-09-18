@@ -11,7 +11,7 @@ export async function enviarContato(formData: FormData) {
 
   if (!nome) redirect("/contato?erro=Nome+obrigatorio");
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   await sql`INSERT INTO leads (nome, telefone, email, mensagem, origem) VALUES (${nome}, ${telefone || null}, ${email || null}, ${mensagem || null}, 'site')`;
   await sql.end();
 

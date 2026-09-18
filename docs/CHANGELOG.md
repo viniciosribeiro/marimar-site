@@ -19,6 +19,61 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (7) — Segunda rodada de correções após execução real
+
+**Autor:** Claude Opus 5 (Cowork)
+
+`db:baseline` e `db:migrate` funcionaram. As 56 fotos do WordPress entraram e o
+hero trocou do beliche para uma foto real. Quatro problemas apareceram no caminho.
+
+### 1. `db:corrigir` abortou no meio e deixou o banco pela metade
+`column "pets" of relation "politicas" does not exist` — a coluna é **`pet`**
+(boolean) + `pet_texto`. Erro meu de nome.
+
+O problema maior era estrutural: uma falha derrubava **todos os passos seguintes**.
+Políticas, depoimentos, subtítulo do topo e seções da home não chegaram a rodar.
+Cada passo agora é isolado — falha, reporta, e o script segue. No fim lista o que
+falhou e lembra que pode rodar de novo.
+
+### 2. O `--dry` não era dry-run
+`npm run db:migrar-wp --dry` **gravou de verdade**. O npm expande `--dry` para
+`--dry-run`, consome o argumento e define `npm_config_dry_run` no ambiente — o
+script nunca viu o flag. Foram 56 fotos inseridas no que deveria ser uma simulação.
+Sorte que era o resultado desejado.
+
+Agora o script lê `--dry`, `--dry-run` **e** `npm_config_dry_run`, e quando está
+gravando de verdade avisa na primeira linha e ensina a forma correta
+(`npm run db:migrar-wp -- --dry`).
+
+### 3. `cached plan must not change result type`
+Apareceu no site logo após a migration. O postgres.js guarda prepared statements
+por conexão; adicionar a coluna `pousada.tema` invalidou os planos das conexões já
+abertas do dev server.
+
+Corrigido na raiz, em **51 arquivos**: todas as chamadas `postgres()` passam
+`prepare: false`. Isso importa além deste episódio — `DATABASE_URL` aponta para o
+**pooler do Neon** (PgBouncer em modo transaction), onde prepared statements não
+sobrevivem à troca de conexão. O motivo está documentado em `src/db/index.ts`.
+
+### 4. A foto do topo foi escolhida por acaso
+O script do WordPress marcou uma aérea como destaque, mas dava `ordem` por
+categoria — várias fotos ficaram com `ordem = 1`. Como a home escolhe o topo com
+`ORDER BY ordem`, venceu uma foto qualquer (acabou sendo o Farol das Conchas, que
+por sorte é boa) e não a aérea de drone.
+
+Novo passo no `db:corrigir`: escolhe deterministicamente — aérea de drone primeiro,
+depois panorâmicas por largura — marca `ordem = 0` e **limpa o destaque das demais**
+fotos sem quarto vinculado, para existir um único topo.
+
+### Ação necessária
+```
+npm run db:corrigir          # roda de novo: aplica o que faltou + escolhe o topo
+```
+Reinicie o dev server uma vez (`Ctrl+C`, `npm run dev`) para as conexões antigas
+com plano em cache serem descartadas.
+
+---
+
 ## 2026-09-18 (6) — Correção dos scripts de banco (3 falhas reportadas)
 
 **Autor:** Claude Opus 5 (Cowork)

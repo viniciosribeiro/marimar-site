@@ -1,7 +1,7 @@
 import Link from "next/link"; import postgres from "postgres";
 
 export default async function ChatWidget() {
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const [p] = await sql`SELECT whatsapp, nome FROM pousada LIMIT 1`;
   await sql.end();
   const wa = p?.whatsapp?.replace(/\D/g, "") || "";

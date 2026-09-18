@@ -33,7 +33,7 @@ export default async function QuartosPage({
   const showMotor = sp.motor === "1";
   const editId = sp.editar;
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const lista = await sql`SELECT q.*, c.nome as categoria_nome FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id ORDER BY q.ordem`;
   const categorias = await sql`SELECT * FROM categorias WHERE ativo = true ORDER BY ordem`;
   const editando = editId ? lista.find((q: any) => q.id === editId) : null;

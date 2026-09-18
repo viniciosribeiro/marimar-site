@@ -3,7 +3,7 @@ import postgres from "postgres";
 import { readFileSync } from "fs";
 
 async function main() {
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
 
   // Carrega o JSON com as fotos do motor
   const data = JSON.parse(readFileSync("docs/samples/tarifas-2026-10-15.json", "utf-8"));

@@ -14,7 +14,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
   let resultados: any[] = []; let erro = ""; let noites = 0; let whatsapp = "";
   let avisoCrianca = "";
 
-  const sql0 = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql0 = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const [pousadaData] = await sql0`SELECT whatsapp, nome FROM pousada LIMIT 1`;
   await sql0.end();
   whatsapp = pousadaData?.whatsapp?.replace(/\D/g, "") || "";
@@ -24,7 +24,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       noites = Math.round((new Date(co + "T12:00").getTime() - new Date(ci + "T12:00").getTime()) / 86400000);
       const data = await fetchTarifas(ci, co, adultos, criancas);
       avisoCrianca = data.aviso_crianca || "";
-      const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+      const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
       const ids = [...data.quartos, ...data.indisponiveis].map(r => r.id);
       const locais = ids.length > 0 ? await sql`SELECT q.*, c.nome as cat_nome FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id WHERE q.desbravador_room_id = ANY(${ids})` : [];
       const map = new Map(locais.map((l: any) => [l.desbravador_room_id, l]));

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default async function GaleriaPage() {
   let midias: any[] = [];
   try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     midias = await sql`
       SELECT m.url, m.alt, m.quarto_id, q.nome AS quarto_nome, c.nome AS cat_nome
       FROM midias m

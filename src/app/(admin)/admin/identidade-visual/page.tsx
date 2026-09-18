@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export default async function IdentidadeVisualPage({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
   const s = await auth(); if (!s?.user) redirect("/admin/login");
   const sp = await searchParams;
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   // to_jsonb traz `tema` quando a coluna existe e omite quando nao existe,
   // entao a tela funciona antes e depois da migration.
   const [row] = await sql`SELECT to_jsonb(x) AS dados FROM pousada x LIMIT 1`;

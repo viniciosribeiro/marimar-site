@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default async function QuartosPage() {
   let lista: any[] = [];
   try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     // A foto de capa NAO estava sendo consultada: a pagina tinha um emoji fixo
     // no lugar da imagem. Agora pega a midia em destaque do quarto e, se nao
     // houver, a primeira por ordem.

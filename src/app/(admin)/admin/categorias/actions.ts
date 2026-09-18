@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import postgres from "postgres";
 
-const sql = () => postgres(process.env.DATABASE_URL!, { max: 1 });
+const sql = () => postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
 
 export async function criarCategoria(formData: FormData) {
   const nome = formData.get("nome") as string;

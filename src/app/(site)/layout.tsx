@@ -55,7 +55,7 @@ const FALLBACK: Record<string, any> = {
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   let p: Record<string, any> = FALLBACK;
   try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     const [row] = await sql`SELECT to_jsonb(x) AS dados FROM pousada x LIMIT 1`;
     await sql.end();
     if (row?.dados) p = row.dados as Record<string, any>;

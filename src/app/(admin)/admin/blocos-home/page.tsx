@@ -32,7 +32,7 @@ export default async function BlocosHomePage({ searchParams }: { searchParams: P
 
   let lista: any[] = [];
   try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     lista = await sql`SELECT * FROM blocos_home ORDER BY ordem, criado_em`;
     await sql.end();
   } catch (e) {

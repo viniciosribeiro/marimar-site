@@ -44,7 +44,7 @@ export async function salvarTema(formData: FormData) {
     },
   };
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   try {
     await sql`
       UPDATE pousada SET

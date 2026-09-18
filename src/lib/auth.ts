@@ -33,7 +33,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = (credentials.email as string).toLowerCase().trim();
         const password = credentials.password as string;
 
-        const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+        const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
         try {
           const [user] = await sql`
             SELECT id, email, nome, senha_hash, papel, must_reset,

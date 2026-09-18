@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const data = await fetchTarifas(ci, co, adultos, criancas);
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
     const ids = [...data.quartos, ...data.indisponiveis].map(r => r.id);
     const locais = ids.length > 0 ? await sql`SELECT * FROM quartos WHERE desbravador_room_id = ANY(${ids})` : [];
     const map = new Map(locais.map((l: any) => [l.desbravador_room_id, l]));

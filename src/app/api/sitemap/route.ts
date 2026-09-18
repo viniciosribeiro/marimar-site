@@ -4,7 +4,7 @@ import postgres from "postgres";
 export const dynamic = "force-dynamic";
 export async function GET() {
   const site = process.env.NEXT_PUBLIC_SITE_URL || "https://www.pousadamarimarilhadomel.com.br";
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const quartos = await sql`SELECT slug FROM quartos WHERE ativo = true`;
   const pacotes = await sql`SELECT slug FROM pacotes WHERE ativo = true`;
   await sql.end();

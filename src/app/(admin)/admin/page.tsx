@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   let semFoto = 0;
   let erroBanco = "";
   try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     const [r] = await sql`
       SELECT
         (SELECT count(*) FROM quartos WHERE ativo = true)::int      AS quartos,

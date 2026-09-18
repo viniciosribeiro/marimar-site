@@ -1,6 +1,10 @@
 /**
  * Migra fotos e textos do WordPress antigo para o Neon.
  *
+ * ATENCAO ao chamar com flags: o npm engole argumentos. Use `--` antes:
+ *   npm run db:migrar-wp -- --dry
+ *   npm run db:migrar-wp -- --textos
+ *
  * O site legado (pousadamarimarilhadomel.com.br) tem a API REST aberta e
  * guarda 68 imagens e 8 paginas de conteudo que o site novo nao tinha.
  *
@@ -18,8 +22,21 @@ import { urlDoBanco, sair, explicarErro } from "./env";
 import postgres from "postgres";
 
 const WP = "https://pousadamarimarilhadomel.com.br/wp-json/wp/v2";
-const DRY = process.argv.includes("--dry");
-const COM_TEXTOS = process.argv.includes("--textos");
+/**
+ * Deteccao de simulacao.
+ *
+ * `npm run db:migrar-wp --dry` NAO passa o flag para o script: o npm expande
+ * para `--dry-run`, consome, e define npm_config_dry_run no ambiente. Na
+ * primeira execucao real isso fez o "teste" gravar 56 fotos de verdade.
+ * Lemos as duas formas para que qualquer uma funcione.
+ */
+const DRY =
+  process.argv.includes("--dry") ||
+  process.argv.includes("--dry-run") ||
+  process.env.npm_config_dry_run === "true";
+
+const COM_TEXTOS =
+  process.argv.includes("--textos") || process.env.npm_config_textos === "true";
 
 /** Imagens do tema/demo do WordPress — nao sao da pousada. */
 const LIXO_DO_TEMA = [
@@ -97,7 +114,12 @@ function limparHtml(html: string): string {
 let clienteAberto: { end: () => Promise<void> } | null = null;
 
 async function main() {
-  console.log(DRY ? "🔍 MODO DRY-RUN — nada será gravado\n" : "🚚 Migrando do WordPress para o Neon\n");
+  console.log(DRY
+    ? "🔍 SIMULAÇÃO — nada será gravado no banco\n"
+    : "🚚 Migrando do WordPress para o Neon (gravando de verdade)\n");
+  if (!DRY) {
+    console.log("   Para apenas simular:  npm run db:migrar-wp -- --dry\n");
+  }
 
   console.log("→ Buscando mídias no WordPress...");
   const res = await fetch(`${WP}/media?per_page=100&_fields=id,slug,source_url,mime_type,media_details`);

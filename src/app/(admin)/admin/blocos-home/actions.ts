@@ -8,7 +8,7 @@ import { auth } from "@/lib/auth";
 async function guardar() {
   const s = await auth();
   if (!s?.user) redirect("/admin/login");
-  return postgres(process.env.DATABASE_URL!, { max: 1 });
+  return postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
 }
 
 function voltar(msg: string, erro = false) {

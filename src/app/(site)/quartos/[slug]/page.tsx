@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function QuartoDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const [q] = await sql`SELECT q.*, c.nome as cat_nome FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id WHERE q.slug = ${slug} AND q.ativo = true`;
   if (!q) { await sql.end(); notFound(); }
   const [p] = await sql`SELECT * FROM pousada LIMIT 1`;

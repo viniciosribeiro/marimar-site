@@ -20,7 +20,7 @@ export async function trocarSenha(formData: FormData) {
     redirect("/admin/trocar-senha?erro=Senhas+nao+conferem");
   }
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const hash = await bcrypt.hash(senha, 12);
   console.log("[trocar-senha] Hash gerado, atualizando usuario", userId);
 

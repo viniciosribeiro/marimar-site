@@ -30,7 +30,7 @@ export default async function HomePage() {
   let blocos: Bloco[] = [];
 
   try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     [pousada] = await sql`SELECT * FROM pousada LIMIT 1`;
 
     quartos = await sql`

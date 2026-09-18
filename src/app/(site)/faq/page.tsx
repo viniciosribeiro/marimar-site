@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default async function FaqPage() {
   let extras: any[] = [];
   try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5 });
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     extras = await sql`SELECT * FROM faq WHERE ativo = true ORDER BY ordem`;
     await sql.end();
   } catch (e) {

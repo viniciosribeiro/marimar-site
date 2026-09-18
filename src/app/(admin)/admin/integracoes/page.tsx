@@ -16,7 +16,7 @@ export default async function IntegracoesPage() {
   const proto = h.get("x-forwarded-proto") || "http";
   const baseUrl = `${proto}://${host}`;
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
 
   // Testa Worker Desbravador
   let workerData: any = null; let workerLat = 0; let workerErr = "";
