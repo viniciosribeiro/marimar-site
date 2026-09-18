@@ -4,7 +4,10 @@ export const dynamic = "force-dynamic";
 
 export default async function IntegracoesPage() {
   const s = await auth(); if (!s?.user) redirect("/admin/login");
-  const apiKey = process.env.AGENT_API_KEY || "marina-agent-key-marimar-2026";
+  // Sem fallback hardcoded: se a env var faltar, a tela avisa em vez de
+  // vazar uma chave de exemplo que funcionava em producao.
+  const apiKey = process.env.AGENT_API_KEY ?? "";
+  const keyConfigurada = apiKey.length >= 16;
 
   // Resolve a URL base a partir do host da requisição (funciona em dev E produção),
   // em vez de depender de NEXT_PUBLIC_SITE_URL que pode estar ausente.
@@ -36,7 +39,9 @@ export default async function IntegracoesPage() {
   const [cCount] = await sql`SELECT count(*)::int as c FROM cache_tarifas`;
   await sql.end();
 
-  const maskedKey = apiKey.slice(0, 8) + "●●●" + apiKey.slice(-4);
+  const maskedKey = keyConfigurada
+    ? apiKey.slice(0, 8) + "●●●" + apiKey.slice(-4)
+    : "⚠️ AGENT_API_KEY nao configurada no ambiente";
 
   return (
     <div className="p-6 max-w-6xl">
@@ -120,7 +125,7 @@ export default async function IntegracoesPage() {
             ["NEXT_PUBLIC_SITE_URL", process.env.NEXT_PUBLIC_SITE_URL],
             ["DATABASE_URL", "●●● configurado"],
             ["AUTH_SECRET", "●●● configurado"],
-            ["AGENT_API_KEY", "●●● configurada"],
+            ["AGENT_API_KEY", keyConfigurada ? "●●● configurada" : "⚠️ AUSENTE"],
           ].map(([k, v]) => (
             <div key={k} className="flex justify-between p-2 bg-gray-50 rounded-lg">
               <span className="font-medium text-gray-600 text-xs">{k}</span>

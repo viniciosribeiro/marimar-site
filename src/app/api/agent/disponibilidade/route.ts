@@ -1,11 +1,11 @@
+import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
 import { fetchTarifas } from "@/lib/worker";
 import { buildDeepLink } from "@/lib/deeplink";
 import postgres from "postgres";
 
 export async function GET(request: NextRequest) {
-  const key = request.headers.get("authorization")?.replace("Bearer ", "");
-  if (key !== process.env.AGENT_API_KEY) return Response.json({ ok: false, erro: "Nao autorizado" }, { status: 401 });
+  if (!checkAgentAuth(request)) return agentUnauthorized();
 
   const q = request.nextUrl.searchParams;
   const ci = q.get("check_in") || "2026-10-15";

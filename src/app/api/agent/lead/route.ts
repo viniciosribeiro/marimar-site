@@ -1,7 +1,7 @@
+import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server"; import postgres from "postgres";
 export async function POST(request: NextRequest) {
-  const key = request.headers.get("authorization")?.replace("Bearer ", "");
-  if (key !== process.env.AGENT_API_KEY) return Response.json({ ok: false, erro: "Nao autorizado" }, { status: 401 });
+  if (!checkAgentAuth(request)) return agentUnauthorized();
   const { nome, telefone, email, mensagem } = await request.json();
   if (!nome) return Response.json({ ok: false, erro: "Nome obrigatorio" }, { status: 400 });
   const sql=postgres(process.env.DATABASE_URL!,{max:1});

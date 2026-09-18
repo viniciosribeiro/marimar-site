@@ -7,7 +7,7 @@ Site oficial com painel administrativo e API para agente de IA (Marina).
 - **UI:** Tailwind CSS v4
 - **Banco:** Neon PostgreSQL + Drizzle ORM
 - **Auth:** Auth.js v5 (Credentials + bcrypt)
-- **Deploy:** Cloudflare Pages
+- **Deploy:** Vercel
 
 ## Como rodar
 
@@ -50,3 +50,18 @@ src/
 ## Variaveis de ambiente
 
 Ver `.env.example`. Essenciais: `DATABASE_URL`, `AUTH_SECRET`, `WORKER_BASE_URL`, `WORKER_SLUG`, `AGENT_API_KEY`.
+
+## Documentacao
+
+| Arquivo | Conteudo |
+|---|---|
+| `docs/ESTADO-DO-PROJETO.md` | **Comece por aqui** — estado, arquitetura, convencoes, pendencias |
+| `docs/CHANGELOG.md` | Historico datado de mudancas |
+| `docs/runbook.md` | Deploy, env vars, incidentes, rotacao de chave |
+| `docs/contrato-api.md` | Contrato do Worker PousadaHub |
+| `docs/padrao-crud.md` | Convencoes das telas de admin |
+| `docs/openclaw-integracao.md` | Como a Marina consome a API |
+| `docs/manual-admin.md` | Manual de uso para a operacao |
+
+> Projeto mantido por multiplas ferramentas de IA agentica. Ao terminar qualquer
+> trabalho, registre em `docs/CHANGELOG.md`. Protocolo completo em `AGENTS.md`.

@@ -10,7 +10,7 @@ Base: `https://www.pousadamarimarilhadomel.com.br`
 
 Todas as rotas exigem header:
 ```
-Authorization: Bearer marina-agent-key-marimar-2026
+Authorization: Bearer <AGENT_API_KEY>
 ```
 
 ## Rotas disponíveis
@@ -54,7 +54,7 @@ No painel do OpenClaw, configure uma **Custom API Tool**:
 
 1. **Nome:** `consultar-pousada-marimar`
 2. **URL Base:** `https://www.pousadamarimarilhadomel.com.br/api/agent`
-3. **Header:** `Authorization: Bearer marina-agent-key-marimar-2026`
+3. **Header:** `Authorization: Bearer <AGENT_API_KEY>`
 4. **Endpoints:**
    - `GET /pousada` → dados gerais
    - `GET /quartos` → catálogo
@@ -72,6 +72,31 @@ Se a API falhar, diga "Vou consultar a disponibilidade com a equipe e retorno em
 
 ## Chave da API
 
-**Atual:** `marina-agent-key-marimar-2026`
+⚠️ **O valor da chave NAO fica neste arquivo.** Ele vive apenas em:
 
-Para rotacionar: Admin → Integrações → AGENT_API_KEY → Gerar nova.
+- `.env.local` (gitignored, na maquina de dev)
+- Painel da Vercel → Environment Variables → `AGENT_API_KEY`
+
+A chave antiga `marina-agent-key-marimar-2026` foi **revogada em 18/09/2026** por
+estar em texto claro neste documento versionado. Se algum agente ou integracao
+ainda usar esse valor, vai receber 401.
+
+Para consultar a chave em uso: Admin → Integracoes (mostra mascarada e completa
+para o admin autenticado).
+
+Para rotacionar: ver `docs/runbook.md` → secao "Rotacionar a AGENT_API_KEY".
+
+---
+
+## Comportamento de autenticacao (desde 18/09/2026)
+
+Todas as rotas `/api/agent/*` usam `src/lib/agent-auth.ts`:
+
+- Sem header `Authorization` → **401**
+- Header malformado (sem `Bearer `) → **401**
+- `AGENT_API_KEY` ausente ou com menos de 16 chars no ambiente → **401 para todos**
+  (fail-closed — antes disso, env var ausente abria as rotas para qualquer um)
+- Comparacao em tempo constante contra timing attack
+
+Se a Marina comecar a receber 401 em massa, o primeiro suspeito e a `AGENT_API_KEY`
+faltando na Vercel apos um deploy.

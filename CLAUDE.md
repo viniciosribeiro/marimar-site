@@ -1,1 +1,2 @@
 @AGENTS.md
+@docs/ESTADO-DO-PROJETO.md

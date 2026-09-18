@@ -1,9 +1,9 @@
+import { checkAgentAuth } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
 import postgres from "postgres";
 
 function checkAuth(request: NextRequest): boolean {
-  const key = request.headers.get("authorization")?.replace("Bearer ", "");
-  return key === process.env.AGENT_API_KEY;
+  return checkAgentAuth(request);
 }
 
 function agentOk(dados: any, resumo: string) {
