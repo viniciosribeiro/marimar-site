@@ -1,9 +1,36 @@
 import Link from "next/link"; import postgres from "postgres";
 
+/**
+ * Todo o site le conteudo editavel pelo admin, entao nada aqui pode ser
+ * congelado em build time.
+ *
+ * Sem este force-dynamic o Next tentava PRERENDERIZAR as paginas cujo page.tsx
+ * tambem nao o declarava (/contato, /faq, /politicas, /a-pousada) e batia no
+ * banco durante o `next build`. Consequencia em producao: se o Neon estivesse
+ * fora do ar ou lento na hora do deploy, o build INTEIRO falhava — e, quando
+ * passava, gravava telefone, cores e textos de forma estatica, fazendo as
+ * edicoes do admin so aparecerem no deploy seguinte.
+ */
+export const dynamic = "force-dynamic";
+
+// Defaults usados quando o banco nao responde: o site continua no ar com o
+// catalogo e o CTA, em vez de devolver 500 em todas as paginas de uma vez.
+const FALLBACK = {
+  nome: "Pousada Ilha do Mel Marimar",
+  cor_primaria: "#0D9488",
+  cor_secundaria: "#0EA5E9",
+} as Record<string, any>;
+
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
-  const [p] = await sql`SELECT * FROM pousada LIMIT 1`;
-  await sql.end();
+  let p: Record<string, any> = FALLBACK;
+  try {
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5 });
+    const [row] = await sql`SELECT * FROM pousada LIMIT 1`;
+    await sql.end();
+    if (row) p = row;
+  } catch (e) {
+    console.error("[SiteLayout] banco indisponivel, usando fallback:", (e as Error).message);
+  }
   const wa = p?.whatsapp?.replace(/\D/g, "") || "";
   const cp = p?.cor_primaria || "#0D9488";
   const cs = p?.cor_secundaria || "#0EA5E9";

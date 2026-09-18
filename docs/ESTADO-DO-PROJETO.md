@@ -225,6 +225,13 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | 3 | **Hero sem foto.** Cadastrar em Admin → Mídias uma imagem com `destaque = true` e **sem quarto vinculado** | Vinicios |
 | 4 | Pendente da 1ª sessão: `AGENT_API_KEY` nova na Vercel + OpenClaw | Vinicios |
 
+### ✅ Verificado nesta sessão
+
+`npx next build` rodado num clone limpo dentro do container: compila, TypeScript
+limpo, 42 rotas geradas, todas as páginas do site como `ƒ` (dinâmicas). Fontes do
+Google foram stubadas só nessa cópia (o proxy do container bloqueia
+`fonts.googleapis.com`) — no build da Vercel elas resolvem normalmente.
+
 ### 🟠 Verificar após o deploy
 
 | # | Item |
@@ -243,6 +250,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | 11 | Coluna dedicada `hero_url` em `pousada` (hoje o hero deduz da tabela `midias`) |
 | 12 | Lint tem ~23 erros pré-existentes (`any`, `react-hooks/purity` com `Date.now`, aspas não escapadas) — não bloqueiam o build |
 | 13 | Seletor de crianças não pede idade, mas o motor tem faixas etárias (`politica_crianca`) |
+| 14 | `src/middleware.ts` usa a convenção `middleware`, deprecada no Next 16 — o build avisa e sugere `npx @next/codemod@canary middleware-to-proxy .`. Funciona hoje; não mexido de propósito porque esse arquivo teve um bug de redirect loop corrigido há pouco (`0f8cb73`) e a troca merece teste dedicado |
 
 ### Verificacao pendente apos o deploy desta sessao
 

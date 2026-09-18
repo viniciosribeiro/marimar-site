@@ -78,6 +78,22 @@ está publicado apenas em `marimar-site.vercel.app`. O DNS nunca foi apontado.
   de criança do motor, e mensagem de erro com saída para o WhatsApp.
 - Header: nome da pousada não some mais no mobile; logo de h-8 para h-9/h-10.
 
+### Corrigido (build verificado no container, apos a revisao ao vivo)
+- **O `next build` estava quebrando o deploy inteiro se o banco piscasse.**
+  `src/app/(site)/layout.tsx` consulta a tabela `pousada` e nao declarava
+  `force-dynamic`. O Next entao tentava PRERENDERIZAR as paginas cujo proprio
+  `page.tsx` tambem nao declarava (`/contato`, `/faq`, `/politicas`,
+  `/a-pousada`) e batia no Neon durante o build. Duas consequencias:
+  1. Neon fora do ar ou lento na hora do deploy = **build falha por inteiro**
+     (reproduzido: `Error occurred prerendering page "/contato"` →
+     `ECONNREFUSED 127.0.0.1:5432` → `build worker exited with code: 1`)
+  2. Quando passava, telefone, cores e textos ficavam **congelados no HTML
+     estatico** — edicoes no admin so apareceriam no deploy seguinte
+  Agora o layout declara `force-dynamic` e envolve a consulta em try/catch com
+  defaults, entao uma queda do banco degrada a pagina em vez de derrubar o site.
+- Build validado de ponta a ponta no container (`npx next build`): compila,
+  TypeScript limpo, 42 rotas, todas as paginas do site como `ƒ` (dinamicas).
+
 ### Ação necessária (só o Vinicios pode fazer)
 1. **`npm run db:corrigir`** — aplica telefone real, acentos e desativa o passeio
    de teste ("Vinicios / VR / R$ 350") que está público na home. O ambiente desta
