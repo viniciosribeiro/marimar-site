@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import postgres from "postgres";
+import { textoIdeal } from "@/lib/contraste";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -79,6 +80,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       ? `"${nome}", var(--font-geist-sans), system-ui, sans-serif`
       : `var(--font-geist-sans), system-ui, sans-serif`;
 
+  // Cor de texto que realmente se le sobre cada cor de marca. Sem isto, um
+  // destaque claro (ambar, amarelo) com texto branco fixo fica ilegivel no
+  // celular. Calculado aqui e exposto como token para o CSS usar.
+  const marcaTexto = textoIdeal(marca);
+  const acentoTexto = textoIdeal(acento);
+
   const raio = tema.raio ? `${tema.raio}px` : "0.75rem";
   const sombra = SOMBRAS[tema.sombra ?? "sm"] ?? SOMBRAS.sm;
   const duracao = tema.animacoes === false ? "0.01ms" : "200ms";
@@ -98,6 +105,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <style>{`:root{
           --marca:${marca};
           --acento:${acento};
+          --marca-texto:${marcaTexto};
+          --acento-texto:${acentoTexto};
           --fonte-titulo:${pilha(fonteTitulo)};
           --fonte-corpo:${pilha(fonteCorpo)};
           --raio:${raio};

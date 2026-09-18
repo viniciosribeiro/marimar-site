@@ -82,7 +82,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           <span className="block text-xs text-gray-500 mb-1">Crianças</span>
           <select name="criancas" defaultValue={criancas} className="border rounded-lg px-3 py-2 text-sm"><option>0</option><option>1</option><option>2</option><option>3</option></select>
         </label>
-        <button type="submit" className="bg-marca text-white px-6 rounded-lg hover:bg-marca-hover font-medium self-end py-2">Buscar</button>
+        <button type="submit" className="bg-marca text-marca-texto px-6 rounded-lg hover:bg-marca-hover font-medium self-end py-2">Buscar</button>
       </form>
 
       {erro && (
@@ -200,7 +200,7 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
           </span>
         ) : (
           <div className="space-y-2">
-            <a href={r.deepLink} target="_blank" className="block text-center bg-marca text-white text-sm px-4 py-2.5 rounded-lg hover:bg-marca-hover font-medium">
+            <a href={r.deepLink} target="_blank" className="block text-center bg-marca text-marca-texto text-sm px-4 py-2.5 rounded-lg hover:bg-marca-hover font-medium">
               Reservar no site oficial
             </a>
             {r.whatsappUrl && (

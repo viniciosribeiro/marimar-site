@@ -19,6 +19,72 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (5) — A home passa a ser editável pela administração
+
+**Autor:** Claude Opus 5 (Cowork)
+**Commits:** _(pendente de commit)_
+
+### A tabela `blocos_home` estava morta
+Existiam 10 seções semeadas e uma tela no admin para editá-las — e **o site
+ignorava tudo**. A Cecília trocava o título, desativava uma seção, reordenava, e
+nada acontecia na home, que era JSX fixo.
+
+Agora a home é montada a partir de `blocos_home`:
+- `src/components/site/BlocosHome.tsx` — cada seção virou um bloco, escolhido pelo
+  `tipo`. Título e subtítulo vêm do banco, com o texto atual como padrão quando o
+  campo está vazio. **Os dados continuam vindo de onde devem**: quartos do
+  motor/banco, fatos do conteúdo canônico. Só a apresentação é configurável.
+- Migration `0002` adiciona os tipos criados no redesign (`complexo`,
+  `diferenciais`, `restaurante`, `avaliacoes`) ao enum `tipo_bloco`.
+
+**Mescla em vez de substituir.** No primeiro teste a home ficou pior: o banco tinha
+só os blocos antigos, então perdeu justamente as seções novas. A regra agora
+distingue dois estados diferentes — tipo **sem linha** no banco é "ainda não
+configurado" e entra pelo padrão; tipo **com linha inativa** é "escondido de
+propósito" e é respeitado. Enquanto o banco não tiver todas as seções, vale a ordem
+padrão; depois de sincronizado, a ordem do admin manda.
+
+### Tela de seções reconstruída
+Era um CRUD genérico que mal editava título (e com o link `/amin` quebrado).
+Agora: ligar/desligar cada seção, **reordenar com setas**, editar título e texto de
+apoio inline, e uma explicação do que cada seção mostra em linguagem de operação
+("Topo do site — foto grande, nome da pousada e a busca de disponibilidade").
+
+A reordenação **troca a `ordem` com a vizinha** em vez de renumerar tudo, para duas
+pessoas editando ao mesmo tempo não embaralharem a home inteira. Há desempate por
+índice, porque o seed gravou ordens que podiam colidir.
+
+### Verificação de contraste (WCAG 2.1)
+`src/lib/contraste.ts` calcula razão de contraste e a cor de texto legível sobre
+qualquer fundo. Validado contra valores de referência: preto/branco dá 21:1 exato,
+que é o máximo teórico.
+
+O editor agora mostra o diagnóstico ao lado de cada cor, com um botão de amostra.
+**E já pegou um erro meu**: o destaque `#F59E0B` pede texto escuro (8,3:1), mas eu
+tinha usado `bg-acento text-white` no rodapé e na faixa de aviso — branco sobre
+âmbar não se lê no celular ao sol.
+
+Correção estrutural: `--marca-texto` e `--acento-texto` são calculados no servidor
+e expostos como token, então `text-marca-texto` e `text-acento-texto` se adaptam
+sozinhos a qualquer cor que a administração escolher. 14 arquivos convertidos; não
+restou texto branco fixo sobre cor de marca.
+
+### Corrigido
+- O bloco `hero` tinha **"Seu refúgio pé na areia em Encantadas"** semeado — o mesmo
+  erro factual, agora vindo do banco. Limpo no seed e no script de produção.
+- No script, a limpeza do hero foi movida para **antes** da sincronização das seções:
+  ela não depende da migration 0002, e estava dentro do mesmo `try` — sem a
+  migration, o bloco inteiro falhava e o texto errado continuava no ar.
+
+### Ação necessária (ordem importa)
+```
+npm run db:migrate    # migrations 0001 (tema) e 0002 (tipos de bloco)
+npm run db:corrigir   # dados + sincroniza as seções da home
+npm run db:migrar-wp  # as 68 fotos, com o hero aéreo
+```
+
+---
+
 ## 2026-09-18 (4) — Admin reorganizado, editor visual funcional e migração do WordPress
 
 **Autor:** Claude Opus 5 (Cowork)

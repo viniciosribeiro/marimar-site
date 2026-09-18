@@ -82,7 +82,7 @@ export default function IlhaDoMelPage() {
 
       <div className="bg-marca-sutil border border-marca-borda rounded-marca p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <p className="text-sm text-gray-700">Planejando a viagem? Veja o passo a passo completo de chegada.</p>
-        <Link href="/como-chegar" className="bg-marca hover:bg-marca-hover text-white px-5 py-2.5 rounded-marca text-sm font-semibold transition-marca whitespace-nowrap shrink-0">
+        <Link href="/como-chegar" className="bg-marca hover:bg-marca-hover text-marca-texto px-5 py-2.5 rounded-marca text-sm font-semibold transition-marca whitespace-nowrap shrink-0">
           Como chegar
         </Link>
       </div>

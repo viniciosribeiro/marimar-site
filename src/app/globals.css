@@ -26,6 +26,11 @@
 
   /* Escala derivada da cor de marca. Uma cor de entrada, tom completo.
      oklab mantem a luminosidade percebida coerente entre matizes. */
+  /* Cor de texto legivel sobre cada cor de marca — calculada no servidor
+     em src/app/layout.tsx com a formula de contraste da WCAG. */
+  --marca-texto: #ffffff;
+  --acento-texto: #ffffff;
+
   --marca-hover:    color-mix(in oklab, var(--marca), black 12%);
   --marca-ativa:    color-mix(in oklab, var(--marca), black 22%);
   --marca-escura:   color-mix(in oklab, var(--marca), black 38%);
@@ -69,6 +74,8 @@
   --color-acento: var(--acento);
   --color-acento-hover: var(--acento-hover);
   --color-acento-suave: var(--acento-suave);
+  --color-marca-texto: var(--marca-texto);
+  --color-acento-texto: var(--acento-texto);
 
   /* Superficies */
   --color-fundo: var(--fundo);

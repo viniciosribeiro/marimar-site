@@ -107,7 +107,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
                     <a
                       href={buildDeepLink({ checkIn: "2026-10-15", checkOut: "2026-10-17", adultos: 2 })}
                       target="_blank"
-                      className="block text-center bg-marca text-white py-3 rounded-marca font-medium hover:bg-marca-hover transition-colors"
+                      className="block text-center bg-marca text-marca-texto py-3 rounded-marca font-medium hover:bg-marca-hover transition-colors"
                     >
                       Reservar no site oficial
                     </a>
@@ -125,7 +125,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
                   <p className="text-gray-500 text-sm mb-4">Consulte a disponibilidade para ver os preços em tempo real.</p>
                   <Link
                     href="/reservar"
-                    className="block text-center bg-marca text-white py-3 rounded-marca font-medium hover:bg-marca-hover transition-colors"
+                    className="block text-center bg-marca text-marca-texto py-3 rounded-marca font-medium hover:bg-marca-hover transition-colors"
                   >
                     Consultar disponibilidade
                   </Link>

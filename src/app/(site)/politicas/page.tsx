@@ -56,7 +56,7 @@ export default function PoliticasPage() {
 
       <div className="mt-10 bg-fundo-suave rounded-marca p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <p className="text-sm text-gray-600">Dúvida sobre alguma regra antes de reservar?</p>
-        <Link href="/contato" className="bg-marca hover:bg-marca-hover text-white px-5 py-2.5 rounded-marca text-sm font-semibold transition-marca whitespace-nowrap shrink-0">
+        <Link href="/contato" className="bg-marca hover:bg-marca-hover text-marca-texto px-5 py-2.5 rounded-marca text-sm font-semibold transition-marca whitespace-nowrap shrink-0">
           Falar com a pousada
         </Link>
       </div>

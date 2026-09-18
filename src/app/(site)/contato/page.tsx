@@ -23,7 +23,7 @@ export default function ContatoPage({ searchParams }: { searchParams: Promise<{ 
           <label className="block text-sm font-medium mb-1">Mensagem</label>
           <textarea name="mensagem" rows={4} className="w-full border rounded p-2" />
         </div>
-        <button type="submit" className="w-full bg-marca text-white rounded p-2 hover:bg-marca-hover">Enviar</button>
+        <button type="submit" className="w-full bg-marca text-marca-texto rounded p-2 hover:bg-marca-hover">Enviar</button>
       </form>
     </div>
   );

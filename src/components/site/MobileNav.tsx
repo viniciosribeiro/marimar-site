@@ -59,7 +59,7 @@ export function MobileNav({ itens }: { itens: [string, string][] }) {
               })}
             </div>
             <div className="p-4 border-t border-gray-100">
-              <Link href="/reservar" className="block text-center bg-marca hover:bg-marca-hover text-white py-3 rounded-marca font-semibold transition-marca">
+              <Link href="/reservar" className="block text-center bg-marca hover:bg-marca-hover text-marca-texto py-3 rounded-marca font-semibold transition-marca">
                 Ver disponibilidade
               </Link>
             </div>

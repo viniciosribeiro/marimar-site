@@ -119,7 +119,78 @@ async function main() {
     console.log("• Nenhum depoimento ativo");
   }
 
-  // ─── 7. Relatorio final ────────────────────────────────────
+
+  // ─── 7. Secoes da home ─────────────────────────────────────
+  //
+  // A tabela blocos_home foi semeada antes do redesign, entao nao tem as
+  // secoes novas (complexo, diferenciais, restaurante, avaliacoes). Como a
+  // home agora e montada a partir dela, sem isto o site perderia justamente
+  // as secoes criadas no redesign.
+  //
+  // Requer a migration 0002 (novos valores do enum tipo_bloco) — rode
+  // `npm run db:migrate` antes deste script.
+  const ORDEM_DESEJADA: { tipo: string; titulo: string | null }[] = [
+    { tipo: "hero", titulo: null },
+    { tipo: "complexo", titulo: "Um complexo, duas partes" },
+    { tipo: "diferenciais", titulo: "O que está incluso na sua estadia" },
+    { tipo: "quartos", titulo: "Nossas suítes" },
+    { tipo: "restaurante", titulo: "Marimar Café Bistrô Bar" },
+    { tipo: "avaliacoes", titulo: "O que dizem quem já ficou" },
+    { tipo: "mapa", titulo: "A poucos passos do trapiche" },
+    { tipo: "cta", titulo: null },
+    { tipo: "faq", titulo: "Perguntas Frequentes" },
+  ];
+
+  // Feita ANTES do resto: nao depende da migration 0002, entao precisa
+  // acontecer mesmo que a sincronizacao das secoes falhe por falta dela.
+  const heroLimpo = await sql`
+    UPDATE blocos_home SET subtitulo = NULL
+    WHERE tipo = 'hero' AND subtitulo ILIKE '%pe na areia%'
+    RETURNING id
+  `;
+  if (heroLimpo.length > 0) {
+    console.log('✅ Subtítulo errado do topo removido ("pé na areia" referindo-se à pousada)');
+  }
+
+  try {
+    const existentes = await sql`SELECT tipo FROM blocos_home`;
+    const tipos = new Set(existentes.map((b: any) => b.tipo));
+    let criados = 0;
+
+    for (let i = 0; i < ORDEM_DESEJADA.length; i++) {
+      const { tipo, titulo } = ORDEM_DESEJADA[i];
+      if (tipos.has(tipo)) {
+        await sql`UPDATE blocos_home SET ordem = ${i}, ativo = true WHERE tipo = ${tipo}`;
+      } else {
+        await sql`INSERT INTO blocos_home (tipo, titulo, ordem, ativo)
+                  VALUES (${tipo}::tipo_bloco, ${titulo}, ${i}, true)`;
+        criados++;
+      }
+    }
+
+    // Secoes que existem mas nao estao na ordem desejada vao para o fim,
+    // desativadas. Nada e apagado — a Cecilia pode reativar no admin.
+    const usados = ORDEM_DESEJADA.map((o) => o.tipo);
+    const sobra = await sql`
+      UPDATE blocos_home SET ativo = false, ordem = 90
+      WHERE tipo <> ALL(${usados}::tipo_bloco[]) AND ativo = true
+      RETURNING tipo
+    `;
+
+    console.log(`✅ Seções da home sincronizadas (${criados} criada(s))`);
+    if (sobra.length > 0) {
+      console.log(`   Desativadas (sem apagar): ${sobra.map((r: any) => r.tipo).join(", ")}`);
+    }
+  } catch (e: any) {
+    if (String(e.message).includes("tipo_bloco")) {
+      console.log("⚠️  Seções da home NÃO sincronizadas: falta a migration 0002.");
+      console.log("   Rode `npm run db:migrate` e execute este script de novo.");
+    } else {
+      console.log("⚠️  Seções da home:", e.message);
+    }
+  }
+
+  // ─── 8. Relatorio final ────────────────────────────────────
   const [depois] = await sql`SELECT nome, telefone, whatsapp, email, descricao_curta, cidade FROM pousada LIMIT 1`;
   const [pAtivos] = await sql`SELECT count(*)::int AS c FROM passeios WHERE ativo = true`;
   const [qAtivos] = await sql`SELECT count(*)::int AS c FROM quartos WHERE ativo = true`;

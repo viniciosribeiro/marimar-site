@@ -21,7 +21,7 @@ export default function ComoChegarPage() {
       <div className="space-y-4 mb-12">
         {CHEGADA_ETAPAS.map((e) => (
           <div key={e.n} className="flex gap-5 bg-white rounded-marca p-6 border border-gray-100 shadow-marca">
-            <div className="shrink-0 w-10 h-10 rounded-full bg-marca text-white flex items-center justify-center font-bold">
+            <div className="shrink-0 w-10 h-10 rounded-full bg-marca text-marca-texto flex items-center justify-center font-bold">
               {e.n}
             </div>
             <div>
@@ -98,7 +98,7 @@ export default function ComoChegarPage() {
         </p>
         <div className="flex flex-wrap gap-2">
           <a href={`https://www.google.com/maps/search/?api=1&query=${ENDERECO.lat},${ENDERECO.lng}`} target="_blank" rel="noopener noreferrer"
-            className="bg-marca hover:bg-marca-hover text-white px-4 py-2.5 rounded-marca text-sm font-semibold transition-marca">
+            className="bg-marca hover:bg-marca-hover text-marca-texto px-4 py-2.5 rounded-marca text-sm font-semibold transition-marca">
             Abrir no Google Maps
           </a>
           <a href={`https://www.openstreetmap.org/?mlat=${ENDERECO.lat}&mlon=${ENDERECO.lng}#map=17/${ENDERECO.lat}/${ENDERECO.lng}`} target="_blank" rel="noopener noreferrer"
@@ -116,7 +116,7 @@ export default function ComoChegarPage() {
 
 function Valor({ rotulo, valor, destaque }: { rotulo: string; valor: string; destaque?: boolean }) {
   return (
-    <div className={`rounded-marca p-4 text-center ${destaque ? "bg-marca text-white" : "bg-white border border-gray-100"}`}>
+    <div className={`rounded-marca p-4 text-center ${destaque ? "bg-marca text-marca-texto" : "bg-white border border-gray-100"}`}>
       <p className={`text-xs mb-1 ${destaque ? "text-white/75" : "text-gray-400"}`}>{rotulo}</p>
       <p className={`font-bold ${destaque ? "text-white" : "text-gray-900"}`}>{valor}</p>
     </div>

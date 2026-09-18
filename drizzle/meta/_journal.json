@@ -15,6 +15,13 @@
       "when": 1789717805194,
       "tag": "0001_tema_jsonb",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789720623299,
+      "tag": "0002_blocos_home_tipos",
+      "breakpoints": true
     }
   ]
 }

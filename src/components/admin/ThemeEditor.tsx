@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { salvarTema } from "@/app/(admin)/admin/identidade-visual/actions";
+import { avaliarCorDeMarca, textoIdeal } from "@/lib/contraste";
 
 const FONTES = ["Geist", "Inter", "Roboto", "Open Sans", "Lato", "Montserrat", "Playfair Display", "Merriweather", "Poppins", "Nunito", "Raleway"];
 
@@ -83,7 +84,9 @@ export function ThemeEditor({ initial }: { initial: any }) {
               ))}
             </div>
             <Cor rotulo="Cor principal" valor={primaria} onChange={setPrimaria} nome="cor_primaria" />
+            <Contraste cor={primaria} />
             <Cor rotulo="Cor de destaque" valor={secundaria} onChange={setSecundaria} nome="cor_secundaria" />
+            <Contraste cor={secundaria} />
           </Card>
         )}
 
@@ -178,6 +181,10 @@ export function ThemeEditor({ initial }: { initial: any }) {
           <p className="text-[11px] text-gray-400 text-center mt-2 leading-relaxed">
             Todas as abas são salvas de uma vez.
           </p>
+          <a href="/" target="_blank" rel="noopener noreferrer"
+            className="block text-center text-xs text-gray-500 hover:text-gray-900 mt-3 underline underline-offset-2">
+            Abrir o site em outra aba ↗
+          </a>
         </div>
       </div>
     </form>
@@ -225,6 +232,27 @@ function Previa({ primaria, secundaria, fonteT, fonteC, raio, sombra, logo, bann
           Ver disponibilidade
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ─────────── Diagnóstico de contraste ─────────── */
+function Contraste({ cor }: { cor: string }) {
+  const d = avaliarCorDeMarca(cor);
+  if (!d) return null;
+  const txt = textoIdeal(cor);
+  return (
+    <div className={`flex items-start gap-3 rounded-lg p-3 mb-3 text-xs leading-relaxed ${
+      d.ok ? "bg-green-50 border border-green-200 text-green-900"
+           : "bg-amber-50 border border-amber-200 text-amber-900"}`}>
+      <span className="px-2 py-1 rounded font-semibold shrink-0 text-[11px]"
+        style={{ background: cor, color: txt }}>
+        Botão
+      </span>
+      <span>
+        <strong>{d.ok ? "✓" : "⚠"} {d.mensagem}</strong>
+        {!d.ok && <span className="block mt-1 opacity-80">Hóspedes leem o site no celular, muitas vezes na praia.</span>}
+      </span>
     </div>
   );
 }

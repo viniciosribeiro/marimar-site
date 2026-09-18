@@ -75,7 +75,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-screen flex flex-col bg-fundo">
       {mostrarBanner && (
-        <div className="bg-acento text-white text-center text-sm px-4 py-2.5">
+        <div className="bg-acento text-acento-texto text-center text-sm px-4 py-2.5">
           <span className={banner.animado !== false ? "inline-block animate-pulse" : ""}>
             {banner.texto}
           </span>
@@ -111,7 +111,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           <div className="flex items-center gap-2">
             <Link
               href="/reservar"
-              className="hidden sm:inline-block bg-marca hover:bg-marca-hover text-white px-4 py-2 rounded-marca text-sm font-semibold transition-marca"
+              className="hidden sm:inline-block bg-marca hover:bg-marca-hover text-marca-texto px-4 py-2 rounded-marca text-sm font-semibold transition-marca"
             >
               Reservar
             </Link>
@@ -158,7 +158,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
                   href={`https://wa.me/${wa}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-marca text-sm font-medium text-white bg-acento hover:bg-acento-hover transition-marca"
+                  className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-marca text-sm font-medium text-acento-texto bg-acento hover:bg-acento-hover transition-marca"
                 >
                   💬 Falar no WhatsApp
                 </a>

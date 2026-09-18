@@ -150,7 +150,7 @@ async function main() {
 
   // ─── 9. Blocos da Home ─────────────────────────────────────
   const blocos = [
-    { tipo: "hero", titulo: "Pousada Ilha do Mel Marimar", subtitulo: "Seu refugio pe na areia em Encantadas.", ordem: 1 },
+    { tipo: "hero", titulo: "Pousada Marimar", subtitulo: null, ordem: 1 },
     { tipo: "sobre", titulo: "Bem-vindo a Marimar", subtitulo: "Conheca nossa historia.", ordem: 2 },
     { tipo: "quartos", titulo: "Nossos Quartos", subtitulo: "Do standard ao premium.", ordem: 3 },
     { tipo: "galeria", titulo: "Galeria", subtitulo: "Nossos espacos.", ordem: 4 },

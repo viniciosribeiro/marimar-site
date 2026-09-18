@@ -48,7 +48,7 @@ export default function RestaurantePage() {
           <p className="text-xs text-gray-400 mt-1">Plus Code {ENDERECO.plusCode}</p>
         </div>
         <div className="flex gap-2 shrink-0">
-          <Link href="/como-chegar" className="bg-marca hover:bg-marca-hover text-white px-4 py-2.5 rounded-marca text-sm font-semibold transition-marca">Como chegar</Link>
+          <Link href="/como-chegar" className="bg-marca hover:bg-marca-hover text-marca-texto px-4 py-2.5 rounded-marca text-sm font-semibold transition-marca">Como chegar</Link>
           <a href={`https://wa.me/${CONTATO.whatsappDigitos}`} target="_blank" rel="noopener noreferrer"
             className="border border-gray-300 text-gray-700 px-4 py-2.5 rounded-marca text-sm font-medium hover:bg-white transition-marca">
             Falar no WhatsApp

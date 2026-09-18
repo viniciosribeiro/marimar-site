@@ -12,6 +12,8 @@ export const origemLeadEnum = pgEnum("origem_lead", ["site", "whatsapp", "agente
 export const tipoBlocoEnum = pgEnum("tipo_bloco", [
   "hero", "sobre", "quartos", "galeria", "pacotes",
   "passeios", "depoimentos", "mapa", "cta", "faq",
+  // Adicionados no redesign de 18/09/2026 (migration 0002)
+  "complexo", "diferenciais", "restaurante", "avaliacoes",
 ]);
 
 // ─── Pousada ─────────────────────────────────────────────────────

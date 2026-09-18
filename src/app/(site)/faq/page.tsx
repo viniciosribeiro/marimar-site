@@ -56,7 +56,7 @@ export default async function FaqPage() {
         <p className="text-sm text-gray-600 mb-4">Não achou o que precisava?</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a href={`https://wa.me/${CONTATO.whatsappDigitos}`} target="_blank" rel="noopener noreferrer"
-            className="bg-marca hover:bg-marca-hover text-white px-5 py-2.5 rounded-marca text-sm font-semibold transition-marca">
+            className="bg-marca hover:bg-marca-hover text-marca-texto px-5 py-2.5 rounded-marca text-sm font-semibold transition-marca">
             💬 Perguntar no WhatsApp
           </a>
           <Link href="/politicas" className="border border-gray-300 text-gray-700 px-5 py-2.5 rounded-marca text-sm font-medium hover:bg-white transition-marca">

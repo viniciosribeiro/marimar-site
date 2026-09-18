@@ -85,7 +85,7 @@ export default function AvaliacoesPage() {
       )}
 
       <div className="text-center mt-12">
-        <Link href="/reservar" className="inline-block bg-marca hover:bg-marca-hover text-white px-6 py-3 rounded-marca font-semibold transition-marca">
+        <Link href="/reservar" className="inline-block bg-marca hover:bg-marca-hover text-marca-texto px-6 py-3 rounded-marca font-semibold transition-marca">
           Consultar disponibilidade
         </Link>
       </div>

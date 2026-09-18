@@ -48,7 +48,7 @@ export default function EventosPage() {
         <p className="text-sm text-gray-600 leading-relaxed mb-5 max-w-lg mx-auto">{EVENTOS.avisoPendente}</p>
         <a href={`https://wa.me/${CONTATO.whatsappDigitos}?text=${encodeURIComponent("Olá! Gostaria de informações sobre eventos na Pousada Marimar.")}`}
           target="_blank" rel="noopener noreferrer"
-          className="inline-block bg-marca hover:bg-marca-hover text-white px-6 py-3 rounded-marca font-semibold transition-marca">
+          className="inline-block bg-marca hover:bg-marca-hover text-marca-texto px-6 py-3 rounded-marca font-semibold transition-marca">
           💬 Falar sobre meu evento
         </a>
       </div>

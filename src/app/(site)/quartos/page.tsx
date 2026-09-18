@@ -116,7 +116,7 @@ export default async function QuartosPage() {
           <p className="font-medium text-gray-900 mb-1">Tarifas e disponibilidade em tempo real</p>
           <p className="text-sm text-gray-600">Informe suas datas para ver quais suítes estão livres e por quanto.</p>
         </div>
-        <Link href="/reservar" className="bg-marca hover:bg-marca-hover text-white px-5 py-3 rounded-marca text-sm font-semibold transition-marca whitespace-nowrap shrink-0">
+        <Link href="/reservar" className="bg-marca hover:bg-marca-hover text-marca-texto px-5 py-3 rounded-marca text-sm font-semibold transition-marca whitespace-nowrap shrink-0">
           Consultar disponibilidade
         </Link>
       </div>
