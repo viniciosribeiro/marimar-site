@@ -1,7 +1,4 @@
-import {
-  pgTable, varchar, text, boolean, timestamp, integer,
-  doublePrecision, jsonb, uuid, primaryKey, index, pgEnum,
-} from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, boolean, timestamp, integer, doublePrecision, jsonb, uuid, primaryKey, index, pgEnum, numeric } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 // ─── Enums ───────────────────────────────────────────────────────
@@ -277,4 +274,48 @@ export const auditLog = pgTable("audit_log", {
   diff: jsonb("diff"),
   ip: varchar("ip", { length: 45 }),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
+});
+
+// ─── Cardapio digital ───────────────────────────────────────────
+// O Marimar Cafe Bistro Bar nao tinha cardapio no sistema: o site so
+// descrevia o restaurante em texto. Estas duas tabelas guardam o cardapio
+// de verdade, editavel pelo admin.
+
+export const cardapioCategorias = pgTable("cardapio_categorias", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  nome: varchar("nome", { length: 120 }).notNull(),
+  slug: varchar("slug", { length: 120 }).notNull().unique(),
+  descricao: text("descricao"),
+  icone: varchar("icone", { length: 16 }),
+  /** Horario em que essa secao e servida: "12h às 16h". Vazio = sempre. */
+  horario: varchar("horario", { length: 60 }),
+  ordem: integer("ordem").default(0).notNull(),
+  ativo: boolean("ativo").default(true).notNull(),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+});
+
+export const cardapioItens = pgTable("cardapio_itens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  categoria_id: uuid("categoria_id")
+    .references(() => cardapioCategorias.id, { onDelete: "cascade" })
+    .notNull(),
+  nome: varchar("nome", { length: 180 }).notNull(),
+  descricao: text("descricao"),
+  /** numeric evita erro de arredondamento de ponto flutuante em dinheiro. */
+  preco: numeric("preco", { precision: 10, scale: 2 }),
+  /** Preenchido so quando ha promocao; a UI risca o preco cheio. */
+  preco_promocional: numeric("preco_promocional", { precision: 10, scale: 2 }),
+  /** "Serve 2 pessoas", "350ml" — texto livre ao lado do preco. */
+  porcao: varchar("porcao", { length: 80 }),
+  foto_url: text("foto_url"),
+  /** vegetariano | vegano | sem-gluten | sem-lactose | picante | novidade */
+  marcadores: jsonb("marcadores").$type<string[]>().default(sql`'[]'::jsonb`),
+  /** Aparece com selo de destaque no topo da categoria. */
+  destaque: boolean("destaque").default(false).notNull(),
+  /** Diferente de `ativo`: o item existe no cardapio mas acabou hoje. */
+  disponivel: boolean("disponivel").default(true).notNull(),
+  ordem: integer("ordem").default(0).notNull(),
+  ativo: boolean("ativo").default(true).notNull(),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
 });

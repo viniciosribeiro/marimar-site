@@ -21,6 +21,10 @@ const GRUPOS: Grupo[] = [
     ],
   },
   {
+    grupo: "Restaurante",
+    itens: [{ href: "/admin/cardapio", label: "Cardápio digital", icone: "🍽" }],
+  },
+  {
     grupo: "Conteúdo do site",
     itens: [
       { href: "/admin/blocos-home", label: "Blocos da Home", icone: "🧱" },

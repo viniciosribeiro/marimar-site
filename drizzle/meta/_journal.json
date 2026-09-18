@@ -22,6 +22,13 @@
       "when": 1789720623299,
       "tag": "0002_blocos_home_tipos",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789771518922,
+      "tag": "0003_cardapio",
+      "breakpoints": true
     }
   ]
 }

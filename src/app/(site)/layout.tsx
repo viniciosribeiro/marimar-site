@@ -14,13 +14,19 @@ import { COMPLEXO, IDENTIDADE } from "@/lib/conteudo-pousada";
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * Menu do topo. "Contato" saiu daqui de proposito: ja existe o botao
+ * flutuante de WhatsApp, o CTA "Reservar" e o rodape — e o espaco foi
+ * melhor usado por Cardapio e Galeria, que o hospede procura e nao achava.
+ */
 const NAV: [string, string][] = [
   ["/quartos", "Acomodações"],
   ["/restaurante", "Restaurante"],
+  ["/cardapio", "Cardápio"],
+  ["/galeria", "Galeria"],
   ["/a-pousada", "A Pousada"],
   ["/ilha-do-mel", "Ilha do Mel"],
   ["/como-chegar", "Como Chegar"],
-  ["/contato", "Contato"],
 ];
 
 /** Arquitetura completa — o topo mostra so o essencial, o rodape mostra tudo. */
@@ -29,6 +35,7 @@ const RODAPE = {
     ["/a-pousada", "A Pousada"],
     ["/quartos", "Acomodações"],
     ["/restaurante", "Restaurante"],
+    ["/cardapio", "Cardápio"],
     ["/cafe-da-manha", "Café da Manhã"],
     ["/eventos", "Eventos e Casamentos"],
     ["/galeria", "Galeria"],
@@ -115,7 +122,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
             >
               Reservar
             </Link>
-            <MobileNav itens={NAV} />
+            <MobileNav itens={[...NAV, ["/contato", "Contato"]]} />
           </div>
         </div>
       </header>

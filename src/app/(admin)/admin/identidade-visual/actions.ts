@@ -33,6 +33,7 @@ export async function salvarTema(formData: FormData) {
   };
 
   const tema = {
+    fonteManuscrita: txt("fonteManuscrita") ?? "Caveat",
     raio: txt("raio") ?? "12",
     sombra: txt("sombra") ?? "sm",
     animacoes: formData.get("animacoes") === "on",

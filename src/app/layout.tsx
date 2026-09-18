@@ -10,14 +10,22 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 /** Fontes que o editor visual oferece. Geist ja vem no bundle; as outras
  *  sao buscadas no Google Fonts so quando o admin realmente escolhe uma. */
 const FONTES_GOOGLE = new Set([
-  "Inter", "Roboto", "Open Sans", "Lato", "Montserrat",
-  "Playfair Display", "Merriweather", "Poppins", "Nunito", "Raleway",
+  // Sem serifa — corpo de texto
+  "Inter", "Roboto", "Open Sans", "Lato", "Montserrat", "Poppins", "Nunito", "Raleway",
+  // Serifadas — titulos editoriais
+  "Playfair Display", "Merriweather", "Lora", "Cormorant Garamond", "Libre Baskerville", "Spectral",
+  // Manuscritas — anotacoes decorativas
+  "Caveat", "Kalam", "Dancing Script", "Shadows Into Light", "Patrick Hand", "Gloria Hallelujah",
 ]);
 
 type Tema = {
   raio?: string;
   sombra?: "none" | "sm" | "md" | "lg";
   animacoes?: boolean;
+  /** Fonte das anotacoes manuscritas. Vazio ou "nenhuma" desliga o recurso. */
+  fonteManuscrita?: string;
+  /** Elementos decorativos (ondas, palmeiras). Desligavel. */
+  decorativos?: boolean;
 };
 
 const SOMBRAS: Record<string, string> = {
@@ -63,10 +71,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const acento = p?.cor_secundaria || "#0EA5E9";
   const fonteTitulo = p?.fonte_titulo || "";
   const fonteCorpo = p?.fonte_corpo || "";
+  const fonteManuscrita = (p?.tema as Tema)?.fonteManuscrita ?? "Caveat";
   const tema: Tema = (p?.tema as Tema) || {};
 
   // So busca no Google Fonts o que o admin escolheu de fato
-  const googleFonts = [fonteTitulo, fonteCorpo]
+  const googleFonts = [fonteTitulo, fonteCorpo, fonteManuscrita]
     .filter((f) => FONTES_GOOGLE.has(f))
     .filter((f, i, a) => a.indexOf(f) === i);
   const googleHref = googleFonts.length
@@ -78,6 +87,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const pilha = (nome: string) =>
     nome && nome !== "Geist"
       ? `"${nome}", var(--font-geist-sans), system-ui, sans-serif`
+      : `var(--font-geist-sans), system-ui, sans-serif`;
+
+  // Manuscrita desligada = cai para a fonte de corpo, e as anotacoes somem
+  // visualmente sem quebrar o layout (ver componente <Manuscrita>).
+  const pilhaManuscrita =
+    fonteManuscrita && fonteManuscrita !== "nenhuma"
+      ? `"${fonteManuscrita}", var(--font-geist-sans), cursive`
       : `var(--font-geist-sans), system-ui, sans-serif`;
 
   // Cor de texto que realmente se le sobre cada cor de marca. Sem isto, um
@@ -109,6 +125,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           --acento-texto:${acentoTexto};
           --fonte-titulo:${pilha(fonteTitulo)};
           --fonte-corpo:${pilha(fonteCorpo)};
+          --fonte-manuscrita:${pilhaManuscrita};
           --raio:${raio};
           --sombra:${sombra};
           --duracao:${duracao};

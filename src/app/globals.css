@@ -23,6 +23,9 @@
   --acento: #0EA5E9;
   --fonte-titulo: var(--font-geist-sans), system-ui, sans-serif;
   --fonte-corpo: var(--font-geist-sans), system-ui, sans-serif;
+  /* Manuscrita para as anotacoes de apoio ("Um paraiso sem pressa").
+     E decorativa: nunca carrega informacao que so exista nela. */
+  --fonte-manuscrita: "Caveat", var(--font-geist-sans), cursive;
 
   /* Escala derivada da cor de marca. Uma cor de entrada, tom completo.
      oklab mantem a luminosidade percebida coerente entre matizes. */
@@ -41,10 +44,17 @@
   --acento-hover:   color-mix(in oklab, var(--acento), black 12%);
   --acento-suave:   color-mix(in oklab, var(--acento), white 88%);
 
-  /* Superficies */
+  /* Superficies — o mockup troca o cinza frio por areia quente.
+     `--fundo-suave` continua sendo o fundo alternado das secoes; agora
+     ele e creme em vez de cinza-azulado. */
   --fundo: #ffffff;
-  --texto: #171717;
-  --fundo-suave: #f8fafc;
+  --texto: #1f2937;
+  --fundo-suave: #fdf8f2;
+  --areia: #faf0e3;
+  --areia-forte: #f2e2cc;
+  --tinta: #12324f;        /* titulos: azul-petroleo profundo, nao preto */
+  --tinta-suave: #4b5c6b;  /* texto de apoio */
+  --linha: #ead9c2;        /* bordas e traços decorativos */
 
   /* Forma — controlado pela aba "Avancado" do editor visual */
   --raio: 0.75rem;
@@ -85,6 +95,7 @@
   /* Tipografia */
   --font-titulo: var(--fonte-titulo);
   --font-corpo: var(--fonte-corpo);
+  --font-manuscrita: var(--fonte-manuscrita);
 
   /* Forma */
   --radius-marca: var(--raio);
@@ -100,6 +111,8 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--fonte-titulo);
+  color: var(--tinta);
+  letter-spacing: -0.015em;
 }
 
 /* O site e desenhado em tema claro (cards brancos, texto escuro).

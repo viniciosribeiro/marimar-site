@@ -4,7 +4,7 @@ import { useState } from "react";
 import { salvarTema } from "@/app/(admin)/admin/identidade-visual/actions";
 import { avaliarCorDeMarca, textoIdeal } from "@/lib/contraste";
 
-const FONTES = ["Geist", "Inter", "Roboto", "Open Sans", "Lato", "Montserrat", "Playfair Display", "Merriweather", "Poppins", "Nunito", "Raleway"];
+const FONTES = ["Geist", "Inter", "Roboto", "Open Sans", "Lato", "Montserrat", "Poppins", "Nunito", "Raleway", "Playfair Display", "Lora", "Merriweather", "Cormorant Garamond", "Libre Baskerville", "Spectral"];
 
 const PALETAS = [
   { n: "Oceano", p: "#0D9488", s: "#0EA5E9" }, { n: "Tropical", p: "#059669", s: "#D97706" },
@@ -12,6 +12,50 @@ const PALETAS = [
   { n: "Verão", p: "#2563EB", s: "#F97316" },  { n: "Natureza", p: "#166534", s: "#CA8A04" },
   { n: "Rosa", p: "#BE185D", s: "#EC4899" },   { n: "Âmbar", p: "#B45309", s: "#F59E0B" },
 ];
+
+/**
+ * Conjuntos completos: cor + fontes + forma de uma vez.
+ *
+ * Trocar so a paleta nao muda o CARATER do site — o mockup editorial
+ * depende tanto da serifada quanto da cor. Aqui a Cecilia troca o visual
+ * inteiro num clique, sem precisar acertar cinco campos separados.
+ */
+const CONJUNTOS = [
+  {
+    id: "editorial",
+    nome: "Editorial Marimar",
+    desc: "Serifada elegante, anotações à mão, cantos suaves",
+    p: "#B45309", s: "#0E7490",
+    titulo: "Playfair Display", corpo: "Inter", manuscrita: "Caveat",
+    raio: "12", sombra: "sm",
+  },
+  {
+    id: "litoral",
+    nome: "Litoral",
+    desc: "Verde-água e areia, leitura leve",
+    p: "#0D9488", s: "#F59E0B",
+    titulo: "Lora", corpo: "Inter", manuscrita: "Caveat",
+    raio: "12", sombra: "sm",
+  },
+  {
+    id: "classico",
+    nome: "Clássico",
+    desc: "Sóbrio, sem manuscrito, cantos retos",
+    p: "#1E3A5F", s: "#B45309",
+    titulo: "Libre Baskerville", corpo: "Inter", manuscrita: "nenhuma",
+    raio: "6", sombra: "sm",
+  },
+  {
+    id: "moderno",
+    nome: "Moderno",
+    desc: "Sem serifa, contornos arredondados",
+    p: "#0891B2", s: "#F97316",
+    titulo: "Montserrat", corpo: "Inter", manuscrita: "nenhuma",
+    raio: "20", sombra: "md",
+  },
+] as const;
+
+const MANUSCRITAS = ["Caveat", "Kalam", "Dancing Script", "Shadows Into Light", "Patrick Hand", "Gloria Hallelujah", "nenhuma"];
 
 const ABAS = [
   { id: "cores", label: "Cores" },
@@ -43,8 +87,15 @@ export function ThemeEditor({ initial }: { initial: any }) {
   const [bannerTexto, setBannerTexto] = useState(banner.texto || "");
   const [bannerSubtexto, setBannerSubtexto] = useState(banner.subtexto || "");
   const [bannerAnimado, setBannerAnimado] = useState(banner.animado !== false);
+  const [manuscrita, setManuscrita] = useState(t.fonteManuscrita ?? "Caveat");
 
   const temaFaltando = initial && initial.tema === undefined;
+
+  function aplicarConjunto(c: (typeof CONJUNTOS)[number]) {
+    setPrimaria(c.p); setSecundaria(c.s);
+    setFonteT(c.titulo); setFonteC(c.corpo); setManuscrita(c.manuscrita);
+    setRaio(c.raio); setSombra(c.sombra);
+  }
 
   return (
     <form action={salvarTema} className="grid grid-cols-1 xl:grid-cols-5 gap-6">
@@ -69,6 +120,30 @@ export function ThemeEditor({ initial }: { initial: any }) {
         </div>
 
         {aba === "cores" && (
+          <>
+          <Card titulo="Estilo do site" ajuda="Um clique troca cor, fontes e forma de uma vez. Depois dá para ajustar cada item.">
+            <div className="grid sm:grid-cols-2 gap-2.5">
+              {CONJUNTOS.map((c) => {
+                const ativo = primaria === c.p && fonteT === c.titulo;
+                return (
+                  <button key={c.id} type="button" onClick={() => aplicarConjunto(c)}
+                    className={`text-left p-3 rounded-xl border-2 transition-all ${
+                      ativo ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"
+                    }`}>
+                    <div className="flex gap-1 mb-2">
+                      <span className="flex-1 h-5 rounded" style={{ background: c.p }} />
+                      <span className="w-4 h-5 rounded" style={{ background: c.s }} />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-900">{c.nome}</p>
+                    <p className="text-[11px] text-gray-500 leading-snug mt-0.5">{c.desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+
+          <div className="h-4" />
+
           <Card titulo="Cores da marca" ajuda="A cor principal gera sozinha os tons de hover, fundo e borda usados em todo o site.">
             <p className="text-xs font-medium text-gray-500 mb-2">Paletas prontas</p>
             <div className="grid grid-cols-4 gap-2 mb-5">
@@ -88,6 +163,7 @@ export function ThemeEditor({ initial }: { initial: any }) {
             <Cor rotulo="Cor de destaque" valor={secundaria} onChange={setSecundaria} nome="cor_secundaria" />
             <Contraste cor={secundaria} />
           </Card>
+          </>
         )}
 
         {aba === "tipografia" && (
@@ -97,9 +173,22 @@ export function ThemeEditor({ initial }: { initial: any }) {
               Pousada Marimar
             </div>
             <Select rotulo="Corpo do texto" nome="fonte_corpo" valor={fonteC} onChange={setFonteC} opcoes={FONTES} />
-            <p style={{ fontFamily: fonteC }} className="text-sm text-gray-600 mt-3">
+            <p style={{ fontFamily: fonteC }} className="text-sm text-gray-600 mt-3 mb-5">
               O Marimar Café Bistrô Bar fica em frente ao mar, e a pousada logo aos fundos.
             </p>
+
+            <div className="border-t border-gray-100 pt-4">
+              <Select rotulo="Anotações à mão" nome="fonteManuscrita" valor={manuscrita} onChange={setManuscrita} opcoes={MANUSCRITAS} />
+              <p className="text-xs text-gray-500 leading-relaxed mt-1">
+                Frases decorativas ao lado dos títulos, como “Um paraíso sem pressa”.
+                Escolha <strong>nenhuma</strong> para desligar — o site continua completo, só sem elas.
+              </p>
+              {manuscrita !== "nenhuma" && (
+                <p style={{ fontFamily: manuscrita }} className="text-2xl text-gray-700 mt-3">
+                  Um paraíso sem pressa
+                </p>
+              )}
+            </div>
           </Card>
         )}
 
