@@ -19,6 +19,42 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-19 (4) — A tela de banners aparecia sem login
+
+**Autor:** Claude Opus 5 (Cowork)
+
+Conferindo o módulo recém-publicado em produção, `/admin/banners` **renderizou
+a lista inteira sem sessão** — sidebar, banners e tudo. A tela seguinte
+(`/admin/identidade-visual`) pediu login normalmente, e foi esse contraste que
+denunciou o problema.
+
+**Por quê:** no admin deste projeto, o `layout.tsx` desenha a moldura mas não
+protege nada — **cada página faz a própria checagem**. Todas fazem; a de
+banners, criada agora, não fazia.
+
+O estrago real era limitado: as server actions chamam `auth()` antes de tocar
+no banco, então ninguém sem sessão criava, editava ou excluía nada. Mas a
+**leitura** passava: dava para ver os banners cadastrados, inclusive os
+desligados e os ainda não publicados — exatamente o tipo de coisa que uma
+pousada agenda com antecedência e não quer mostrar.
+
+Corrigido com as duas linhas que as outras quatorze telas já tinham. Varri as
+demais páginas do admin para garantir que essa era a única: era. A única sem
+guarda agora é `/admin/login`, que é o esperado.
+
+Também conferido no mesmo passo, já que a sessão estava válida: a rota de
+upload (`/api/admin/upload`) valida a sessão dentro de `onBeforeGenerateToken`,
+antes de emitir o token do Blob — essa estava certa.
+
+### Verificado nesta passada (produção)
+
+- Módulo de banners no ar, com o estado vazio correto — o que confirma que a
+  migration `0005_banners` rodou e a tabela existe
+- Logo grande e título do topo em branco, as duas correções da sessão
+- `tsc --noEmit` limpo
+
+---
+
 ## 2026-09-19 (3) — Banners do topo, e um título que nunca ficou branco
 
 **Autor:** Claude Opus 5 (Cowork)

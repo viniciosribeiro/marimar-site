@@ -1,4 +1,6 @@
 import postgres from "postgres";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { blobConfigurado } from "@/lib/blob";
 import { PainelBanners } from "./PainelBanners";
 import type { Banner } from "./FormBanner";
@@ -12,6 +14,13 @@ export default async function BannersPage({
 }: {
   searchParams: Promise<{ ok?: string; erro?: string }>;
 }) {
+  /* Cada pagina do admin faz a propria checagem — o layout desenha a
+     moldura, mas nao protege nada. Sem esta linha a lista de banners
+     aparecia para quem nao estava logado: as actions barravam a escrita,
+     mas a leitura passava. */
+  const sessao = await auth();
+  if (!sessao?.user) redirect("/admin/login");
+
   const { ok, erro } = await searchParams;
 
   let banners: Banner[] = [];
