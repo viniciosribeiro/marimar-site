@@ -6,6 +6,64 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-19 — Marina no site no ar, painel responsivo e voz no WhatsApp
+**Autor:** Claude Opus 5 (Cowork)
+**Commits:** 44b24b6
+
+### O chat do site entrou no ar
+O gateway do OpenClaw ja era publico pelo dominio que a Hostinger da ao app
+(`violet-mongoose-603045.hostingersite.com`) — nao precisou de tunel nem mudar
+o `bind`. O que faltava era **um endpoint desligado de fabrica**:
+
+```
+openclaw config set gateway.http.endpoints.chatCompletions.enabled true --strict-json
+```
+
+Sem ele, `/v1/models` e `/v1/chat/completions` respondem 404 mesmo com token
+valido. O sintoma engana: o token E aceito (a resposta ate devolve cookie de
+sessao), so que a rota nao existe.
+
+Na Vercel entraram `OPENCLAW_GATEWAY_URL`, `OPENCLAW_GATEWAY_TOKEN` e
+`OPENCLAW_MODELO=openclaw/default`.
+
+### O painel do chat crescia por cima do site
+Era `fixed` com apenas `bottom` e `right` e nenhuma altura maxima. Dois
+sintomas, uma causa: ele subia conforme a conversa aumentava, e a lista de
+mensagens nunca rolava — `overflow-y:auto` so rola quando o pai tem altura
+definida.
+
+As medidas foram para `.painel-chat`, no `globals.css`, porque mudam em quatro
+situacoes: celular em pe (tela cheia, `100svh`), celular deitado e telas com
+menos de 480px de altura (tela cheia tambem — um cartao de 34rem nao cabe),
+tablet e desktop (cartao ancorado com teto, mais botao de ampliar).
+
+### Ditado por voz no site
+Pelo reconhecimento do proprio navegador: o texto aparece no campo e a pessoa
+confere antes de enviar. Audio nao sai do aparelho e nao custa nada. O botao
+so aparece onde a API existe (Firefox nao tem) em vez de aparecer e falhar.
+
+### A Marina dizia ter enviado fotos, e inventava escassez
+No chat do site ela respondeu *"Enviei as fotos da Suite Lua de Mel"* — o canal
+e texto puro, nada foi enviado — e *"e a ultima unidade para essas datas"*, sem
+ter consultado disponibilidade.
+
+Duas correcoes: `CONTEXTO_CANAL`, em `src/lib/chat.ts`, entra como mensagem de
+sistema montada **no servidor** (nunca vinda do navegador, que poderia
+reescreve-la) e diz o que este canal consegue fazer; e a regra contra escassez
+inventada entrou na `marimar-pousada`, valendo tambem para o WhatsApp.
+
+### Voz no WhatsApp voltou — e a causa da quebra fomos nos
+Ela transcrevia e respondia falando ate a lista de permissao
+`agents.defaults.skills` ser aplicada em 18/09, que tirou `sag` (TTS) e
+`openai-whisper-api` (STT) do ar. Refeito pela config nativa do OpenClaw, que
+nao depende de habilidade nenhuma. Detalhes e comandos em `agente/README.md`.
+
+### Pendencias que isto deixou
+- O chat do site so tem entrada por voz. Resposta falada no site nao foi feita
+  — cada resposta seria uma chamada paga por caractere num canal publico.
+- `npm run lint` nao rodou ate o fim no shell da caixa (estourou o tempo).
+  `tsc --noEmit` passou limpo e o `npm run build` local passou.
+
 ## AAAA-MM-DD — Titulo curto
 **Autor:** quem fez (ex.: Claude Opus 5 / Agent Hermes / Vinicios)
 **Commits:** hashes envolvidos
