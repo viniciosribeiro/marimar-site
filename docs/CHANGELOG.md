@@ -518,7 +518,29 @@ visualmente** — a sessão do admin estava no login.
 
 ---
 
-## 2026-09-19 (deploy) — Deploy da terceira sessão: banners, alinhamento, cartões e conjunto logo+nome
+## 2026-09-19 (deploy 2) — Deploy da correção de rolagem horizontal no celular + teto da marca
+
+**Autor:** Agent Hermes (OpenRouter)
+**Commits:** `d8d54f2` `bf765b1`
+
+A home estourava a largura da tela em 390px — as abas da busca somavam ~430px, a caixa
+crescia e levava a página inteira. Corrigido com `min-w-0` nos dois níveis, abas
+dividindo a largura e rótulos curtos no celular. Teto do conjunto logo+nome também
+entrou.
+
+### Verificado em produção
+
+- API do agente: 401 sem header, 200 com
+- `/admin/banners` e `/admin/cartoes`: 307 → login
+- Build: zero erros, todas `ƒ`
+
+### Pendências (sem alteração)
+
+- `AGENT_API_KEY`: chave antiga ainda responde
+- DNS: domínio oficial é WordPress 5.8.16
+- 56 fotos do WordPress no servidor antigo
+
+---
 
 **Autor:** Agent Hermes (OpenRouter)
 **Commits:** `b68bc97` `e27713d` `4172c64` `07663bc` `7a988bb` `24dd160` `f220b21`
