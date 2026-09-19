@@ -64,7 +64,7 @@ export default async function QuartosPage({
       ];
 
   return (
-    <div className="p-6">
+    <div className="p-5 sm:p-8">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">Quartos</h1>
         <a href={`/admin/quartos?motor=${showMotor ? "0" : "1"}`} className="text-sm text-teal-600 hover:underline">
@@ -97,8 +97,8 @@ export default async function QuartosPage({
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden mt-6">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto mt-6">
+        <table className="w-full text-sm min-w-[40rem]">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="text-left p-3">Nome</th>

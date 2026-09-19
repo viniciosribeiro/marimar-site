@@ -120,14 +120,14 @@ export function Cardapio({ categorias }: { categorias: CategoriaCardapio[] }) {
         <div className="space-y-14">
           {filtradas.map((c) => (
             <section key={c.id} id={c.slug} className="scroll-mt-52">
-              <div className="flex items-baseline gap-4 mb-1">
-                <h2 className="font-titulo text-2xl font-bold text-tinta whitespace-nowrap">
+              <div className="flex items-baseline gap-4 mb-1 min-w-0">
+                <h2 className="font-titulo text-2xl font-bold text-tinta min-w-0 text-balance">
                   {c.icone && <span className="mr-2" aria-hidden>{c.icone}</span>}
                   {c.nome}
                 </h2>
-                <span className="h-px flex-1 bg-linha" aria-hidden />
+                <span className="hidden sm:block h-px flex-1 bg-linha" aria-hidden />
                 {c.horario && (
-                  <span className="text-xs text-tinta-suave whitespace-nowrap">🕐 {c.horario}</span>
+                  <span className="text-xs text-tinta-suave whitespace-nowrap shrink-0">🕐 {c.horario}</span>
                 )}
               </div>
               {c.descricao && <p className="text-sm text-tinta-suave mb-6">{c.descricao}</p>}

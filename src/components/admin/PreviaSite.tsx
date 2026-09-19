@@ -25,9 +25,9 @@ const PAGINAS = [
 ];
 
 const TELAS = [
-  { id: "celular", nome: "Celular", icone: "📱", largura: 390 },
-  { id: "tablet", nome: "Tablet", icone: "📲", largura: 820 },
-  { id: "computador", nome: "Computador", icone: "🖥", largura: 1280 },
+  { id: "celular", nome: "Celular", icone: "📱", largura: 390, altura: 780 },
+  { id: "tablet", nome: "Tablet", icone: "📲", largura: 820, altura: 700 },
+  { id: "computador", nome: "Computador", icone: "🖥", largura: 1280, altura: 760 },
 ] as const;
 
 export function PreviaSite({ tema, fontesUsadas }: { tema: Tema; fontesUsadas: string[] }) {
@@ -38,17 +38,27 @@ export function PreviaSite({ tema, fontesUsadas }: { tema: Tema; fontesUsadas: s
   const caixaRef = useRef<HTMLDivElement>(null);
   const [escala, setEscala] = useState(1);
 
-  const larguraAlvo = TELAS.find((t) => t.id === tela)!.largura;
+  const alvo = TELAS.find((t) => t.id === tela)!;
+  const larguraAlvo = alvo.largura;
+  const alturaAlvo = alvo.altura;
 
-  // Encolhe a previa para caber na coluna, sem cortar o layout
+  /**
+   * Encolhe a previa para caber na coluna.
+   *
+   * ResizeObserver e nao `window.resize`: a largura util muda quando o grid
+   * do editor troca de uma para duas colunas, sem a janela mudar de tamanho.
+   */
   useEffect(() => {
-    function medir() {
-      const disponivel = caixaRef.current?.clientWidth ?? larguraAlvo;
-      setEscala(Math.min(1, disponivel / larguraAlvo));
-    }
+    const caixa = caixaRef.current;
+    if (!caixa) return;
+    const medir = () => {
+      const disponivel = caixa.clientWidth;
+      if (disponivel > 0) setEscala(Math.min(1, disponivel / larguraAlvo));
+    };
     medir();
-    window.addEventListener("resize", medir);
-    return () => window.removeEventListener("resize", medir);
+    const obs = new ResizeObserver(medir);
+    obs.observe(caixa);
+    return () => obs.disconnect();
   }, [larguraAlvo]);
 
   /** Injeta (ou atualiza) o estilo do rascunho dentro do iframe. */
@@ -117,7 +127,18 @@ export function PreviaSite({ tema, fontesUsadas }: { tema: Tema; fontesUsadas: s
         </select>
       </div>
 
-      <div ref={caixaRef} className="rounded-xl border border-gray-200 bg-gray-100 overflow-hidden relative">
+      {/*
+        `transform: scale` NAO reduz o espaco que o elemento ocupa no layout:
+        o iframe de 1280px continuava exigindo 1280px de largura e estourava a
+        coluna do editor, jogando a previa por cima dos controles.
+        A caixa externa tem altura ja multiplicada pela escala e recorta o que
+        sobra; `min-w-0` impede o grid de crescer para caber o conteudo.
+      */}
+      <div
+        ref={caixaRef}
+        className="rounded-xl border border-gray-200 bg-gray-100 overflow-hidden relative w-full min-w-0"
+        style={{ height: Math.round(alturaAlvo * escala) }}
+      >
         {carregando && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-50">
             <span className="text-xs text-gray-400">carregando a prévia…</span>
@@ -125,11 +146,11 @@ export function PreviaSite({ tema, fontesUsadas }: { tema: Tema; fontesUsadas: s
         )}
 
         <div
+          className="absolute top-0 left-0 origin-top-left"
           style={{
             width: larguraAlvo,
-            height: 560 / escala,
+            height: alturaAlvo,
             transform: `scale(${escala})`,
-            transformOrigin: "top left",
           }}
         >
           <iframe
@@ -144,7 +165,7 @@ export function PreviaSite({ tema, fontesUsadas }: { tema: Tema; fontesUsadas: s
 
       <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
         Site real, com as suas mudanças aplicadas em cima — nada foi salvo ainda.
-        Largura simulada: {larguraAlvo}px{escala < 1 ? ` (reduzida a ${Math.round(escala * 100)}% para caber)` : ""}.
+        Tela simulada: {larguraAlvo}×{alturaAlvo}px{escala < 1 ? ` · reduzida a ${Math.round(escala * 100)}% para caber` : ""}.
       </p>
     </div>
   );

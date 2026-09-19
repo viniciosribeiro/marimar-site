@@ -34,12 +34,21 @@ export function TituloPagina({ children, className = "" }: { children: ReactNode
   );
 }
 
-/** Título de seção com o traço que continua para a direita. */
+/**
+ * Título de seção com o traço que continua para a direita.
+ *
+ * O título QUEBRA no celular. Com `whitespace-nowrap`, um título longo
+ * ("Ponto de referência no mapa") empurrava o traço para fora da tela e
+ * criava rolagem horizontal em 375px. O traço só aparece a partir de `sm`,
+ * onde existe espaço sobrando para ele — é ornamento, não informação.
+ */
 export function TituloSecao({ children, id }: { children: ReactNode; id?: string }) {
   return (
-    <div className="flex items-center gap-4 mb-1 scroll-mt-24" id={id}>
-      <h2 className="font-titulo text-2xl lg:text-[1.9rem] font-bold text-tinta whitespace-nowrap">{children}</h2>
-      <span className="h-px flex-1 bg-linha" aria-hidden />
+    <div className="flex items-baseline gap-4 mb-1 scroll-mt-24 min-w-0" id={id}>
+      <h2 className="font-titulo text-2xl lg:text-[1.9rem] font-bold text-tinta text-balance min-w-0">
+        {children}
+      </h2>
+      <span className="hidden sm:block h-px flex-1 bg-linha" aria-hidden />
     </div>
   );
 }
@@ -145,7 +154,7 @@ export function Botao({ href, children, icone, variante = "solido", externo = fa
 /* ─────────────── Selo ─────────────── */
 export function Selo({ children, tom = "areia" }: { children: ReactNode; tom?: "areia" | "marca" }) {
   return (
-    <span className={`inline-block text-xs px-3 py-1 rounded-full ${
+    <span className={`inline-block max-w-full text-xs px-3 py-1 rounded-full ${
       tom === "marca" ? "bg-marca text-marca-texto" : "bg-areia text-tinta border border-linha"
     }`}>
       {children}

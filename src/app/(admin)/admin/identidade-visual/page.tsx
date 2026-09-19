@@ -14,7 +14,7 @@ export default async function IdentidadeVisualPage({ searchParams }: { searchPar
   await sql.end();
 
   return (
-    <div className="p-6">
+    <div className="p-5 sm:p-8 min-w-0">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">🎨 Identidade Visual</h1>

@@ -10,7 +10,7 @@ export default async function DiagnosticoPage() {
     workerStatus=`Online (${latencia}ms)`;
     workerJson=data;
   } catch(e:any) { workerStatus="Offline"; erro=e.message; }
-  return(<div className="p-6"><h1 className="text-2xl font-bold mb-2">Diagnostico</h1><p className="text-sm text-gray-500 mb-6">Teste a conexao com o motor Desbravador</p>
+  return(<div className="p-5 sm:p-8"><h1 className="text-2xl font-bold mb-2">Diagnostico</h1><p className="text-sm text-gray-500 mb-6">Teste a conexao com o motor Desbravador</p>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <div className={`bg-white rounded-lg shadow p-4 ${workerJson?"border-green-500 border-2":"border-red-500 border-2"}`}><h3 className="font-semibold">Worker</h3><p className="text-2xl font-bold mt-2">{workerStatus}</p></div>
       <div className="bg-white rounded-lg shadow p-4"><h3 className="font-semibold">Quartos retornados</h3><p className="text-2xl font-bold mt-2">{workerJson?workerJson.quartos.length+workerJson.indisponiveis.length:"—"}</p></div>

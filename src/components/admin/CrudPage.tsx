@@ -53,8 +53,11 @@ export function CrudPage({ title, subtitle, lista, columns, fields, criarAction,
         )}
       </Modal>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <table className="w-full text-sm">
+      {/* overflow-x-auto: no celular a tabela rola em vez de espremer as
+          colunas a ponto de virar uma coluna de letras. min-w garante que
+          ela nao encolha a ponto de quebrar cada palavra. */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+        <table className="w-full text-sm min-w-[36rem]">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
               {columns.map((c: string) => (

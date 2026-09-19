@@ -116,7 +116,7 @@ export default async function ComoChegarPage() {
         {/* ─── Valores ─── */}
         <div className="flex items-baseline justify-between gap-4 flex-wrap mb-5">
           <TituloSecao>Valores da travessia</TituloSecao>
-          <span className="text-xs text-tinta-suave whitespace-nowrap">consultados em {ATUALIZADO_EM}</span>
+          <span className="text-xs text-tinta-suave whitespace-nowrap shrink-0">consultados em {ATUALIZADO_EM}</span>
         </div>
 
         <div className="grid lg:grid-cols-[1fr_1fr_1fr_1.3fr] gap-4">

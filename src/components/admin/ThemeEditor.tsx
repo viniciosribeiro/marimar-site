@@ -89,10 +89,13 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
     leitor.readAsText(arquivo);
   }
 
+  // minmax(0,...) nas duas colunas + min-w-0 nos filhos: em grid, o filho
+  // tem min-width:auto por padrao e se recusa a encolher abaixo do proprio
+  // conteudo. Era o que fazia a previa de 1280px estourar o layout.
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,26rem)_1fr] gap-6 items-start">
+    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] gap-6 items-start">
       {/* ═══════════ COLUNA DE CONTROLES ═══════════ */}
-      <div>
+      <div className="min-w-0">
         {temaFaltando && (
           <Alerta>
             A coluna <code>tema</code> não existe no banco. Rode <code>npm run db:migrate</code> —
@@ -100,10 +103,10 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
           </Alerta>
         )}
 
-        <div className="flex flex-wrap gap-1 mb-4 bg-gray-100 p-1 rounded-xl">
+        <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xl overflow-x-auto">
           {ABAS.map((a) => (
             <button key={a.id} type="button" onClick={() => setAba(a.id)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                 aba === a.id ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
               }`}>
               <span aria-hidden className="mr-1">{a.icone}</span>{a.nome}
@@ -180,7 +183,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
               </Card>
 
               <Card titulo="Escala gerada" ajuda="Derivada da cor principal. É o que o site usa em hover, fundos e bordas.">
-                <div className="grid grid-cols-6 gap-1">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                   {[
                     ["sutil", 95], ["suave", 88], ["borda", 72],
                     ["base", 0], ["hover", -12], ["escura", -38],
@@ -336,7 +339,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
       </div>
 
       {/* ═══════════ PRÉVIA ═══════════ */}
-      <div className="xl:sticky xl:top-6">
+      <div className="min-w-0 xl:sticky xl:top-6">
         <div className="flex items-center justify-between gap-3 mb-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Prévia ao vivo</p>
           {mudou && <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">não publicado</span>}

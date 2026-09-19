@@ -19,6 +19,54 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (10) — Responsividade: correções em cascata
+
+**Autor:** Claude Opus 5 (Cowork)
+
+A prévia do editor estourou o layout e cobriu os controles. Investigando, apareceram
+problemas de responsividade que iam além dela.
+
+### A causa raiz: `min-width: auto`
+Em grid e flex, o filho tem `min-width: auto` por padrão e **se recusa a encolher
+abaixo do próprio conteúdo**. O iframe de 1280px da prévia forçava a coluna inteira a
+ter 1280px, estourando a página e jogando a prévia por cima dos controles.
+
+Corrigido com `minmax(0, …)` nas colunas do grid e `min-w-0` nos filhos.
+
+### E um erro de conta
+A caixa da prévia usava `height: 560 / escala`. Dividir pela escala deixa a caixa
+**maior** quando a prévia encolhe — era o contrário. `transform: scale` também não
+reduz o espaço que o elemento ocupa no layout, então a caixa externa precisa ter a
+altura já multiplicada e recortar o resto.
+
+Aproveitando: a medição passou a usar `ResizeObserver` em vez de `window.resize`. A
+largura útil muda quando o grid troca de uma para duas colunas, sem a janela mudar
+de tamanho — o listener antigo não percebia.
+
+### `TituloSecao` criava rolagem horizontal no celular
+Usava `whitespace-nowrap`. Um título como "Ponto de referência no mapa" não quebrava
+e empurrava o traço decorativo para fora da tela em 375px. Agora o título quebra, e
+o traço só aparece a partir de `sm` — é ornamento, não informação.
+
+O mesmo valia para os títulos de seção do cardápio. Selos e legendas que ficam ao
+lado de um título ganharam `shrink-0`, para não empurrar o vizinho.
+
+### Admin
+- **Todas as tabelas rolam** no celular (`overflow-x-auto` + largura mínima), em vez
+  de espremer as colunas até cada palavra virar uma coluna de letras: leads, quartos,
+  usuários e o `CrudPage` genérico.
+- `CrudForm` empilha os campos no celular e só vira linha a partir de `lg`.
+- Padding das páginas passou de `p-6` fixo para `p-5 sm:p-8` em 8 telas.
+- Abas do editor rolam horizontalmente em vez de quebrar em três linhas.
+
+### Verificado
+Medido em 375px: `/`, `/quartos`, `/restaurante`, `/como-chegar`, `/a-pousada`,
+`/galeria` e `/reservar` — nenhuma com rolagem horizontal, nenhum elemento
+ultrapassando a viewport. A busca de disponibilidade continua trazendo os quartos do
+motor normalmente.
+
+---
+
 ## 2026-09-18 (9) — Restaurante+Cardápio fundidos e Identidade Visual reconstruída
 
 **Autor:** Claude Opus 5 (Cowork)

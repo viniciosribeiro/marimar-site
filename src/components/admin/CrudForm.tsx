@@ -31,7 +31,7 @@ export function CrudForm({
     <div>
       {error && <p className="text-sm text-red-600 bg-red-50 p-2 rounded mb-2">{error}</p>}
       {ok && <p className="text-sm text-green-600 bg-green-50 p-2 rounded mb-2">{ok}</p>}
-      <form action={action} className="bg-white rounded-lg shadow p-4 flex flex-wrap gap-3 items-end">
+      <form action={action} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 lg:items-end">
         {fields.map((f) => {
           if (f.type === "hidden") {
             return <input key={f.name} type="hidden" name={f.name} value={f.defaultValue} />;

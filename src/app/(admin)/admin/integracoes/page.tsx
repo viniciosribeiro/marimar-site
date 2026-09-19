@@ -44,7 +44,7 @@ export default async function IntegracoesPage() {
     : "⚠️ AGENT_API_KEY nao configurada no ambiente";
 
   return (
-    <div className="p-6 max-w-6xl">
+    <div className="p-5 sm:p-8 max-w-6xl">
       <h1 className="text-2xl font-bold mb-2">🔌 Integrações</h1>
       <p className="text-sm text-gray-500 mb-6">Monitoramento em tempo real de todas as conexões</p>
 

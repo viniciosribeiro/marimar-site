@@ -135,7 +135,7 @@ function Complexo({ t, s }: { t: string | null; s: string | null }) {
         </div>
         <div className="flex sm:flex-col items-center justify-center gap-2 py-2">
           <div className="h-px sm:h-full sm:w-px flex-1 bg-gray-200" />
-          <span className="text-xs text-gray-400 whitespace-nowrap px-2">anexada aos fundos</span>
+          <span className="text-xs text-tinta-suave whitespace-nowrap px-2 shrink-0">anexada aos fundos</span>
           <div className="h-px sm:h-full sm:w-px flex-1 bg-gray-200" />
         </div>
         <div className="bg-white border border-gray-200 rounded-marca p-6 text-center shadow-marca">

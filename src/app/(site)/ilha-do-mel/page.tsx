@@ -28,7 +28,7 @@ export default function IlhaDoMelPage() {
             <div className="flex items-start justify-between gap-4 mb-2 flex-wrap">
               <h3 className="font-titulo text-lg font-bold text-gray-900">{a.nome}</h3>
               {a.distanciaTexto && (
-                <span className="text-xs bg-marca-sutil text-marca-ativa px-3 py-1 rounded-full whitespace-nowrap">
+                <span className="text-xs bg-marca-sutil text-marca-ativa px-3 py-1 rounded-full whitespace-nowrap shrink-0">
                   {a.distanciaTexto}
                 </span>
               )}
