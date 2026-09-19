@@ -518,6 +518,28 @@ visualmente** — a sessão do admin estava no login.
 
 ---
 
+## 2026-09-19 (10) — A tela de integrações caía antes da migration
+
+**Autor:** Claude Opus 5 (Cowork)
+
+`column "chat_ativo" does not exist` — a tela inteira de Integrações quebrava
+entre o deploy e a migration `0008`.
+
+Erro meu, e do tipo que não tem desculpa: eu tinha acabado de isolar a consulta
+nova na home **exatamente por esse motivo**, e não fiz o mesmo aqui. Pior: a de
+Integrações é justamente a tela que a pessoa abre **para descobrir o que está
+quebrado**. Ela é a última que pode cair.
+
+Agora as três consultas do chat ficam em `try` próprio, e o cartão avisa qual
+migration falta em vez de derrubar a página. O botão de ligar o chat só aparece
+quando há o que ligar.
+
+**A regra que ficou:** consulta a tabela ou coluna criada na mesma leva de
+código vai em `try` isolado. O deploy e a migration nunca acontecem no mesmo
+instante, e a janela entre os dois não pode derrubar tela nenhuma.
+
+---
+
 ## 2026-09-19 (9) — Atendimento da Marina no site
 
 **Autor:** Claude Opus 5 (Cowork)

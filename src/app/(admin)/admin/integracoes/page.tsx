@@ -39,8 +39,18 @@ export default async function IntegracoesPage() {
      token, servidor a servidor. `GET /v1/models` porque e a chamada mais
      barata que prova as tres coisas de uma vez — alcance, token valido e
      gateway de pe — sem gastar credito de conversa. */
-  const [linhaChat] = await sql`SELECT chat_ativo FROM pousada LIMIT 1`;
-  const chatAtivo = Boolean((linhaChat as any)?.chat_ativo);
+  /* Isolado como o da home: entre o deploy e a migration 0008 a coluna e a
+     tabela nao existem, e uma falha aqui derruba a tela INTEIRA de
+     integracoes — justamente a tela que a pessoa abre para descobrir o que
+     esta quebrado. */
+  let chatAtivo = false;
+  let chatPendente = false;
+  try {
+    const [linhaChat] = await sql`SELECT chat_ativo FROM pousada LIMIT 1`;
+    chatAtivo = Boolean((linhaChat as any)?.chat_ativo);
+  } catch {
+    chatPendente = true;
+  }
 
   let gwOk = false, gwLat = 0, gwErro = "", gwModelos: string[] = [];
   if (gatewayConfigurado()) {
@@ -65,12 +75,20 @@ export default async function IntegracoesPage() {
     }
   }
 
-  const [chatHoje] = await sql`
-    SELECT COUNT(*)::int AS c FROM chat_mensagens
-    WHERE papel = 'visitante' AND criado_em > now() - interval '24 hours'`;
-  const [chatConversas] = await sql`
-    SELECT COUNT(DISTINCT sessao)::int AS c FROM chat_mensagens
-    WHERE criado_em > now() - interval '30 days'`;
+  let chatHoje = 0;
+  let chatConversas = 0;
+  try {
+    const [a] = await sql`
+      SELECT COUNT(*)::int AS c FROM chat_mensagens
+      WHERE papel = 'visitante' AND criado_em > now() - interval '24 hours'`;
+    const [b] = await sql`
+      SELECT COUNT(DISTINCT sessao)::int AS c FROM chat_mensagens
+      WHERE criado_em > now() - interval '30 days'`;
+    chatHoje = (a as any)?.c ?? 0;
+    chatConversas = (b as any)?.c ?? 0;
+  } catch {
+    chatPendente = true;
+  }
 
   // Stats do banco
   const [qCount] = await sql`SELECT count(*)::int as c FROM quartos WHERE ativo = true`;
@@ -106,21 +124,29 @@ export default async function IntegracoesPage() {
               do WhatsApp, pelo gateway do OpenClaw.
             </p>
           </div>
-          <form action={alternarChat}>
+          {!chatPendente && <form action={alternarChat}>
             <button type="submit"
               className={`px-4 py-2.5 rounded-lg text-sm font-medium ${
                 chatAtivo ? "border border-red-200 text-red-600 hover:bg-red-50" : "bg-gray-900 text-white"
               }`}>
               {chatAtivo ? "Desligar o chat" : "Ligar o chat"}
             </button>
-          </form>
+          </form>}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Info rotulo="Situação" valor={chatAtivo ? "No ar" : "Desligado"} tom={chatAtivo ? "ok" : "neutro"} />
-          <Info rotulo="Perguntas em 24h" valor={String((chatHoje as any)?.c ?? 0)} tom="neutro" />
-          <Info rotulo="Conversas em 30 dias" valor={String((chatConversas as any)?.c ?? 0)} tom="neutro" />
-        </div>
+        {chatPendente ? (
+          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 leading-relaxed">
+            Falta rodar <code>npm run db:migrate</code> (migration{" "}
+            <code>0008_chat_site</code>). Até lá o chat não existe — o resto
+            desta tela continua funcionando normalmente.
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Info rotulo="Situação" valor={chatAtivo ? "No ar" : "Desligado"} tom={chatAtivo ? "ok" : "neutro"} />
+            <Info rotulo="Perguntas em 24h" valor={String(chatHoje)} tom="neutro" />
+            <Info rotulo="Conversas em 30 dias" valor={String(chatConversas)} tom="neutro" />
+          </div>
+        )}
 
         <div className="mt-4 border-t border-gray-100 pt-4">
           <p className="text-xs font-medium text-gray-600 mb-2">Gateway do OpenClaw</p>
