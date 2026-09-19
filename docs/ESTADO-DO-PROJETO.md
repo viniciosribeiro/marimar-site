@@ -3,8 +3,8 @@
 > **Para agentes de IA:** este e o documento de entrada. Leia antes de tocar em codigo.
 > Mantenha-o atualizado ao final de cada sessao de trabalho, junto com `docs/CHANGELOG.md`.
 >
-> **Ultima atualizacao:** 19/09/2026 — deploy dos 6 commits de redesign (menu, cardápio, identidade visual, responsividade)
-> **Fase atual:** v1.1 publicada em `marimar-site.vercel.app`. **O domínio oficial ainda serve o WordPress antigo** — a migração de DNS é o próximo marco.
+> **Ultima atualizacao:** 19/09/2026 — terceira sessão: deploy de banners, alinhamento, cartões e logo+nome
+> **Fase atual:** v1.2 publicada em `marimar-site-rnkyimtse.vercel.app`. **O domínio oficial ainda serve o WordPress antigo** — a migração de DNS é o próximo marco.
 
 ---
 
@@ -243,15 +243,13 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 
 ### ✅ Verificado nesta sessão
 
-Deploy dos 6 commits de redesign, validado pelo Agent Hermes contra a URL do
-deployment e reconferido depois no alias estavel `marimar-site.vercel.app`:
+Deploy da terceira sessão validado contra `marimar-site-rnkyimtse.vercel.app`:
 
-- `npm run build`: limpo, 42+ rotas, todas as páginas do site como `ƒ`
-- API do agente: 401 sem header, 200 com — bypass corrigido mantido
-- `/cardapio` → 308 → `/restaurante#cardapio` (308 e o que o Next emite para
-  `permanent: true`; onde a doc antiga dizia 301, leia 308)
-- `/quartos` em producao: menu novo no ar, titulos em azul-petroleo e as 7 fotos
-  dos quartos servidas por `/_next/image` com 200
+- Migration `0007_blocos_itens` aplicada (cartões editáveis da home)
+- `npm run build`: limpo, todas as páginas do site como `ƒ`
+- API do agente: 401 sem header, 200 com
+- `/admin/banners` e `/admin/cartoes`: 307 → login (protegidos)
+- `/reservar`: dados do motor
 
 > **URL de producao e `marimar-site.vercel.app`.** A Vercel tambem da a cada
 > build uma URL propria (`marimar-site-<hash>.vercel.app`), que congela naquele

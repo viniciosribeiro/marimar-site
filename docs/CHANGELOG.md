@@ -468,7 +468,31 @@ visualmente** — a sessão do admin estava no login.
 
 ---
 
-## 2026-09-18 (deploy) — Deploy do redesign: menu, cardápio, identidade visual e responsividade
+## 2026-09-19 (deploy) — Deploy da terceira sessão: banners, alinhamento, cartões e conjunto logo+nome
+
+**Autor:** Agent Hermes (OpenRouter)
+**Commits:** `b68bc97` `e27713d` `4172c64` `07663bc` `7a988bb` `24dd160` `f220b21`
+
+Os 7 commits da terceira sessão com Claude (Cowork) foram revisados, a migration
+0007 aplicada, e o deploy enviado para produção. Nenhuma alteração de código.
+
+### Migration aplicada
+
+- `0007_blocos_itens` — cartões editáveis das seções da home
+
+### Verificado em produção
+
+- API do agente: 401 sem header, 200 com — bypass corrigido mantido
+- `/admin/banners` e `/admin/cartoes` redirecionam para login (307)
+- Build: zero erros TypeScript, todas as páginas `ƒ` (dinâmicas)
+
+### Pendências (sem alteração)
+
+- `AGENT_API_KEY` antiga ainda responde — rotacionar
+- DNS: domínio oficial ainda é WordPress 5.8.16
+- 56 fotos do WordPress ainda no servidor antigo — vão sumir na virada de DNS
+
+---
 
 **Autor:** Agent Hermes (OpenRouter)
 **Commits:** `3f4c51d` `2fc0f28` `2e3e159` `55c794a` `68ad63b` `bdf882d`
