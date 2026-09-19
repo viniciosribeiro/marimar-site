@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Icone } from "./Icone";
-import { SUGESTOES, SAUDACAO, INDISPONIVEL } from "@/lib/chat";
+import { SUGESTOES, SAUDACAO, INDISPONIVEL, LIMITE_AUDIO_SEGUNDOS } from "@/lib/chat";
 
 type Fala = { de: "visitante" | "marina"; texto: string };
 
@@ -27,7 +27,9 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
   const [falas, setFalas] = useState<Fala[]>([]);
   const [rascunho, setRascunho] = useState("");
   const [esperando, setEsperando] = useState(false);
-  const [ditando, setDitando] = useState(false);
+  const [gravando, setGravando] = useState(false);
+  const [segundos, setSegundos] = useState(0);
+  const [transcrevendo, setTranscrevendo] = useState(false);
   const [temMicrofone, setTemMicrofone] = useState(false);
   const [sessao] = useState(() => novaSessao());
 
@@ -41,7 +43,10 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
 
   const fimRef = useRef<HTMLDivElement>(null);
   const campoRef = useRef<HTMLTextAreaElement>(null);
-  const reconhecimentoRef = useRef<Reconhecimento | null>(null);
+  const gravadorRef = useRef<MediaRecorder | null>(null);
+  const pedacosRef = useRef<BlobPart[]>([]);
+  const relogioRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const contagemRef = useRef(0);
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ block: "end" });
@@ -89,17 +94,23 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
     campo.style.height = Math.min(campo.scrollHeight, 112) + "px";
   }, [rascunho]);
 
-  // Ditado por voz, quando o navegador tem. Ver `alternarDitado`.
   useEffect(() => {
-    setTemMicrofone(Boolean(construtorDeReconhecimento()));
-    return () => { try { reconhecimentoRef.current?.stop(); } catch {} };
+    setTemMicrofone(
+      typeof window !== "undefined" &&
+      typeof MediaRecorder !== "undefined" &&
+      Boolean(navigator.mediaDevices?.getUserMedia),
+    );
+    return () => {
+      if (relogioRef.current) clearInterval(relogioRef.current);
+      pararTudo();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const enviar = useCallback(async (texto: string) => {
+  async function enviar(texto: string, porVoz = false) {
     const pergunta = texto.trim();
     if (!pergunta || esperando) return;
 
-    try { reconhecimentoRef.current?.stop(); } catch {}
     setRascunho("");
     setFalas((f) => [...f, { de: "visitante", texto: pergunta }]);
     setEsperando(true);
@@ -118,14 +129,18 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
       }
 
       // A resposta chega em pedaços; cada pedaço entra na última fala.
-      setFalas((f) => [...f, { de: "marina", texto: "" }]);
+      let indiceResposta = -1;
+      setFalas((f) => { indiceResposta = f.length; return [...f, { de: "marina", texto: "" }]; });
+
       const leitor = r.body.getReader();
       const decodificador = new TextDecoder();
+      let completa = "";
 
       for (;;) {
         const { done, value } = await leitor.read();
         if (done) break;
         const pedaco = decodificador.decode(value, { stream: true });
+        completa += pedaco;
         setFalas((f) => {
           const copia = [...f];
           copia[copia.length - 1] = {
@@ -135,53 +150,118 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
           return copia;
         });
       }
+
+      /* Perguntou falando, responde falando. É o que a pessoa espera de
+         quem gravou um áudio — e é o mesmo critério do WhatsApp, onde o
+         `tts.auto` está em "inbound". Quem escreveu continua lendo, e
+         decide se quer ouvir pelo botão. */
+      if (porVoz && completa.trim() && indiceResposta >= 0) {
+        ouvir(indiceResposta, completa.trim());
+      }
     } catch {
       setFalas((f) => [...f, { de: "marina", texto: INDISPONIVEL }]);
     } finally {
       setEsperando(false);
       campoRef.current?.focus();
     }
-  }, [esperando, sessao]);
+  }
 
-  /**
-   * Ditado por voz.
-   *
-   * Usa o reconhecimento do próprio navegador: nada de áudio sai daqui,
-   * o texto aparece no campo e a pessoa confere antes de enviar. É de
-   * propósito — mandar o áudio para transcrever no servidor custa
-   * dinheiro por segundo falado e transforma um engano em uma pergunta
-   * enviada.
-   *
-   * Nem todo navegador tem (Firefox não tem). Por isso o botão só
-   * aparece quando existe, em vez de aparecer e falhar.
-   */
-  function alternarDitado() {
-    if (ditando) {
-      try { reconhecimentoRef.current?.stop(); } catch {}
-      return;
+  /* ── gravar e mandar áudio ────────────────────────────────────────
+     Igual ao WhatsApp: grava, manda, e a resposta volta falada. O áudio
+     vira texto no servidor e segue pelo MESMO caminho de uma pergunta
+     escrita — se cada canal tivesse sua própria conversa, a Marina
+     perderia o fio quando a pessoa alternasse entre falar e escrever,
+     que é o que toda pessoa faz. */
+
+  function pararTudo() {
+    try { gravadorRef.current?.stream.getTracks().forEach((t) => t.stop()); } catch {}
+    gravadorRef.current = null;
+  }
+
+  function encerrarRelogio() {
+    if (relogioRef.current) clearInterval(relogioRef.current);
+    relogioRef.current = null;
+    setSegundos(0);
+  }
+
+  async function gravar() {
+    if (gravando || esperando || transcrevendo) return;
+    try {
+      const fluxo = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const gravador = new MediaRecorder(fluxo);
+      pedacosRef.current = [];
+      gravador.ondataavailable = (e) => { if (e.data.size) pedacosRef.current.push(e.data); };
+      gravadorRef.current = gravador;
+      gravador.start();
+      setGravando(true);
+      setSegundos(0);
+
+      contagemRef.current = 0;
+      relogioRef.current = setInterval(() => {
+        contagemRef.current += 1;
+        setSegundos(contagemRef.current);
+        // Corta sozinho no teto: um áudio esquecido aberto no bolso é gasto
+        // sem pergunta nenhuma do outro lado. A contagem vive num ref porque
+        // disparar o encerramento de dentro do cálculo do próximo estado é
+        // efeito colateral no lugar errado.
+        if (contagemRef.current >= LIMITE_AUDIO_SEGUNDOS) concluir();
+      }, 1000);
+    } catch {
+      // Permissão negada ou sem microfone: o botão some e o campo de
+      // texto continua ali. Nada a explicar, nada quebrado.
+      setTemMicrofone(false);
     }
-    const Construtor = construtorDeReconhecimento();
-    if (!Construtor) return;
+  }
 
-    const r = new Construtor();
-    r.lang = "pt-BR";
-    r.continuous = false;
-    r.interimResults = true;
+  function descartar() {
+    const gravador = gravadorRef.current;
+    encerrarRelogio();
+    setGravando(false);
+    if (!gravador) return;
+    gravador.ondataavailable = null;
+    gravador.onstop = null;
+    try { gravador.stop(); } catch {}
+    pedacosRef.current = [];
+    pararTudo();
+  }
 
-    let base = rascunho;
-    r.onresult = (e) => {
-      let transcrito = "";
-      for (let i = 0; i < e.results.length; i++) {
-        transcrito += e.results[i][0].transcript;
+  function concluir() {
+    const gravador = gravadorRef.current;
+    encerrarRelogio();
+    setGravando(false);
+    if (!gravador) return;
+
+    gravador.onstop = async () => {
+      const audio = new Blob(pedacosRef.current, { type: gravador.mimeType || "audio/webm" });
+      pedacosRef.current = [];
+      pararTudo();
+      if (audio.size < 1200) return;   // clique sem querer
+
+      setTranscrevendo(true);
+      try {
+        const envio = new FormData();
+        envio.append("audio", audio, "pergunta.webm");
+        envio.append("sessao", sessao);
+
+        const r = await fetch("/api/chat/transcrever", { method: "POST", body: envio });
+        const dados = await r.json().catch(() => null);
+
+        if (!r.ok || !dados?.texto) {
+          setFalas((f) => [...f, {
+            de: "marina",
+            texto: dados?.erro || "Não consegui entender o áudio. Pode repetir ou escrever?",
+          }]);
+          return;
+        }
+        // Veio por voz: a resposta volta falada, sem pedir clique.
+        await enviar(dados.texto, true);
+      } catch {
+        setFalas((f) => [...f, { de: "marina", texto: INDISPONIVEL }]);
+      } finally {
+        setTranscrevendo(false);
       }
-      setRascunho((base ? base.trimEnd() + " " : "") + transcrito);
     };
-    r.onerror = () => setDitando(false);
-    r.onend = () => { setDitando(false); base = ""; campoRef.current?.focus(); };
-
-    reconhecimentoRef.current = r;
-    setDitando(true);
-    try { r.start(); } catch { setDitando(false); }
+    try { gravador.stop(); } catch {}
   }
 
   /**
@@ -337,6 +417,37 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
           {/* ── escrever ── */}
           <div className="shrink-0 border-t border-linha bg-white p-3"
             style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+            {gravando ? (
+              /* Barra de gravação: some o campo de texto e fica só o que
+                 importa — o tempo correndo, cancelar e enviar. Misturar
+                 gravação e digitação na mesma barra faz a pessoa errar o
+                 botão, e errar aqui significa perder o que ela falou. */
+              <div className="flex items-center gap-3 h-11">
+                <button type="button" onClick={descartar} aria-label="Descartar gravação"
+                  className="shrink-0 flex items-center justify-center w-10 h-10 rounded-marca text-tinta-suave hover:text-tinta transition-marca">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2" strokeLinecap="round" aria-hidden>
+                    <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+                  </svg>
+                </button>
+
+                <span className="flex items-center gap-2 flex-1 min-w-0 text-sm text-tinta">
+                  <span className="w-2.5 h-2.5 rounded-full bg-acento animate-pulse shrink-0" aria-hidden />
+                  <span className="tabular-nums">{relogio(segundos)}</span>
+                  <span className="text-tinta-suave text-[11px] truncate">
+                    / {relogio(LIMITE_AUDIO_SEGUNDOS)}
+                  </span>
+                </span>
+
+                <button type="button" onClick={concluir} aria-label="Enviar áudio"
+                  className="shrink-0 flex items-center justify-center w-11 h-11 rounded-marca bg-marca text-marca-texto transition-marca">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M4 12 20 4l-4 16-4-6-8-2Z" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
             <form
               onSubmit={(e) => { e.preventDefault(); enviar(rascunho); }}
               className="flex items-end gap-2"
@@ -351,22 +462,18 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
                   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(rascunho); }
                 }}
                 rows={1}
-                placeholder={ditando ? "Ouvindo…" : "Escreva sua pergunta…"}
-                className="flex-1 min-w-0 resize-none border border-linha rounded-marca px-3 py-2.5 text-sm text-tinta focus:outline-none focus:ring-2 focus:ring-marca/20 focus:border-marca"
+                disabled={transcrevendo}
+                placeholder={transcrevendo ? "Entendendo o que você falou…" : "Escreva sua pergunta…"}
+                className="flex-1 min-w-0 resize-none border border-linha rounded-marca px-3 py-2.5 text-sm text-tinta disabled:bg-areia/40 focus:outline-none focus:ring-2 focus:ring-marca/20 focus:border-marca"
               />
 
               {/* Microfone enquanto não há texto, enviar quando há. É o que
                   todo mensageiro faz, e economiza um botão na largura de
                   celular, que é onde a barra aperta. */}
               {temMicrofone && !temTexto ? (
-                <button type="button" onClick={alternarDitado}
-                  aria-label={ditando ? "Parar de ditar" : "Ditar por voz"}
-                  aria-pressed={ditando}
-                  className={`shrink-0 flex items-center justify-center w-11 h-11 rounded-marca border transition-marca ${
-                    ditando
-                      ? "bg-acento text-acento-texto border-transparent animate-pulse"
-                      : "bg-white text-tinta-suave border-linha hover:text-tinta"
-                  }`}>
+                <button type="button" onClick={gravar} disabled={transcrevendo || esperando}
+                  aria-label="Gravar um áudio"
+                  className="shrink-0 flex items-center justify-center w-11 h-11 rounded-marca border border-linha bg-white text-tinta-suave hover:text-tinta disabled:opacity-40 transition-marca">
                   <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <rect x="9" y="2" width="6" height="11" rx="3" />
@@ -384,6 +491,7 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
                 </button>
               )}
             </form>
+            )}
 
             <a href={linkWhats} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-1.5 text-[11px] text-tinta-suave hover:text-tinta mt-2 transition-marca">
@@ -472,6 +580,13 @@ function pedacos(linha: string): React.ReactNode[] {
   return saida;
 }
 
+/** Segundos em m:ss — o formato que todo mundo le sem pensar. */
+function relogio(segundos: number): string {
+  const m = Math.floor(segundos / 60);
+  const s = segundos % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 function Pontinhos() {
   return (
     <span className="inline-flex gap-1 py-1" aria-label="Escrevendo">
@@ -482,30 +597,6 @@ function Pontinhos() {
       ))}
     </span>
   );
-}
-
-/* ── ditado por voz ─────────────────────────────────────────────────
-   A API de reconhecimento do navegador não está nos tipos do DOM, e
-   ainda vem com prefixo no Chrome. Declarar só o que se usa evita um
-   `any` solto atravessando o arquivo.                                */
-type Reconhecimento = {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  start(): void;
-  stop(): void;
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-  onerror: (() => void) | null;
-  onend: (() => void) | null;
-};
-
-function construtorDeReconhecimento(): (new () => Reconhecimento) | null {
-  if (typeof window === "undefined") return null;
-  const janela = window as unknown as {
-    SpeechRecognition?: new () => Reconhecimento;
-    webkitSpeechRecognition?: new () => Reconhecimento;
-  };
-  return janela.SpeechRecognition ?? janela.webkitSpeechRecognition ?? null;
 }
 
 /**

@@ -452,6 +452,9 @@ export const chatVoz = pgTable("chat_voz", {
   sessao: text("sessao").notNull(),
   ip_hash: text("ip_hash"),
   caracteres: integer("caracteres").default(0).notNull(),
+  /** "tts" (texto virou audio) ou "stt" (audio virou texto). */
+  tipo: text("tipo").default("tts").notNull(),
+  segundos: integer("segundos").default(0).notNull(),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
 

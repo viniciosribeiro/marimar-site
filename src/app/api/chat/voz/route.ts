@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     const ip = hashIp(ipDaRequisicao(req));
     const [{ usadas }] = await sql<{ usadas: number }[]>`
       SELECT COUNT(*)::int AS usadas FROM chat_voz
-      WHERE ip_hash = ${ip} AND criado_em > now() - interval '1 hour'`;
+      WHERE ip_hash = ${ip} AND tipo = 'tts' AND criado_em > now() - interval '1 hour'`;
     if (usadas >= LIMITE_VOZ_POR_HORA) {
       await sql.end();
       return Response.json({ erro: "Muitos áudios seguidos. Tente mais tarde." }, { status: 429 });
@@ -86,8 +86,8 @@ export async function POST(req: Request) {
     // Só conta depois que a síntese deu certo: cobrar do teto um pedido que
     // falhou puniria o visitante por um problema nosso.
     await sql`
-      INSERT INTO chat_voz (sessao, ip_hash, caracteres)
-      VALUES (${sessao}, ${ip}, ${texto.length})`;
+      INSERT INTO chat_voz (sessao, ip_hash, tipo, caracteres)
+      VALUES (${sessao}, ${ip}, 'tts', ${texto.length})`;
     await sql.end();
 
     const audio = await resposta.arrayBuffer();

@@ -109,6 +109,19 @@ export const LIMITE_VOZ_POR_HORA = 25;
 /** Mensagem maior que isto nao vira audio — e resposta para ler. */
 export const LIMITE_VOZ_CARACTERES = 900;
 
+/** Teto de transcricoes por IP, por hora. */
+export const LIMITE_AUDIO_POR_HORA = 20;
+
+/** Um minuto e meio. Acima disso nao e pergunta, e outra coisa. */
+export const LIMITE_AUDIO_SEGUNDOS = 90;
+
+/** Teto de tamanho do arquivo, como segunda linha de defesa. */
+export const LIMITE_AUDIO_BYTES = 4 * 1024 * 1024;
+
+/** Transcricao (audio -> texto). Mesmo fornecedor da voz, mesma chave. */
+export const URL_TRANSCRICAO = "https://api.elevenlabs.io/v1/speech-to-text";
+export const MODELO_TRANSCRICAO = "scribe_v2";
+
 export function vozConfigurada(): boolean {
   return Boolean(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_VOICE_ID);
 }
