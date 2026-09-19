@@ -13,7 +13,7 @@ async function conectar() {
 }
 
 function voltar(msg: string, erro = false) {
-  revalidatePath("/cardapio");
+  revalidatePath("/restaurante");
   revalidatePath("/admin/cardapio");
   redirect(`/admin/cardapio?${erro ? "erro" : "ok"}=${encodeURIComponent(msg)}`);
 }
@@ -188,7 +188,7 @@ export async function registrarFoto(dados: {
       await sql`UPDATE cardapio_itens SET foto_url = ${dados.url}, atualizado_em = now() WHERE id = ${dados.itemId}`;
     }
 
-    revalidatePath("/cardapio");
+    revalidatePath("/restaurante");
     revalidatePath("/admin/cardapio");
     return { ok: true, id: (foto as any).id as string };
   } catch (e) {

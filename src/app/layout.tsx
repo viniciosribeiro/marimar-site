@@ -7,39 +7,15 @@ import { textoIdeal } from "@/lib/contraste";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
-/** Fontes que o editor visual oferece. Geist ja vem no bundle; as outras
- *  sao buscadas no Google Fonts so quando o admin realmente escolhe uma. */
-const FONTES_GOOGLE = new Set([
-  // Sem serifa — corpo de texto
-  "Inter", "Roboto", "Open Sans", "Lato", "Montserrat", "Poppins", "Nunito", "Raleway",
-  // Serifadas — titulos editoriais
-  "Playfair Display", "Merriweather", "Lora", "Cormorant Garamond", "Libre Baskerville", "Spectral",
-  // Manuscritas — anotacoes decorativas
-  "Caveat", "Kalam", "Dancing Script", "Shadows Into Light", "Patrick Hand", "Gloria Hallelujah",
-]);
-
-type Tema = {
-  raio?: string;
-  sombra?: "none" | "sm" | "md" | "lg";
-  animacoes?: boolean;
-  /** Fonte das anotacoes manuscritas. Vazio ou "nenhuma" desliga o recurso. */
-  fonteManuscrita?: string;
-  /** Elementos decorativos (ondas, palmeiras). Desligavel. */
-  decorativos?: boolean;
-};
-
-const SOMBRAS: Record<string, string> = {
-  none: "none",
-  sm: "0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08)",
-  md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-};
+import {
+  lerTema, temaParaCss, pilhaFonte, pilhaManuscrita, TODAS_AS_FONTES,
+} from "@/lib/tema";
 
 async function lerPousada(): Promise<Record<string, any> | null> {
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 3, prepare: false });
-    // to_jsonb evita nomear colunas: funciona antes e depois da migration
-    // que adiciona `tema`, sem quebrar o site no meio do caminho.
+    // to_jsonb evita nomear colunas: funciona antes e depois de qualquer
+    // migration que acrescente campo na tabela.
     const [row] = await sql`SELECT to_jsonb(p) AS dados FROM pousada p LIMIT 1`;
     await sql.end();
     return (row?.dados as Record<string, any>) ?? null;
@@ -66,45 +42,27 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const p = await lerPousada();
+  const tema = lerTema(p);
 
-  const marca = p?.cor_primaria || "#0D9488";
-  const acento = p?.cor_secundaria || "#0EA5E9";
-  const fonteTitulo = p?.fonte_titulo || "";
-  const fonteCorpo = p?.fonte_corpo || "";
-  const fonteManuscrita = (p?.tema as Tema)?.fonteManuscrita ?? "Caveat";
-  const tema: Tema = (p?.tema as Tema) || {};
-
-  // So busca no Google Fonts o que o admin escolheu de fato
-  const googleFonts = [fonteTitulo, fonteCorpo, fonteManuscrita]
-    .filter((f) => FONTES_GOOGLE.has(f))
+  // So busca no Google Fonts o que o admin realmente escolheu
+  const googleFonts = [tema.fonteTitulo, tema.fonteCorpo, tema.fonteManuscrita]
+    .filter((f) => TODAS_AS_FONTES.has(f))
     .filter((f, i, a) => a.indexOf(f) === i);
+
   const googleHref = googleFonts.length
     ? `https://fonts.googleapis.com/css2?${googleFonts
-        .map((f) => `family=${encodeURIComponent(f).replace(/%20/g, "+")}:wght@400;500;600;700`)
+        .map((f) => `family=${encodeURIComponent(f).replace(/%20/g, "+")}:wght@400;500;600;700;800`)
         .join("&")}&display=swap`
     : null;
 
-  const pilha = (nome: string) =>
-    nome && nome !== "Geist"
-      ? `"${nome}", var(--font-geist-sans), system-ui, sans-serif`
-      : `var(--font-geist-sans), system-ui, sans-serif`;
+  const css = temaParaCss(tema, {
+    titulo: pilhaFonte(tema.fonteTitulo),
+    corpo: pilhaFonte(tema.fonteCorpo),
+    manuscrita: pilhaManuscrita(tema.fonteManuscrita),
+  });
 
-  // Manuscrita desligada = cai para a fonte de corpo, e as anotacoes somem
-  // visualmente sem quebrar o layout (ver componente <Manuscrita>).
-  const pilhaManuscrita =
-    fonteManuscrita && fonteManuscrita !== "nenhuma"
-      ? `"${fonteManuscrita}", var(--font-geist-sans), cursive`
-      : `var(--font-geist-sans), system-ui, sans-serif`;
-
-  // Cor de texto que realmente se le sobre cada cor de marca. Sem isto, um
-  // destaque claro (ambar, amarelo) com texto branco fixo fica ilegivel no
-  // celular. Calculado aqui e exposto como token para o CSS usar.
-  const marcaTexto = textoIdeal(marca);
-  const acentoTexto = textoIdeal(acento);
-
-  const raio = tema.raio ? `${tema.raio}px` : "0.75rem";
-  const sombra = SOMBRAS[tema.sombra ?? "sm"] ?? SOMBRAS.sm;
-  const duracao = tema.animacoes === false ? "0.01ms" : "200ms";
+  // Cor de texto legivel sobre cada cor de marca, pela formula da WCAG
+  const extras = `--marca-texto:${textoIdeal(tema.marca)};--acento-texto:${textoIdeal(tema.acento)};`;
 
   return (
     <html lang="pt-BR" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
@@ -116,20 +74,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <link rel="stylesheet" href={googleHref} />
           </>
         )}
-        {/* Valores crus dos tokens. O globals.css deriva a escala a partir
-            daqui com color-mix — ver o cabecalho daquele arquivo. */}
-        <style>{`:root{
-          --marca:${marca};
-          --acento:${acento};
-          --marca-texto:${marcaTexto};
-          --acento-texto:${acentoTexto};
-          --fonte-titulo:${pilha(fonteTitulo)};
-          --fonte-corpo:${pilha(fonteCorpo)};
-          --fonte-manuscrita:${pilhaManuscrita};
-          --raio:${raio};
-          --sombra:${sombra};
-          --duracao:${duracao};
-        }`}</style>
+        {/* Valores crus dos tokens. O globals.css deriva a escala de cor com
+            color-mix e os tamanhos de texto com calc — ver aquele arquivo. */}
+        <style>{`:root{${css}${extras}}`}</style>
       </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

@@ -215,7 +215,7 @@ export function Secao({
   const bg = { branco: "bg-white", areia: "bg-areia", suave: "bg-fundo-suave" }[fundo];
   return (
     <section className={`${bg} ${className}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">{children}</div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 secao-py">{children}</div>
     </section>
   );
 }

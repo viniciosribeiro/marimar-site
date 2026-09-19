@@ -2,6 +2,7 @@ import Link from "next/link";
 import postgres from "postgres";
 import { MobileNav } from "@/components/site/MobileNav";
 import { COMPLEXO, IDENTIDADE } from "@/lib/conteudo-pousada";
+import { lerTema } from "@/lib/tema";
 
 /**
  * Todo o site le conteudo editavel pelo admin, entao nada aqui pode ser
@@ -22,7 +23,6 @@ export const dynamic = "force-dynamic";
 const NAV: [string, string][] = [
   ["/quartos", "Acomodações"],
   ["/restaurante", "Restaurante"],
-  ["/cardapio", "Cardápio"],
   ["/galeria", "Galeria"],
   ["/a-pousada", "A Pousada"],
   ["/ilha-do-mel", "Ilha do Mel"],
@@ -34,9 +34,8 @@ const RODAPE = {
   Pousada: [
     ["/a-pousada", "A Pousada"],
     ["/quartos", "Acomodações"],
-    ["/restaurante", "Restaurante"],
-    ["/cardapio", "Cardápio"],
-    ["/cafe-da-manha", "Café da Manhã"],
+    ["/restaurante", "Restaurante e Cardápio"],
+    ["/restaurante#cafe-da-manha", "Café da Manhã"],
     ["/eventos", "Eventos e Casamentos"],
     ["/galeria", "Galeria"],
   ],
@@ -76,8 +75,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   // Faixa de aviso configurada em Admin -> Identidade visual -> Banner.
   // Sem isto o editor salvaria e nada apareceria — que era exatamente o
   // problema do editor antigo.
-  const banner = p?.tema?.banner;
-  const mostrarBanner = banner?.ativo === true && !!banner?.texto;
+  const banner = lerTema(p).banner;
+  const mostrarBanner = banner.ativo && !!banner.texto;
 
   return (
     <div className="min-h-screen flex flex-col bg-fundo">

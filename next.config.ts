@@ -1,6 +1,28 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /**
+   * Indicador de desenvolvimento do Next (o circulo com "N" no canto).
+   * Desligado porque cobre o botao flutuante de WhatsApp e atrapalha a
+   * avaliacao visual das telas. Erros de compilacao e de runtime continuam
+   * aparecendo normalmente — so o selo sai.
+   * So existia em desenvolvimento; em producao nunca apareceu.
+   */
+  devIndicators: false,
+
+  /**
+   * /cardapio e /cafe-da-manha foram absorvidas por /restaurante: eram tres
+   * paginas falando do mesmo lugar, e o hospede nao separa "restaurante" de
+   * "cardapio" na cabeca. As rotas antigas continuam valendo — QR code
+   * impresso, link enviado no WhatsApp e resultado de busca ja indexado
+   * seguem funcionando. permanent: true transfere o ranking para a nova URL.
+   */
+  async redirects() {
+    return [
+      { source: "/cardapio", destination: "/restaurante#cardapio", permanent: true },
+      { source: "/cafe-da-manha", destination: "/restaurante#cafe-da-manha", permanent: true },
+    ];
+  },
   images: {
     // As fotos dos quartos vivem no motor Desbravador. Passando por next/image
     // elas sao redimensionadas, convertidas para AVIF/WebP e cacheadas na borda

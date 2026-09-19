@@ -19,6 +19,64 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (9) — Restaurante+Cardápio fundidos e Identidade Visual reconstruída
+
+**Autor:** Claude Opus 5 (Cowork)
+
+### Três páginas viraram uma
+`/restaurante`, `/cardapio` e `/cafe-da-manha` diziam a mesma coisa para o hóspede —
+ele não separa "restaurante" de "cardápio" na cabeça. Agora é uma página só, com
+âncoras. As rotas antigas viraram **redirecionamento 301** no `next.config.ts`: QR
+code impresso na mesa não quebra, link já enviado no WhatsApp continua abrindo e o
+ranking de busca é transferido em vez de perdido.
+
+### Identidade Visual: de 3 para um módulo de verdade
+O módulo configurava aparência mas não tinha prévia real, não fazia upload, não
+controlava tipografia nem espaçamento, e a "prévia" era um cartão desenhado à mão.
+
+**Prévia do site real.** `PreviaSite.tsx` carrega a página de verdade num iframe e
+injeta os tokens do rascunho dentro dele. Seletor de celular/tablet/computador (com
+redução proporcional para caber) e de qual página ver. Usa a **mesma função**
+`temaParaCss()` que o layout raiz — duas implementações divergiriam e a prévia
+passaria a mentir.
+
+**Rascunho vs publicado.** Mexer não altera o site. Um selo "não publicado" avisa, e
+"Descartar mudanças" volta ao estado salvo.
+
+**Upload de logo, favicon e imagem de compartilhamento**, agora que o Blob existe.
+Era campo de URL, inconsistente com o cardápio.
+
+**Extração de paleta a partir da logo.** Lê a imagem num canvas, agrupa em caixas de
+32 níveis por canal (senão devolveria 40 variações do mesmo tom) e descarta quase-branco,
+quase-preto e cinza sem identidade — numa logo isso costuma ser fundo e contorno.
+
+**Escala tipográfica modular.** Tamanho base, razão entre níveis (1.125 a 1.414),
+altura de linha e peso dos títulos. Os tamanhos são derivados por `calc()`: mudar a
+razão reescala o site inteiro de forma coerente, sem ajustar título por título.
+
+**Densidade.** Multiplicador do respiro vertical das seções. Site com muita foto pede
+mais ar; site com muito texto pede menos.
+
+**Relatório de acessibilidade.** Seis combinações reais do site verificadas pela WCAG,
+não só duas cores. Avisa também quando o texto base cai abaixo de 15px.
+
+**Exportar e importar tema** em JSON — serve para repetir a identidade em outra
+propriedade e para guardar um estado antes de experimentar.
+
+### Novo: `src/lib/tema.ts`
+Formato do tema num lugar só, com `lerTema()` tolerante a campo faltando e
+`temaParaCss()` compartilhada entre site e prévia. É o que torna export, import e
+conjuntos possíveis — não existiriam se cada opção fosse uma coluna solta.
+
+### Corrigido
+- Indicador de desenvolvimento do Next (`devIndicators: false`) — o círculo com "N"
+  cobria o botão de WhatsApp e atrapalhava avaliar as telas. Só existia em
+  desenvolvimento; erros de compilação continuam aparecendo.
+- Rota de upload passou a aceitar as pastas `marca/` e `quartos/`, e os tipos de
+  favicon (SVG e ICO).
+
+---
+
 ## 2026-09-18 (8) — Upload real de fotos no cardápio
 
 **Autor:** Claude Opus 5 (Cowork)

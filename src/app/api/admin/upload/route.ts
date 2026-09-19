@@ -34,12 +34,16 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (!sessao?.user) throw new Error("Não autorizado");
 
         // Nunca aceitar caminho arbitrario vindo do cliente
-        if (!pathname.startsWith("cardapio/") && !pathname.startsWith("galeria/")) {
+        const pastasPermitidas = ["cardapio/", "galeria/", "marca/", "quartos/"];
+        if (!pastasPermitidas.some((pasta) => pathname.startsWith(pasta))) {
           throw new Error("Destino de upload inválido");
         }
 
         return {
-          allowedContentTypes: ["image/jpeg", "image/png", "image/webp", "image/avif"],
+          allowedContentTypes: [
+            "image/jpeg", "image/png", "image/webp", "image/avif",
+            "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon",
+          ],
           maximumSizeInBytes: 12 * 1024 * 1024,
           addRandomSuffix: true,
           // Fotos de cardapio mudam pouco: cache longo na borda

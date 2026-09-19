@@ -56,7 +56,32 @@
   --tinta-suave: #4b5c6b;  /* texto de apoio */
   --linha: #ead9c2;        /* bordas e traços decorativos */
 
-  /* Forma — controlado pela aba "Avancado" do editor visual */
+  /* ── Tipografia: escala modular ──
+     O editor controla o tamanho base e a razao entre os niveis. Uma razao
+     de 1.25 da uma hierarquia discreta; 1.414 da uma hierarquia dramatica,
+     como a do material de referencia. Os tamanhos abaixo sao DERIVADOS —
+     mudar a razao reescala o site inteiro de forma coerente, sem precisar
+     ajustar cada titulo na mao. */
+  --texto-base: 1rem;
+  --escala: 1.25;
+  --altura-linha: 1.6;
+  --peso-titulo: 700;
+  --rastreio-titulo: -0.015em;
+
+  --t-sm:  calc(var(--texto-base) / var(--escala));
+  --t-md:  var(--texto-base);
+  --t-lg:  calc(var(--texto-base) * var(--escala));
+  --t-xl:  calc(var(--t-lg) * var(--escala));
+  --t-2xl: calc(var(--t-xl) * var(--escala));
+  --t-3xl: calc(var(--t-2xl) * var(--escala));
+  --t-4xl: calc(var(--t-3xl) * var(--escala));
+
+  /* ── Densidade ──
+     Multiplica o respiro vertical das secoes. Pousada com muita foto pede
+     mais ar; site com muito texto pede menos. */
+  --densidade: 1;
+
+  /* Forma — controlado pela aba "Forma" do editor visual */
   --raio: 0.75rem;
   --sombra: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
   --sombra-forte: 0 10px 25px -5px rgb(0 0 0 / 0.12), 0 8px 10px -6px rgb(0 0 0 / 0.08);
@@ -97,6 +122,15 @@
   --font-corpo: var(--fonte-corpo);
   --font-manuscrita: var(--fonte-manuscrita);
 
+  /* Tipografia derivada */
+  --text-t-sm: var(--t-sm);
+  --text-t-md: var(--t-md);
+  --text-t-lg: var(--t-lg);
+  --text-t-xl: var(--t-xl);
+  --text-t-2xl: var(--t-2xl);
+  --text-t-3xl: var(--t-3xl);
+  --text-t-4xl: var(--t-4xl);
+
   /* Forma */
   --radius-marca: var(--raio);
   --shadow-marca: var(--sombra);
@@ -107,12 +141,24 @@ body {
   background: var(--fundo);
   color: var(--texto);
   font-family: var(--fonte-corpo);
+  font-size: var(--texto-base);
+  line-height: var(--altura-linha);
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--fonte-titulo);
   color: var(--tinta);
-  letter-spacing: -0.015em;
+  font-weight: var(--peso-titulo);
+  letter-spacing: var(--rastreio-titulo);
+  line-height: 1.15;
+}
+
+/* Respiro das secoes responde ao controle de densidade */
+.secao-py {
+  padding-block: calc(3rem * var(--densidade));
+}
+@media (min-width: 1024px) {
+  .secao-py { padding-block: calc(4rem * var(--densidade)); }
 }
 
 /* O site e desenhado em tema claro (cards brancos, texto escuro).

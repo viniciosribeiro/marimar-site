@@ -67,7 +67,7 @@ export default async function CardapioAdminPage({ searchParams }: { searchParams
             {categorias.length} seç{categorias.length === 1 ? "ão" : "ões"} · {totalAtivos} itens
           </p>
         </div>
-        <Link href="/cardapio" target="_blank"
+        <Link href="/restaurante#cardapio" target="_blank"
           className="text-sm font-medium text-gray-900 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50">
           Ver no site ↗
         </Link>

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth"; import { redirect } from "next/navigation"; import postgres from "postgres"; import { ThemeEditor } from "@/components/admin/ThemeEditor";
+import { blobConfigurado } from "@/lib/blob";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export default async function IdentidadeVisualPage({ searchParams }: { searchPar
       </div>
       {sp.ok && <p className="text-sm text-green-700 bg-green-50 border border-green-200 p-3 rounded-xl mb-6">✅ {sp.ok}</p>}
       {sp.erro && <p className="text-sm text-red-700 bg-red-50 border border-red-200 p-3 rounded-xl mb-6">⚠️ {sp.erro}</p>}
-      <ThemeEditor initial={p} />
+      <ThemeEditor initial={p} blobOk={blobConfigurado()} />
     </div>
   );
 }
