@@ -440,6 +440,21 @@ export const blocosItens = pgTable("blocos_itens", {
 //
 // `ip_hash` e hash com sal, nunca o IP cru: limita abuso sem guardar dado
 // pessoal identificavel.
+/**
+ * Sinteses de voz pedidas no chat do site.
+ *
+ * A ElevenLabs cobra por caractere e o chat e publico: sem contagem, um
+ * visitante em loop vira fatura. Nao guarda audio nem texto — so quem pediu
+ * e quanto custou.
+ */
+export const chatVoz = pgTable("chat_voz", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sessao: text("sessao").notNull(),
+  ip_hash: text("ip_hash"),
+  caracteres: integer("caracteres").default(0).notNull(),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+});
+
 export const chatMensagens = pgTable("chat_mensagens", {
   id: uuid("id").defaultRandom().primaryKey(),
   sessao: text("sessao").notNull(),

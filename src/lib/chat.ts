@@ -97,6 +97,43 @@ export const CONTEXTO_CANAL = [
   "recepção descobre quando o hóspede chega cobrando.",
 ].join("\n");
 
+/* ── voz ───────────────────────────────────────────────────────────
+   A Marina fala no site sob demanda: um botao por mensagem, nunca
+   automatico. A diferenca nao e estetica — a ElevenLabs cobra por
+   caractere, e tocar audio sozinho num canal publico transforma cada
+   visitante curioso em gasto. Quem quer ouvir, clica.                */
+
+/** Teto de sinteses por IP, por hora. */
+export const LIMITE_VOZ_POR_HORA = 25;
+
+/** Mensagem maior que isto nao vira audio — e resposta para ler. */
+export const LIMITE_VOZ_CARACTERES = 900;
+
+export function vozConfigurada(): boolean {
+  return Boolean(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_VOICE_ID);
+}
+
+/**
+ * Endereco da sintese na ElevenLabs.
+ *
+ * `eleven_multilingual_v2` e `apply_text_normalization: "on"` sao os mesmos
+ * do WhatsApp, de proposito: a voz da pousada tem que ser uma so, e sem a
+ * normalizacao ela le "26/09" como digito solto em vez de data.
+ */
+export function urlVoz(): string {
+  const voz = process.env.ELEVENLABS_VOICE_ID;
+  return `https://api.elevenlabs.io/v1/text-to-speech/${voz}`;
+}
+
+export function corpoVoz(texto: string) {
+  return {
+    text: texto,
+    model_id: "eleven_multilingual_v2",
+    language_code: "pt",
+    apply_text_normalization: "on",
+  };
+}
+
 /**
  * Perguntas sugeridas no primeiro contato.
  *

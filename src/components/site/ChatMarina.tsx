@@ -31,6 +31,14 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
   const [temMicrofone, setTemMicrofone] = useState(false);
   const [sessao] = useState(() => novaSessao());
 
+  /* Voz sob demanda. `vozDisponivel` comeca otimista e so vira falso se o
+     servidor disser que nao ha chave — assim o botao some sozinho em vez de
+     ficar ali falhando a cada clique. */
+  const [vozDisponivel, setVozDisponivel] = useState(true);
+  const [vozCarregando, setVozCarregando] = useState<number | null>(null);
+  const [vozTocando, setVozTocando] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const fimRef = useRef<HTMLDivElement>(null);
   const campoRef = useRef<HTMLTextAreaElement>(null);
   const reconhecimentoRef = useRef<Reconhecimento | null>(null);
@@ -41,6 +49,16 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
 
   useEffect(() => {
     if (aberto) campoRef.current?.focus();
+  }, [aberto]);
+
+  // Fechar o painel silencia o audio: ninguem espera que a voz continue
+  // tocando depois de fechar a janela.
+  useEffect(() => {
+    if (!aberto) {
+      audioRef.current?.pause();
+      audioRef.current = null;
+      setVozTocando(null);
+    }
   }, [aberto]);
 
   // Esc fecha — a mesma tecla que fecha tudo no resto do site.
@@ -166,6 +184,45 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
     try { r.start(); } catch { setDitando(false); }
   }
 
+  /**
+   * Toca uma resposta da Marina em voz.
+   *
+   * Sob demanda, nunca automatico: a sintese e cobrada por caractere, e num
+   * chat publico tocar audio sozinho transformaria todo visitante curioso em
+   * gasto. Quem quer ouvir, clica — e clicar de novo para.
+   */
+  async function ouvir(indice: number, texto: string) {
+    if (vozTocando === indice || vozCarregando !== null) {
+      audioRef.current?.pause();
+      audioRef.current = null;
+      setVozTocando(null);
+      return;
+    }
+    audioRef.current?.pause();
+    setVozCarregando(indice);
+
+    try {
+      const r = await fetch("/api/chat/voz", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessao, texto }),
+      });
+      if (r.status === 503) { setVozDisponivel(false); return; }
+      if (!r.ok) return;
+
+      const som = new Audio(URL.createObjectURL(await r.blob()));
+      audioRef.current = som;
+      som.onended = () => setVozTocando(null);
+      som.onerror = () => setVozTocando(null);
+      await som.play();
+      setVozTocando(indice);
+    } catch {
+      setVozTocando(null);
+    } finally {
+      setVozCarregando(null);
+    }
+  }
+
   const linkWhats = `https://wa.me/${whatsapp}?text=${encodeURIComponent(
     "Olá! Vim pelo site e gostaria de informações sobre a Pousada Marimar.",
   )}`;
@@ -245,11 +302,29 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
             )}
 
             {falas.map((f, i) => (
-              <Balao key={i} de={f.de}>
-                {f.texto
-                  ? (f.de === "marina" ? <Marcacao texto={f.texto} /> : f.texto)
-                  : (f.de === "marina" ? <Pontinhos /> : "")}
-              </Balao>
+              <div key={i}>
+                <Balao de={f.de}>
+                  {f.texto
+                    ? (f.de === "marina" ? <Marcacao texto={f.texto} /> : f.texto)
+                    : (f.de === "marina" ? <Pontinhos /> : "")}
+                </Balao>
+
+                {f.de === "marina" && f.texto && vozDisponivel && !esperando && (
+                  <button
+                    onClick={() => ouvir(i, f.texto)}
+                    aria-label={vozTocando === i ? "Parar o áudio" : "Ouvir esta resposta"}
+                    className="flex items-center gap-1 mt-1 ml-0.5 text-[11px] text-tinta-suave hover:text-tinta transition-marca"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      {vozTocando === i
+                        ? <><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></>
+                        : <path d="M8 5v14l11-7z" />}
+                    </svg>
+                    {vozCarregando === i ? "gerando…" : vozTocando === i ? "parar" : "ouvir"}
+                  </button>
+                )}
+              </div>
             ))}
 
             {esperando && falas[falas.length - 1]?.de === "visitante" && (
