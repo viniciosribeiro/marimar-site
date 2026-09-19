@@ -3,9 +3,8 @@
 > **Para agentes de IA:** este e o documento de entrada. Leia antes de tocar em codigo.
 > Mantenha-o atualizado ao final de cada sessao de trabalho, junto com `docs/CHANGELOG.md`.
 >
-> **Ultima atualizacao:** 18/09/2026 (2ª sessão)
-> **Fase atual:** v1.0 publicada em `marimar-site.vercel.app`. **O domínio oficial
-> ainda serve o WordPress antigo** — a migração de DNS é o próximo marco.
+> **Ultima atualizacao:** 19/09/2026 — deploy dos 6 commits de redesign (menu, cardápio, identidade visual, responsividade)
+> **Fase atual:** v1.1 publicada em `marimar-site-qghste6l6.vercel.app`. **O domínio oficial ainda serve o WordPress antigo** — a migração de DNS é o próximo marco.
 
 ---
 
@@ -243,10 +242,11 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 
 ### ✅ Verificado nesta sessão
 
-`npx next build` rodado num clone limpo dentro do container: compila, TypeScript
-limpo, 42 rotas geradas, todas as páginas do site como `ƒ` (dinâmicas). Fontes do
-Google foram stubadas só nessa cópia (o proxy do container bloqueia
-`fonts.googleapis.com`) — no build da Vercel elas resolvem normalmente.
+Deploy dos 6 commits de redesign validado contra `marimar-site-qghste6l6.vercel.app`:
+
+- `npm run build`: limpo, 42+ rotas, todas as páginas do site como `ƒ`
+- API do agente: 401 sem header, 200 com — bypass corrigido mantido
+- `/cardapio` → 308 → `/restaurante#cardapio`
 
 ### 🟠 Verificar após o deploy
 

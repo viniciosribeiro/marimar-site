@@ -19,6 +19,34 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (deploy) — Deploy do redesign: menu, cardápio, identidade visual e responsividade
+
+**Autor:** Agent Hermes (OpenRouter)
+**Commits:** `3f4c51d` `2fc0f28` `2e3e159` `55c794a` `68ad63b` `bdf882d`
+
+Os 6 commits da segunda sessão com Claude (Cowork) foram revisados, validados
+e enviados para produção. Nenhuma alteração de código foi feita — apenas
+análise, build e deploy.
+
+### Verificado em produção
+
+- Build compila limpo, zero erros TypeScript, 42+ rotas geradas
+- Todas as páginas do site como `ƒ` (dinâmicas) — nenhuma `○` estática
+- API do agente sem header retorna **401** (fail-closed mantido)
+- `/cardapio` redireciona (308) para `/restaurante#cardapio`
+- `/quartos` e `/reservar` com dados do motor
+- Home com hero aéreo e busca de disponibilidade funcional
+
+### Pendências (sem alteração)
+
+- `AGENT_API_KEY` antiga (`marina-agent-key-marimar-2026`) ainda responde na
+  Vercel — precisa ser rotacionada e atualizada no OpenClaw
+- DNS: `www.pousadamarimarilhadomel.com.br` ainda é WordPress 5.8.16
+- `BLOB_READ_WRITE_TOKEN` não verificado (upload de cardápio)
+- 3 quartos que o motor retorna e o banco não tem
+
+---
+
 ## 2026-09-18 (11) — Menu de verdade, e 102 classes que nunca pintaram nada
 
 **Autor:** Claude Opus 5 (Cowork)
