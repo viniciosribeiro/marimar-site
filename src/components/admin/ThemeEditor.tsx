@@ -15,6 +15,7 @@ const ABAS = [
   { id: "cores", nome: "Cores", icone: "🎨" },
   { id: "tipografia", nome: "Tipografia", icone: "🔤" },
   { id: "forma", nome: "Forma", icone: "⬜" },
+  { id: "alinhamento", nome: "Alinhamento", icone: "↔" },
   { id: "marca", nome: "Marca", icone: "🏷" },
   { id: "faixa", nome: "Faixa", icone: "📢" },
   { id: "seo", nome: "Busca", icone: "🔍" },
@@ -291,6 +292,59 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
             </Card>
           )}
 
+          {aba === "alinhamento" && (
+            <>
+              <Card titulo="Barra do topo"
+                ajuda="Só vale em tela larga: no celular os três viram logo + botão Menu, que é o único arranjo que cabe.">
+                <Arranjos valor={tema.alinhamento.topo}
+                  aoMudar={(v) => set("alinhamento", { ...tema.alinhamento, topo: v as any })} />
+                <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+                  Este é o único controle desta aba que a prévia ao lado só mostra
+                  <strong> depois de publicar</strong> — ele muda a estrutura da
+                  página, não só uma cor ou medida.
+                </p>
+              </Card>
+
+              <Card titulo="Títulos das seções" ajuda="Vale para todas as páginas do site.">
+                <Selecao rotulo="Alinhamento" valor={tema.alinhamento.titulos}
+                  aoMudar={(v) => set("alinhamento", { ...tema.alinhamento, titulos: v as any })}
+                  opcoes={[["esquerda", "À esquerda"], ["centro", "Centralizado"]]} />
+                <PreviaTitulo centro={tema.alinhamento.titulos === "centro"} fonte={tema.fonteTitulo} />
+              </Card>
+
+              <Card titulo="Topo das páginas" ajuda="O bloco de título, texto e busca sobre a foto grande.">
+                <Selecao rotulo="Alinhamento" valor={tema.alinhamento.hero}
+                  aoMudar={(v) => set("alinhamento", { ...tema.alinhamento, hero: v as any })}
+                  opcoes={[["esquerda", "À esquerda"], ["centro", "Centralizado"]]} />
+                <p className="text-[11px] text-gray-400 -mt-1 leading-relaxed">
+                  À esquerda, o texto fica sobre a parte clara da foto. Centralizado
+                  pede uma foto com o meio limpo — confira na prévia.
+                </p>
+              </Card>
+
+              <Card titulo="Texto corrido">
+                <Interruptor rotulo="Justificar parágrafos"
+                  descricao="As duas margens alinhadas, como em livro."
+                  ligado={tema.alinhamento.justificado}
+                  aoMudar={(v) => set("alinhamento", { ...tema.alinhamento, justificado: v })} />
+                <div className="rounded-lg border border-gray-200 p-3 bg-gray-50">
+                  <p className="text-[13px] text-gray-600 leading-relaxed"
+                    lang="pt-BR"
+                    style={{ textAlign: tema.alinhamento.justificado ? "justify" : "left", hyphens: "auto" }}>
+                    O Marimar Café Bistrô Bar fica de frente para a Praia de Encantadas,
+                    e a Pousada Marimar está anexada logo aos fundos do restaurante, a
+                    poucos passos do trapiche.
+                  </p>
+                </div>
+                <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+                  Aplicado só a partir de tablet. Na coluna estreita do celular o
+                  justificado abre buracos entre as palavras e fica pior que o
+                  alinhado à esquerda — por isso lá ele não entra.
+                </p>
+              </Card>
+            </>
+          )}
+
           {aba === "marca" && (
             <Card titulo="Logo e imagens" ajuda="Arquivos enviados ficam no armazenamento da Vercel, servidos por CDN.">
               <UploadImagem rotulo="Logo" valor={logo} aoEnviar={setLogo} pasta="marca" configurado={blobOk}
@@ -443,6 +497,64 @@ function RelatorioAcessibilidade({ tema }: { tema: Tema }) {
 }
 
 /* ═════════ Peças de formulário ═════════ */
+/** Os tres arranjos da barra, desenhados — nomear "dividido" nao diz nada. */
+function Arranjos({ valor, aoMudar }: { valor: string; aoMudar: (v: string) => void }) {
+  const opcoes = [
+    { id: "esquerda", nome: "À esquerda", desc: "Logo na ponta, menu à direita" },
+    { id: "centro", nome: "Centralizado", desc: "Logo no meio, menu numa linha abaixo" },
+    { id: "dividido", nome: "Dividido", desc: "Metade do menu de cada lado da logo" },
+  ];
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      {opcoes.map((o) => (
+        <button key={o.id} type="button" onClick={() => aoMudar(o.id)}
+          className={`text-left p-2.5 rounded-lg border-2 transition-all ${
+            valor === o.id ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"
+          }`}>
+          <svg viewBox="0 0 120 34" className="w-full mb-2" aria-hidden>
+            <rect x="0" y="0" width="120" height="34" rx="3" fill="#fff" stroke="#e5e7eb" />
+            {o.id === "esquerda" && (<>
+              <rect x="7" y="12" width="26" height="10" rx="2" fill="#12324f" />
+              <rect x="50" y="15" width="40" height="4" rx="2" fill="#cbd5e1" />
+              <rect x="96" y="12" width="17" height="10" rx="2" fill="#b45309" />
+            </>)}
+            {o.id === "centro" && (<>
+              <rect x="47" y="4" width="26" height="9" rx="2" fill="#12324f" />
+              <rect x="96" y="5" width="17" height="7" rx="2" fill="#b45309" />
+              <line x1="0" y1="18" x2="120" y2="18" stroke="#e5e7eb" />
+              <rect x="40" y="24" width="40" height="4" rx="2" fill="#cbd5e1" />
+            </>)}
+            {o.id === "dividido" && (<>
+              <rect x="10" y="15" width="30" height="4" rx="2" fill="#cbd5e1" />
+              <rect x="47" y="12" width="26" height="10" rx="2" fill="#12324f" />
+              <rect x="79" y="15" width="16" height="4" rx="2" fill="#cbd5e1" />
+              <rect x="99" y="12" width="14" height="10" rx="2" fill="#b45309" />
+            </>)}
+          </svg>
+          <p className="text-xs font-medium text-gray-900">{o.nome}</p>
+          <p className="text-[10px] text-gray-500 leading-snug mt-0.5">{o.desc}</p>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Mostra o titulo com o traco decorativo de um lado so ou dos dois. */
+function PreviaTitulo({ centro, fonte }: { centro: boolean; fonte: string }) {
+  const traco = <span className="h-px flex-1 bg-gray-300" />;
+  return (
+    <div className="rounded-lg border border-gray-200 p-4 bg-gray-50 mt-1">
+      <div className="flex items-baseline gap-3">
+        {centro && traco}
+        <span className="font-bold text-[#12324f] whitespace-nowrap" style={{ fontFamily: fonte }}>
+          Um complexo, duas partes
+        </span>
+        {traco}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Previa do conjunto logo + nome na barra do topo.
  *

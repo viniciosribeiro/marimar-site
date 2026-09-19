@@ -19,6 +19,73 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-19 (2) — Alinhamento: topo, títulos, hero e justificado
+
+**Autor:** Claude Opus 5 (Cowork)
+
+Quatro controles novos na aba **Alinhamento** do editor visual.
+
+### Uma intenção, várias consequências
+
+O tema guarda a **intenção** (`"centro"`), não o CSS (`"center"`). O mesmo
+"centro" precisa virar `text-align`, `justify-content`, `margin-inline` e ainda
+mostrar um segundo traço decorativo. Derivar tudo em `temaParaCss()` é o que
+mantém essas quatro consequências coerentes — espalhá-las pelos componentes
+garantiria que uma ficasse para trás.
+
+### Barra do topo — três arranjos
+
+- **À esquerda** (atual): logo na ponta, menu à direita
+- **Centralizado**: logo no meio, menu numa segunda linha centrada
+- **Dividido**: metade do menu de cada lado da logo
+
+Os três usam as **mesmas peças** (`marca`, `acoes`, `grupos()`), montadas uma
+vez e recompostas por arranjo — duplicá-las deixaria um arranjo para trás na
+próxima mudança do menu.
+
+Abaixo de `lg` os três viram o mesmo: logo + botão Menu. É o único arranjo que
+cabe, e fingir o contrário quebraria a responsividade que acabamos de arrumar.
+
+Este é o único controle que a prévia só mostra **depois de publicar** — ele muda
+a estrutura da página, não um token. O editor avisa isso na própria aba.
+
+### Títulos — e o traço torto
+
+Com os títulos centralizados aparece um segundo traço, à esquerda. Um traço só
+de um lado, com o título no meio, fica visivelmente torto. Ele entra por
+variável CSS (`--titulo-linha-esq`), não por prop, para a prévia refletir na hora.
+
+### Hero — e o véu que acompanha
+
+O véu que clareia a foto sob o texto agora segue o alinhamento. Antes era
+sempre `from-white/95` à esquerda: com o texto centralizado, o título cairia
+sobre a parte escura da foto. Centralizado, o véu clareia o meio.
+
+### Justificado
+
+`text-align: justify` + `hyphens: auto`, **só a partir de `md`**. Na coluna
+estreita do celular o justificado abre rios de espaço entre as palavras e fica
+pior que o alinhado à esquerda. A hifenização funciona porque o `<html>` já
+declara `lang="pt-BR"`.
+
+### Descoberto no caminho
+
+Os controles chegam às páginas que já usam o design system — home, restaurante
+e como chegar. **As demais (`a-pousada`, `ilha-do-mel`, `galeria`, `faq`,
+`politicas`, `contato`, `eventos`, `avaliacoes`) têm marcação própria**, com
+`text-gray-900` em vez dos componentes e tokens. É a mesma razão pela qual o
+visual editorial não chegou nelas. Está no backlog como "aplicar o novo visual
+nas demais páginas" — e agora tem uma segunda razão para sair.
+
+### Verificado
+
+`tsc --noEmit` limpo. Os três arranjos do topo conferidos no site com o padrão
+trocado temporariamente, e revertidos depois: centralizado põe a logo no meio
+com o menu embaixo; dividido reparte o menu nos dois lados; à esquerda ficou
+idêntico ao que era.
+
+---
+
 ## 2026-09-19 — Tamanho da logo vira controle do admin
 
 **Autor:** Claude Opus 5 (Cowork)

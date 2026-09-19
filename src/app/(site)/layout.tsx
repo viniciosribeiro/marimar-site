@@ -62,6 +62,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         nome={IDENTIDADE.nome}
         logoUrl={p?.logo_url ?? null}
         mostrarNome={tema.logo.mostrarNome}
+        topo={tema.alinhamento.topo}
         whatsappDigitos={wa || CONTATO.whatsappDigitos}
         whatsappExibicao={p?.whatsapp || CONTATO.whatsapp}
         instagram={IDENTIDADE.instagram}

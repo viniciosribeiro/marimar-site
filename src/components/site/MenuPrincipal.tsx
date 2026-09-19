@@ -11,6 +11,9 @@ type Props = {
   /** Escrever o nome ao lado da imagem. Logo que ja traz o nome desenhado
       nao precisa — e repetido fica pior do que so a imagem. */
   mostrarNome?: boolean;
+  /** Arranjo da barra em tela larga. Abaixo de `lg` e sempre logo + Menu:
+      e o unico arranjo que cabe, e os tres viram o mesmo ali. */
+  topo?: "esquerda" | "centro" | "dividido";
   whatsappDigitos?: string;
   whatsappExibicao?: string | null;
   instagram: string;
@@ -43,6 +46,7 @@ export function MenuPrincipal({
   nome,
   logoUrl,
   mostrarNome = true,
+  topo = "esquerda",
   whatsappDigitos,
   whatsappExibicao,
   instagram,
@@ -123,6 +127,77 @@ export function MenuPrincipal({
 
   const wa = whatsappDigitos && whatsappDigitos.length >= 10 ? whatsappDigitos : null;
 
+  const alturaBarra = compacto
+    ? "max(3.5rem, calc(var(--logo-altura-compacta) + 1rem))"
+    : "max(4rem, calc(var(--logo-altura) + 1.25rem))";
+
+  /* Os tres arranjos usam as MESMAS pecas em ordens diferentes. Montadas
+     uma vez aqui, elas nao podem divergir entre um arranjo e outro. */
+  const metade = Math.ceil(NAVEGACAO.length / 2);
+  const grupos = (de: number, ate: number) =>
+    NAVEGACAO.slice(de, ate).map((grupo) => (
+      <ItemDesktop
+        key={grupo.rotulo}
+        grupo={grupo}
+        ativo={grupoAtivo(pathname, grupo)}
+        aberto={painel === grupo.rotulo}
+        onAbrir={() => abrir(grupo.rotulo)}
+        onAlternar={() => setPainel((a) => (a === grupo.rotulo ? null : grupo.rotulo))}
+      />
+    ));
+
+  const marca = (
+    <Link href="/" className="flex items-center gap-2.5 min-w-0 shrink" aria-label={`${nome} — início`}>
+      {logoUrl
+        ? <img src={logoUrl} alt="" aria-hidden
+            className="w-auto shrink-0 transition-marca"
+            style={{ height: compacto ? "var(--logo-altura-compacta)" : "var(--logo-altura)" }} />
+        : <span className="text-2xl shrink-0" aria-hidden>🏝️</span>}
+      {(mostrarNome || !logoUrl) && (
+        <span className="font-titulo font-bold text-tinta leading-tight truncate text-[0.95rem] sm:text-lg">
+          {nome}
+        </span>
+      )}
+    </Link>
+  );
+
+  const acoes = (
+    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      {wa && (
+        <a
+          href={`https://wa.me/${wa}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Falar no WhatsApp"
+          className="hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-marca text-[#25D366] hover:bg-[#25D366]/10 transition-marca"
+        >
+          <IconeWhats size={20} />
+        </a>
+      )}
+      <Link
+        href="/reservar"
+        className="hidden sm:inline-flex items-center bg-marca hover:bg-marca-hover text-marca-texto px-4 lg:px-5 py-2.5 rounded-marca text-sm font-semibold shadow-marca transition-marca"
+      >
+        Reservar
+      </Link>
+
+      <button
+        onClick={() => setGaveta(true)}
+        aria-label="Abrir menu"
+        aria-expanded={gaveta}
+        className="lg:hidden flex items-center gap-2 -mr-1 pl-2.5 pr-3 py-2 rounded-marca text-tinta border border-linha hover:bg-areia transition-marca"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2" strokeLinecap="round" aria-hidden>
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+        <span className="text-sm font-medium">Menu</span>
+      </button>
+    </div>
+  );
+
   return (
     <>
     <header
@@ -140,82 +215,55 @@ export function MenuPrincipal({
             qualquer logo horizontal minuscula ao lado do nome. O `max()`
             garante o minimo de toque de 64px mesmo com logo pequena. */}
         <div
-          className="flex items-center justify-between gap-3 transition-marca"
-          style={{
-            height: compacto
-              ? "max(3.5rem, calc(var(--logo-altura-compacta) + 1rem))"
-              : "max(4rem, calc(var(--logo-altura) + 1.25rem))",
-          }}
+          className={
+            topo === "dividido"
+              ? "flex items-center justify-between gap-3 lg:grid lg:grid-cols-[1fr_auto_1fr] transition-marca"
+              : topo === "centro"
+              ? "flex items-center justify-between gap-3 lg:justify-center lg:relative transition-marca"
+              : "flex items-center justify-between gap-3 transition-marca"
+          }
+          style={{ height: alturaBarra }}
         >
-          {/* ── Marca ── */}
-          <Link href="/" className="flex items-center gap-2.5 min-w-0 shrink" aria-label={`${nome} — início`}>
-            {logoUrl
-              ? <img src={logoUrl} alt="" aria-hidden
-                  className="w-auto shrink-0 transition-marca"
-                  style={{ height: compacto ? "var(--logo-altura-compacta)" : "var(--logo-altura)" }} />
-              : <span className="text-2xl shrink-0" aria-hidden>🏝️</span>}
-            {(mostrarNome || !logoUrl) && (
-              <span className="font-titulo font-bold text-tinta leading-tight truncate text-[0.95rem] sm:text-lg">
-                {nome}
-              </span>
-            )}
-          </Link>
+          {topo === "dividido" && (
+            <nav className="hidden lg:flex items-stretch self-stretch justify-end"
+              aria-label="Navegação principal">
+              {grupos(0, metade)}
+            </nav>
+          )}
 
-          {/* ── Menu do desktop ──
-              So a partir de lg. Entre 768 e 1024 os seis rotulos, a marca e
-              o botao nao cabiam na mesma linha e se atropelavam: ate 1024
-              a gaveta atende melhor. */}
-          <nav className="hidden lg:flex items-stretch self-stretch" aria-label="Navegação principal">
-            {NAVEGACAO.map((grupo) => (
-              <ItemDesktop
-                key={grupo.rotulo}
-                grupo={grupo}
-                ativo={grupoAtivo(pathname, grupo)}
-                aberto={painel === grupo.rotulo}
-                onAbrir={() => abrir(grupo.rotulo)}
-                onAlternar={() => setPainel((a) => (a === grupo.rotulo ? null : grupo.rotulo))}
-              />
-            ))}
-          </nav>
+          {marca}
 
-          {/* ── Acoes ── */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {wa && (
-              <a
-                href={`https://wa.me/${wa}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Falar no WhatsApp"
-                className="hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-marca text-[#25D366] hover:bg-[#25D366]/10 transition-marca"
-              >
-                <IconeWhats size={20} />
-              </a>
-            )}
-            <Link
-              href="/reservar"
-              className="hidden sm:inline-flex items-center bg-marca hover:bg-marca-hover text-marca-texto px-4 lg:px-5 py-2.5 rounded-marca text-sm font-semibold shadow-marca transition-marca"
-            >
-              Reservar
-            </Link>
+          {topo === "esquerda" && (
+            <nav className="hidden lg:flex items-stretch self-stretch" aria-label="Navegação principal">
+              {grupos(0, NAVEGACAO.length)}
+            </nav>
+          )}
 
-            <button
-              onClick={() => setGaveta(true)}
-              aria-label="Abrir menu"
-              aria-expanded={gaveta}
-              className="lg:hidden flex items-center gap-2 -mr-1 pl-2.5 pr-3 py-2 rounded-marca text-tinta border border-linha hover:bg-areia transition-marca"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" aria-hidden>
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-              <span className="text-sm font-medium">Menu</span>
-            </button>
-          </div>
+          {topo === "dividido" ? (
+            <div className="flex items-center gap-3 lg:self-stretch lg:justify-between">
+              <nav className="hidden lg:flex items-stretch self-stretch" aria-label="Navegação principal (continuação)">
+                {grupos(metade, NAVEGACAO.length)}
+              </nav>
+              {acoes}
+            </div>
+          ) : topo === "centro" ? (
+            /* A logo fica no centro da linha; as acoes saem do fluxo para
+               a direita, senao empurrariam a logo para fora do meio. */
+            <div className="lg:absolute lg:right-0 lg:top-1/2 lg:-translate-y-1/2">{acoes}</div>
+          ) : (
+            acoes
+          )}
         </div>
-      </div>
 
+        {/* Segunda linha do arranjo centralizado: o menu inteiro, centrado
+            sob a marca. So existe a partir de `lg`. */}
+        {topo === "centro" && (
+          <nav className="hidden lg:flex items-stretch justify-center h-12 border-t border-linha/60"
+            aria-label="Navegação principal">
+            {grupos(0, NAVEGACAO.length)}
+          </nav>
+        )}
+      </div>
     </header>
 
     {/* A gaveta fica FORA do <header> de proposito.

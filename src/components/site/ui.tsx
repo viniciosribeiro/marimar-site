@@ -45,6 +45,12 @@ export function TituloPagina({ children, className = "" }: { children: ReactNode
 export function TituloSecao({ children, id }: { children: ReactNode; id?: string }) {
   return (
     <div className="flex items-baseline gap-4 mb-1 scroll-mt-24 min-w-0" id={id}>
+      {/* O traco da ESQUERDA so existe com os titulos centralizados: um traco
+          so de um lado, com o titulo no meio, fica torto. Ele aparece por
+          variavel CSS, nao por prop, para a previa do editor mostrar a
+          mudanca na hora. */}
+      <span className="h-px flex-1 bg-linha" aria-hidden
+        style={{ display: "var(--titulo-linha-esq)" }} />
       <h2 className="font-titulo text-2xl lg:text-[1.9rem] font-bold text-tinta text-balance min-w-0">
         {children}
       </h2>
@@ -54,7 +60,9 @@ export function TituloSecao({ children, id }: { children: ReactNode; id?: string
 }
 
 export function Subtexto({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <p className={`text-tinta-suave leading-relaxed ${className}`}>{children}</p>;
+  // `texto-corrido` e o que obedece ao justificado do editor — e so a partir
+  // de `md`, porque em coluna de celular o justificado abre rios de espaco.
+  return <p className={`texto-corrido text-tinta-suave leading-relaxed ${className}`}>{children}</p>;
 }
 
 /* ─────────────── Anotação manuscrita ─────────────── */
@@ -176,21 +184,28 @@ export function Hero({
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imagem} alt={alt || ""} className="absolute inset-0 -z-10 w-full h-full object-cover" />
-          {/* Clareia a esquerda para o texto escuro ficar legivel sobre foto */}
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-white/75 to-white/10" />
+          {/* Clareia a foto sob o texto. A direcao acompanha o alinhamento
+              escolhido no editor: com o texto centralizado, um veu que so
+              clareia a esquerda deixaria o titulo sobre a parte escura. */}
+          <div className="absolute inset-0 -z-10" style={{ backgroundImage: "var(--hero-veu)" }} />
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-white/60 to-transparent" />
         </>
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20 relative">
-        <div className="max-w-xl">
+        {/* A coluna do hero acompanha o alinhamento escolhido no editor:
+            centralizada, ela ganha `margin-inline: auto` e o texto vai ao
+            centro; a esquerda, fica exatamente como estava. */}
+        <div className="max-w-xl"
+          style={{ marginInline: "var(--hero-margem)", textAlign: "var(--alinha-hero)" as any }}>
           {rotulo && <div className="mb-4"><Rotulo>{rotulo}</Rotulo></div>}
           <TituloPagina>{titulo}</TituloPagina>
           {texto && <Subtexto className="mt-4 text-[15px]">{texto}</Subtexto>}
           {children}
 
           {atributos && atributos.length > 0 && (
-            <div className="flex flex-wrap gap-x-8 gap-y-3 mt-8">
+            <div className="flex flex-wrap gap-x-8 gap-y-3 mt-8"
+              style={{ justifyContent: "var(--hero-just)" }}>
               {atributos.map((a) => (
                 <span key={a.texto} className="flex items-center gap-2.5 text-xs text-tinta-suave max-w-[10rem] leading-snug">
                   <span className="text-marca text-lg shrink-0" aria-hidden>{a.icone}</span>

@@ -85,6 +85,17 @@
   --logo-altura-compacta: max(22px, calc(var(--logo-altura) * 0.78));
   --logo-altura-rodape: 36px;
 
+  /* ── Alinhamento ──
+     Controlado pela aba "Alinhamento" do editor visual. Os valores abaixo
+     sao os padroes; o layout raiz e a previa sobrescrevem. */
+  --alinha-titulos: left;
+  --titulo-linha-esq: none;
+  --alinha-hero: left;
+  --hero-margem: 0;
+  --hero-just: flex-start;
+  --alinha-corpo: inherit;
+  --hero-veu: linear-gradient(to right, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.1));
+
   /* ── Densidade ──
      Multiplica o respiro vertical das secoes. Pousada com muita foto pede
      mais ar; site com muito texto pede menos. */
@@ -179,6 +190,18 @@ h1, h2, h3, h4, h5, h6 {
 }
 @media (min-width: 1024px) {
   .secao-py { padding-block: calc(4rem * var(--densidade)); }
+}
+
+/* Texto corrido justificado.
+   So a partir de `md` de proposito: numa coluna estreita de celular o
+   justificado abre rios de espaco entre as palavras e fica pior do que o
+   alinhado a esquerda. A hifenizacao depende do `lang` no <html>. */
+@media (min-width: 768px) {
+  .texto-corrido {
+    text-align: var(--alinha-corpo);
+    hyphens: auto;
+    text-wrap: pretty;
+  }
 }
 
 /* O site e desenhado em tema claro (cards brancos, texto escuro).

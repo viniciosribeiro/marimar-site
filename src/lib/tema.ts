@@ -47,6 +47,22 @@ export type Tema = {
     mostrarNome: boolean;  // o nome escrito ao lado da imagem
   };
 
+  /**
+   * Alinhamento.
+   *
+   * Guardamos a INTENCAO ("centro"), nao o CSS ("center"): o mesmo
+   * "centro" precisa virar `text-align`, `justify-content`, `margin-inline`
+   * e ate mostrar um segundo traco decorativo. Derivar tudo em
+   * `temaParaCss()` mantem essas quatro consequencias coerentes entre si.
+   */
+  alinhamento: {
+    topo: "esquerda" | "centro" | "dividido";
+    titulos: "esquerda" | "centro";
+    hero: "esquerda" | "centro";
+    /** Texto corrido com as duas margens alinhadas. So a partir de `md`. */
+    justificado: boolean;
+  };
+
   // Faixa de aviso
   banner: { ativo: boolean; texto: string | null; subtexto: string | null; animado: boolean };
 };
@@ -66,6 +82,7 @@ export const TEMA_PADRAO: Tema = {
   densidade: 1,
   animacoes: true,
   logo: { altura: 52, alturaRodape: 36, mostrarNome: true },
+  alinhamento: { topo: "esquerda", titulos: "esquerda", hero: "esquerda", justificado: false },
   banner: { ativo: false, texto: null, subtexto: null, animado: true },
 };
 
@@ -83,6 +100,7 @@ export function lerTema(pousada: Record<string, any> | null): Tema {
     // `raio` era string em versoes antigas do editor
     raio: Number(t.raio ?? TEMA_PADRAO.raio),
     logo: { ...TEMA_PADRAO.logo, ...(t.logo ?? {}) },
+    alinhamento: { ...TEMA_PADRAO.alinhamento, ...(t.alinhamento ?? {}) },
     banner: { ...TEMA_PADRAO.banner, ...(t.banner ?? {}) },
   };
 }
@@ -102,6 +120,8 @@ const SOMBRAS: Record<Tema["sombra"], string> = {
  * exatamente o que o site vai mostrar — duas implementacoes divergiriam.
  */
 export function temaParaCss(t: Tema, pilhas: { titulo: string; corpo: string; manuscrita: string }): string {
+  const centroTitulos = t.alinhamento.titulos === "centro";
+  const centroHero = t.alinhamento.hero === "centro";
   return [
     `--marca:${t.marca}`,
     `--acento:${t.acento}`,
@@ -117,6 +137,22 @@ export function temaParaCss(t: Tema, pilhas: { titulo: string; corpo: string; ma
     `--densidade:${t.densidade}`,
     `--logo-altura:${t.logo.altura}px`,
     `--logo-altura-rodape:${t.logo.alturaRodape}px`,
+
+    // Alinhamento — uma intencao, varias consequencias, derivadas aqui
+    `--alinha-titulos:${centroTitulos ? "center" : "left"}`,
+    // Com os titulos centralizados aparece um segundo traco, do lado
+    // esquerdo: um traco so de um lado com o titulo no meio fica torto.
+    `--titulo-linha-esq:${centroTitulos ? "block" : "none"}`,
+    `--alinha-hero:${centroHero ? "center" : "left"}`,
+    `--hero-margem:${centroHero ? "auto" : "0"}`,
+    `--hero-just:${centroHero ? "center" : "flex-start"}`,
+    // O veu sobre a foto acompanha o texto. Com o texto a esquerda ele
+    // clareia a esquerda; centralizado, clarearia o lado errado e o titulo
+    // cairia por cima da parte escura da foto.
+    `--hero-veu:${centroHero
+      ? "linear-gradient(to right, rgb(255 255 255 / 0.35), rgb(255 255 255 / 0.88) 35%, rgb(255 255 255 / 0.88) 65%, rgb(255 255 255 / 0.35))"
+      : "linear-gradient(to right, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.1))"}`,
+    `--alinha-corpo:${t.alinhamento.justificado ? "justify" : "inherit"}`,
     `--duracao:${t.animacoes ? "200ms" : "0.01ms"}`,
   ].join(";") + ";";
 }
