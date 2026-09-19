@@ -518,6 +518,79 @@ visualmente** — a sessão do admin estava no login.
 
 ---
 
+## 2026-09-19 (9) — Atendimento da Marina no site
+
+**Autor:** Claude Opus 5 (Cowork)
+
+> ⚠️ **Rode `npm run db:migrate`** (migration `0008_chat_site`) e preencha
+> `OPENCLAW_GATEWAY_URL`, `OPENCLAW_GATEWAY_TOKEN` e `OPENCLAW_MODELO` na Vercel.
+
+O chat do site conversa com a **mesma Marina do WhatsApp**, pelo gateway do
+OpenClaw. O caminho é:
+
+```
+navegador → /api/chat (nosso servidor) → gateway do OpenClaw → Marina
+```
+
+### O navegador nunca vê credencial
+
+A documentação do OpenClaw trata o endpoint `/v1/chat/completions` como
+**acesso de operador da instância** e manda mantê-lo fora da internet pública.
+Por isso o widget não conhece token nenhum: ele fala com `/api/chat`, que é
+público, não recebe chave alguma e só sabe fazer uma coisa — repassar uma
+pergunta de visitante.
+
+### O histórico vem do banco, não do navegador
+
+O cliente manda **só a mensagem nova**. O contexto da conversa é montado no
+servidor a partir de `chat_mensagens`.
+
+Não é detalhe de persistência: se o histórico viesse do cliente, qualquer
+pessoa poderia forjar uma mensagem de "sistema" e reescrever as instruções da
+Marina. É o caminho mais fácil para tirar um agente do papel, e ele fica
+fechado por construção.
+
+### O interruptor nasce desligado
+
+`chat_ativo` começa `false`. Um chat público com LLM é uma porta para o crédito
+da pousada — ele entra no ar quando a administração decidir, não quando o
+deploy subir. Desligado, a rota responde 503 **antes** de chegar ao gateway:
+é corte de consumo na hora, sem deploy.
+
+### Limites
+
+- 30 perguntas por IP por hora, contadas no banco (serverless não tem memória
+  compartilhada entre instâncias — um contador em RAM não limita nada)
+- 1200 caracteres por mensagem
+- 20 mensagens de contexto
+
+O IP é guardado como **hash com sal** (`AUTH_SECRET`), nunca cru: dá para
+limitar abuso sem guardar dado pessoal. Sem o sal, uma tabela de hashes de
+IPv4 é reversível por força bruta em minutos.
+
+### Falha vira resposta, não erro
+
+Quando o gateway cai, o visitante recebe uma frase e o link do WhatsApp — nunca
+uma tela de erro. E a saída humana fica visível o tempo todo, mesmo quando tudo
+funciona: atendimento automático que esconde o caminho para uma pessoa de
+verdade é pior do que não ter atendimento automático.
+
+### No admin
+
+**Integrações → Marina no site**: liga/desliga, perguntas nas últimas 24h,
+conversas nos últimos 30 dias, e um teste do gateway. O teste usa
+`GET /v1/models` porque é a chamada mais barata que prova três coisas de uma
+vez — alcance, token válido e gateway de pé — sem gastar crédito de conversa.
+Ele também **lista os modelos disponíveis**, que é o valor a pôr em
+`OPENCLAW_MODELO`.
+
+### Removido
+
+`src/components/site/ChatWidget.tsx` — era um botão de WhatsApp disfarçado de
+chat, e não estava sendo usado em página nenhuma.
+
+---
+
 ## 2026-09-19 (deploy 2) — Deploy da correção de rolagem horizontal no celular + teto da marca
 
 **Autor:** Agent Hermes (OpenRouter)

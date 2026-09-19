@@ -1,4 +1,6 @@
 import { auth } from "@/lib/auth"; import { redirect } from "next/navigation"; import { fetchTarifas } from "@/lib/worker"; import postgres from "postgres"; import { headers } from "next/headers";
+import { gatewayConfigurado, urlGateway, cabecalhosGateway } from "@/lib/chat";
+import { alternarChat } from "./chat-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,44 @@ export default async function IntegracoesPage() {
   let dispOk = false; let dispLat = 0;
   try { const t0 = Date.now(); const r = await fetch(`${baseUrl}/api/disponibilidade?check_in=2026-10-15&check_out=2026-10-17&adultos=2`, { signal: AbortSignal.timeout(8000) }); dispOk = r.ok; dispLat = Date.now() - t0; } catch {}
 
+  /* ── Marina no site ──
+     Testa o gateway do OpenClaw como o /api/chat faria: mesma URL, mesmo
+     token, servidor a servidor. `GET /v1/models` porque e a chamada mais
+     barata que prova as tres coisas de uma vez — alcance, token valido e
+     gateway de pe — sem gastar credito de conversa. */
+  const [linhaChat] = await sql`SELECT chat_ativo FROM pousada LIMIT 1`;
+  const chatAtivo = Boolean((linhaChat as any)?.chat_ativo);
+
+  let gwOk = false, gwLat = 0, gwErro = "", gwModelos: string[] = [];
+  if (gatewayConfigurado()) {
+    try {
+      const t0 = Date.now();
+      const r = await fetch(urlGateway("/v1/models"), {
+        headers: cabecalhosGateway(),
+        signal: AbortSignal.timeout(8000),
+      });
+      gwLat = Date.now() - t0;
+      gwOk = r.ok;
+      if (r.ok) {
+        const j = await r.json().catch(() => null);
+        gwModelos = (j?.data ?? []).map((m: any) => String(m.id)).slice(0, 8);
+      } else {
+        gwErro = `HTTP ${r.status}`;
+      }
+    } catch (e: any) {
+      gwErro = e?.message === "The operation was aborted due to timeout"
+        ? "sem resposta em 8s — o gateway pode estar fechado para fora da Hostinger"
+        : (e?.message ?? "falhou");
+    }
+  }
+
+  const [chatHoje] = await sql`
+    SELECT COUNT(*)::int AS c FROM chat_mensagens
+    WHERE papel = 'visitante' AND criado_em > now() - interval '24 hours'`;
+  const [chatConversas] = await sql`
+    SELECT COUNT(DISTINCT sessao)::int AS c FROM chat_mensagens
+    WHERE criado_em > now() - interval '30 days'`;
+
   // Stats do banco
   const [qCount] = await sql`SELECT count(*)::int as c FROM quartos WHERE ativo = true`;
   const [lCount] = await sql`SELECT count(*)::int as c FROM leads`;
@@ -54,6 +94,60 @@ export default async function IntegracoesPage() {
         <StatusCard label="API Disponibilidade" status={dispOk ? "online" : "offline"} detail={dispOk ? `${dispLat}ms` : "Falha"} />
         <StatusCard label="API do Agente" status={Object.values(agentTests).every((t: any) => t.ok) ? "online" : "partial"} detail={`${Object.values(agentTests).filter((t: any) => t.ok).length}/${Object.values(agentTests).length} endpoints`} />
         <StatusCard label="Banco de Dados" status="online" detail={`${qCount.c} quartos • ${mCount.c} mídias`} />
+      </div>
+
+      {/* ── Marina no site ── */}
+      <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+          <div className="min-w-0">
+            <h2 className="font-semibold text-gray-900">Marina no site</h2>
+            <p className="text-sm text-gray-500 mt-0.5 leading-relaxed max-w-xl">
+              O chat de atendimento nas páginas do site. Fala com a mesma Marina
+              do WhatsApp, pelo gateway do OpenClaw.
+            </p>
+          </div>
+          <form action={alternarChat}>
+            <button type="submit"
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium ${
+                chatAtivo ? "border border-red-200 text-red-600 hover:bg-red-50" : "bg-gray-900 text-white"
+              }`}>
+              {chatAtivo ? "Desligar o chat" : "Ligar o chat"}
+            </button>
+          </form>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Info rotulo="Situação" valor={chatAtivo ? "No ar" : "Desligado"} tom={chatAtivo ? "ok" : "neutro"} />
+          <Info rotulo="Perguntas em 24h" valor={String((chatHoje as any)?.c ?? 0)} tom="neutro" />
+          <Info rotulo="Conversas em 30 dias" valor={String((chatConversas as any)?.c ?? 0)} tom="neutro" />
+        </div>
+
+        <div className="mt-4 border-t border-gray-100 pt-4">
+          <p className="text-xs font-medium text-gray-600 mb-2">Gateway do OpenClaw</p>
+          {!gatewayConfigurado() ? (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 leading-relaxed">
+              Faltam as variáveis <code>OPENCLAW_GATEWAY_URL</code> e{" "}
+              <code>OPENCLAW_GATEWAY_TOKEN</code> na Vercel. Sem elas o chat não
+              tem com quem falar — o botão acima liga a tela, não a conversa.
+            </p>
+          ) : gwOk ? (
+            <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5 leading-relaxed">
+              Conectado em {gwLat}ms.
+              {gwModelos.length > 0 && (
+                <>
+                  {" "}Modelos disponíveis: <strong>{gwModelos.join(", ")}</strong>.
+                  <span className="block text-xs mt-1 opacity-80">
+                    Use um destes em <code>OPENCLAW_MODELO</code>.
+                  </span>
+                </>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 leading-relaxed">
+              Não alcançou o gateway: {gwErro}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Endpoints Agent */}
@@ -155,6 +249,17 @@ export default async function IntegracoesPage() {
           <div>curl -H "Authorization: Bearer {apiKey}" {baseUrl}/api/agent/pousada</div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Info({ rotulo, valor, tom }: { rotulo: string; valor: string; tom: "ok" | "neutro" }) {
+  return (
+    <div className={`rounded-lg border px-3 py-2.5 ${
+      tom === "ok" ? "border-emerald-200 bg-emerald-50" : "border-gray-200 bg-gray-50"
+    }`}>
+      <p className="text-[11px] text-gray-500">{rotulo}</p>
+      <p className={`text-sm font-semibold ${tom === "ok" ? "text-emerald-800" : "text-gray-900"}`}>{valor}</p>
     </div>
   );
 }

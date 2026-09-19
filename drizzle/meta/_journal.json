@@ -57,6 +57,13 @@
       "when": 1789833000000,
       "tag": "0007_blocos_itens",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789900000000,
+      "tag": "0008_chat_site",
+      "breakpoints": true
     }
   ]
 }

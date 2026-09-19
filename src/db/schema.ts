@@ -426,3 +426,26 @@ export const blocosItens = pgTable("blocos_itens", {
   ativo: boolean("ativo").default(true).notNull(),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
+
+/* ═══════════════════════ CHAT DO SITE ═══════════════════════ */
+
+// O widget do site conversa com a MESMA Marina do WhatsApp, atraves do
+// gateway do OpenClaw. O navegador fala com /api/chat (publico, sem chave) e
+// e o servidor que carrega o token.
+//
+// O historico mora aqui e NAO no navegador — nao so por persistencia: o
+// contexto enviado ao agente e montado no servidor a partir desta tabela. Se
+// viesse do cliente, qualquer pessoa poderia forjar uma mensagem de sistema e
+// reescrever as instrucoes da Marina.
+//
+// `ip_hash` e hash com sal, nunca o IP cru: limita abuso sem guardar dado
+// pessoal identificavel.
+export const chatMensagens = pgTable("chat_mensagens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sessao: text("sessao").notNull(),
+  ip_hash: text("ip_hash"),
+  /** "visitante" ou "marina". */
+  papel: text("papel").notNull(),
+  conteudo: text("conteudo").notNull(),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+});

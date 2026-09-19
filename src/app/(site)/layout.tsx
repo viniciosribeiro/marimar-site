@@ -2,6 +2,7 @@ import Link from "next/link";
 import postgres from "postgres";
 import { MenuPrincipal } from "@/components/site/MenuPrincipal";
 import { MarcaLockup } from "@/components/site/MarcaLockup";
+import { ChatMarina } from "@/components/site/ChatMarina";
 import { COLUNAS_RODAPE } from "@/lib/navegacao";
 import { COMPLEXO, CONTATO, IDENTIDADE } from "@/lib/conteudo-pousada";
 import { lerTema } from "@/lib/tema";
@@ -147,6 +148,11 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           </div>
         </div>
       </footer>
+
+      {/* O chat so existe com o interruptor ligado em Admin -> Integracoes.
+          Ele nasce desligado: um chat publico com LLM e uma porta para o
+          credito da pousada, e quem decide abrir e a administracao. */}
+      {p?.chat_ativo && wa && <ChatMarina whatsapp={wa} nome={IDENTIDADE.nome} />}
 
       {wa && (
         <a
