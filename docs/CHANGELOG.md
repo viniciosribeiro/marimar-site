@@ -19,6 +19,61 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-19 (7) — O nome ao lado da logo virou um conjunto configurável
+
+**Autor:** Claude Opus 5 (Cowork)
+
+Não precisa de migration: o tema é `jsonb` e `lerTema()` completa o que falta.
+
+### O problema
+
+"Ao lado" era a única posição, com uma distância fixa no código. Isso funciona
+para uma logo e falha para a seguinte: logo alta pede o nome embaixo, logo
+larga pede ao lado, e o espaço que parece certo com um brasão fica grande
+demais com uma assinatura horizontal — foi exatamente o que aconteceu aqui, o
+nome ficou solto da logo.
+
+### Um componente, quatro lugares
+
+`MarcaLockup` desenha o conjunto no topo, no rodapé, na gaveta do celular e na
+prévia do editor. Antes cada lugar montava o seu, com alturas e distâncias
+próprias — três chances de divergir a cada ajuste.
+
+### A posição não mexe no HTML
+
+`--marca-direcao` vira `flex-direction`: "abaixo" é uma coluna, "esquerda" é
+uma linha invertida. Então a ordem no HTML é sempre **imagem → texto**, que é a
+ordem em que um leitor de tela precisa ouvir, esteja o texto acima, abaixo ou
+dos lados. E, como tudo sai por variável CSS, a prévia do editor reflete cada
+mudança na hora.
+
+### Controles novos (aba Marca)
+
+Posição (direita, esquerda, acima, abaixo), texto próprio, **segunda linha**
+(como "POUSADA" sob "Marimar"), distância até a logo, tamanho, peso,
+espaçamento entre letras e caixa alta.
+
+A segunda linha é **derivada** do tamanho do nome — sempre menor e mais
+espaçada. Não virou um segundo controle de propósito: seriam duas medidas para
+a mesma coisa, e a primeira vez que alguém mexesse em uma só, as duas linhas
+sairiam tortas entre si.
+
+### A barra deixou de ter altura fechada
+
+Passou de `height` para `minHeight`. Com o nome **acima** ou **abaixo** da
+logo, o conjunto fica mais alto que a imagem, e uma altura calculada só a
+partir dela cortaria o texto. O mínimo continua garantindo a área de toque
+quando a logo é pequena.
+
+### Verificado
+
+`tsc --noEmit` limpo. Home conferida pela árvore de acessibilidade (o painel do
+navegador estava oculto, e nesse estado os screenshots não são confiáveis): o
+conjunto do topo, o do rodapé e o da gaveta renderizam, e a ordem continua
+imagem → texto.
+
+---
+
 ## 2026-09-19 (6) — Home: ícones de verdade, busca em abas e cartões editáveis
 
 **Autor:** Claude Opus 5 (Cowork)

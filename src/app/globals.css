@@ -85,6 +85,17 @@
   --logo-altura-compacta: max(22px, calc(var(--logo-altura) * 0.78));
   --logo-altura-rodape: 36px;
 
+  /* Conjunto logo + nome. A posicao do nome vira flex-direction, entao o
+     HTML nunca muda: imagem, depois texto, na ordem que o leitor de tela
+     precisa ouvir — independentemente de onde o texto aparece. */
+  --marca-direcao: row;
+  --marca-alinhar: center;
+  --marca-espaco: 10px;
+  --marca-nome-tam: 18px;
+  --marca-nome-peso: 700;
+  --marca-nome-rastreio: 0em;
+  --marca-nome-caixa: none;
+
   /* ── Alinhamento ──
      Controlado pela aba "Alinhamento" do editor visual. Os valores abaixo
      sao os padroes; o layout raiz e a previa sobrescrevem. */

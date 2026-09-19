@@ -5,6 +5,7 @@ import { salvarTema } from "@/app/(admin)/admin/identidade-visual/actions";
 import { PreviaSite } from "./PreviaSite";
 import { UploadImagem } from "./UploadImagem";
 import { avaliarCorDeMarca, textoIdeal, razaoContraste } from "@/lib/contraste";
+import { MarcaLockup } from "@/components/site/MarcaLockup";
 import {
   lerTema, CONJUNTOS, FONTES_TITULO, FONTES_CORPO, FONTES_MANUSCRITA,
   ESCALAS, TODAS_AS_FONTES, type Tema,
@@ -39,6 +40,11 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
   const [enviando, iniciarEnvio] = useTransition();
 
   const set = <K extends keyof Tema>(k: K, v: Tema[K]) => setTema((t) => ({ ...t, [k]: v }));
+
+  /** Atalho para o bloco aninhado do nome — senao cada controle repetiria
+      dois niveis de spread e um deles acabaria esquecendo um campo. */
+  const setNome = (mudanca: Partial<Tema["logo"]["nome"]>) =>
+    setTema((t) => ({ ...t, logo: { ...t.logo, nome: { ...t.logo.nome, ...mudanca } } }));
 
   const mudou = useMemo(() =>
     JSON.stringify(tema) !== JSON.stringify(salvo) ||
@@ -372,10 +378,53 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                   aoMudar={(v) => set("logo", { ...tema.logo, alturaRodape: v })} />
 
                 <Interruptor
-                  rotulo="Escrever o nome ao lado"
-                  descricao="Desligue se a própria imagem da logo já traz o nome — repetido fica pior."
+                  rotulo="Escrever o nome junto da logo"
+                  descricao="Desligue se a própria imagem já traz o nome — repetido fica pior."
                   ligado={tema.logo.mostrarNome}
                   aoMudar={(v) => set("logo", { ...tema.logo, mostrarNome: v })} />
+
+                {tema.logo.mostrarNome && (
+                  <div className="border-t border-gray-100 pt-4 mt-1">
+                    <p className="text-xs font-medium text-gray-600 mb-2">Onde o nome fica</p>
+                    <PosicaoNome valor={tema.logo.nome.posicao}
+                      aoMudar={(v) => setNome({ posicao: v as any })} />
+
+                    <Campo rotulo="Texto" valor={tema.logo.nome.texto ?? ""}
+                      placeholder={nomeDaPousada}
+                      aoMudar={(v) => setNome({ texto: v || null })} />
+                    <p className="text-[11px] text-gray-400 -mt-2 mb-4 leading-relaxed">
+                      Em branco, usa o nome da pousada. Útil quando a logo já diz
+                      uma parte e o texto deve dizer a outra.
+                    </p>
+
+                    <Campo rotulo="Segunda linha" valor={tema.logo.nome.subtexto ?? ""}
+                      placeholder="Ex.: POUSADA"
+                      aoMudar={(v) => setNome({ subtexto: v || null })} />
+                    <p className="text-[11px] text-gray-400 -mt-2 mb-4 leading-relaxed">
+                      Menor e mais espaçada, derivada do tamanho do nome — não é um
+                      segundo controle, para as duas linhas nunca saírem tortas
+                      entre si.
+                    </p>
+
+                    <Faixa rotulo="Distância até a logo" valor={tema.logo.nome.espaco}
+                      min={0} max={28} passo={1} formato={(v) => `${v} px`}
+                      aoMudar={(v) => setNome({ espaco: v })} />
+                    <Faixa rotulo="Tamanho do nome" valor={tema.logo.nome.tamanho}
+                      min={11} max={34} passo={1} formato={(v) => `${v} px`}
+                      aoMudar={(v) => setNome({ tamanho: v })} />
+                    <Faixa rotulo="Peso" valor={tema.logo.nome.peso}
+                      min={300} max={800} passo={100} formato={(v) => String(v)}
+                      aoMudar={(v) => setNome({ peso: v })} />
+                    <Faixa rotulo="Espaçamento entre letras" valor={tema.logo.nome.rastreio}
+                      min={-3} max={30} passo={1} formato={(v) => `${(v / 100).toFixed(2)} em`}
+                      aoMudar={(v) => setNome({ rastreio: v })} />
+
+                    <Interruptor rotulo="Tudo em maiúsculas"
+                      descricao="Combina com espaçamento entre letras maior."
+                      ligado={tema.logo.nome.caixa === "maiuscula"}
+                      aoMudar={(v) => setNome({ caixa: v ? "maiuscula" : "normal" })} />
+                  </div>
+                )}
               </div>
               <UploadImagem rotulo="Favicon" valor={favicon} aoEnviar={setFavicon} pasta="marca" configurado={blobOk}
                 previewClasse="h-8" ajuda="Ícone da aba do navegador. Quadrado, 512×512." />
@@ -563,22 +612,41 @@ function PreviaTitulo({ centro, fonte }: { centro: boolean; fonte: string }) {
  * nada sobre como a marca vai aparecer.
  */
 function PreviaLockup({ logo, nome, tema }: { logo: string; nome: string; tema: Tema }) {
-  const alturaBarra = Math.max(64, tema.logo.altura + 20);
+  const n = tema.logo.nome;
+  const vertical = n.posicao === "acima" || n.posicao === "abaixo";
+  const alturaBarra = Math.max(64, tema.logo.altura + (vertical && tema.logo.mostrarNome ? n.tamanho + 18 : 20));
+
+  /* As mesmas variaveis que o site recebe, aplicadas so nesta caixa. E o
+     que faz a previa mostrar o resultado real em vez de uma imitacao: o
+     componente e o mesmo do cabecalho. */
+  const vars = {
+    ["--marca-direcao" as any]: { direita: "row", esquerda: "row-reverse", abaixo: "column", acima: "column-reverse" }[n.posicao],
+    ["--marca-alinhar" as any]: "center",
+    ["--marca-espaco" as any]: `${n.espaco}px`,
+    ["--marca-nome-tam" as any]: `${n.tamanho}px`,
+    ["--marca-nome-peso" as any]: String(n.peso),
+    ["--marca-nome-rastreio" as any]: `${(n.rastreio / 100).toFixed(3)}em`,
+    ["--marca-nome-caixa" as any]: n.caixa === "maiuscula" ? "uppercase" : "none",
+    ["--tinta" as any]: "#12324f",
+    ["--tinta-suave" as any]: "#4b5c6b",
+    ["--fonte-titulo" as any]: tema.fonteTitulo,
+  } as React.CSSProperties;
+
   return (
     <div className="mb-4">
       <p className="text-xs font-medium text-gray-600 mb-2">Como fica no topo</p>
-      <div className="rounded-lg border border-gray-200 overflow-hidden bg-white">
+      <div className="rounded-lg border border-gray-200 overflow-hidden bg-white" style={vars}>
         <div className="flex items-center gap-2.5 px-4 border-b border-gray-200"
-          style={{ height: alturaBarra }}>
-          {logo
-            ? <img src={logo} alt="" className="w-auto shrink-0" style={{ height: tema.logo.altura }} />
-            : <span className="text-2xl shrink-0">🏝️</span>}
-          {(tema.logo.mostrarNome || !logo) && (
-            <span className="font-bold truncate" style={{ fontFamily: tema.fonteTitulo, color: "#12324f" }}>
-              {nome}
-            </span>
-          )}
-          <span className="ml-auto shrink-0 text-[10px] text-white px-2.5 py-1.5 rounded"
+          style={{ minHeight: alturaBarra }}>
+          <MarcaLockup
+            nome={nome}
+            logoUrl={logo || null}
+            mostrarNome={tema.logo.mostrarNome}
+            texto={tema.logo.nome.texto}
+            subtexto={tema.logo.nome.subtexto}
+            altura={`${tema.logo.altura}px`}
+          />
+          <span className="ml-auto shrink-0 text-[10px] text-white px-2.5 py-1.5"
             style={{ backgroundColor: tema.marca, borderRadius: tema.raio }}>
             Reservar
           </span>
@@ -586,6 +654,35 @@ function PreviaLockup({ logo, nome, tema }: { logo: string; nome: string; tema: 
         <div className="h-8 bg-gray-50" />
       </div>
       <p className="text-[11px] text-gray-400 mt-1.5">Barra de {alturaBarra}px</p>
+    </div>
+  );
+}
+
+/** As quatro posicoes, desenhadas: "acima" e "abaixo" nao se explicam em texto. */
+function PosicaoNome({ valor, aoMudar }: { valor: string; aoMudar: (v: string) => void }) {
+  const opcoes = [
+    { id: "direita", nome: "À direita" },
+    { id: "esquerda", nome: "À esquerda" },
+    { id: "abaixo", nome: "Abaixo" },
+    { id: "acima", nome: "Acima" },
+  ];
+  const desenho: Record<string, React.ReactElement> = {
+    direita: <><rect x="12" y="14" width="18" height="16" rx="3" fill="#12324f" /><rect x="34" y="19" width="26" height="6" rx="3" fill="#cbd5e1" /></>,
+    esquerda: <><rect x="42" y="14" width="18" height="16" rx="3" fill="#12324f" /><rect x="12" y="19" width="26" height="6" rx="3" fill="#cbd5e1" /></>,
+    abaixo: <><rect x="27" y="6" width="18" height="16" rx="3" fill="#12324f" /><rect x="18" y="26" width="36" height="6" rx="3" fill="#cbd5e1" /></>,
+    acima: <><rect x="18" y="8" width="36" height="6" rx="3" fill="#cbd5e1" /><rect x="27" y="18" width="18" height="16" rx="3" fill="#12324f" /></>,
+  };
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+      {opcoes.map((o) => (
+        <button key={o.id} type="button" onClick={() => aoMudar(o.id)}
+          className={`p-2 rounded-lg border-2 transition-all ${
+            valor === o.id ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"
+          }`}>
+          <svg viewBox="0 0 72 40" className="w-full" aria-hidden>{desenho[o.id]}</svg>
+          <p className="text-[10px] font-medium text-gray-700 mt-1">{o.nome}</p>
+        </button>
+      ))}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import postgres from "postgres";
 import { MenuPrincipal } from "@/components/site/MenuPrincipal";
+import { MarcaLockup } from "@/components/site/MarcaLockup";
 import { COLUNAS_RODAPE } from "@/lib/navegacao";
 import { COMPLEXO, CONTATO, IDENTIDADE } from "@/lib/conteudo-pousada";
 import { lerTema } from "@/lib/tema";
@@ -62,6 +63,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         nome={IDENTIDADE.nome}
         logoUrl={p?.logo_url ?? null}
         mostrarNome={tema.logo.mostrarNome}
+        nomeTexto={tema.logo.nome.texto}
+        nomeSubtexto={tema.logo.nome.subtexto}
         topo={tema.alinhamento.topo}
         whatsappDigitos={wa || CONTATO.whatsappDigitos}
         whatsappExibicao={p?.whatsapp || CONTATO.whatsapp}
@@ -80,15 +83,16 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
           <div className="grid grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-10">
             <div className="col-span-2 lg:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                {p?.logo_url
-                  ? <img src={p.logo_url} className="w-auto" alt={nome}
-                      style={{ height: "var(--logo-altura-rodape)" }} />
-                  : <span className="text-2xl">🏝️</span>}
-                {(tema.logo.mostrarNome || !p?.logo_url) && (
-                  <span className="text-white font-titulo font-bold text-lg">{nome}</span>
-                )}
-              </div>
+              <MarcaLockup
+                nome={nome}
+                logoUrl={p?.logo_url ?? null}
+                mostrarNome={tema.logo.mostrarNome}
+                texto={tema.logo.nome.texto}
+                subtexto={tema.logo.nome.subtexto}
+                altura="var(--logo-altura-rodape)"
+                escuro
+                className="mb-4"
+              />
               <p className="text-sm text-gray-400 leading-relaxed mb-5 max-w-sm">
                 {COMPLEXO.fraseLonga}
               </p>

@@ -44,7 +44,28 @@ export type Tema = {
   logo: {
     altura: number;        // px — topo da pagina, antes de rolar
     alturaRodape: number;  // px — rodape
-    mostrarNome: boolean;  // o nome escrito ao lado da imagem
+    mostrarNome: boolean;  // escrever o nome junto da imagem
+
+    /**
+     * O nome escrito junto da logo.
+     *
+     * "Ao lado" era a unica opcao, e nem sempre e a certa: logo alta pede o
+     * nome embaixo, logo larga pede ao lado, e ha marca que quer o nome por
+     * cima. Como a posicao vira `flex-direction`, isso sai por variavel CSS
+     * — nao muda o HTML, e a previa do editor reflete na hora.
+     */
+    nome: {
+      posicao: "direita" | "esquerda" | "acima" | "abaixo";
+      /** Vazio = usa o nome da pousada. */
+      texto: string | null;
+      /** Segunda linha, menor. Ex.: "POUSADA" sob "Marimar". */
+      subtexto: string | null;
+      espaco: number;    // px entre a imagem e o texto
+      tamanho: number;   // px
+      peso: number;      // 300–800
+      rastreio: number;  // centesimos de em: 12 = 0.12em
+      caixa: "normal" | "maiuscula";
+    };
   };
 
   /**
@@ -81,7 +102,15 @@ export const TEMA_PADRAO: Tema = {
   sombra: "sm",
   densidade: 1,
   animacoes: true,
-  logo: { altura: 52, alturaRodape: 36, mostrarNome: true },
+  logo: {
+    altura: 52,
+    alturaRodape: 36,
+    mostrarNome: true,
+    nome: {
+      posicao: "direita", texto: null, subtexto: null,
+      espaco: 10, tamanho: 18, peso: 700, rastreio: 0, caixa: "normal",
+    },
+  },
   alinhamento: { topo: "esquerda", titulos: "esquerda", hero: "esquerda", justificado: false },
   banner: { ativo: false, texto: null, subtexto: null, animado: true },
 };
@@ -99,11 +128,25 @@ export function lerTema(pousada: Record<string, any> | null): Tema {
     fonteCorpo: pousada?.fonte_corpo || t.fonteCorpo || TEMA_PADRAO.fonteCorpo,
     // `raio` era string em versoes antigas do editor
     raio: Number(t.raio ?? TEMA_PADRAO.raio),
-    logo: { ...TEMA_PADRAO.logo, ...(t.logo ?? {}) },
+    logo: {
+      ...TEMA_PADRAO.logo,
+      ...(t.logo ?? {}),
+      // O bloco `nome` chegou depois: um tema salvo antes dele nao o tem, e
+      // sem este merge o conjunto sairia com tamanho e peso indefinidos.
+      nome: { ...TEMA_PADRAO.logo.nome, ...((t.logo as any)?.nome ?? {}) },
+    },
     alinhamento: { ...TEMA_PADRAO.alinhamento, ...(t.alinhamento ?? {}) },
     banner: { ...TEMA_PADRAO.banner, ...(t.banner ?? {}) },
   };
 }
+
+/** Posicao do nome -> eixo do flex. "esquerda" e "acima" invertem a ordem. */
+const DIRECAO_NOME: Record<string, string> = {
+  direita: "row",
+  esquerda: "row-reverse",
+  abaixo: "column",
+  acima: "column-reverse",
+};
 
 const SOMBRAS: Record<Tema["sombra"], string> = {
   none: "none",
@@ -137,6 +180,19 @@ export function temaParaCss(t: Tema, pilhas: { titulo: string; corpo: string; ma
     `--densidade:${t.densidade}`,
     `--logo-altura:${t.logo.altura}px`,
     `--logo-altura-rodape:${t.logo.alturaRodape}px`,
+
+    /* O conjunto logo + nome.
+       A posicao vira `flex-direction`: "abaixo" e uma coluna, "esquerda" e
+       uma linha invertida. Assim o HTML e sempre o mesmo — imagem, depois
+       texto — e quem le com leitor de tela ouve na ordem certa,
+       independentemente de onde o texto foi parar visualmente. */
+    `--marca-direcao:${DIRECAO_NOME[t.logo.nome.posicao] ?? "row"}`,
+    `--marca-alinhar:${t.logo.nome.posicao === "acima" || t.logo.nome.posicao === "abaixo" ? "center" : "center"}`,
+    `--marca-espaco:${t.logo.nome.espaco}px`,
+    `--marca-nome-tam:${t.logo.nome.tamanho}px`,
+    `--marca-nome-peso:${t.logo.nome.peso}`,
+    `--marca-nome-rastreio:${(t.logo.nome.rastreio / 100).toFixed(3)}em`,
+    `--marca-nome-caixa:${t.logo.nome.caixa === "maiuscula" ? "uppercase" : "none"}`,
 
     // Alinhamento — uma intencao, varias consequencias, derivadas aqui
     `--alinha-titulos:${centroTitulos ? "center" : "left"}`,

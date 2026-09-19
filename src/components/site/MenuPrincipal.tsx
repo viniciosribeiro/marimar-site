@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAVEGACAO, grupoAtivo, type GrupoNav } from "@/lib/navegacao";
+import { MarcaLockup } from "./MarcaLockup";
 
 type Props = {
   nome: string;
@@ -11,6 +12,10 @@ type Props = {
   /** Escrever o nome ao lado da imagem. Logo que ja traz o nome desenhado
       nao precisa — e repetido fica pior do que so a imagem. */
   mostrarNome?: boolean;
+  /** Texto proprio ao lado da logo; vazio usa o nome da pousada. */
+  nomeTexto?: string | null;
+  /** Segunda linha, menor. Ex.: "POUSADA" sob "Marimar". */
+  nomeSubtexto?: string | null;
   /** Arranjo da barra em tela larga. Abaixo de `lg` e sempre logo + Menu:
       e o unico arranjo que cabe, e os tres viram o mesmo ali. */
   topo?: "esquerda" | "centro" | "dividido";
@@ -46,6 +51,8 @@ export function MenuPrincipal({
   nome,
   logoUrl,
   mostrarNome = true,
+  nomeTexto = null,
+  nomeSubtexto = null,
   topo = "esquerda",
   whatsappDigitos,
   whatsappExibicao,
@@ -127,6 +134,9 @@ export function MenuPrincipal({
 
   const wa = whatsappDigitos && whatsappDigitos.length >= 10 ? whatsappDigitos : null;
 
+  /* `minHeight`, nao `height`: com o nome ACIMA ou ABAIXO da logo o conjunto
+     fica mais alto que a imagem, e uma altura fechada o cortaria. O minimo
+     garante a area de toque mesmo com logo pequena; o resto cresce sozinho. */
   const alturaBarra = compacto
     ? "max(3.5rem, calc(var(--logo-altura-compacta) + 1rem))"
     : "max(4rem, calc(var(--logo-altura) + 1.25rem))";
@@ -147,17 +157,15 @@ export function MenuPrincipal({
     ));
 
   const marca = (
-    <Link href="/" className="flex items-center gap-2.5 min-w-0 shrink" aria-label={`${nome} — início`}>
-      {logoUrl
-        ? <img src={logoUrl} alt="" aria-hidden
-            className="w-auto shrink-0 transition-marca"
-            style={{ height: compacto ? "var(--logo-altura-compacta)" : "var(--logo-altura)" }} />
-        : <span className="text-2xl shrink-0" aria-hidden>🏝️</span>}
-      {(mostrarNome || !logoUrl) && (
-        <span className="font-titulo font-bold text-tinta leading-tight truncate text-[0.95rem] sm:text-lg">
-          {nome}
-        </span>
-      )}
+    <Link href="/" className="min-w-0 shrink" aria-label={`${nome} — início`}>
+      <MarcaLockup
+        nome={nome}
+        logoUrl={logoUrl}
+        mostrarNome={mostrarNome}
+        texto={nomeTexto}
+        subtexto={nomeSubtexto}
+        altura={compacto ? "var(--logo-altura-compacta)" : "var(--logo-altura)"}
+      />
     </Link>
   );
 
@@ -217,12 +225,12 @@ export function MenuPrincipal({
         <div
           className={
             topo === "dividido"
-              ? "flex items-center justify-between gap-3 lg:grid lg:grid-cols-[1fr_auto_1fr] transition-marca"
+              ? "flex items-center justify-between gap-3 py-2 lg:grid lg:grid-cols-[1fr_auto_1fr] transition-marca"
               : topo === "centro"
-              ? "flex items-center justify-between gap-3 lg:justify-center lg:relative transition-marca"
-              : "flex items-center justify-between gap-3 transition-marca"
+              ? "flex items-center justify-between gap-3 py-2 lg:justify-center lg:relative transition-marca"
+              : "flex items-center justify-between gap-3 py-2 transition-marca"
           }
-          style={{ height: alturaBarra }}
+          style={{ minHeight: alturaBarra }}
         >
           {topo === "dividido" && (
             <nav className="hidden lg:flex items-stretch self-stretch justify-end"
@@ -277,6 +285,8 @@ export function MenuPrincipal({
           nome={nome}
           logoUrl={logoUrl}
           mostrarNome={mostrarNome}
+          nomeTexto={nomeTexto}
+          nomeSubtexto={nomeSubtexto}
           pathname={pathname}
           sanfona={sanfona}
           setSanfona={setSanfona}
@@ -389,12 +399,14 @@ function ItemDesktop({
 /* ────────────────────────── gaveta do celular ────────────────────────── */
 
 function Gaveta({
-  nome, logoUrl, mostrarNome, pathname, sanfona, setSanfona, fechar,
+  nome, logoUrl, mostrarNome, nomeTexto, nomeSubtexto, pathname, sanfona, setSanfona, fechar,
   wa, whatsappExibicao, instagram, instagramUser,
 }: {
   nome: string;
   logoUrl?: string | null;
   mostrarNome: boolean;
+  nomeTexto: string | null;
+  nomeSubtexto: string | null;
   pathname: string;
   sanfona: string | null;
   setSanfona: (v: string | null) => void;
@@ -413,15 +425,15 @@ function Gaveta({
         aria-label="Navegação"
       >
         <div className="h-16 shrink-0 flex items-center justify-between px-4 border-b border-linha">
-          <div className="flex items-center gap-2 min-w-0">
-            {logoUrl
-              ? <img src={logoUrl} alt="" aria-hidden className="w-auto shrink-0"
-                  style={{ height: "var(--logo-altura-compacta)" }} />
-              : <span className="text-xl shrink-0" aria-hidden>🏝️</span>}
-            {(mostrarNome || !logoUrl) && (
-              <span className="font-titulo font-bold text-tinta truncate">{nome}</span>
-            )}
-          </div>
+          <MarcaLockup
+            nome={nome}
+            logoUrl={logoUrl}
+            mostrarNome={mostrarNome}
+            texto={nomeTexto}
+            subtexto={nomeSubtexto}
+            altura="var(--logo-altura-compacta)"
+            className="min-w-0"
+          />
           <button onClick={fechar} aria-label="Fechar menu"
             className="p-2 -mr-2 text-tinta-suave hover:text-tinta rounded-marca">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
