@@ -2,7 +2,7 @@ import postgres from "postgres";
 import {
   LIMITE_POR_HORA, LIMITE_CARACTERES, CONTEXTO_MENSAGENS,
   hashIp, ipDaRequisicao, gatewayConfigurado, urlGateway, cabecalhosGateway,
-  INDISPONIVEL,
+  INDISPONIVEL, CONTEXTO_CANAL,
 } from "@/lib/chat";
 
 export const runtime = "nodejs";
@@ -81,12 +81,16 @@ export async function POST(req: Request) {
       ORDER BY criado_em DESC
       LIMIT ${CONTEXTO_MENSAGENS}`;
 
-    const mensagens = anteriores
-      .reverse()
-      .map((m) => ({
+    /* A mensagem de sistema entra AQUI, no servidor, e nunca vem do
+       navegador — senão qualquer visitante poderia reescrever as regras
+       da Marina mandando um "system" forjado no corpo da requisição. */
+    const mensagens = [
+      { role: "system", content: CONTEXTO_CANAL },
+      ...anteriores.reverse().map((m) => ({
         role: m.papel === "visitante" ? "user" : "assistant",
         content: m.conteudo,
-      }));
+      })),
+    ];
 
     const resposta = await fetch(urlGateway("/v1/chat/completions"), {
       method: "POST",

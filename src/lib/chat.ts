@@ -60,6 +60,34 @@ export function cabecalhosGateway(): Record<string, string> {
 }
 
 /**
+ * O que a Marina precisa saber sobre ONDE ela está atendendo.
+ *
+ * Vai como mensagem de sistema em toda conversa do site, montada aqui no
+ * servidor — nunca vinda do navegador, que poderia reescrevê-la.
+ *
+ * Existe por um motivo concreto: no WhatsApp ela manda foto, e por isso
+ * responde "enviei as fotos". Aqui nada disso sai — o canal é texto puro.
+ * Um atendimento que diz ter enviado o que não enviou é pior que um que
+ * diz não poder enviar: o hóspede fica esperando.
+ */
+export const CONTEXTO_CANAL = [
+  "Você está atendendo pelo CHAT DE TEXTO DO SITE da pousada. Não é o WhatsApp.",
+  "",
+  "Neste canal você NÃO consegue enviar fotos, áudios, arquivos ou anexos de",
+  "nenhum tipo. Só chega ao visitante o texto que você escrever. Portanto:",
+  "- Nunca diga que enviou, mandou ou anexou uma foto. Você não enviou.",
+  "- Nunca prometa enviar algo em seguida.",
+  "- Quando pedirem fotos, diga onde vê-las: a página da acomodação no site ou",
+  "  a galeria. E ofereça o WhatsApp para quem quiser receber as imagens.",
+  "",
+  "Nunca afirme escassez — \"última unidade\", \"últimas vagas\", \"só resta um\",",
+  "\"está acabando\" — a menos que esse dado tenha vindo da consulta de",
+  "disponibilidade nesta mesma conversa. Sem o dado, não diga. Pressão de",
+  "venda inventada é o tipo de coisa que a pousada não autorizou e que a",
+  "recepção descobre quando o hóspede chega cobrando.",
+].join("\n");
+
+/**
  * Perguntas sugeridas no primeiro contato.
  *
  * Não são enfeite: um campo de texto vazio faz a pessoa não saber o que
