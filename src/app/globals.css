@@ -81,9 +81,18 @@
      e a gaveta do celular) e DERIVADA daqui, nunca um segundo campo: dois
      numeros para a mesma coisa acabariam incoerentes entre si. O piso de
      22px existe porque abaixo disso nenhuma logo com texto continua legivel. */
-  --logo-altura: 52px;
-  --logo-altura-compacta: max(22px, calc(var(--logo-altura) * 0.78));
+  /* O editor escreve os valores `-base`; as medidas de uso sao DERIVADAS
+     deles logo abaixo. A separacao existe por um motivo mecanico: o layout
+     injeta o tema como style inline no <html>, e estilo inline ganha de
+     qualquer media query. Se o editor escrevesse direto em `--logo-altura`,
+     o limite do celular nunca valeria. */
+  --logo-altura-base: 52px;
+  --marca-nome-tam-base: 18px;
+
+  --logo-altura: var(--logo-altura-base);
+  --logo-altura-compacta: max(22px, calc(var(--logo-altura-base) * 0.78));
   --logo-altura-rodape: 36px;
+  --marca-nome-tam: var(--marca-nome-tam-base);
 
   /* Conjunto logo + nome. A posicao do nome vira flex-direction, entao o
      HTML nunca muda: imagem, depois texto, na ordem que o leitor de tela
@@ -91,7 +100,6 @@
   --marca-direcao: row;
   --marca-alinhar: center;
   --marca-espaco: 10px;
-  --marca-nome-tam: 18px;
   --marca-nome-peso: 700;
   --marca-nome-rastreio: 0em;
   --marca-nome-caixa: none;
@@ -120,6 +128,19 @@
   /* Movimento — respeitado por transicoes; vira 0s quando o admin
      desliga animacoes ou quando o sistema pede menos movimento */
   --duracao: 200ms;
+}
+
+/* Teto no celular.
+   A marca pode ser grande numa tela larga sem custo nenhum; num celular ela
+   come a tela antes de a pessoa ver qualquer conteudo. O `min()` respeita a
+   escolha do editor quando ela ja e pequena e so segura os valores altos. */
+@media (max-width: 639px) {
+  :root {
+    --logo-altura: min(var(--logo-altura-base), 46px);
+    --logo-altura-compacta: min(max(22px, calc(var(--logo-altura-base) * 0.78)), 38px);
+    --logo-altura-rodape: min(var(--logo-altura-rodape), 40px);
+    --marca-nome-tam: min(var(--marca-nome-tam-base), 19px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

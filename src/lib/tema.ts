@@ -178,7 +178,7 @@ export function temaParaCss(t: Tema, pilhas: { titulo: string; corpo: string; ma
     `--raio:${t.raio}px`,
     `--sombra:${SOMBRAS[t.sombra] ?? SOMBRAS.sm}`,
     `--densidade:${t.densidade}`,
-    `--logo-altura:${t.logo.altura}px`,
+    `--logo-altura-base:${t.logo.altura}px`,
     `--logo-altura-rodape:${t.logo.alturaRodape}px`,
 
     /* O conjunto logo + nome.
@@ -189,7 +189,7 @@ export function temaParaCss(t: Tema, pilhas: { titulo: string; corpo: string; ma
     `--marca-direcao:${DIRECAO_NOME[t.logo.nome.posicao] ?? "row"}`,
     `--marca-alinhar:${t.logo.nome.posicao === "acima" || t.logo.nome.posicao === "abaixo" ? "center" : "center"}`,
     `--marca-espaco:${t.logo.nome.espaco}px`,
-    `--marca-nome-tam:${t.logo.nome.tamanho}px`,
+    `--marca-nome-tam-base:${t.logo.nome.tamanho}px`,
     `--marca-nome-peso:${t.logo.nome.peso}`,
     `--marca-nome-rastreio:${(t.logo.nome.rastreio / 100).toFixed(3)}em`,
     `--marca-nome-caixa:${t.logo.nome.caixa === "maiuscula" ? "uppercase" : "none"}`,

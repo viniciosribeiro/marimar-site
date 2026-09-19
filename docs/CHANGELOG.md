@@ -19,6 +19,56 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-19 (8) — A home quebrou no celular: rolagem horizontal
+
+**Autor:** Claude Opus 5 (Cowork)
+
+O Vinicios testou no celular e a página apareceu **mais larga que a tela**: as
+seções de baixo preenchiam só a largura da tela e sobrava uma faixa branca à
+direita. É a assinatura clássica de rolagem horizontal.
+
+### A causa
+
+A caixa de busca do topo. A fila de abas — "Hospedagem", "Pacotes e ofertas",
+"Informações importantes" — somava cerca de 430px de rótulos que não quebram
+linha. A caixa cresceu até caber tudo, **passou dos 390px da tela e levou a
+página inteira junto**.
+
+`overflow-x-auto` na fila não segurou porque o problema estava um nível acima:
+em flex, o filho tem `min-width: auto` e **se recusa a encolher abaixo do
+próprio conteúdo**. É o mesmo mecanismo que já tinha estourado a prévia do
+editor — e desta vez escapou porque a caixa é nova.
+
+### A correção
+
+- `w-full min-w-0` na caixa e `min-w-0` na coluna de conteúdo do banner, nos
+  dois níveis: a caixa passa a obedecer à tela em vez de ao próprio conteúdo.
+- As abas agora **dividem a largura** (`flex-1`) e usam rótulos curtos abaixo
+  de `sm`: "Datas", "Pacotes", "Informações". Uma fila que rola escondendo a
+  terceira aba é uma aba que ninguém acha.
+
+### O teto da marca no celular
+
+O conjunto logo + nome ocupava um quarto da tela antes de a pessoa ver qualquer
+conteúdo. A marca pode ser grande numa tela larga sem custo; num celular, não.
+
+Agora há um teto — mas ele exigiu separar as variáveis: o editor escreve
+`--logo-altura-base` e `--marca-nome-tam-base`, e o CSS **deriva** as medidas de
+uso. A separação é mecânica, não estética: o layout injeta o tema como `style`
+inline no `<html>`, e **estilo inline ganha de qualquer media query**. Escrevendo
+direto em `--logo-altura`, o limite do celular nunca valeria.
+
+O `min()` respeita a escolha do editor quando ela já é pequena e só segura os
+valores altos.
+
+### Verificado
+
+Medido em 320px e 390px: `/` e `/restaurante` sem rolagem horizontal, a caixa de
+busca dentro da tela, o cabeçalho condensando ao rolar. A busca continua sendo
+o mesmo formulário, com a mesma ação para `/reservar`.
+
+---
+
 ## 2026-09-19 (7) — O nome ao lado da logo virou um conjunto configurável
 
 **Autor:** Claude Opus 5 (Cowork)

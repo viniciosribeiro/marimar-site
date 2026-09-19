@@ -624,6 +624,7 @@ function PreviaLockup({ logo, nome, tema }: { logo: string; nome: string; tema: 
     ["--marca-alinhar" as any]: "center",
     ["--marca-espaco" as any]: `${n.espaco}px`,
     ["--marca-nome-tam" as any]: `${n.tamanho}px`,
+    ["--marca-nome-tam-base" as any]: `${n.tamanho}px`,
     ["--marca-nome-peso" as any]: String(n.peso),
     ["--marca-nome-rastreio" as any]: `${(n.rastreio / 100).toFixed(3)}em`,
     ["--marca-nome-caixa" as any]: n.caixa === "maiuscula" ? "uppercase" : "none",

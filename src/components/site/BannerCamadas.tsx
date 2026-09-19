@@ -58,8 +58,12 @@ export function BannerCamadas({
       {textura && <div className="absolute inset-0 -z-10 mix-blend-overlay" style={textura} aria-hidden />}
 
       {/* ── 4. conteúdo ── */}
-      <div className={`relative flex-1 flex flex-col px-5 sm:px-8 ${pos.vertical} ${pos.horizontal}`}>
-        <div className={`w-full ${LARGURAS[b.largura_texto]} ${pos.texto} ${classeAnim}`}>
+      <div className={`relative flex-1 flex flex-col min-w-0 px-5 sm:px-8 ${pos.vertical} ${pos.horizontal}`}>
+        {/* `min-w-0` nos dois niveis: em flex, o filho se recusa a encolher
+            abaixo do proprio conteudo por padrao, e qualquer coisa larga
+            dentro do banner (a caixa de busca, um titulo sem espaco)
+            empurraria a pagina inteira para fora da tela. */}
+        <div className={`w-full max-w-full min-w-0 ${LARGURAS[b.largura_texto]} ${pos.texto} ${classeAnim}`}>
           {b.rotulo && (
             <p className={`text-[0.7rem] sm:text-xs font-semibold uppercase tracking-[0.22em] mb-3 ${
               claro ? "text-white/85" : "text-tinta-suave"

@@ -21,29 +21,37 @@ type Pacote = { slug: string; nome: string; resumo: string | null };
 export function BuscaHome({ pacotes = [] }: { pacotes?: Pacote[] }) {
   const [aba, setAba] = useState<"datas" | "pacotes" | "info">("datas");
 
+  /* No celular os rotulos longos nao cabem lado a lado, e uma fila que rola
+     escondendo a terceira aba e uma aba que ninguem acha. Nomes curtos
+     abaixo de `sm`; os completos a partir dali. */
   const ABAS = [
-    { id: "datas" as const, nome: "Hospedagem", icone: "calendario" },
-    { id: "pacotes" as const, nome: "Pacotes e ofertas", icone: "estrela" },
-    { id: "info" as const, nome: "Informações importantes", icone: "check" },
+    { id: "datas" as const, nome: "Hospedagem", curto: "Datas", icone: "calendario" },
+    { id: "pacotes" as const, nome: "Pacotes e ofertas", curto: "Pacotes", icone: "estrela" },
+    { id: "info" as const, nome: "Informações importantes", curto: "Informações", icone: "check" },
   ];
 
   return (
-    <div className="bg-white rounded-marca shadow-2xl max-w-3xl mx-auto overflow-hidden text-left">
-      <div className="flex border-b border-linha overflow-x-auto">
+    /* `w-full min-w-0` e o que impede a caixa de crescer ate o conteudo:
+       sem isso a fila de abas define a largura, a caixa passa da tela e a
+       PAGINA INTEIRA ganha rolagem horizontal — foi o que quebrou no
+       celular. */
+    <div className="w-full min-w-0 bg-white rounded-marca shadow-2xl max-w-3xl mx-auto overflow-hidden text-left">
+      <div className="flex border-b border-linha overflow-x-auto min-w-0">
         {ABAS.map((a) => (
           <button
             key={a.id}
             type="button"
             onClick={() => setAba(a.id)}
             aria-pressed={aba === a.id}
-            className={`flex items-center gap-2 px-4 sm:px-5 py-3 text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-marca ${
+            className={`flex flex-1 sm:flex-none items-center justify-center gap-2 px-2.5 sm:px-5 py-3 text-xs sm:text-sm font-medium whitespace-nowrap min-w-0 transition-marca ${
               aba === a.id
                 ? "bg-marca text-marca-texto"
                 : "text-tinta-suave hover:bg-areia"
             }`}
           >
-            <Icone nome={a.icone} tamanho={16} />
-            {a.nome}
+            <span className="shrink-0"><Icone nome={a.icone} tamanho={16} /></span>
+            <span className="truncate sm:hidden">{a.curto}</span>
+            <span className="hidden sm:inline">{a.nome}</span>
           </button>
         ))}
       </div>
@@ -87,9 +95,9 @@ export function BuscaHome({ pacotes = [] }: { pacotes?: Pacote[] }) {
                 pousada. "Melhor preço garantido" seria uma garantia que a
                 pousada não deu — e o briefing proíbe publicar o que não foi
                 confirmado. */}
-            <p className="flex items-center justify-center gap-2 text-[11px] text-tinta-suave mt-3">
-              <span className="text-marca"><Icone nome="escudo" tamanho={14} /></span>
-              Disponibilidade e tarifas em tempo real, direto com a pousada.
+            <p className="flex items-center justify-center gap-2 text-[11px] text-tinta-suave mt-3 text-center">
+              <span className="text-marca shrink-0"><Icone nome="escudo" tamanho={14} /></span>
+              <span className="min-w-0">Disponibilidade e tarifas em tempo real, direto com a pousada.</span>
             </p>
           </>
         )}
