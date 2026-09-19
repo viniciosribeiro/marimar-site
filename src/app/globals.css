@@ -76,6 +76,15 @@
   --t-3xl: calc(var(--t-2xl) * var(--escala));
   --t-4xl: calc(var(--t-3xl) * var(--escala));
 
+  /* ── Logo ──
+     A altura vem do editor visual. A versao compacta (topo depois de rolar,
+     e a gaveta do celular) e DERIVADA daqui, nunca um segundo campo: dois
+     numeros para a mesma coisa acabariam incoerentes entre si. O piso de
+     22px existe porque abaixo disso nenhuma logo com texto continua legivel. */
+  --logo-altura: 52px;
+  --logo-altura-compacta: max(22px, calc(var(--logo-altura) * 0.78));
+  --logo-altura-rodape: 36px;
+
   /* ── Densidade ──
      Multiplica o respiro vertical das secoes. Pousada com muita foto pede
      mais ar; site com muito texto pede menos. */

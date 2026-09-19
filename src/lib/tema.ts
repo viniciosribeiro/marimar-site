@@ -28,6 +28,25 @@ export type Tema = {
   densidade: number;      // multiplicador do respiro vertical
   animacoes: boolean;
 
+  /**
+   * Logo.
+   *
+   * Existe porque nenhum arquivo de logo se parece com o outro: um brasao
+   * quadrado e uma assinatura horizontal com a mesma altura em pixels
+   * ocupam pesos visuais completamente diferentes no topo. Altura fixa no
+   * codigo servia a um arquivo so — o que estava la deixava a logo da
+   * Marimar minuscula ao lado do nome.
+   *
+   * `alturaCompacta` NAO fica aqui: e derivada em CSS a partir de `altura`.
+   * Dois numeros para a mesma coisa so dariam chance de ficarem
+   * incoerentes entre si.
+   */
+  logo: {
+    altura: number;        // px — topo da pagina, antes de rolar
+    alturaRodape: number;  // px — rodape
+    mostrarNome: boolean;  // o nome escrito ao lado da imagem
+  };
+
   // Faixa de aviso
   banner: { ativo: boolean; texto: string | null; subtexto: string | null; animado: boolean };
 };
@@ -46,6 +65,7 @@ export const TEMA_PADRAO: Tema = {
   sombra: "sm",
   densidade: 1,
   animacoes: true,
+  logo: { altura: 52, alturaRodape: 36, mostrarNome: true },
   banner: { ativo: false, texto: null, subtexto: null, animado: true },
 };
 
@@ -62,6 +82,7 @@ export function lerTema(pousada: Record<string, any> | null): Tema {
     fonteCorpo: pousada?.fonte_corpo || t.fonteCorpo || TEMA_PADRAO.fonteCorpo,
     // `raio` era string em versoes antigas do editor
     raio: Number(t.raio ?? TEMA_PADRAO.raio),
+    logo: { ...TEMA_PADRAO.logo, ...(t.logo ?? {}) },
     banner: { ...TEMA_PADRAO.banner, ...(t.banner ?? {}) },
   };
 }
@@ -94,6 +115,8 @@ export function temaParaCss(t: Tema, pilhas: { titulo: string; corpo: string; ma
     `--raio:${t.raio}px`,
     `--sombra:${SOMBRAS[t.sombra] ?? SOMBRAS.sm}`,
     `--densidade:${t.densidade}`,
+    `--logo-altura:${t.logo.altura}px`,
+    `--logo-altura-rodape:${t.logo.alturaRodape}px`,
     `--duracao:${t.animacoes ? "200ms" : "0.01ms"}`,
   ].join(";") + ";";
 }

@@ -33,6 +33,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
   const [seoTitle, setSeoTitle] = useState<string>(initial?.seo_title ?? "");
   const [seoDesc, setSeoDesc] = useState<string>(initial?.seo_description ?? "");
   const [aba, setAba] = useState<string>("estilo");
+  const nomeDaPousada = (initial?.nome as string) || "Pousada Marimar";
   const [sugestoes, setSugestoes] = useState<string[]>([]);
   const [enviando, iniciarEnvio] = useTransition();
 
@@ -295,6 +296,33 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
               <UploadImagem rotulo="Logo" valor={logo} aoEnviar={setLogo} pasta="marca" configurado={blobOk}
                 previewClasse="h-12" ajuda="Aparece no topo e no rodapé. PNG com fundo transparente funciona melhor."
                 aoExtrairCores={setSugestoes} />
+
+              {/* Tamanho da logo.
+                  Nenhum arquivo de logo se parece com o outro: um brasão
+                  quadrado e uma assinatura horizontal com a mesma altura em
+                  pixels ocupam pesos visuais bem diferentes no topo. Por isso
+                  a altura é sua, não do código. */}
+              <div className="border-t border-gray-100 pt-4 mt-1">
+                <PreviaLockup logo={logo} nome={nomeDaPousada} tema={tema} />
+
+                <Faixa rotulo="Altura no topo" valor={tema.logo.altura} min={24} max={88} passo={2}
+                  formato={(v) => `${v} px`}
+                  aoMudar={(v) => set("logo", { ...tema.logo, altura: v })} />
+                <p className="text-[11px] text-gray-400 -mt-2 mb-4 leading-relaxed">
+                  A barra do topo cresce junto — a logo não fica espremida. Depois
+                  que a pessoa rola a página ela encolhe sozinha, para devolver tela.
+                </p>
+
+                <Faixa rotulo="Altura no rodapé" valor={tema.logo.alturaRodape} min={20} max={72} passo={2}
+                  formato={(v) => `${v} px`}
+                  aoMudar={(v) => set("logo", { ...tema.logo, alturaRodape: v })} />
+
+                <Interruptor
+                  rotulo="Escrever o nome ao lado"
+                  descricao="Desligue se a própria imagem da logo já traz o nome — repetido fica pior."
+                  ligado={tema.logo.mostrarNome}
+                  aoMudar={(v) => set("logo", { ...tema.logo, mostrarNome: v })} />
+              </div>
               <UploadImagem rotulo="Favicon" valor={favicon} aoEnviar={setFavicon} pasta="marca" configurado={blobOk}
                 previewClasse="h-8" ajuda="Ícone da aba do navegador. Quadrado, 512×512." />
               <UploadImagem rotulo="Imagem de compartilhamento" valor={og} aoEnviar={setOg} pasta="marca" configurado={blobOk}
@@ -415,6 +443,41 @@ function RelatorioAcessibilidade({ tema }: { tema: Tema }) {
 }
 
 /* ═════════ Peças de formulário ═════════ */
+/**
+ * Previa do conjunto logo + nome na barra do topo.
+ *
+ * Existe para a escolha do tamanho ser feita olhando a proporcao real —
+ * logo, nome e altura da barra juntos. Um numero solto num campo nao diz
+ * nada sobre como a marca vai aparecer.
+ */
+function PreviaLockup({ logo, nome, tema }: { logo: string; nome: string; tema: Tema }) {
+  const alturaBarra = Math.max(64, tema.logo.altura + 20);
+  return (
+    <div className="mb-4">
+      <p className="text-xs font-medium text-gray-600 mb-2">Como fica no topo</p>
+      <div className="rounded-lg border border-gray-200 overflow-hidden bg-white">
+        <div className="flex items-center gap-2.5 px-4 border-b border-gray-200"
+          style={{ height: alturaBarra }}>
+          {logo
+            ? <img src={logo} alt="" className="w-auto shrink-0" style={{ height: tema.logo.altura }} />
+            : <span className="text-2xl shrink-0">🏝️</span>}
+          {(tema.logo.mostrarNome || !logo) && (
+            <span className="font-bold truncate" style={{ fontFamily: tema.fonteTitulo, color: "#12324f" }}>
+              {nome}
+            </span>
+          )}
+          <span className="ml-auto shrink-0 text-[10px] text-white px-2.5 py-1.5 rounded"
+            style={{ backgroundColor: tema.marca, borderRadius: tema.raio }}>
+            Reservar
+          </span>
+        </div>
+        <div className="h-8 bg-gray-50" />
+      </div>
+      <p className="text-[11px] text-gray-400 mt-1.5">Barra de {alturaBarra}px</p>
+    </div>
+  );
+}
+
 function Card({ titulo, ajuda, children }: { titulo: string; ajuda?: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">

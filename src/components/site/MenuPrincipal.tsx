@@ -8,6 +8,9 @@ import { NAVEGACAO, grupoAtivo, type GrupoNav } from "@/lib/navegacao";
 type Props = {
   nome: string;
   logoUrl?: string | null;
+  /** Escrever o nome ao lado da imagem. Logo que ja traz o nome desenhado
+      nao precisa — e repetido fica pior do que so a imagem. */
+  mostrarNome?: boolean;
   whatsappDigitos?: string;
   whatsappExibicao?: string | null;
   instagram: string;
@@ -39,6 +42,7 @@ function IconeWhats({ size = 18 }: { size?: number }) {
 export function MenuPrincipal({
   nome,
   logoUrl,
+  mostrarNome = true,
   whatsappDigitos,
   whatsappExibicao,
   instagram,
@@ -131,20 +135,30 @@ export function MenuPrincipal({
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         onMouseLeave={agendarFechar}
       >
+        {/* A altura da barra SEGUE a logo, em vez de a logo ter de caber numa
+            barra fixa. Era esse o aperto: altura travada no codigo deixava
+            qualquer logo horizontal minuscula ao lado do nome. O `max()`
+            garante o minimo de toque de 64px mesmo com logo pequena. */}
         <div
-          className={`flex items-center justify-between gap-3 transition-marca ${
-            compacto ? "h-16" : "h-16 lg:h-20"
-          }`}
+          className="flex items-center justify-between gap-3 transition-marca"
+          style={{
+            height: compacto
+              ? "max(3.5rem, calc(var(--logo-altura-compacta) + 1rem))"
+              : "max(4rem, calc(var(--logo-altura) + 1.25rem))",
+          }}
         >
           {/* ── Marca ── */}
           <Link href="/" className="flex items-center gap-2.5 min-w-0 shrink" aria-label={`${nome} — início`}>
             {logoUrl
               ? <img src={logoUrl} alt="" aria-hidden
-                  className={`w-auto shrink-0 transition-marca ${compacto ? "h-9" : "h-9 lg:h-11"}`} />
+                  className="w-auto shrink-0 transition-marca"
+                  style={{ height: compacto ? "var(--logo-altura-compacta)" : "var(--logo-altura)" }} />
               : <span className="text-2xl shrink-0" aria-hidden>🏝️</span>}
-            <span className="font-titulo font-bold text-tinta leading-tight truncate text-[0.95rem] sm:text-lg">
-              {nome}
-            </span>
+            {(mostrarNome || !logoUrl) && (
+              <span className="font-titulo font-bold text-tinta leading-tight truncate text-[0.95rem] sm:text-lg">
+                {nome}
+              </span>
+            )}
           </Link>
 
           {/* ── Menu do desktop ──
@@ -214,6 +228,7 @@ export function MenuPrincipal({
         <Gaveta
           nome={nome}
           logoUrl={logoUrl}
+          mostrarNome={mostrarNome}
           pathname={pathname}
           sanfona={sanfona}
           setSanfona={setSanfona}
@@ -326,11 +341,12 @@ function ItemDesktop({
 /* ────────────────────────── gaveta do celular ────────────────────────── */
 
 function Gaveta({
-  nome, logoUrl, pathname, sanfona, setSanfona, fechar,
+  nome, logoUrl, mostrarNome, pathname, sanfona, setSanfona, fechar,
   wa, whatsappExibicao, instagram, instagramUser,
 }: {
   nome: string;
   logoUrl?: string | null;
+  mostrarNome: boolean;
   pathname: string;
   sanfona: string | null;
   setSanfona: (v: string | null) => void;
@@ -351,9 +367,12 @@ function Gaveta({
         <div className="h-16 shrink-0 flex items-center justify-between px-4 border-b border-linha">
           <div className="flex items-center gap-2 min-w-0">
             {logoUrl
-              ? <img src={logoUrl} alt="" aria-hidden className="h-8 w-auto shrink-0" />
+              ? <img src={logoUrl} alt="" aria-hidden className="w-auto shrink-0"
+                  style={{ height: "var(--logo-altura-compacta)" }} />
               : <span className="text-xl shrink-0" aria-hidden>🏝️</span>}
-            <span className="font-titulo font-bold text-tinta truncate">{nome}</span>
+            {(mostrarNome || !logoUrl) && (
+              <span className="font-titulo font-bold text-tinta truncate">{nome}</span>
+            )}
           </div>
           <button onClick={fechar} aria-label="Fechar menu"
             className="p-2 -mr-2 text-tinta-suave hover:text-tinta rounded-marca">

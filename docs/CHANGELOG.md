@@ -19,6 +19,64 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-19 — Tamanho da logo vira controle do admin
+
+**Autor:** Claude Opus 5 (Cowork)
+
+A logo saía pequena ao lado do nome. A causa não era a imagem: a altura estava
+**fixa no código** (`h-9 lg:h-11`), escolhida para um arquivo de logo que não é
+o que a pousada usa.
+
+Nenhum arquivo de logo se parece com o outro. Um brasão quadrado e uma
+assinatura horizontal com a mesma altura em pixels ocupam pesos visuais
+completamente diferentes no topo — por isso essa altura não é decisão de quem
+escreve o código, é de quem olha a marca.
+
+### O que entrou no editor (aba Marca)
+
+- **Altura no topo** — 24 a 88px
+- **Altura no rodapé** — 20 a 72px
+- **Escrever o nome ao lado** — desligável, para logo que já traz o nome
+  desenhado, onde repetir fica pior do que só a imagem
+- **Prévia do conjunto** — logo, nome e barra juntos, na proporção real. Um
+  número solto num campo não diz nada sobre como a marca vai aparecer.
+
+### A barra do topo agora segue a logo
+
+`height: max(4rem, calc(var(--logo-altura) + 1.25rem))`. Antes a logo tinha de
+caber numa barra de altura travada — era esse o aperto. Agora a barra cresce
+junto, e o `max()` mantém o mínimo de 64px de área de toque mesmo com logo
+pequena.
+
+### Uma altura, não duas
+
+A versão compacta (depois de rolar, e na gaveta do celular) é **derivada** da
+altura escolhida, em CSS:
+
+```css
+--logo-altura-compacta: max(22px, calc(var(--logo-altura) * 0.78));
+```
+
+Não virou um segundo campo de propósito. Dois números para a mesma coisa
+acabariam incoerentes entre si na primeira vez que alguém mexesse em um só. O
+piso de 22px existe porque abaixo disso nenhuma logo com texto continua legível.
+
+Como sai por variável CSS via `temaParaCss()`, a prévia dentro do iframe do
+editor mostra o tamanho real enquanto o controle é arrastado.
+
+### Padrão novo
+
+52px no topo (era 44 em tela larga e 36 no celular) e 36px no rodapé. Quem
+quiser outro tamanho arrasta — o ponto da mudança é esse.
+
+### Verificado
+
+`tsc --noEmit` limpo. Topo conferido no site: a logo cresceu e a barra cresceu
+junto, sem espremer o menu nem o botão Reservar. **A aba Marca não foi conferida
+visualmente** — a sessão do admin estava no login.
+
+---
+
 ## 2026-09-18 (deploy) — Deploy do redesign: menu, cardápio, identidade visual e responsividade
 
 **Autor:** Agent Hermes (OpenRouter)

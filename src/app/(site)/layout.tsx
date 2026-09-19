@@ -43,7 +43,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   // Faixa de aviso configurada em Admin -> Identidade visual -> Banner.
   // Sem isto o editor salvaria e nada apareceria — que era exatamente o
   // problema do editor antigo.
-  const banner = lerTema(p).banner;
+  const tema = lerTema(p);
+  const banner = tema.banner;
   const mostrarBanner = banner.ativo && !!banner.texto;
 
   return (
@@ -60,6 +61,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <MenuPrincipal
         nome={IDENTIDADE.nome}
         logoUrl={p?.logo_url ?? null}
+        mostrarNome={tema.logo.mostrarNome}
         whatsappDigitos={wa || CONTATO.whatsappDigitos}
         whatsappExibicao={p?.whatsapp || CONTATO.whatsapp}
         instagram={IDENTIDADE.instagram}
@@ -79,9 +81,12 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
             <div className="col-span-2 lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 {p?.logo_url
-                  ? <img src={p.logo_url} className="h-8 w-auto" alt={nome} />
+                  ? <img src={p.logo_url} className="w-auto" alt={nome}
+                      style={{ height: "var(--logo-altura-rodape)" }} />
                   : <span className="text-2xl">🏝️</span>}
-                <span className="text-white font-titulo font-bold text-lg">{nome}</span>
+                {(tema.logo.mostrarNome || !p?.logo_url) && (
+                  <span className="text-white font-titulo font-bold text-lg">{nome}</span>
+                )}
               </div>
               <p className="text-sm text-gray-400 leading-relaxed mb-5 max-w-sm">
                 {COMPLEXO.fraseLonga}
