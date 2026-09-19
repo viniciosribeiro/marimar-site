@@ -1,149 +1,156 @@
 # Handoff — continuar de onde paramos
 
-> Reescrito em 18/09/2026, ao fim da segunda sessão com Claude (Cowork).
+> Reescrito em 19/09/2026, ao fim da terceira sessão com Claude (Cowork).
 > Cole a seção **PROMPT** em qualquer ferramenta agêntica para retomar.
 
 ---
 
 ## PROMPT
 
-Você vai continuar o desenvolvimento do site da Pousada Marimar (Ilha do Mel/PR).
-O projeto está em `D:\Projetos\Dev\Marimar Site` (Next.js 16 + Neon + Vercel).
+Você vai continuar o desenvolvimento do site da Pousada Marimar (Ilha do Mel/PR),
+em `D:\Projetos\Dev\Marimar Site` (Next.js 16 + Neon + Vercel).
 
-A sessão anterior deixou **5 commits locais ainda não enviados ao GitHub**.
-Sua tarefa: analisar tudo que foi feito, validar, e fazer o deploy.
+A sessão anterior deixou **2 commits locais não enviados** e **uma migration não
+aplicada**. Sua tarefa: analisar, aplicar, validar e fazer o deploy.
 
 ### Passo 1 — Leia antes de tocar em qualquer coisa
 
-Nesta ordem, sem pular:
+1. `docs/ESTADO-DO-PROJETO.md`
+2. `docs/CHANGELOG.md` — as entradas de 18 e 19/09/2026 explicam cada mudança e
+   **por quê**. As de 19/09 são as desta sessão.
+3. `AGENTS.md` e `docs/briefing/briefing-administracao-2026-09-18.txt`
+4. `git log --oneline -12` e `git status`
 
-1. `docs/ESTADO-DO-PROJETO.md` — visão geral, arquitetura, convenções, pendências
-2. `docs/CHANGELOG.md` — as **11 entradas de 18/09/2026** descrevem tudo que mudou
-   e **por quê**, incluindo os bugs encontrados e as decisões tomadas. As quatro
-   mais recentes (8 a 11) são as desta sessão e ainda não foram para produção.
-3. `AGENTS.md` — regras do projeto e do Next.js 16
-4. `docs/briefing/briefing-administracao-2026-09-18.txt` — fatos oficiais da pousada
-5. `git log --oneline -12` e `git status`
+### Passo 2 — Migration primeiro
 
-### Passo 2 — O que entrou nos 5 commits pendentes
+```
+npm run db:migrate
+```
+
+Falta a `0007_blocos_itens` (cartões editáveis das seções da home). As `0005` e
+`0006`, dos banners, já foram aplicadas.
+
+Enquanto ela não roda, a home funciona: a consulta dos itens fica num `try`
+próprio e as seções caem nas constantes. Depois de rodar, confira que
+`/admin/cartoes` abre sem erro de banco.
+
+### Passo 3 — O que entrou nesta sessão
 
 | Commit | O que é |
 |---|---|
-| `3f4c51d` | Linguagem editorial (tokens de design), rota inteligente em Como Chegar, cardápio digital |
-| `2fc0f28` | Upload real de fotos do cardápio via Vercel Blob (galeria por item) |
-| `2e3e159` | Funde `/restaurante` + `/cardapio` numa página só; reconstrói a Identidade Visual |
-| `55c794a` | Responsividade: prévia do editor estourava o layout; títulos criavam rolagem horizontal |
-| `68ad63b` | Menu: árvore única de navegação + registra 5 tokens que nunca geraram classe |
+| `b68bc97` | Alinhamento: barra do topo (3 arranjos), títulos, hero e justificado |
+| `e27713d` | Módulo de **Banners do topo** + corrige título invisível no hero |
+| `4172c64` | **Correção de segurança**: a tela de banners renderizava sem login |
+| `07663bc` | Banners em camadas: vídeo, texturas, ponto focal, Ken Burns |
+| `7a988bb` | Home: ícones SVG, busca em abas, cartões editáveis (**migration 0007**) |
+| `24dd160` | Conjunto logo + nome configurável (posição, espaço, estilo) |
 
-Pontos que valem sua atenção ao revisar:
+Pontos que merecem atenção ao revisar:
 
-- **`src/lib/navegacao.ts` é a fonte única da navegação.** Topo, gaveta do celular
-  e rodapé leem dela. Página nova entra só nesse arquivo.
-- **`@theme inline` no `globals.css`.** No Tailwind v4, variável declarada só no
-  `:root` **não** vira classe. Cinco tokens (`--areia`, `--areia-forte`, `--tinta`,
-  `--tinta-suave`, `--linha`) estavam fora do `@theme` e 102 usos de
-  `text-tinta` / `bg-areia` / `border-linha` não pintavam nada. Se você adicionar
-  um token novo, registre-o no `@theme` também.
-- **`src/components/site/MobileNav.tsx` foi apagado** — substituído por
-  `MenuPrincipal.tsx`, que cobre desktop e celular.
-- **Migrations 0003 e 0004** (cardápio e fotos do cardápio) já foram aplicadas no
-  Neon pelo Vinicios.
-- **Redirects 301** de `/cardapio` e `/cafe-da-manha` para `/restaurante` estão no
-  `next.config.ts`. Não remova: são URLs que existiam no WordPress antigo.
+- **`src/lib/banners.ts` e `src/lib/tema.ts` guardam ESCOLHAS, não CSS.** O CSS
+  correspondente é derivado numa função só. Se for adicionar uma opção, derive
+  no mesmo lugar — espalhar pelos componentes é como uma consequência fica para
+  trás.
+- **Todo token de cor novo vai no `@theme inline`**, não só no `:root`. Cinco
+  ficaram de fora antes e 102 classes não pintavam nada, em silêncio.
+- **Cada página do admin faz a própria checagem de sessão.** O `layout.tsx`
+  desenha a moldura e não protege nada. Página nova sem `await auth()` fica
+  aberta — foi o bug do commit `4172c64`.
+- **Componentes compartilhados entre site e admin**: `BannerCamadas` e
+  `MarcaLockup` são usados também na prévia do editor. É o que impede a prévia
+  de mentir. Não crie um segundo renderizador.
+- **`lerBanner()` e `lerTema()` completam o que falta** ao ler do banco. Campos
+  novos em tema/banner não precisam de migration para os registros antigos.
 
-### Passo 3 — Validar antes de enviar
+### Passo 4 — Validar com `npm run dev`
 
-```
-npm run dev
-```
-
-Em `http://localhost:3000`, confirme:
-
-- **Menu:** em tela larga, passar o mouse em "Restaurante" abre um painel com
-  quatro itens e descrições. Abaixo de 1024px o menu vira o botão "Menu" e a
-  gaveta abre **em tela cheia** (se ela aparecer recortada na faixa do topo, o
-  bug do `backdrop-filter` voltou — veja a entrada 11 do CHANGELOG).
-- **Cores:** os títulos das seções são azul-petróleo, não cinza. Se estiverem
-  cinza, os tokens saíram do `@theme`.
-- **`/reservar?check_in=2026-10-15&check_out=2026-10-17&adultos=2`** traz quartos
-  com preço — vindos do motor.
-- **`/quartos`** mostra foto em todos os cards.
-- **`/restaurante`** carrega hero, café da manhã e cardápio na mesma página.
-- **`/admin/identidade-visual`**: a prévia do site fica **dentro** da sua coluna,
-  sem cobrir os controles, em qualquer largura de janela. *(Esta tela não foi
-  verificada visualmente na sessão anterior — a sessão do admin tinha expirado.)*
+- **Home**: busca do topo com três abas (Hospedagem / Pacotes / Informações);
+  cartões com ícones coloridos; onda sob os títulos de seção; faixa final com
+  foto.
+- **`/admin/identidade-visual`**: abas Alinhamento e Marca; ao arrastar o tamanho
+  da logo ou mudar a posição do nome, a prévia do lado acompanha.
+- **`/admin/banners`**: pedir login; o editor abre com as abas Mídia / Texto /
+  Layout / Camadas / Movimento / Agenda e a prévia em três larguras.
+- **`/admin/cartoes`**: lista as seções "complexo" e "diferenciais".
+- **`/reservar?check_in=2026-10-15&check_out=2026-10-17&adultos=2`**: traz
+  quartos com preço, do motor.
 
 ```
 npm run build
 ```
 
-Precisa passar. Todas as páginas do site devem sair como `ƒ` (dinâmicas) — se
-alguma sair `○` (estática), perdeu o `force-dynamic` e vai congelar conteúdo do
-banco no HTML.
+Todas as páginas do site como `ƒ` (dinâmicas). Se alguma sair `○`, perdeu o
+`force-dynamic`.
 
-### Passo 4 — Deploy
+### Passo 5 — Deploy e verificação
 
 ```
 git push origin main
 ```
 
-Deploy automático na Vercel. Confirme no painel que o build passou.
-
-### Passo 5 — Verificar em produção
+Depois, em produção:
 
 ```
-curl -i https://marimar-site.vercel.app/api/agent/pousada
-# DEVE dar 401 (sem header de autorização)
-
-curl -i -H "Authorization: Bearer <AGENT_API_KEY>" https://marimar-site.vercel.app/api/agent/pousada
-# DEVE dar 200
+curl -i https://marimar-site.vercel.app/api/agent/pousada          # DEVE dar 401
+curl -i -H "Authorization: Bearer <AGENT_API_KEY>" \
+     https://marimar-site.vercel.app/api/agent/pousada             # DEVE dar 200
 ```
 
-Se a primeira der **200**, a `AGENT_API_KEY` não está na Vercel e as rotas do
-agente estão abertas para qualquer um. Isso é crítico — avise imediatamente.
+Se a primeira der 200, as rotas do agente estão abertas — avise imediatamente.
+Confirme também que `/admin/banners` e `/admin/cartoes` **pedem login**.
 
-Depois, no site em produção:
-
-- `/cardapio` redireciona (301) para `/restaurante#cardapio`
-- O menu abre e fecha, e a gaveta ocupa a tela inteira no celular
-- `/quartos` e `/reservar` trazem dados do motor
+> A URL de produção é `marimar-site.vercel.app`. A Vercel também dá a cada build
+> uma URL própria (`marimar-site-<hash>.vercel.app`), que congela naquele
+> deployment — não use essa para verificar o estado atual.
 
 ---
 
-### Pendências que dependem do Vinicios (não tente resolver sozinho)
+## ⚠️ O item mais urgente do projeto
 
-1. **`AGENT_API_KEY` na Vercel.** Precisa ser rotacionada em Settings →
-   Environment Variables (Production **e** Preview) + redeploy, e no OpenClaw
-   (agente Marina do WhatsApp). A antiga `marina-agent-key-marimar-2026` ainda
-   responde em produção e deve ser revogada.
-2. **`BLOB_READ_WRITE_TOKEN`.** O store do Vercel Blob foi conectado ao projeto.
-   Rode `npx vercel env pull .env.local` e **reinicie o dev server** — sem isso o
-   upload de fotos do cardápio falha em desenvolvimento.
-3. **DNS.** `www.pousadamarimarilhadomel.com.br` ainda serve o **WordPress 5.8.16
-   antigo**. O Next.js só existe em `marimar-site.vercel.app`.
-4. **3 quartos faltando.** O motor retorna 10 tipos; o banco tem 7 ativos. Os 3
-   ausentes aparecem em `/reservar` e somem de `/quartos`.
-5. **13 itens pendentes de confirmação** — listados em `PENDENTE_CONFIRMACAO`, em
-   `src/lib/conteudo-pousada.ts`, e visíveis no painel do admin. Incluem razão
-   social/CNPJ vigentes, número real de suítes, horários do restaurante e
-   capacidade para eventos. **Não publique nenhum sem confirmação.**
+**As 56 fotos importadas do WordPress ainda são servidas pelo servidor antigo.**
 
----
+O script de migração gravou as URLs originais (`m.source_url`) em vez de copiar
+os arquivos. Hoje elas carregam de
+`pousadamarimarilhadomel.com.br/wp-content/uploads/...`.
 
-### Backlog aberto (não faça sem combinar com o Vinicios)
+No dia em que o DNS apontar para a Vercel, **esse servidor sai do ar e todas
+essas fotos somem de uma vez** — topo da home, galeria, fotos de quarto. E, por
+ser um WordPress 5.8.16 de 2021 sem atualização, ele pode cair antes disso por
+conta própria.
 
-- **Galeria categorizada.** Hoje as fotos aparecem numa grade só; o pedido é
-  agrupar por ambiente com lightbox.
-- **Fotos reais na página A Pousada.** A página existe, o conteúdo é texto.
-- **Fundir Identidade Visual + Seções da Home** num módulo só do admin.
-- **Redesenhar o admin** no mesmo padrão editorial do site.
+A solução é mecânica: um script que lê cada mídia com URL do domínio antigo,
+baixa o arquivo, sobe para o Vercel Blob e reescreve a URL no banco. **Isso
+precisa acontecer antes da virada de DNS.**
 
 ---
 
-### Regras rígidas
+## Outras pendências que dependem do Vinicios
 
-**NÃO QUEBRE O MOTOR DE RESERVAS.** Integração com o Desbravador — não altere sem
-necessidade real:
+1. **`AGENT_API_KEY` na Vercel** — a antiga `marina-agent-key-marimar-2026` ainda
+   responde em produção. Rotacionar em Settings → Environment Variables
+   (Production **e** Preview) + redeploy, e no OpenClaw (agente Marina).
+2. **DNS** — `www.pousadamarimarilhadomel.com.br` ainda serve o WordPress antigo.
+3. **3 quartos faltando** — o motor retorna 10 tipos; o banco tem 7 ativos.
+4. **13 itens pendentes de confirmação** — em `PENDENTE_CONFIRMACAO`, em
+   `src/lib/conteudo-pousada.ts`. **Não publique nenhum sem confirmação.**
+
+---
+
+## Backlog aberto (combine antes de fazer)
+
+- **Aplicar o design system nas demais páginas.** `a-pousada`, `ilha-do-mel`,
+  `galeria`, `faq`, `politicas`, `contato`, `eventos` e `avaliacoes` têm marcação
+  própria com `text-gray-900` em vez dos componentes e tokens. Por isso nem o
+  visual editorial nem os controles de alinhamento chegam nelas.
+- **Galeria categorizada** com lightbox — hoje as fotos aparecem numa grade só.
+- **Fundir Identidade Visual + Blocos da Home** num módulo só do admin.
+- **Redesenhar o admin** no padrão editorial do site.
+
+---
+
+## Regras rígidas
+
+**NÃO QUEBRE O MOTOR DE RESERVAS.** Não altere sem necessidade real:
 
 - `src/lib/worker.ts` — contrato com o Worker PousadaHub
 - `src/lib/deeplink.ts` — URL de reserva no motor
@@ -151,35 +158,32 @@ necessidade real:
 - `src/lib/agent-auth.ts` — autenticação da Marina
 - a query de disponibilidade em `src/app/(site)/reservar/page.tsx`
 
-Quartos, tarifas e disponibilidade vêm **sempre** do motor. Nunca escreva quarto ou
-preço fixo no código.
+Quartos, tarifas e disponibilidade vêm **sempre** do motor. Nunca escreva quarto
+ou preço fixo no código.
 
 **Demais regras:**
 
 - **Nunca commite segredos.** Há um `openai api.txt` com chave da OpenAI em texto
-  claro na raiz. Está no `.gitignore` — não commite nem exponha.
-  `AGENT_API_KEY`, `AUTH_SECRET` e `DATABASE_URL` vivem só em `.env.local` e na Vercel.
+  claro na raiz. Está no `.gitignore`.
 - **Nunca reintroduza Cloudflare/wrangler.** Deploy é Vercel desde 17/09/2026.
-- **`prepare: false` em toda chamada `postgres()`.** `DATABASE_URL` aponta para o
-  pooler do Neon (PgBouncer em transaction mode). Sem isso, qualquer migration
-  quebra as conexões vivas com `cached plan must not change result type`.
-- **Todo token de cor novo vai no `@theme inline`**, não só no `:root` — senão a
-  classe simplesmente não existe e falha em silêncio.
-- **Flags do npm precisam de `--`.** `npm run db:migrar-wp --dry` **não** é
-  simulação: o npm engole o argumento. Use `npm run db:migrar-wp -- --dry`.
-- **Texto que o hóspede lê vai acentuado e por extenso** ("Diária", "2 noites").
-  Código, colunas e rotas em português sem acento (`disponibilidade`, `criado_em`).
-  BRL passa por `brl()`, nome de quarto por `tituloQuarto()`, texto longo por
-  `resumir()` — tudo em `src/lib/format.ts`.
+- **`prepare: false` em toda chamada `postgres()`** — o `DATABASE_URL` aponta
+  para o pooler do Neon.
+- **Todo token de cor novo vai no `@theme inline`**, não só no `:root`.
+- **Toda página nova do admin começa com `await auth()`** e redirect para
+  `/admin/login`.
+- **Flags do npm precisam de `--`**: `npm run db:migrar-wp -- --dry`.
+- **Texto que o hóspede lê vai acentuado e por extenso.** Código, colunas e rotas
+  em português sem acento. BRL por `brl()`, nome de quarto por `tituloQuarto()`,
+  texto longo por `resumir()` — tudo em `src/lib/format.ts`.
 - **Nunca invente fato sobre a pousada.** Ou vem do banco, ou de
-  `src/lib/conteudo-pousada.ts`, ou do motor. Depoimento sem identificar a
-  plataforma de origem não vai ao ar.
-- **O site não fecha reserva.** O escopo é consulta; fechamento é no motor ou WhatsApp.
+  `src/lib/conteudo-pousada.ts`, ou do motor. Nada de garantia que a pousada não
+  deu ("melhor preço garantido") nem depoimento sem identificar a plataforma.
+- **O site não fecha reserva.** O escopo é consulta.
 - **Ambiente:** `.env.local` (não `.env`). Scripts de banco usam `src/db/env.ts`.
 
-### Ao terminar
+## Ao terminar
 
-1. Nova entrada **no topo** de `docs/CHANGELOG.md` (formato no próprio arquivo)
-2. Atualize "Pendências conhecidas" e a data em `docs/ESTADO-DO-PROJETO.md`
-3. Commit com mensagem descritiva — não deixe trabalho só no working directory
+1. Nova entrada **no topo** de `docs/CHANGELOG.md`
+2. Atualize as pendências e a data em `docs/ESTADO-DO-PROJETO.md`
+3. Commit com mensagem descritiva
 4. Relate: o que rodou, o que falhou, o que ficou pendente
