@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { blobConfigurado } from "@/lib/blob";
 import { PainelBanners } from "./PainelBanners";
-import type { Banner } from "./FormBanner";
+import type { BannerAdmin as Banner } from "./FormBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +27,12 @@ export default async function BannersPage({
   let falha: string | null = null;
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
+    /* `*` menos as duas datas, que voltam formatadas: o input
+       `datetime-local` so aceita "YYYY-MM-DDTHH:MM", e converter um Date do
+       driver no cliente daria fuso do navegador — o horario deixaria de ser
+       o que a pousada cadastrou. */
     banners = (await sql`
-      SELECT id, titulo, subtitulo, imagem_url, imagem_pathname, alt,
-             cta_texto, cta_href, ordem, ativo,
+      SELECT *,
              to_char(inicia_em,  'YYYY-MM-DD HH24:MI') AS inicia_em,
              to_char(termina_em, 'YYYY-MM-DD HH24:MI') AS termina_em
       FROM banners ORDER BY ordem, criado_em

@@ -34,17 +34,26 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (!sessao?.user) throw new Error("Não autorizado");
 
         // Nunca aceitar caminho arbitrario vindo do cliente
-        const pastasPermitidas = ["cardapio/", "galeria/", "marca/", "quartos/"];
+        const pastasPermitidas = ["banners/", "cardapio/", "galeria/", "marca/", "quartos/"];
         if (!pastasPermitidas.some((pasta) => pathname.startsWith(pasta))) {
           throw new Error("Destino de upload inválido");
         }
 
+        /* Video so e aceito em `banners/`, e com limite proprio.
+           Nao e generosidade: um mp4 de fundo de topo passa de 12 MB com
+           facilidade, enquanto uma foto de cardapio que chegue perto disso
+           quase sempre e um arquivo que ninguem otimizou. Limites diferentes
+           para usos diferentes. */
+        const ehBanner = pathname.startsWith("banners/");
+        const imagens = [
+          "image/jpeg", "image/png", "image/webp", "image/avif",
+          "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon",
+        ];
+        const videos = ["video/mp4", "video/webm"];
+
         return {
-          allowedContentTypes: [
-            "image/jpeg", "image/png", "image/webp", "image/avif",
-            "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon",
-          ],
-          maximumSizeInBytes: 12 * 1024 * 1024,
+          allowedContentTypes: ehBanner ? [...imagens, ...videos] : imagens,
+          maximumSizeInBytes: (ehBanner ? 50 : 12) * 1024 * 1024,
           addRandomSuffix: true,
           // Fotos de cardapio mudam pouco: cache longo na borda
           cacheControlMaxAge: 60 * 60 * 24 * 365,

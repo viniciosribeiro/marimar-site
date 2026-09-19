@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { lerBanner } from "@/lib/banners";
 import { RenderBloco, type Bloco, type DadosHome } from "@/components/site/BlocosHome";
 
 export const dynamic = "force-dynamic";
@@ -61,8 +62,7 @@ export default async function HomePage() {
        entraria ou sairia na hora errada. */
     try {
       banners = await sql`
-        SELECT id, titulo, subtitulo, imagem_url, alt, cta_texto, cta_href
-        FROM banners
+        SELECT * FROM banners
         WHERE ativo = true
           AND (inicia_em  IS NULL OR inicia_em  <= now())
           AND (termina_em IS NULL OR termina_em >= now())
@@ -96,7 +96,7 @@ export default async function HomePage() {
     heroUrl: heroMidia?.url || pousada?.og_image_url || null,
     heroAlt: heroMidia?.alt || null,
     wa: pousada?.whatsapp?.replace(/\D/g, "") || "",
-    banners: banners as any,
+    banners: banners.map(lerBanner),
   };
 
   const todos = blocos as (Bloco & { ativo?: boolean })[];

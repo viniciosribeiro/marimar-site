@@ -19,6 +19,89 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-19 (5) — Banners em camadas: vídeo, texturas, foco e movimento
+
+**Autor:** Claude Opus 5 (Cowork)
+
+> ⚠️ **Rode `npm run db:migrate`** (migration `0006_banners_camadas`).
+
+A primeira versão tinha imagem + título + chamada + um botão. Isso monta um
+aviso, não um topo de site: não dava para escolher onde o texto fica, que parte
+da foto sobrevive ao corte no celular, nem usar vídeo.
+
+### Quatro camadas
+
+1. **Mídia** — foto ou vídeo (MP4/WebM, até 50 MB), com ponto focal
+2. **Véu** — escurece de cima para baixo, por igual, clareia da esquerda ou
+   vinheta, com intensidade regulável
+3. **Textura** — grão de filme, pontos ou linhas diagonais, **desenhadas em
+   CSS**: nenhum arquivo baixado. O grão usa `feTurbulence` num SVG embutido,
+   que é o único jeito de ter ruído real sem uma imagem.
+4. **Conteúdo** — rótulo, título, chamada, texto de apoio e dois botões
+
+### O controle que mais muda a responsividade
+
+**Ponto focal**, escolhido clicando na própria foto. Uma foto horizontal
+cortada para a tela vertical do celular perde as laterais — e sem isso perde
+justamente o assunto. É o controle mais barato de usar e o que mais salva
+banner no celular.
+
+Junto: **posição do texto** numa grade de nove, **centralizar no celular**
+(numa coluna estreita, texto encostado num canto parece erro de layout, não
+intenção), altura em quatro níveis e largura do bloco de texto.
+
+`100svh` no "tela cheia", não `100vh`: no celular o `vh` conta a barra do
+navegador que aparece e some, e o banner ficava mais alto que a tela,
+empurrando a busca de disponibilidade para fora.
+
+### Vídeo, com parcimônia
+
+Toca só quando faz sentido gastar a banda de quem está vendo: slide visível,
+animações ligadas, fora da prévia do editor e — no celular — **só se quem
+cadastrou pediu**. Em qualquer outro caso fica a imagem de cartaz, que já
+estava carregada de qualquer jeito. Sem som, porque vídeo de fundo com áudio é
+bloqueado pelos navegadores e incomoda quem está no escritório.
+
+### Movimento
+
+Entrada do texto (sobe, aparece, aproxima) e Ken Burns na foto — 28 segundos,
+ida e volta. Rápido demais enjoa, e o `alternate` evita o salto seco do fim
+para o começo. Tudo desligado para quem pediu menos animação no aparelho, e
+para quem desligou animações na Identidade visual.
+
+### A prévia não pode mentir
+
+O editor renderiza o banner com o **mesmo componente do site**, em três larguras
+(celular, tablet, desktop). Não existe um segundo renderizador para divergir —
+o que aparece na prévia é literalmente o que vai ao ar.
+
+### Dois bugs encontrados no caminho
+
+1. **`banners/` não estava na lista de pastas permitidas** da rota de upload.
+   O primeiro upload de banner teria falhado com "Destino de upload inválido".
+2. `lerBanner()` completa a linha do banco com os padrões. Entre o deploy e a
+   migration as colunas não existem, e sem esse merge `ALTURAS[undefined]`
+   devolveria classe vazia: o banner apareceria com **altura zero** — invisível,
+   sem nada no log para explicar.
+
+### Também
+
+Vídeo só é aceito em `banners/`, e com limite próprio (50 MB contra 12 MB). Não
+é generosidade: um MP4 de fundo passa de 12 MB com facilidade, enquanto uma foto
+de cardápio que chegue perto disso quase sempre é um arquivo que ninguém
+otimizou.
+
+Os enums são validados contra a lista antes de gravar. Um valor inválido viraria
+um banner que não renderiza, e o erro só apareceria no site — longe de quem
+salvou.
+
+### Verificado
+
+`tsc --noEmit` limpo. Home conferida sem banners: cai no comportamento antigo
+sem quebrar nada.
+
+---
+
 ## 2026-09-19 (4) — A tela de banners aparecia sem login
 
 **Autor:** Claude Opus 5 (Cowork)

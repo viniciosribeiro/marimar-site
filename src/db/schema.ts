@@ -367,4 +367,35 @@ export const banners = pgTable("banners", {
   inicia_em: timestamp("inicia_em"),
   termina_em: timestamp("termina_em"),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
+
+  /* ── Camadas (migration 0006) ──
+     O banco guarda ESCOLHAS ("esquerda-base", "vinheta", "grao"); o CSS
+     correspondente nasce em src/lib/banners.ts. */
+  tipo_midia: text("tipo_midia").default("imagem").notNull(),
+  video_url: text("video_url"),
+  video_pathname: text("video_pathname"),
+  /** Ponto focal em % — o que decide o que sobrevive ao corte no celular. */
+  foco_x: integer("foco_x").default(50).notNull(),
+  foco_y: integer("foco_y").default(50).notNull(),
+  video_no_celular: boolean("video_no_celular").default(false).notNull(),
+
+  altura: text("altura").default("alto").notNull(),
+  posicao: text("posicao").default("centro-meio").notNull(),
+  largura_texto: text("largura_texto").default("media").notNull(),
+  centralizar_celular: boolean("centralizar_celular").default(true).notNull(),
+
+  veu: text("veu").default("escuro-baixo").notNull(),
+  veu_forca: integer("veu_forca").default(55).notNull(),
+  textura: text("textura").default("nenhuma").notNull(),
+  textura_forca: integer("textura_forca").default(18).notNull(),
+
+  rotulo: text("rotulo"),
+  texto: text("texto"),
+  cta2_texto: text("cta2_texto"),
+  cta2_href: text("cta2_href"),
+  cor_texto: text("cor_texto").default("claro").notNull(),
+  sombra_texto: boolean("sombra_texto").default(true).notNull(),
+
+  animacao: text("animacao").default("subir").notNull(),
+  ken_burns: boolean("ken_burns").default(false).notNull(),
 });

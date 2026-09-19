@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FormBanner, type Banner } from "./FormBanner";
+import { FormBanner, type BannerAdmin as Banner } from "./FormBanner";
 import { alternarBanner, moverBanner, excluirBanner } from "./actions";
 
 export function PainelBanners({ banners, blobOk }: { banners: Banner[]; blobOk: boolean }) {
@@ -58,6 +58,9 @@ export function PainelBanners({ banners, blobOk }: { banners: Banner[]; blobOk: 
                 <div className="flex flex-wrap gap-2 mt-2">
                   {b.cta_texto && <Selo>{b.cta_texto} → {b.cta_href || "sem link"}</Selo>}
                   <Periodo inicia={b.inicia_em} termina={b.termina_em} />
+                  {b.tipo_midia === "video" && <Selo>vídeo</Selo>}
+                  {b.ken_burns && <Selo>movimento na foto</Selo>}
+                  {b.textura !== "nenhuma" && <Selo>textura: {b.textura}</Selo>}
                   {!b.alt && <Selo tom="alerta">sem texto alternativo</Selo>}
                 </div>
               </div>

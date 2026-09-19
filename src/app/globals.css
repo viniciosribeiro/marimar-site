@@ -200,6 +200,35 @@ body {
   .secao-py { padding-block: calc(4rem * var(--densidade)); }
 }
 
+/* ── Animacoes dos banners ──
+   Entram por classe, nao por style inline, para o navegador poder
+   compor no GPU. O componente so as aplica quando as animacoes estao
+   ligadas (botao do editor + prefers-reduced-motion), entao nao ha
+   `@media` aqui: a decisao ja foi tomada antes de a classe existir. */
+@keyframes banner-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes banner-subir {
+  from { opacity: 0; transform: translateY(1.75rem); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes banner-zoom {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: none; }
+}
+/* Ken Burns: deriva MUITO devagar e volta, em 28s. Rapido demais vira
+   enjoo; e o `alternate` evita o salto seco do fim para o comeco. */
+@keyframes ken-burns {
+  from { transform: scale(1); }
+  to   { transform: scale(1.12) translate3d(-1.5%, -1%, 0); }
+}
+
+.anim-banner-fade  { animation: banner-fade  0.7s ease-out both; }
+.anim-banner-subir { animation: banner-subir 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-banner-zoom  { animation: banner-zoom  0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-ken-burns    { animation: ken-burns 28s ease-in-out infinite alternate; }
+
 /* Texto corrido justificado.
    So a partir de `md` de proposito: numa coluna estreita de celular o
    justificado abre rios de espaco entre as palavras e fica pior do que o

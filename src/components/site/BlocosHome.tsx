@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { tituloQuarto, resumir } from "@/lib/format";
-import { CarrosselBanners, type BannerPublico } from "./CarrosselBanners";
+import { CarrosselBanners } from "./CarrosselBanners";
+import type { Banner } from "@/lib/banners";
 import {
   COMPLEXO, DIFERENCIAIS, CAFE_DA_MANHA, RESTAURANTE,
   AVALIACOES, ATRACOES, POLITICAS, ENDERECO, TRAVESSIA,
@@ -36,7 +37,7 @@ export type DadosHome = {
   heroAlt: string | null;
   wa: string;
   /** Cadastrados em Admin → Banners do topo. Vazio = comportamento antigo. */
-  banners: BannerPublico[];
+  banners: Banner[];
 };
 
 export function RenderBloco({ bloco, dados }: { bloco: Bloco; dados: DadosHome }) {

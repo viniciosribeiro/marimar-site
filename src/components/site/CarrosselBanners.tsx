@@ -1,39 +1,27 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import Image from "next/image";
-import Link from "next/link";
-
-export type BannerPublico = {
-  id: string;
-  titulo: string | null;
-  subtitulo: string | null;
-  imagem_url: string;
-  alt: string | null;
-  cta_texto: string | null;
-  cta_href: string | null;
-};
+import { BannerCamadas } from "./BannerCamadas";
+import type { Banner } from "@/lib/banners";
 
 /**
  * Carrossel do topo da home.
  *
- * Regras que ele respeita, e o porque de cada uma:
+ * Regras, e o porquê de cada uma:
  *
- * - **Um banner so nao vira carrossel.** Sem setas, sem bolinhas, sem
- *   temporizador. Controles para navegar entre um item so sao ruido.
- * - **Para sozinho** com o mouse em cima, com o foco dentro, ou com a aba
- *   em segundo plano. Trocar a imagem por baixo de quem esta lendo e a
- *   forma mais rapida de irritar; e girar numa aba escondida so gasta
- *   bateria.
- * - **Respeita `prefers-reduced-motion`**, e tambem o botao de animacoes do
- *   editor: `--duracao` vira quase zero e o giro automatico nao comeca.
- * - **So a primeira imagem tem `priority`.** Ela e o LCP da home; marcar
- *   todas faria o navegador disputar banda consigo mesmo.
+ * - **Um banner só não vira carrossel.** Sem bolinhas, sem temporizador.
+ *   Controle para navegar entre um item só é ruído.
+ * - **Para sozinho** com o mouse em cima, com o foco dentro ou com a aba em
+ *   segundo plano. Trocar a imagem por baixo de quem está lendo é a forma
+ *   mais rápida de irritar; girar numa aba escondida só gasta bateria.
+ * - **Respeita `prefers-reduced-motion`** e o botão de animações do editor:
+ *   com eles desligados não gira sozinho — as bolinhas continuam lá.
+ * - **Só o primeiro slide tem `priority`**: ele é o LCP da home.
  */
 export function CarrosselBanners({
   banners, children,
 }: {
-  banners: BannerPublico[];
+  banners: Banner[];
   /** A busca de disponibilidade, que fica por cima de qualquer banner. */
   children?: React.ReactNode;
 }) {
@@ -46,12 +34,9 @@ export function CarrosselBanners({
 
   useEffect(() => {
     if (total < 2 || parado) return;
-
-    // Se o site esta com animacoes desligadas (ou o sistema pede menos
-    // movimento), o carrossel simplesmente nao gira: quem quiser ver os
-    // outros banners usa as bolinhas.
-    const duracao = getComputedStyle(document.documentElement).getPropertyValue("--duracao");
-    if (duracao && parseFloat(duracao) < 1) return;
+    const d = getComputedStyle(document.documentElement).getPropertyValue("--duracao");
+    if (d && parseFloat(d) < 1) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const t = setInterval(() => setAtual((a) => (a + 1) % total), 7000);
     return () => clearInterval(t);
@@ -63,9 +48,11 @@ export function CarrosselBanners({
     return () => document.removeEventListener("visibilitychange", aoTrocarAba);
   }, []);
 
+  if (total === 0) return null;
+
   return (
     <section
-      className="relative isolate text-white py-24 lg:py-32 overflow-hidden bg-gradient-to-br from-marca via-marca-hover to-marca-escura"
+      className="relative isolate"
       onMouseEnter={() => setParado(true)}
       onMouseLeave={() => setParado(false)}
       onFocus={() => setParado(true)}
@@ -79,56 +66,41 @@ export function CarrosselBanners({
       }}
       aria-roledescription={total > 1 ? "carrossel" : undefined}
     >
-      {banners.map((b, i) => (
-        <div key={b.id}
-          className="absolute inset-0 -z-10 transition-opacity duration-700"
-          style={{ opacity: i === atual ? 1 : 0 }}
-          aria-hidden={i !== atual}>
-          <Image src={b.imagem_url} alt={b.alt || ""} fill priority={i === 0}
-            sizes="100vw" className="object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/70" />
-        </div>
-      ))}
-
-      <div className="relative max-w-5xl mx-auto px-4 text-center">
+      {/* Empilhados no mesmo espaço: o primeiro no fluxo define a altura, os
+          outros ficam sobrepostos. Assim a troca não faz a página pular
+          quando dois banners têm alturas diferentes. */}
+      <div className="grid">
         {banners.map((b, i) => (
-          <div key={b.id} className={i === atual ? "block" : "hidden"}>
-            {b.titulo && (
-              <h1 className="font-titulo text-4xl sm:text-5xl lg:text-6xl font-bold mb-5 leading-tight drop-shadow-sm text-white">
-                {b.titulo}
-              </h1>
-            )}
-            {b.subtitulo && (
-              <p className="text-base lg:text-lg text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-                {b.subtitulo}
-              </p>
-            )}
-            {b.cta_texto && b.cta_href && (
-              <Link href={b.cta_href}
-                className="inline-block bg-white text-tinta px-6 py-3 rounded-marca font-semibold shadow-marca hover:bg-white/90 transition-marca">
-                {b.cta_texto}
-              </Link>
-            )}
+          <div
+            key={b.id}
+            className="col-start-1 row-start-1 transition-opacity duration-700"
+            style={{ opacity: i === atual ? 1 : 0, pointerEvents: i === atual ? undefined : "none" }}
+            aria-hidden={i !== atual}
+          >
+            <BannerCamadas b={b} ativo={i === atual} prioridade={i === 0}>
+              {i === atual ? children : null}
+            </BannerCamadas>
           </div>
         ))}
-
-        {children}
-
-        {total > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-10">
-            {banners.map((b, i) => (
-              <button key={b.id} onClick={() => ir(i)}
-                aria-label={`Ver banner ${i + 1} de ${total}`}
-                aria-current={i === atual}
-                className="p-2 -m-1 group">
-                <span className={`block h-1.5 rounded-full transition-all ${
-                  i === atual ? "w-7 bg-white" : "w-3 bg-white/50 group-hover:bg-white/80"
-                }`} />
-              </button>
-            ))}
-          </div>
-        )}
       </div>
+
+      {total > 1 && (
+        <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center gap-2">
+          {banners.map((b, i) => (
+            <button
+              key={b.id}
+              onClick={() => ir(i)}
+              aria-label={`Ver banner ${i + 1} de ${total}`}
+              aria-current={i === atual}
+              className="p-2 -m-1 group"
+            >
+              <span className={`block h-1.5 rounded-full transition-all ${
+                i === atual ? "w-7 bg-white" : "w-3 bg-white/50 group-hover:bg-white/80"
+              }`} />
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

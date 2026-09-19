@@ -46,6 +46,20 @@ export async function salvarBanner(fd: FormData) {
     voltar("A data final precisa ser depois da inicial", true);
   }
 
+  /* Enums vem do cliente: validamos contra a lista antes de gravar.
+     Nao por desconfianca do formulario, mas porque um valor invalido aqui
+     viraria um banner que simplesmente nao renderiza — e o erro so
+     apareceria no site, longe de quem salvou. */
+  const opcao = <T extends string>(k: string, validos: readonly T[], padrao: T): T => {
+    const v = txt(fd, k);
+    return validos.includes(v as T) ? (v as T) : padrao;
+  };
+  const numero = (k: string, min: number, max: number, padrao: number) => {
+    const n = Number(txt(fd, k));
+    return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : padrao;
+  };
+  const liga = (k: string) => fd.get(k) === "1" || fd.get(k) === "on";
+
   const dados = {
     titulo: txt(fd, "titulo"),
     subtitulo: txt(fd, "subtitulo"),
@@ -55,28 +69,57 @@ export async function salvarBanner(fd: FormData) {
     cta_texto: txt(fd, "cta_texto"),
     cta_href: txt(fd, "cta_href"),
     ordem: Number(txt(fd, "ordem") ?? 0) || 0,
-    ativo: fd.get("ativo") === "on",
+    ativo: liga("ativo"),
+
+    tipo_midia: opcao("tipo_midia", ["imagem", "video"] as const, "imagem"),
+    video_url: txt(fd, "video_url"),
+    video_pathname: txt(fd, "video_pathname"),
+    foco_x: numero("foco_x", 0, 100, 50),
+    foco_y: numero("foco_y", 0, 100, 50),
+    video_no_celular: liga("video_no_celular"),
+
+    altura: opcao("altura", ["compacto", "medio", "alto", "tela"] as const, "alto"),
+    posicao: opcao("posicao", [
+      "esquerda-topo", "centro-topo", "direita-topo",
+      "esquerda-meio", "centro-meio", "direita-meio",
+      "esquerda-base", "centro-base", "direita-base",
+    ] as const, "centro-meio"),
+    largura_texto: opcao("largura_texto", ["estreita", "media", "larga"] as const, "media"),
+    centralizar_celular: liga("centralizar_celular"),
+
+    veu: opcao("veu", ["nenhum", "escuro", "escuro-baixo", "claro-esquerda", "vinheta"] as const, "escuro-baixo"),
+    veu_forca: numero("veu_forca", 0, 100, 55),
+    textura: opcao("textura", ["nenhuma", "grao", "pontos", "linhas"] as const, "nenhuma"),
+    textura_forca: numero("textura_forca", 0, 100, 18),
+
+    rotulo: txt(fd, "rotulo"),
+    texto: txt(fd, "texto"),
+    cta2_texto: txt(fd, "cta2_texto"),
+    cta2_href: txt(fd, "cta2_href"),
+    cor_texto: opcao("cor_texto", ["claro", "escuro"] as const, "claro"),
+    sombra_texto: liga("sombra_texto"),
+
+    animacao: opcao("animacao", ["nenhuma", "fade", "subir", "zoom"] as const, "subir"),
+    ken_burns: liga("ken_burns"),
   };
 
   const sql = await conectar();
   try {
     if (id) {
+      /* `sql(objeto)` monta a lista de colunas a partir das chaves — sao
+         trinta campos, e escrever cada um a mao duas vezes (update e
+         insert) e um convite a esquecer um e so descobrir no site. */
       await sql`
-        UPDATE banners SET
-          titulo = ${dados.titulo}, subtitulo = ${dados.subtitulo},
-          imagem_url = ${dados.imagem_url}, imagem_pathname = ${dados.imagem_pathname},
-          alt = ${dados.alt}, cta_texto = ${dados.cta_texto}, cta_href = ${dados.cta_href},
-          ordem = ${dados.ordem}, ativo = ${dados.ativo},
+        UPDATE banners SET ${sql(dados)},
           inicia_em = ${inicia}::timestamp, termina_em = ${termina}::timestamp
         WHERE id = ${id}::uuid`;
     } else {
       await sql`
-        INSERT INTO banners
-          (titulo, subtitulo, imagem_url, imagem_pathname, alt, cta_texto, cta_href, ordem, ativo, inicia_em, termina_em)
-        VALUES
-          (${dados.titulo}, ${dados.subtitulo}, ${dados.imagem_url}, ${dados.imagem_pathname},
-           ${dados.alt}, ${dados.cta_texto}, ${dados.cta_href}, ${dados.ordem}, ${dados.ativo},
-           ${inicia}::timestamp, ${termina}::timestamp)`;
+        INSERT INTO banners ${sql({
+          ...dados,
+          inicia_em: inicia as any,
+          termina_em: termina as any,
+        })}`;
     }
   } finally {
     await sql.end();
