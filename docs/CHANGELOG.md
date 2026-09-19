@@ -19,6 +19,84 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-19 (3) — Banners do topo, e um título que nunca ficou branco
+
+**Autor:** Claude Opus 5 (Cowork)
+
+> ⚠️ **Precisa rodar `npm run db:migrate`** (migration `0005_banners`) antes de
+> o módulo funcionar. Até lá o topo segue com o comportamento antigo — a
+> consulta está isolada num `try` próprio justamente para isso.
+
+### O que existia, e por que ninguém achava
+
+Havia **uma** foto de topo, escolhida por uma regra implícita dentro do módulo
+Fotos: a mídia com `destaque = true` e sem quarto vinculado. Quem procurava
+"banner" no admin não encontrava nada — porque não havia nada com esse nome. E
+trocar a foto do topo exigia conhecer a regra.
+
+### Agora: Admin → Conteúdo do site → Banners do topo
+
+Registros próprios, com imagem, título, chamada, botão (texto + link), ordem,
+ligar/desligar e **janela de exibição**.
+
+A janela existe porque a pousada anuncia por temporada: um banner de feriado
+tem de sair do ar sozinho, sem depender de alguém lembrar de desligar. A
+comparação de datas é feita **no banco**, com `now()` — fazer a conta no Node
+daria a hora do data center, não a que foi cadastrada, e o banner entraria ou
+sairia na hora errada.
+
+A listagem avisa quando um banner está ligado mas fora da janela ("encerrado
+em 06/01", "começa em 24/12"). Sem isso a tela diria "ativo" e o site não
+mostraria nada — e ninguém entenderia por quê.
+
+O formulário mostra a prévia **com o véu escuro do site por cima**, não uma
+miniatura limpa: é olhando o texto sobre a foto que se percebe se a imagem
+serve.
+
+### O carrossel
+
+- **Um banner só não vira carrossel** — sem setas, sem bolinhas, sem
+  temporizador. Controle para navegar entre um item só é ruído.
+- **Para sozinho** com o mouse em cima, com o foco dentro ou com a aba em
+  segundo plano. Trocar a imagem por baixo de quem está lendo é a forma mais
+  rápida de irritar; girar numa aba escondida só gasta bateria.
+- **Respeita o botão de animações** do editor e o `prefers-reduced-motion`: com
+  eles desligados ele simplesmente não gira.
+- **Só a primeira imagem tem `priority`** — ela é o LCP da home; marcar todas
+  faria o navegador disputar banda consigo mesmo.
+- Arrasta com o dedo no celular.
+
+A busca de disponibilidade é a **mesma** nos dois caminhos, montada uma vez:
+duplicá-la acabaria com dois formulários divergentes, e esse é justamente o
+componente que não pode divergir.
+
+### Excluir apaga o arquivo também
+
+`imagem_pathname` é gravado no upload porque é ele que o Vercel Blob usa para
+apagar. Sem guardar, excluir o banner deixaria a imagem órfã pagando
+armazenamento para sempre. O arquivo sai **depois** do registro, e a falha dele
+não derruba a exclusão: banner fantasma no site é pior que imagem órfã no
+storage.
+
+### O título que nunca ficou branco
+
+"Pousada Marimar" aparecia **azul-escuro sobre a foto escura do farol**, apesar
+do `text-white` na seção. A regra base `h1…h6 { color: var(--tinta) }` define
+`color` no próprio elemento, e **declaração própria sempre ganha de herança** —
+o `text-white` do `<section>` nunca chegava ao `<h1>`.
+
+Corrigido nos títulos sobre fundo escuro (topo da home, carrossel e o CTA), com
+a cor no próprio elemento. A regra base foi para dentro de `@layer base`, que é
+onde ela deveria estar desde o começo.
+
+### Verificado
+
+`tsc --noEmit` limpo. Home conferida antes e depois: com a tabela ainda
+inexistente ela cai no topo antigo sem quebrar nada, e o título do topo agora
+sai branco.
+
+---
+
 ## 2026-09-19 (2) — Alinhamento: topo, títulos, hero e justificado
 
 **Autor:** Claude Opus 5 (Cowork)

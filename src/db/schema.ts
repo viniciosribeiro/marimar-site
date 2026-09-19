@@ -341,3 +341,30 @@ export const cardapioFotos = pgTable("cardapio_fotos", {
   ordem: integer("ordem").default(0).notNull(),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
+
+/* ═══════════════════════ BANNERS DO TOPO ═══════════════════════ */
+
+// Antes existia UMA foto de topo, escolhida por uma regra implicita no
+// modulo Fotos (midia com `destaque = true` e sem quarto vinculado). Quem
+// procurava "banner" no admin nao achava nada, porque nao havia nada com
+// esse nome.
+//
+// `inicia_em`/`termina_em` existem porque a pousada anuncia por temporada:
+// um banner de feriado tem de sair do ar sozinho, sem depender de alguem
+// lembrar de desligar. NULL nos dois = sempre no ar.
+export const banners = pgTable("banners", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  titulo: text("titulo"),
+  subtitulo: text("subtitulo"),
+  imagem_url: text("imagem_url").notNull(),
+  /** Necessario para apagar o arquivo no Blob junto com o registro. */
+  imagem_pathname: text("imagem_pathname"),
+  alt: text("alt"),
+  cta_texto: text("cta_texto"),
+  cta_href: text("cta_href"),
+  ordem: integer("ordem").default(0).notNull(),
+  ativo: boolean("ativo").default(true).notNull(),
+  inicia_em: timestamp("inicia_em"),
+  termina_em: timestamp("termina_em"),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+});

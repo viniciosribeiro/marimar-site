@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { tituloQuarto, resumir } from "@/lib/format";
+import { CarrosselBanners, type BannerPublico } from "./CarrosselBanners";
 import {
   COMPLEXO, DIFERENCIAIS, CAFE_DA_MANHA, RESTAURANTE,
   AVALIACOES, ATRACOES, POLITICAS, ENDERECO, TRAVESSIA,
@@ -34,6 +35,8 @@ export type DadosHome = {
   heroUrl: string | null;
   heroAlt: string | null;
   wa: string;
+  /** Cadastrados em Admin → Banners do topo. Vazio = comportamento antigo. */
+  banners: BannerPublico[];
 };
 
 export function RenderBloco({ bloco, dados }: { bloco: Bloco; dados: DadosHome }) {
@@ -75,6 +78,49 @@ function Cabecalho({ sobre, titulo, texto }: { sobre?: string; titulo: string; t
 function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string | null }; d: DadosHome }) {
   const img = b.img || d.heroUrl;
   const nome = b.t || d.pousada?.nome || "Pousada Marimar";
+
+  /* A busca e a MESMA nos dois caminhos: com banners cadastrados ela vai por
+     cima do carrossel; sem banners, fica sobre a foto unica. Duplica-la
+     acabaria com dois formularios de disponibilidade divergentes — e esse e
+     justamente o componente que nao pode divergir. */
+  const busca = (
+    <>
+      <form action="/reservar" className="bg-white rounded-marca shadow-2xl p-3 max-w-3xl mx-auto grid grid-cols-2 sm:grid-cols-5 gap-2 text-left">
+        <label className="col-span-2 sm:col-span-1">
+          <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Check-in</span>
+          <input type="date" name="check_in" required className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none" />
+        </label>
+        <label className="col-span-2 sm:col-span-1">
+          <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Check-out</span>
+          <input type="date" name="check_out" required className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none" />
+        </label>
+        <label>
+          <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Adultos</span>
+          <select name="adultos" defaultValue="2" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none">
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+          </select>
+        </label>
+        <label>
+          <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Crianças</span>
+          <select name="criancas" defaultValue="0" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none">
+            <option>0</option><option>1</option><option>2</option><option>3</option>
+          </select>
+        </label>
+        <button type="submit" className="col-span-2 sm:col-span-1 bg-marca hover:bg-marca-hover text-marca-texto px-5 py-2.5 rounded-lg font-semibold transition-marca text-sm self-end">
+          Ver disponibilidade
+        </button>
+      </form>
+      <p className="text-xs text-white/70 mt-3">Disponibilidade e tarifas em tempo real, direto do nosso sistema de reservas.</p>
+    </>
+  );
+
+  // Com banners cadastrados, eles mandam no topo. Sem nenhum, continua
+  // valendo a foto marcada como destaque em Fotos — quem nunca cadastrar um
+  // banner nao perde o topo que ja tinha.
+  if (d.banners.length > 0) {
+    return <CarrosselBanners banners={d.banners}>{busca}</CarrosselBanners>;
+  }
+
   return (
     <section className="relative isolate text-white py-24 lg:py-32 overflow-hidden bg-gradient-to-br from-marca via-marca-hover to-marca-escura">
       {img && (
@@ -87,36 +133,11 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
         <span className="inline-block text-white/90 text-xs sm:text-sm font-medium bg-white/15 px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm border border-white/20">
           🌊 Encantadas · Ilha do Mel · Paraná
         </span>
-        <h1 className="font-titulo text-4xl sm:text-5xl lg:text-6xl font-bold mb-5 leading-tight drop-shadow-sm">{nome}</h1>
+        <h1 className="font-titulo text-4xl sm:text-5xl lg:text-6xl font-bold mb-5 leading-tight drop-shadow-sm text-white">{nome}</h1>
         <p className="text-base lg:text-lg text-white/90 mb-9 max-w-2xl mx-auto leading-relaxed">
           {b.s || COMPLEXO.fraseLonga}
         </p>
-        <form action="/reservar" className="bg-white rounded-marca shadow-2xl p-3 max-w-3xl mx-auto grid grid-cols-2 sm:grid-cols-5 gap-2 text-left">
-          <label className="col-span-2 sm:col-span-1">
-            <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Check-in</span>
-            <input type="date" name="check_in" required className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none" />
-          </label>
-          <label className="col-span-2 sm:col-span-1">
-            <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Check-out</span>
-            <input type="date" name="check_out" required className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none" />
-          </label>
-          <label>
-            <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Adultos</span>
-            <select name="adultos" defaultValue="2" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none">
-              <option>1</option><option>2</option><option>3</option><option>4</option>
-            </select>
-          </label>
-          <label>
-            <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Crianças</span>
-            <select name="criancas" defaultValue="0" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none">
-              <option>0</option><option>1</option><option>2</option><option>3</option>
-            </select>
-          </label>
-          <button type="submit" className="col-span-2 sm:col-span-1 bg-marca hover:bg-marca-hover text-marca-texto px-5 py-2.5 rounded-lg font-semibold transition-marca text-sm self-end">
-            Ver disponibilidade
-          </button>
-        </form>
-        <p className="text-xs text-white/70 mt-3">Disponibilidade e tarifas em tempo real, direto do nosso sistema de reservas.</p>
+        {busca}
       </div>
     </section>
   );
@@ -296,7 +317,7 @@ function Cta({ t, s, d }: { t: string | null; s: string | null; d: DadosHome }) 
   return (
     <section className="bg-gradient-to-r from-marca to-marca-ativa text-white py-16 lg:py-20 text-center">
       <div className="max-w-3xl mx-auto px-4">
-        <h2 className="font-titulo text-2xl lg:text-4xl font-bold mb-4">{t || "Pronto para sua estadia em Encantadas?"}</h2>
+        <h2 className="font-titulo text-2xl lg:text-4xl font-bold mb-4 text-white">{t || "Pronto para sua estadia em Encantadas?"}</h2>
         <p className="text-white/85 text-base lg:text-lg mb-8">
           {s || `Check-in a partir das ${POLITICAS.checkIn} · Check-out até ${POLITICAS.checkOut} · Café da manhã incluso`}
         </p>

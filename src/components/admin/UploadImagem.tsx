@@ -14,7 +14,13 @@ export function UploadImagem({
   valor, aoEnviar, pasta, rotulo, ajuda, previewClasse = "h-12", configurado, aoExtrairCores,
 }: {
   valor: string;
-  aoEnviar: (url: string) => void;
+  /**
+   * O segundo argumento e o `pathname` do Blob. So ele permite APAGAR o
+   * arquivo depois: sem guardar isso, excluir o registro deixaria a imagem
+   * orfa no storage, sendo cobrada para sempre. Opcional porque nem todo
+   * uso (logo, favicon) chega a excluir.
+   */
+  aoEnviar: (url: string, pathname?: string) => void;
   pasta: string;
   rotulo: string;
   ajuda?: string;
@@ -48,7 +54,7 @@ export function UploadImagem({
         handleUploadUrl: "/api/admin/upload",
         onUploadProgress: ({ percentage }) => setProgresso(percentage),
       });
-      aoEnviar(blob.url);
+      aoEnviar(blob.url, blob.pathname);
     } catch (e) {
       setErro((e as Error).message);
     } finally {

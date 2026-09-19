@@ -27,6 +27,7 @@ const GRUPOS: Grupo[] = [
   {
     grupo: "Conteúdo do site",
     itens: [
+      { href: "/admin/banners", label: "Banners do topo", icone: "🖼" },
       { href: "/admin/blocos-home", label: "Blocos da Home", icone: "🧱" },
       { href: "/admin/pacotes", label: "Pacotes", icone: "🎁" },
       { href: "/admin/passeios", label: "Passeios", icone: "🧭" },

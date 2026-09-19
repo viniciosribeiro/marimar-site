@@ -28,6 +28,7 @@ export default async function HomePage() {
   let faqs: any[] = [];
   let heroMidia: any = null;
   let blocos: Bloco[] = [];
+  let banners: any[] = [];
 
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
@@ -54,6 +55,27 @@ export default async function HomePage() {
       ORDER BY (quarto_id IS NULL) DESC, ordem LIMIT 1
     `;
 
+    /* Banners do topo. A janela de exibicao e resolvida NO BANCO, com
+       `now()`: fazer essa conta no servidor Node daria a hora do data
+       center, nao a que a pousada cadastrou, e um banner de feriado
+       entraria ou sairia na hora errada. */
+    try {
+      banners = await sql`
+        SELECT id, titulo, subtitulo, imagem_url, alt, cta_texto, cta_href
+        FROM banners
+        WHERE ativo = true
+          AND (inicia_em  IS NULL OR inicia_em  <= now())
+          AND (termina_em IS NULL OR termina_em >= now())
+        ORDER BY ordem, criado_em
+      `;
+    } catch (e) {
+      /* Isolado de proposito. Ate a migration 0005 rodar, a tabela nao
+         existe — e uma falha aqui derrubaria o `try` inteiro, levando junto
+         os blocos da home, que sao consultados logo abaixo. O topo volta ao
+         comportamento antigo e o resto da pagina nem percebe. */
+      console.warn("[HomePage] banners indisponiveis (rodou a migration 0005?):", (e as Error).message);
+    }
+
     // Traz ativos e inativos: precisamos saber quais tipos JA existem,
     // para nao reinserir um que foi escondido de proposito.
     const linhas = await sql`
@@ -74,6 +96,7 @@ export default async function HomePage() {
     heroUrl: heroMidia?.url || pousada?.og_image_url || null,
     heroAlt: heroMidia?.alt || null,
     wa: pousada?.whatsapp?.replace(/\D/g, "") || "",
+    banners: banners as any,
   };
 
   const todos = blocos as (Bloco & { ativo?: boolean })[];

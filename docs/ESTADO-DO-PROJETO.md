@@ -99,12 +99,13 @@ src/
 │   │   ├── faq/  politicas/  contato/ (+ actions.ts)
 │   │   └── reservar/                   monta deeplink pro motor
 │   │
-│   ├── (admin)/admin/          # Painel — 14 CRUDs + 4 telas de sistema
+│   ├── (admin)/admin/          # Painel — 15 CRUDs + 4 telas de sistema
 │   │   ├── page.tsx                    dashboard
 │   │   ├── login/  trocar-senha/       auth
 │   │   ├── quartos/ categorias/ comodidades/   (actions.ts proprias)
 │   │   ├── midias/ pacotes/ passeios/ politicas/
 │   │   ├── faq/ depoimentos/ blocos-home/ leads/ usuarios/
+│   │   ├── banners/                    imagens do topo da home (carrossel)
 │   │   ├── identidade-visual/          cores, fontes, logos, SEO
 │   │   ├── integracoes/                monitor ao vivo + chave da API
 │   │   └── diagnostico/                teste do Worker
@@ -155,7 +156,7 @@ src/
                          em dev e preview vercel.app roda na mesma origem)
 ```
 
-### Tabelas do banco (18)
+### Tabelas do banco (19)
 
 `pousada` · `usuarios` · `categorias` · `quartos` · `midias` · `comodidades` ·
 `quarto_comodidades` · `pousada_comodidades` · `pacotes` · `politicas` · `faq` ·

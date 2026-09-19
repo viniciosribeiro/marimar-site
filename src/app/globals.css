@@ -176,12 +176,20 @@ body {
   line-height: var(--altura-linha);
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--fonte-titulo);
-  color: var(--tinta);
-  font-weight: var(--peso-titulo);
-  letter-spacing: var(--rastreio-titulo);
-  line-height: 1.15;
+/* Dentro de `@layer base` de proposito.
+   Fora de camada, esta regra GANHAVA das utilities do Tailwind — que moram
+   em `@layer utilities` — e todo titulo sobre foto escura saia azul-tinta
+   em vez de branco, apesar do `text-white` no bloco. Era o caso do topo da
+   home: "Pousada Marimar" azul-escuro sobre a foto escura do farol.
+   Em `base`, a utility volta a poder sobrescrever. */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--fonte-titulo);
+    color: var(--tinta);
+    font-weight: var(--peso-titulo);
+    letter-spacing: var(--rastreio-titulo);
+    line-height: 1.15;
+  }
 }
 
 /* Respiro das secoes responde ao controle de densidade */
