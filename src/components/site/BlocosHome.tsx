@@ -3,8 +3,12 @@ import Image from "next/image";
 import { tituloQuarto, resumir } from "@/lib/format";
 import { CarrosselBanners } from "./CarrosselBanners";
 import type { Banner } from "@/lib/banners";
+import { IconeCirculo, Icone, OndaTitulo } from "./Icone";
+import { BuscaHome } from "./BuscaHome";
+import { Manuscrita } from "./ui";
+import type { ItemBloco } from "@/lib/blocos";
 import {
-  COMPLEXO, DIFERENCIAIS, CAFE_DA_MANHA, RESTAURANTE,
+  COMPLEXO, DIFERENCIAIS, DESTAQUES_TOPO, CAFE_DA_MANHA, RESTAURANTE,
   AVALIACOES, ATRACOES, POLITICAS, ENDERECO, TRAVESSIA,
 } from "@/lib/conteudo-pousada";
 
@@ -38,6 +42,10 @@ export type DadosHome = {
   wa: string;
   /** Cadastrados em Admin → Banners do topo. Vazio = comportamento antigo. */
   banners: Banner[];
+  /** Cartões de cada bloco, por tipo. Vazio = valem as constantes. */
+  itens: Record<string, ItemBloco[]>;
+  /** Até 3 pacotes ativos, para a aba de ofertas da busca. */
+  pacotes: { slug: string; nome: string; resumo: string | null }[];
 };
 
 export function RenderBloco({ bloco, dados }: { bloco: Bloco; dados: DadosHome }) {
@@ -46,8 +54,8 @@ export function RenderBloco({ bloco, dados }: { bloco: Bloco; dados: DadosHome }
 
   switch (bloco.tipo) {
     case "hero":        return <Hero b={{ t, s, img: bloco.imagem_url }} d={dados} />;
-    case "complexo":    return <Complexo t={t} s={s} />;
-    case "diferenciais":return <Diferenciais t={t} s={s} />;
+    case "complexo":    return <Complexo t={t} s={s} itens={dados.itens.complexo ?? []} />;
+    case "diferenciais":return <Diferenciais t={t} s={s} itens={dados.itens.diferenciais ?? []} />;
     case "quartos":     return <Quartos t={t} s={s} d={dados} />;
     case "restaurante": return <Restaurante t={t} s={s} />;
     case "avaliacoes":  return <Avaliacoes t={t} s={s} />;
@@ -67,10 +75,19 @@ export function RenderBloco({ bloco, dados }: { bloco: Bloco; dados: DadosHome }
 /* ══════════════ Cabecalho reutilizavel ══════════════ */
 function Cabecalho({ sobre, titulo, texto }: { sobre?: string; titulo: string; texto?: string | null }) {
   return (
-    <div className="text-center mb-10 lg:mb-12">
-      {sobre && <span className="text-marca font-medium text-sm">{sobre}</span>}
-      <h2 className="font-titulo text-2xl lg:text-3xl font-bold text-gray-900 mt-2">{titulo}</h2>
-      {texto && <p className="text-gray-500 mt-3 max-w-xl mx-auto text-sm leading-relaxed">{texto}</p>}
+    <div className="text-center mb-10 lg:mb-14">
+      {sobre && (
+        <span className="block text-marca font-semibold text-[0.7rem] uppercase tracking-[0.22em]">
+          {sobre}
+        </span>
+      )}
+      <h2 className="font-titulo text-[1.65rem] sm:text-3xl lg:text-[2.35rem] font-bold text-tinta mt-2.5 text-balance">
+        {titulo}
+      </h2>
+      {/* A onda amarra a identidade: mesmo lugar, mesmo tamanho, em toda
+          seção. É o que dá ritmo à página em vez de títulos soltos. */}
+      <OndaTitulo className="mx-auto mt-3.5" />
+      {texto && <p className="text-tinta-suave mt-4 max-w-xl mx-auto text-sm leading-relaxed">{texto}</p>}
     </div>
   );
 }
@@ -80,39 +97,14 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
   const img = b.img || d.heroUrl;
   const nome = b.t || d.pousada?.nome || "Pousada Marimar";
 
-  /* A busca e a MESMA nos dois caminhos: com banners cadastrados ela vai por
-     cima do carrossel; sem banners, fica sobre a foto unica. Duplica-la
-     acabaria com dois formularios de disponibilidade divergentes — e esse e
-     justamente o componente que nao pode divergir. */
+  /* A busca é a MESMA nos dois caminhos: com banners cadastrados ela vai por
+     cima do carrossel; sem banners, fica sobre a foto única. Duplicá-la
+     acabaria com dois formulários de disponibilidade divergentes — e esse é
+     justamente o componente que não pode divergir. */
   const busca = (
-    <>
-      <form action="/reservar" className="bg-white rounded-marca shadow-2xl p-3 max-w-3xl mx-auto grid grid-cols-2 sm:grid-cols-5 gap-2 text-left">
-        <label className="col-span-2 sm:col-span-1">
-          <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Check-in</span>
-          <input type="date" name="check_in" required className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none" />
-        </label>
-        <label className="col-span-2 sm:col-span-1">
-          <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Check-out</span>
-          <input type="date" name="check_out" required className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none" />
-        </label>
-        <label>
-          <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Adultos</span>
-          <select name="adultos" defaultValue="2" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none">
-            <option>1</option><option>2</option><option>3</option><option>4</option>
-          </select>
-        </label>
-        <label>
-          <span className="block text-[11px] font-medium text-gray-500 px-1 mb-1">Crianças</span>
-          <select name="criancas" defaultValue="0" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 text-sm focus:ring-2 focus:ring-marca outline-none">
-            <option>0</option><option>1</option><option>2</option><option>3</option>
-          </select>
-        </label>
-        <button type="submit" className="col-span-2 sm:col-span-1 bg-marca hover:bg-marca-hover text-marca-texto px-5 py-2.5 rounded-lg font-semibold transition-marca text-sm self-end">
-          Ver disponibilidade
-        </button>
-      </form>
-      <p className="text-xs text-white/70 mt-3">Disponibilidade e tarifas em tempo real, direto do nosso sistema de reservas.</p>
-    </>
+    <div className="mt-8">
+      <BuscaHome pacotes={d.pacotes} />
+    </div>
   );
 
   // Com banners cadastrados, eles mandam no topo. Sem nenhum, continua
@@ -135,9 +127,21 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
           🌊 Encantadas · Ilha do Mel · Paraná
         </span>
         <h1 className="font-titulo text-4xl sm:text-5xl lg:text-6xl font-bold mb-5 leading-tight drop-shadow-sm text-white">{nome}</h1>
-        <p className="text-base lg:text-lg text-white/90 mb-9 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-base lg:text-lg text-white/90 mb-7 max-w-2xl mx-auto leading-relaxed">
           {b.s || COMPLEXO.fraseLonga}
         </p>
+
+        {/* Os quatro atributos são fatos confirmados, não slogans: é o que
+            a pessoa precisa saber antes de olhar datas. */}
+        <ul className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5 text-white/90 text-xs sm:text-sm">
+          {DESTAQUES_TOPO.map((x) => (
+            <li key={x.texto} className="flex items-center gap-2">
+              <span className="text-white/70" aria-hidden><Icone nome={x.icone} tamanho={17} /></span>
+              {x.texto}
+            </li>
+          ))}
+        </ul>
+
         {busca}
       </div>
     </section>
@@ -145,44 +149,121 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
 }
 
 /* ══════════════ COMPLEXO ══════════════ */
-function Complexo({ t, s }: { t: string | null; s: string | null }) {
+function Complexo({ t, s, itens }: { t: string | null; s: string | null; itens: ItemBloco[] }) {
+  /* Sem itens cadastrados valem os dois cartões do conteúdo canônico: quem
+     nunca abrir a tela do admin não perde o que já estava no ar. */
+  const cartoes: ItemBloco[] = itens.length
+    ? itens
+    : [
+        {
+          id: "restaurante", icone: "talheres", cor: "coral",
+          titulo: RESTAURANTE.nome,
+          texto: "Na parte da frente, pé na areia, de frente para a Praia de Encantadas. Gastronomia, drinks e o melhor visual da ilha.",
+          imagem_url: null, href: "/restaurante", cta_texto: "Conheça o restaurante",
+        },
+        {
+          id: "pousada", icone: "cama", cor: "mata",
+          titulo: "Pousada Marimar",
+          texto: "As acomodações ficam logo atrás do restaurante, a poucos passos do trapiche. Conforto, privacidade e a essência da Ilha do Mel.",
+          imagem_url: null, href: "/quartos", cta_texto: "Conheça as acomodações",
+        },
+      ];
+
   return (
-    <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
-      <Cabecalho sobre={s || "Como funciona"} titulo={t || "Um complexo, duas partes"} />
-      <div className="grid sm:grid-cols-[1fr_auto_1fr] gap-4 sm:gap-2 items-stretch">
-        <div className="bg-marca-sutil border border-marca-borda rounded-marca p-6 text-center">
-          <div className="text-3xl mb-3">🏖️</div>
-          <h3 className="font-semibold text-gray-900 mb-1.5">{RESTAURANTE.nome}</h3>
-          <p className="text-sm text-gray-600 leading-relaxed">Na parte da frente, pé na areia, de frente para a Praia de Encantadas.</p>
+    <section className="bg-fundo-suave secao-py">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Cabecalho sobre={s || "Como funciona"} titulo={t || "Um complexo, duas partes"} />
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr] lg:gap-4 items-stretch">
+          <CartaoComplexo item={cartoes[0]} />
+
+          {/* O conector é informação, não enfeite: é ele que diz que os dois
+              cartões são partes do MESMO lugar. Vira horizontal no celular,
+              onde os cartões ficam um sobre o outro. */}
+          <div className="flex lg:flex-col items-center justify-center gap-3 lg:py-10 lg:w-28">
+            <span className="h-px lg:h-auto lg:w-px flex-1 bg-linha" aria-hidden />
+            <span className="text-[0.62rem] uppercase tracking-[0.18em] text-tinta-suave text-center leading-tight shrink-0">
+              Anexada<br className="hidden lg:block" /> aos fundos
+            </span>
+            <OndaTitulo className="shrink-0 hidden lg:block" />
+            <span className="h-px lg:h-auto lg:w-px flex-1 bg-linha" aria-hidden />
+          </div>
+
+          {cartoes[1] && <CartaoComplexo item={cartoes[1]} />}
         </div>
-        <div className="flex sm:flex-col items-center justify-center gap-2 py-2">
-          <div className="h-px sm:h-full sm:w-px flex-1 bg-gray-200" />
-          <span className="text-xs text-tinta-suave whitespace-nowrap px-2 shrink-0">anexada aos fundos</span>
-          <div className="h-px sm:h-full sm:w-px flex-1 bg-gray-200" />
-        </div>
-        <div className="bg-white border border-gray-200 rounded-marca p-6 text-center shadow-marca">
-          <div className="text-3xl mb-3">🛏️</div>
-          <h3 className="font-semibold text-gray-900 mb-1.5">Pousada Marimar</h3>
-          <p className="text-sm text-gray-600 leading-relaxed">As acomodações ficam logo atrás do restaurante, a poucos passos do trapiche.</p>
-        </div>
+
+        {cartoes.length > 2 && (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
+            {cartoes.slice(2).map((i) => <CartaoComplexo key={i.id} item={i} />)}
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-/* ══════════════ DIFERENCIAIS ══════════════ */
-function Diferenciais({ t, s }: { t: string | null; s: string | null }) {
+function CartaoComplexo({ item }: { item: ItemBloco }) {
   return (
-    <section className="bg-fundo-suave py-16 lg:py-20">
+    <article className="relative bg-white rounded-marca border border-linha shadow-marca overflow-hidden flex flex-col">
+      {item.imagem_url && (
+        <div className="relative h-48 sm:h-56">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={item.imagem_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        </div>
+      )}
+
+      <div className={`relative px-6 pb-6 text-center ${item.imagem_url ? "pt-10" : "pt-8"}`}>
+        {/* Com foto, o ícone monta na junção entre imagem e texto — é o que
+            costura as duas metades em vez de deixar dois blocos empilhados. */}
+        {item.icone && (
+          <span className={item.imagem_url ? "absolute -top-6 left-1/2 -translate-x-1/2" : "inline-block mb-3"}>
+            <span className="block rounded-full bg-white p-1.5 shadow-marca">
+              <IconeCirculo nome={item.icone} cor={item.cor} tamanho={44} />
+            </span>
+          </span>
+        )}
+
+        <h3 className="font-titulo text-xl font-bold text-tinta">{item.titulo}</h3>
+        {item.texto && (
+          <p className="text-sm text-tinta-suave leading-relaxed mt-2">{item.texto}</p>
+        )}
+        {item.href && item.cta_texto && (
+          <Link href={item.href}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-marca hover:gap-2.5 transition-all mt-4">
+            {item.cta_texto}
+            <span aria-hidden>→</span>
+          </Link>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/* ══════════════ DIFERENCIAIS ══════════════ */
+function Diferenciais({ t, s, itens }: { t: string | null; s: string | null; itens: ItemBloco[] }) {
+  const cartoes: ItemBloco[] = itens.length
+    ? itens
+    : DIFERENCIAIS.map((d, i) => ({
+        id: String(i), icone: d.icone, cor: d.cor, titulo: d.titulo, texto: d.texto,
+        imagem_url: null, href: null, cta_texto: null,
+      }));
+
+  return (
+    <section className="secao-py">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Cabecalho sobre={s || "Por que a Marimar"} titulo={t || "O que está incluso na sua estadia"} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {DIFERENCIAIS.map((d) => (
-            <div key={d.titulo} className="bg-white rounded-marca p-5 border border-gray-100 shadow-marca">
-              <div className="text-2xl mb-3">{d.icone}</div>
-              <h3 className="font-semibold text-gray-900 text-sm mb-1.5">{d.titulo}</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">{d.texto}</p>
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
+          {cartoes.map((d) => (
+            <article key={d.id}
+              className="bg-white rounded-marca p-5 border border-linha shadow-marca hover:shadow-marca-forte transition-marca">
+              <div className="flex items-start gap-3">
+                <IconeCirculo nome={d.icone || "check"} cor={d.cor} tamanho={40} />
+                <h3 className="font-semibold text-tinta text-sm leading-snug pt-2">{d.titulo}</h3>
+              </div>
+              {d.texto && (
+                <p className="text-xs text-tinta-suave leading-relaxed mt-3">{d.texto}</p>
+              )}
+            </article>
           ))}
         </div>
       </div>
@@ -315,18 +396,53 @@ function Mapa({ t, s }: { t: string | null; s: string | null }) {
 
 /* ══════════════ CTA ══════════════ */
 function Cta({ t, s, d }: { t: string | null; s: string | null; d: DadosHome }) {
+  /* A faixa usa a MESMA foto de destaque do topo quando nao ha banner
+     proprio: repetir uma foto que a pousada ja escolheu e melhor do que
+     inventar um degrade — e some sozinha se nenhuma existir. */
+  const foto = d.heroUrl;
+
   return (
-    <section className="bg-gradient-to-r from-marca to-marca-ativa text-white py-16 lg:py-20 text-center">
-      <div className="max-w-3xl mx-auto px-4">
-        <h2 className="font-titulo text-2xl lg:text-4xl font-bold mb-4 text-white">{t || "Pronto para sua estadia em Encantadas?"}</h2>
-        <p className="text-white/85 text-base lg:text-lg mb-8">
-          {s || `Check-in a partir das ${POLITICAS.checkIn} · Check-out até ${POLITICAS.checkOut} · Café da manhã incluso`}
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link href="/reservar" className="bg-white text-marca-ativa px-8 py-3.5 rounded-marca font-semibold hover:bg-gray-100 transition-marca">Consultar disponibilidade</Link>
-          {d.wa && (
-            <a href={`https://wa.me/${d.wa}`} target="_blank" rel="noopener noreferrer" className="border-2 border-white/50 text-white px-8 py-3.5 rounded-marca font-semibold hover:bg-white/10 transition-marca">💬 Falar no WhatsApp</a>
-          )}
+    <section className="relative isolate overflow-hidden text-white">
+      {foto && (
+        <>
+          <Image src={foto} alt="" fill sizes="100vw" className="object-cover -z-10" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-tinta/85 via-tinta/70 to-tinta/85" />
+        </>
+      )}
+      {!foto && <div className="absolute inset-0 -z-10 bg-gradient-to-r from-marca to-marca-ativa" />}
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-12">
+          <div className="min-w-0 text-center lg:text-left">
+            <Manuscrita tamanho="lg" className="text-white/95">Ilha do Mel</Manuscrita>
+            <p className="text-[0.62rem] sm:text-xs uppercase tracking-[0.3em] text-white/70 mt-2">
+              Natureza · Gastronomia · Bem-estar
+            </p>
+          </div>
+
+          <div className="lg:ml-auto text-center lg:text-right min-w-0">
+            <h2 className="font-titulo text-2xl lg:text-[2rem] font-bold text-white text-balance">
+              {t || "Sua próxima história começa aqui."}
+            </h2>
+            <p className="text-white/80 text-sm mt-2 leading-relaxed">
+              {s || `Check-in a partir das ${POLITICAS.checkIn} · Café da manhã incluso`}
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center shrink-0">
+            <Link href="/reservar"
+              className="inline-flex items-center justify-center gap-2 bg-marca hover:bg-marca-hover text-marca-texto px-7 py-3.5 rounded-marca font-semibold shadow-marca transition-marca">
+              <Icone nome="calendario" tamanho={18} />
+              Reservar agora
+            </Link>
+            {d.wa && (
+              <a href={`https://wa.me/${d.wa}`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 border border-white/60 text-white px-6 py-3.5 rounded-marca font-semibold hover:bg-white/15 backdrop-blur-sm transition-marca">
+                <Icone nome="telefone" tamanho={18} />
+                WhatsApp
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </section>

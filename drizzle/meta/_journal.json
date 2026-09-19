@@ -50,6 +50,13 @@
       "when": 1789830000000,
       "tag": "0006_banners_camadas",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789833000000,
+      "tag": "0007_blocos_itens",
+      "breakpoints": true
     }
   ]
 }

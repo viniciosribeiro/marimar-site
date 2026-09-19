@@ -1,5 +1,6 @@
 import postgres from "postgres";
 import { lerBanner } from "@/lib/banners";
+import { agruparItens } from "@/lib/blocos";
 import { RenderBloco, type Bloco, type DadosHome } from "@/components/site/BlocosHome";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,8 @@ export default async function HomePage() {
   let heroMidia: any = null;
   let blocos: Bloco[] = [];
   let banners: any[] = [];
+  let itensBlocos: any[] = [];
+  let pacotesTopo: any[] = [];
 
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
@@ -50,6 +53,14 @@ export default async function HomePage() {
     `;
 
     faqs = await sql`SELECT * FROM faq WHERE ativo = true ORDER BY ordem LIMIT 6`;
+
+    /* Para a aba "Pacotes e ofertas" da busca. Tres: a caixa e pequena, e
+       uma lista longa ali em cima competiria com a busca por datas, que e
+       o que a maioria veio fazer. */
+    pacotesTopo = await sql`
+      SELECT slug, nome, descricao AS resumo FROM pacotes
+      WHERE ativo = true ORDER BY ordem, criado_em LIMIT 3
+    `;
 
     [heroMidia] = await sql`
       SELECT url, alt FROM midias WHERE destaque = true
@@ -76,6 +87,21 @@ export default async function HomePage() {
       console.warn("[HomePage] banners indisponiveis (rodou a migration 0005?):", (e as Error).message);
     }
 
+    try {
+      /* Os cartoes de cada bloco. Isolado pelo mesmo motivo dos banners:
+         entre o deploy e a migration 0007 a tabela nao existe, e a falha
+         derrubaria os blocos da home logo abaixo. */
+      itensBlocos = await sql`
+        SELECT i.*, b.tipo
+        FROM blocos_itens i
+        JOIN blocos_home b ON b.id = i.bloco_id
+        WHERE i.ativo = true
+        ORDER BY i.ordem, i.criado_em
+      `;
+    } catch (e) {
+      console.warn("[HomePage] itens dos blocos indisponiveis (migration 0007?):", (e as Error).message);
+    }
+
     // Traz ativos e inativos: precisamos saber quais tipos JA existem,
     // para nao reinserir um que foi escondido de proposito.
     const linhas = await sql`
@@ -97,6 +123,8 @@ export default async function HomePage() {
     heroAlt: heroMidia?.alt || null,
     wa: pousada?.whatsapp?.replace(/\D/g, "") || "",
     banners: banners.map(lerBanner),
+    itens: agruparItens(itensBlocos),
+    pacotes: pacotesTopo as any,
   };
 
   const todos = blocos as (Bloco & { ativo?: boolean })[];

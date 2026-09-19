@@ -399,3 +399,30 @@ export const banners = pgTable("banners", {
   animacao: text("animacao").default("subir").notNull(),
   ken_burns: boolean("ken_burns").default(false).notNull(),
 });
+
+/* ═══════════════════════ ITENS DOS BLOCOS DA HOME ═══════════════════════ */
+
+// Os cartoes de "Um complexo, duas partes" e "O que esta incluso" eram
+// constantes no codigo: dava para editar o TITULO da secao pelo admin, mas
+// nao os cartoes dentro dela — que e o conteudo que a pousada quer mexer.
+//
+// Uma tabela so serve aos dois blocos porque a forma e a mesma (icone ou
+// foto, titulo, texto, link); o que muda e como o bloco desenha. Sem nenhuma
+// linha para um bloco, valem as constantes de src/lib/conteudo-pousada.ts.
+export const blocosItens = pgTable("blocos_itens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  bloco_id: uuid("bloco_id")
+    .references(() => blocosHome.id, { onDelete: "cascade" })
+    .notNull(),
+  icone: text("icone"),
+  cor: text("cor").default("marca").notNull(),
+  titulo: text("titulo").notNull(),
+  texto: text("texto"),
+  imagem_url: text("imagem_url"),
+  imagem_pathname: text("imagem_pathname"),
+  href: text("href"),
+  cta_texto: text("cta_texto"),
+  ordem: integer("ordem").default(0).notNull(),
+  ativo: boolean("ativo").default(true).notNull(),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+});

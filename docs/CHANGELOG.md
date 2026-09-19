@@ -19,6 +19,78 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-19 (6) — Home: ícones de verdade, busca em abas e cartões editáveis
+
+**Autor:** Claude Opus 5 (Cowork)
+
+> ⚠️ **Rode `npm run db:migrate`** (migration `0007_blocos_itens`).
+
+### Emoji não é ícone
+
+Os oito cartões de "O que está incluso" usavam emoji. Cada sistema desenha o
+seu: o mesmo 🍤 muda de cor e de forma entre iPhone, Android e Windows, e
+nenhum deles aceita a cor da marca. Numa grade de oito, isso vira **oito
+estilos gráficos diferentes na mesma tela**.
+
+Agora são 28 ícones de linha em SVG inline (`src/components/site/Icone.tsx`):
+herdam `currentColor`, escalam sem borrar e não custam nenhuma requisição.
+Cada um vai dentro de um círculo colorido, com uma paleta de oito cores
+**fixas, não derivadas da marca** — a graça de uma grade é a variedade, e oito
+tons da mesma cor viram oito cartões iguais.
+
+### A busca do topo virou três respostas
+
+O topo recebe três perguntas diferentes e só respondia a uma:
+
+- **Hospedagem** — as datas, exatamente o formulário de antes, mesma ação,
+  mesmo motor
+- **Pacotes e ofertas** — até três pacotes ativos, direto do banco
+- **Informações importantes** — check-in, café, pets e crianças, que a pessoa
+  ia procurar rolando a página inteira
+
+O selo diz "direto com a pousada", não "melhor preço garantido": o segundo
+seria uma garantia que a pousada não deu, e o briefing proíbe publicar o que
+não foi confirmado.
+
+### Seções redesenhadas
+
+- **Cabeçalho de seção** ganhou o rótulo em maiúsculas e a **onda** sob o
+  título. Ela aparece sempre no mesmo lugar e no mesmo tamanho — é o que dá
+  ritmo à página em vez de títulos soltos.
+- **"Um complexo, duas partes"** — cartões com foto, ícone montado na junção
+  entre imagem e texto, e link. O conector do meio é informação, não enfeite:
+  é ele que diz que os dois são partes do mesmo lugar.
+- **Faixa final** — foto, manuscrita "Ilha do Mel", tagline espaçada e os dois
+  botões. Reaproveita a foto de destaque que a pousada já escolheu, em vez de
+  inventar um degradê.
+
+### Os cartões agora são editáveis (Admin → Cartões das seções)
+
+Eram constantes no código. Dava para editar o **título da seção** pelo admin,
+mas não os cartões dentro dela — que é justamente o conteúdo que a pousada
+quer mexer.
+
+Uma tabela (`blocos_itens`) serve aos dois blocos, porque a forma é a mesma:
+ícone ou foto, título, texto, link. O que muda é como o bloco desenha — e a
+tela só oferece foto e link onde o site realmente os usa; oferecer em
+"diferenciais" seria prometer uma edição que o site ignora.
+
+**Sem nenhum cartão cadastrado, valem as constantes.** Quem nunca abrir a tela
+não perde o que já estava no ar. O primeiro cartão criado substitui os padrões
+daquela seção — a tela avisa isso antes.
+
+A ordem de um cartão novo é o fim da fila **da seção**, não da tabela: um
+cartão de "O que está incluso" não pode nascer atrás dos cartões de outro
+bloco, já que eles nem aparecem juntos.
+
+### Verificado
+
+`tsc --noEmit` limpo. Home conferida com e sem banner: a busca em abas troca
+de conteúdo, os cartões caem nas constantes enquanto a migration não roda, e a
+consulta dos itens está isolada num `try` próprio para não derrubar o resto.
+
+---
+
 ## 2026-09-19 (5) — Banners em camadas: vídeo, texturas, foco e movimento
 
 **Autor:** Claude Opus 5 (Cowork)

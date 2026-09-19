@@ -106,15 +106,33 @@ export const CNPJ_ATUAL = null;
    DIFERENCIAIS — somente os confirmados
    ───────────────────────────────────────────────────────────────── */
 
+/**
+ * A fila de atributos do topo da home.
+ *
+ * Quatro, todos FATOS confirmados — nao slogans. "Experiencias
+ * inesqueciveis" nao diz nada a quem esta decidindo; "cafe da manha
+ * incluso" responde uma duvida real antes de a pessoa olhar datas.
+ */
+export const DESTAQUES_TOPO = [
+  { icone: "praia", texto: "Restaurante pé na areia" },
+  { icone: "caminhar", texto: "A passos do trapiche" },
+  { icone: "cafe", texto: "Café da manhã incluso" },
+  { icone: "folha", texto: "Dentro da Ilha do Mel" },
+] as const;
+
+/* `icone` e `cor` referem-se ao catalogo de src/components/site/Icone.tsx.
+   Eram emojis: cada sistema desenha o seu, entao a mesma grade de oito
+   cartoes saia com oito estilos graficos diferentes — e nenhum emoji aceita
+   a cor da marca. */
 export const DIFERENCIAIS = [
-  { icone: "🍤", titulo: "Restaurante próprio pé na areia", texto: "O Marimar Café Bistrô Bar fica na parte da frente do complexo, de frente para a Praia de Encantadas." },
-  { icone: "🚶", titulo: "A poucos passos do trapiche", texto: "Percurso curto e a pé desde o trapiche de Encantadas até o restaurante — a pousada fica logo atrás." },
-  { icone: "☕", titulo: "Café da manhã incluso", texto: "Self-service servido das 08h às 10h, com pães, bolos, lanches naturais, frios, frutas frescas e sucos." },
-  { icone: "❄️", titulo: "Suítes climatizadas", texto: "Ar-condicionado, banheiro privativo e TV nas acomodações." },
-  { icone: "📶", titulo: "Wi-Fi gratuito", texto: "Internet sem fio nas dependências da pousada." },
-  { icone: "👨‍👩‍👧", titulo: "Casais e famílias", texto: "Acomodações para casais e opções familiares com camas adicionais." },
-  { icone: "🎉", titulo: "Espaço para eventos", texto: "Casamentos, festas e confraternizações usando jardim, restaurante e a proximidade do mar." },
-  { icone: "🌿", titulo: "Contato com a natureza", texto: "Encantadas fica dentro do contexto natural da Ilha do Mel, sem circulação de veículos." },
+  { icone: "talheres", cor: "coral", titulo: "Restaurante próprio pé na areia", texto: "O Marimar Café Bistrô Bar fica na parte da frente do complexo, de frente para a Praia de Encantadas." },
+  { icone: "caminhar", cor: "mar", titulo: "A poucos passos do trapiche", texto: "Percurso curto e a pé desde o trapiche de Encantadas até o restaurante — a pousada fica logo atrás." },
+  { icone: "cafe", cor: "areia", titulo: "Café da manhã incluso", texto: "Self-service servido das 08h às 10h, com pães, bolos, lanches naturais, frios, frutas frescas e sucos." },
+  { icone: "ar", cor: "mar", titulo: "Suítes climatizadas", texto: "Ar-condicionado, banheiro privativo e TV nas acomodações." },
+  { icone: "wifi", cor: "noite", titulo: "Wi-Fi gratuito", texto: "Internet sem fio nas dependências da pousada." },
+  { icone: "familia", cor: "sol", titulo: "Casais e famílias", texto: "Acomodações para casais e opções familiares com camas adicionais." },
+  { icone: "festa", cor: "coral", titulo: "Espaço para eventos", texto: "Casamentos, festas e confraternizações usando jardim, restaurante e a proximidade do mar." },
+  { icone: "folha", cor: "mata", titulo: "Contato com a natureza", texto: "Encantadas fica dentro do contexto natural da Ilha do Mel, sem circulação de veículos." },
 ] as const;
 
 /* ─────────────────────────────────────────────────────────────────
