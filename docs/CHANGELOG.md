@@ -19,6 +19,87 @@ Formato de cada entrada:
 
 ---
 
+## 2026-09-18 (11) — Menu de verdade, e 102 classes que nunca pintaram nada
+
+**Autor:** Claude Opus 5 (Cowork)
+
+### O achado antes do menu
+
+Os tokens da paleta editorial (`--areia`, `--areia-forte`, `--tinta`,
+`--tinta-suave`, `--linha`) estavam declarados no `:root`, mas **nunca foram
+registrados no `@theme inline`**. No Tailwind v4 e o `@theme` que gera as
+utilities — declarar no `:root` nao basta.
+
+Resultado: `text-tinta`, `bg-areia` e `border-linha` eram classes que nao
+existiam. **102 usos em 7 arquivos** silenciosamente sem efeito: os titulos
+caiam no cinza do `body` em vez do azul-petroleo, as superficies de areia
+ficavam transparentes e os traços decorativos, invisiveis. O redesenho estava
+no codigo mas nao na tela — era parte da sensacao de "basico demais".
+
+Cinco linhas no `@theme` acenderam tudo de uma vez.
+
+### O menu
+
+Antes: seis links chapados no topo, sem estado ativo, e quinze links no rodape
+que nao existiam no topo. Politicas, FAQ, Pacotes, Avaliacoes e Eventos —
+paginas que respondem exatamente o que a pessoa quer saber antes de reservar —
+so eram alcancaveis rolando ate o fim.
+
+Agora existe `src/lib/navegacao.ts`: **uma arvore, tres consumidores** (topo,
+gaveta do celular, rodape). Pagina nova entra em um arquivo so.
+
+**No desktop**, cada grupo abre um painel com o nome e uma linha dizendo o que
+a pessoa vai encontrar ali — a parte mais util do menu e essa, poupa o clique
+de descoberta. As descricoes nao citam numero, preco nem nada que dependa do
+que o admin cadastrou: o cardapio muda, o menu nao pode mentir enquanto isso.
+
+O gatilho e um **link**, nao um botao: "Restaurante" leva a `/restaurante`.
+Quem tem mouse ve o painel ao passar por cima e escolhe entre a pagina inteira
+ou um item. Em ponteiro sem hover, o primeiro toque so abre o painel e o
+segundo navega — senao o painel nunca apareceria no celular.
+
+O item fica marcado quando a pessoa esta nele **ou em qualquer pagina abaixo
+dele**: quem esta em `/pacotes` ve "Acomodacoes" aceso. A ancora e cortada na
+comparacao, senao `/restaurante#cardapio` e `/restaurante` disputariam.
+
+**Entre 768px e 1024px o menu nao cabia.** Seis rotulos, a marca e o botao
+Reservar na mesma linha se atropelavam — era o "nada responsivo". O menu do
+desktop agora so aparece a partir de `lg`; ate la, a gaveta.
+
+**Na gaveta**, os grupos viraram sanfona: quatro toques de 56px em vez de uma
+lista de dezessete links para rolar ate achar "Contato". Ganhou o WhatsApp, o
+Instagram e um CTA fixo no rodape — a acao que a pousada quer de qualquer
+ponto da lista, sem obrigar a rolar de volta.
+
+O cabecalho condensa depois do primeiro rolar: altura maior no topo da pagina,
+mais tela enquanto a pessoa le.
+
+### Dois bugs de posicionamento no caminho
+
+**A gaveta aparecia recortada na faixa do topo**, com os links cortados e o
+fundo escuro cobrindo so o cabecalho. Causa: `backdrop-filter` cria bloco
+contentor. A gaveta era filha do `<header>`, que usa `backdrop-blur`, entao o
+`fixed inset-0` dela se media pelos 64px do cabecalho em vez da janela.
+Resolvido tirando a gaveta de dentro do `<header>`.
+
+**Fechar no hover e traicoeiro:** o painel sumia quando o mouse atravessava o
+vao entre o botao e o painel. Agora ha 140ms de folga antes de fechar.
+
+### Acessibilidade
+
+`Esc` fecha o que estiver aberto, na ordem esperada. `Tab` abre o painel do
+grupo focado e `ArrowDown` tambem. Clique fora fecha. O fundo so trava o
+scroll com a gaveta aberta — no desktop, rolar e um jeito legitimo de fechar.
+
+### Verificado
+
+`tsc --noEmit` limpo. Medido em 390, 820 e 1440px em `/`, `/quartos`,
+`/restaurante` e `/reservar`: painel abre e fecha, sanfona abre, cabecalho
+condensa ao rolar, nenhuma rolagem horizontal. A busca de disponibilidade
+continua trazendo os quartos do motor.
+
+---
+
 ## 2026-09-18 (10) — Responsividade: correções em cascata
 
 **Autor:** Claude Opus 5 (Cowork)

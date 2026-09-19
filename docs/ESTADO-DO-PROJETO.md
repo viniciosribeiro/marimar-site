@@ -87,11 +87,16 @@ retorna `quartos: []` silenciosamente (parece "sem disponibilidade", nao erro).
 ```
 src/
 ├── app/
-│   ├── (site)/                 # Site publico — 11 paginas
+│   ├── (site)/                 # Site publico — 15 rotas
+│   │   ├── layout.tsx                  topo, gaveta e rodape (MenuPrincipal)
 │   │   ├── page.tsx                    home (com busca de disponibilidade)
 │   │   ├── quartos/ + [slug]/
 │   │   ├── pacotes/ + [slug]/
-│   │   ├── a-pousada/  ilha-do-mel/  passeios(via blocos)
+│   │   ├── restaurante/                restaurante + cardapio + cafe (funde
+│   │   │                               /cardapio e /cafe-da-manha, 301 no
+│   │   │                               next.config.ts)
+│   │   ├── a-pousada/  ilha-do-mel/  como-chegar/  galeria/
+│   │   ├── eventos/  avaliacoes/
 │   │   ├── faq/  politicas/  contato/ (+ actions.ts)
 │   │   └── reservar/                   monta deeplink pro motor
 │   │
@@ -115,9 +120,12 @@ src/
 │       └── robots/  sitemap/
 │
 ├── components/
-│   ├── admin/   CrudPage  CrudForm  Modal  DeleteButton
-│   │            SubmitButton  IconPicker  ThemeEditor
-│   └── site/    Gallery  ChatWidget
+│   ├── admin/   CrudPage  CrudForm  Modal  DeleteButton  AdminNav
+│   │            SubmitButton  IconPicker  ThemeEditor  PreviaSite
+│   │            UploadFotos  UploadImagem  GaleriaItem
+│   └── site/    MenuPrincipal ⭐  ui.tsx (design system)  BlocosHome
+│                Cardapio  LightboxCardapio  RotaInteligente
+│                Gallery  ChatWidget
 │
 ├── db/
 │   ├── schema.ts       18 tabelas (Drizzle)
@@ -134,6 +142,13 @@ src/
 │   │                    motor passa por aqui antes de virar UI
 │   ├── worker.ts        fetchTarifas() + schemas Zod do Worker
 │   ├── deeplink.ts      monta URL de reserva no Desbravador
+│   ├── navegacao.ts     ⭐ arvore de navegacao — topo, gaveta do celular e
+│   │                    rodape leem daqui. Pagina nova entra so neste arquivo
+│   ├── tema.ts          modelo unico do tema + temaParaCss() (layout e previa)
+│   ├── conteudo-pousada.ts  fatos canonicos + PENDENTE_CONFIRMACAO
+│   ├── contraste.ts     WCAG: escolhe texto legivel sobre a cor de marca
+│   ├── cardapio.ts      marcadores e tipos do cardapio digital
+│   ├── blob.ts          limites e caminhos do Vercel Blob
 │   └── admin-actions.ts server actions compartilhadas dos CRUDs
 │
 └── middleware.ts        split de hostname: /admin no dominio publico

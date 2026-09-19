@@ -1,7 +1,8 @@
 import Link from "next/link";
 import postgres from "postgres";
-import { MobileNav } from "@/components/site/MobileNav";
-import { COMPLEXO, IDENTIDADE } from "@/lib/conteudo-pousada";
+import { MenuPrincipal } from "@/components/site/MenuPrincipal";
+import { COLUNAS_RODAPE } from "@/lib/navegacao";
+import { COMPLEXO, CONTATO, IDENTIDADE } from "@/lib/conteudo-pousada";
 import { lerTema } from "@/lib/tema";
 
 /**
@@ -16,43 +17,10 @@ import { lerTema } from "@/lib/tema";
 export const dynamic = "force-dynamic";
 
 /**
- * Menu do topo. "Contato" saiu daqui de proposito: ja existe o botao
- * flutuante de WhatsApp, o CTA "Reservar" e o rodape — e o espaco foi
- * melhor usado por Cardapio e Galeria, que o hospede procura e nao achava.
+ * Topo, gaveta do celular e rodape leem a MESMA arvore, em
+ * src/lib/navegacao.ts. Antes eram duas listas soltas aqui: seis links no
+ * topo e quinze no rodape, que divergiam a cada pagina nova.
  */
-const NAV: [string, string][] = [
-  ["/quartos", "Acomodações"],
-  ["/restaurante", "Restaurante"],
-  ["/galeria", "Galeria"],
-  ["/a-pousada", "A Pousada"],
-  ["/ilha-do-mel", "Ilha do Mel"],
-  ["/como-chegar", "Como Chegar"],
-];
-
-/** Arquitetura completa — o topo mostra so o essencial, o rodape mostra tudo. */
-const RODAPE = {
-  Pousada: [
-    ["/a-pousada", "A Pousada"],
-    ["/quartos", "Acomodações"],
-    ["/restaurante", "Restaurante e Cardápio"],
-    ["/restaurante#cafe-da-manha", "Café da Manhã"],
-    ["/eventos", "Eventos e Casamentos"],
-    ["/galeria", "Galeria"],
-  ],
-  "Ilha do Mel": [
-    ["/ilha-do-mel", "Encantadas e a Ilha"],
-    ["/como-chegar", "Como Chegar"],
-    ["/ilha-do-mel#travessia", "Travessia e ABALINE"],
-    ["/ilha-do-mel#atracoes", "Praias e Trilhas"],
-  ],
-  Reservas: [
-    ["/reservar", "Consultar disponibilidade"],
-    ["/pacotes", "Pacotes e Ofertas"],
-    ["/politicas", "Políticas"],
-    ["/faq", "Perguntas Frequentes"],
-    ["/avaliacoes", "Avaliações"],
-  ],
-} as Record<string, [string, string][]>;
 
 const FALLBACK: Record<string, any> = {
   nome: "Pousada Ilha do Mel Marimar",
@@ -89,42 +57,14 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         </div>
       )}
 
-      {/* Fundo solido de proposito: o briefing pede leitura clara, sem
-          transparencia que atrapalhe a visualizacao sobre a foto do hero. */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2.5 min-w-0">
-            {p?.logo_url
-              ? <img src={p.logo_url} className="h-9 sm:h-10 w-auto shrink-0" alt={nome} />
-              : <span className="text-2xl shrink-0">🏝️</span>}
-            <span className="font-titulo text-base sm:text-lg font-bold text-gray-900 leading-tight whitespace-nowrap">
-              {IDENTIDADE.nome}
-            </span>
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-0.5">
-            {NAV.map(([href, label]) => (
-              <Link
-                key={href}
-                href={href}
-                className="px-2.5 py-2 text-sm text-gray-600 rounded-lg whitespace-nowrap hover:text-marca hover:bg-marca-sutil transition-marca"
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href="/reservar"
-              className="hidden sm:inline-block bg-marca hover:bg-marca-hover text-marca-texto px-4 py-2 rounded-marca text-sm font-semibold transition-marca"
-            >
-              Reservar
-            </Link>
-            <MobileNav itens={[...NAV, ["/contato", "Contato"]]} />
-          </div>
-        </div>
-      </header>
+      <MenuPrincipal
+        nome={IDENTIDADE.nome}
+        logoUrl={p?.logo_url ?? null}
+        whatsappDigitos={wa || CONTATO.whatsappDigitos}
+        whatsappExibicao={p?.whatsapp || CONTATO.whatsapp}
+        instagram={IDENTIDADE.instagram}
+        instagramUser={IDENTIDADE.instagramUser}
+      />
 
       <main className="flex-1">{children}</main>
 
@@ -135,7 +75,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
             {COMPLEXO.fraseRodape}
           </p>
 
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-10">
             <div className="col-span-2 lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 {p?.logo_url
@@ -171,16 +111,24 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
               )}
             </div>
 
-            {Object.entries(RODAPE).map(([titulo, links]) => (
-              <div key={titulo}>
-                <h4 className="text-white font-semibold mb-4 text-xs uppercase tracking-wider">{titulo}</h4>
-                {links.map(([href, label]) => (
-                  <Link key={href} href={href} className="block text-sm text-gray-400 hover:text-white transition-marca mb-2.5">
-                    {label}
+            {COLUNAS_RODAPE.map((coluna) => (
+              <div key={coluna.titulo}>
+                <h4 className="text-white font-semibold mb-4 text-xs uppercase tracking-wider">{coluna.titulo}</h4>
+                {coluna.itens.map((item) => (
+                  <Link key={item.href} href={item.href} className="block text-sm text-gray-400 hover:text-white transition-marca mb-2.5">
+                    {item.rotulo}
                   </Link>
                 ))}
               </div>
             ))}
+            <div>
+              <h4 className="text-white font-semibold mb-4 text-xs uppercase tracking-wider">Reservas</h4>
+              {[["/reservar", "Consultar disponibilidade"], ["/contato", "Falar com a pousada"]].map(([href, rotulo]) => (
+                <Link key={href} href={href} className="block text-sm text-gray-400 hover:text-white transition-marca mb-2.5">
+                  {rotulo}
+                </Link>
+              ))}
+            </div>
           </div>
 
           <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">

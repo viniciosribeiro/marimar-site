@@ -112,10 +112,21 @@
   --color-marca-texto: var(--marca-texto);
   --color-acento-texto: var(--acento-texto);
 
-  /* Superficies */
+  /* Superficies
+     ATENCAO: toda variavel usada como classe (bg-areia, text-tinta,
+     border-linha...) PRECISA estar aqui. O Tailwind v4 so gera utility
+     para o que esta em @theme — declarar em :root nao basta. As cinco
+     de baixo ficaram de fora na primeira versao e 102 classes espalhadas
+     pelo site nao pintavam nada: os titulos caiam no cinza do body e as
+     superficies de areia ficavam transparentes. */
   --color-fundo: var(--fundo);
   --color-texto: var(--texto);
   --color-fundo-suave: var(--fundo-suave);
+  --color-areia: var(--areia);
+  --color-areia-forte: var(--areia-forte);
+  --color-tinta: var(--tinta);
+  --color-tinta-suave: var(--tinta-suave);
+  --color-linha: var(--linha);
 
   /* Tipografia */
   --font-titulo: var(--fonte-titulo);
