@@ -78,6 +78,13 @@
       "when": 1789925000000,
       "tag": "0010_chat_voz_tipo",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789930000000,
+      "tag": "0011_marina_treinamento",
+      "breakpoints": true
     }
   ]
 }

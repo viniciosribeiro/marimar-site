@@ -4,6 +4,7 @@ import {
   hashIp, ipDaRequisicao, gatewayConfigurado, urlGateway, cabecalhosGateway,
   INDISPONIVEL, CONTEXTO_CANAL,
 } from "@/lib/chat";
+import { lerConfig, lerEnsinamentos, ensinamentosEmTexto } from "@/lib/marina";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,8 +85,15 @@ export async function POST(req: Request) {
     /* A mensagem de sistema entra AQUI, no servidor, e nunca vem do
        navegador — senão qualquer visitante poderia reescrever as regras
        da Marina mandando um "system" forjado no corpo da requisição. */
+    /* O que a Cecília ensinou no painel entra junto do contexto do canal.
+       A mesma fonte alimenta o WhatsApp pela rota /api/agent/conhecimento —
+       ensinar uma vez tem que valer nos dois lugares, senão o painel vira
+       mais um lugar para manter em sincronia à mão. */
+    const config = await lerConfig(sql);
+    const ensinado = ensinamentosEmTexto(config, await lerEnsinamentos(sql));
+
     const mensagens = [
-      { role: "system", content: CONTEXTO_CANAL },
+      { role: "system", content: CONTEXTO_CANAL + (ensinado ? "\n\n" + ensinado : "") },
       ...anteriores.reverse().map((m) => ({
         role: m.papel === "visitante" ? "user" : "assistant",
         content: m.conteudo,

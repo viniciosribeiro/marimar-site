@@ -109,3 +109,32 @@ openclaw config set tools.media.models '[{"provider":"elevenlabs","model":"scrib
 
 A chave `ELEVENLABS_API_KEY` fica na aba **Ambiente** do painel da Hostinger,
 nunca na config — o OpenClaw le do ambiente sozinho.
+
+
+## O painel de treinamento (`/admin/marina`)
+
+A Cecilia treina a Marina pelo site, sem abrir a Hostinger. Cinco abas:
+
+| Aba | O que faz | Onde vive |
+|---|---|---|
+| Voz | ID, modelo, estabilidade, semelhanca, velocidade, com botao de prova | `marina_config` |
+| Jeito de falar | O tom, em portugues corrido | `marina_config.tom` |
+| O que ela sabe | Fatos oficiais que ela passa a usar | `marina_conhecimento` (tipo `fato`) |
+| O que ela nunca diz | Proibicoes | `marina_conhecimento` (tipo `limite`) |
+| Conversas | Revisao das conversas do site; corrigir vira ensinamento | `chat_mensagens` |
+
+Os dois canais leem a MESMA fonte: o chat do site monta a mensagem de
+sistema com `lerEnsinamentos()`, e a Marina do WhatsApp le a rota
+`/api/agent/conhecimento`. Ensinar uma vez vale nos dois — e e por isso que
+a skill manda consultar essa rota antes de responder.
+
+**A voz agora vem do banco**, nao da variavel de ambiente. A
+`ELEVENLABS_VOICE_ID` continua como reserva: se ninguem salvou no painel,
+ela e usada. Trocar a fonte da verdade nao pode calar a Marina.
+
+> **O que este painel NAO faz.** A Marina nao aprende sozinha com as
+> conversas. Nao ha ajuste fino aqui, nao ha evolucao por osmose. O que
+> parece aprendizado e a base de conhecimento crescendo porque alguem
+> escreveu nela. Prometer o contrario deixaria a Cecilia esperando uma
+> melhora que nunca vem — e parando de ensinar, que e a unica coisa que
+> de fato melhora as respostas.

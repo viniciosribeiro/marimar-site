@@ -1,8 +1,9 @@
 import postgres from "postgres";
 import {
   LIMITE_VOZ_POR_HORA, LIMITE_VOZ_CARACTERES,
-  hashIp, ipDaRequisicao, vozConfigurada, urlVoz, corpoVoz,
+  hashIp, ipDaRequisicao,
 } from "@/lib/chat";
+import { lerConfig, ajustesDeVoz } from "@/lib/marina";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
   let sql: ReturnType<typeof postgres> | null = null;
 
   try {
-    if (!vozConfigurada()) {
+    if (!process.env.ELEVENLABS_API_KEY) {
       return Response.json({ erro: "Voz não configurada." }, { status: 503 });
     }
 
@@ -66,15 +67,35 @@ export async function POST(req: Request) {
       return Response.json({ erro: "Muitos áudios seguidos. Tente mais tarde." }, { status: 429 });
     }
 
-    const resposta = await fetch(urlVoz(), {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        accept: "audio/mpeg",
-        "xi-api-key": process.env.ELEVENLABS_API_KEY!,
+    /* A voz vem do painel, não do ambiente: e é o que permite a Cecília
+       trocar o timbre sem ninguém publicar nada. Se ela nunca salvou,
+       `lerConfig` cai na variável de ambiente — trocar a fonte da verdade
+       não pode calar a Marina. */
+    const config = await lerConfig(sql);
+    if (!config.voz_id) {
+      await sql.end();
+      return Response.json({ erro: "Voz não configurada." }, { status: 503 });
+    }
+
+    const resposta = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${config.voz_id}`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          accept: "audio/mpeg",
+          "xi-api-key": process.env.ELEVENLABS_API_KEY!,
+        },
+        body: JSON.stringify({
+          text: texto,
+          model_id: config.voz_modelo,
+          language_code: "pt",
+          // Sem isto ela lê "26/09" como dígito solto em vez de data.
+          apply_text_normalization: "on",
+          voice_settings: ajustesDeVoz(config),
+        }),
       },
-      body: JSON.stringify(corpoVoz(texto)),
-    });
+    );
 
     if (!resposta.ok || !resposta.body) {
       const detalhe = await resposta.text().catch(() => "");

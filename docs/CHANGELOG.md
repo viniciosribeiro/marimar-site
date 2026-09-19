@@ -6,6 +6,56 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-19 (2) — Voz de verdade no site e o painel de treinamento da Marina
+**Autor:** Claude Opus 5 (Cowork)
+**Commits:** ba8bc4d e o desta entrada
+**Migrations:** 0009, 0010, 0011 — rodar `npm run db:migrate`
+
+### Audio no chat do site
+O botao de microfone fazia ditado; agora grava de verdade. O audio vai para
+`/api/chat/transcrever`, vira texto pela ElevenLabs (`scribe_v2`) e segue
+pelo MESMO caminho de uma pergunta escrita — duas conversas paralelas, uma
+falada e uma escrita, fariam a Marina perder o fio quando a pessoa
+alternasse entre as duas, que e o que toda pessoa faz.
+
+Perguntou falando, responde falando. Quem escreveu le, e decide se quer
+ouvir pelo botao. Mesmo criterio do WhatsApp (`tts.auto: "inbound"`).
+
+Corta sozinho em 90s. A tabela `chat_voz` separa os dois custos por `tipo`:
+sintese e cobrada por caractere, transcricao por minuto — somados, o teto
+por hora misturaria unidades diferentes.
+
+### `/admin/marina` — o painel da Cecilia
+Cinco abas: Voz (com prova antes de salvar), Jeito de falar, O que ela sabe,
+O que ela nunca diz, e Conversas (corrigir uma resposta vira ensinamento).
+
+O ponto de arquitetura: **uma fonte, dois canais.** O chat do site monta a
+mensagem de sistema com `lerEnsinamentos()`; o WhatsApp le a rota nova
+`/api/agent/conhecimento`. A skill foi atualizada para consultar essa rota
+antes de responder qualquer coisa que nao seja data, preco ou
+disponibilidade.
+
+Uma tabela (`marina_conhecimento`) com um `tipo` em vez de tres tabelas: para
+quem opera, "coisas que eu ensinei" e um conceito unico, e tres telas
+parecidas com nomes tecnicos diferentes e onde um painel comeca a ser
+evitado.
+
+A voz passou a vir de `marina_config`. A `ELEVENLABS_VOICE_ID` fica como
+reserva — trocar a fonte da verdade nao pode calar a Marina.
+
+### O que este painel NAO faz
+A Marina **nao aprende sozinha** com as conversas. Nao ha ajuste fino aqui.
+O que parece aprendizado e a base crescendo porque alguem escreveu nela.
+Isto esta escrito tambem no `agente/README.md`, de proposito: prometer o
+contrario deixaria a Cecilia esperando uma melhora que nunca vem — e
+parando de ensinar, que e a unica coisa que melhora as respostas.
+
+### Pendencias
+- As conversas do **WhatsApp** nao aparecem na revisao: ficam no OpenClaw.
+  Falta investigar o que o gateway expoe.
+- `npm run build` nao roda no shell da caixa (node_modules e de Windows e
+  nao ha rede para o binario SWC de Linux). `tsc --noEmit` passou limpo.
+
 ## 2026-09-19 — Marina no site no ar, painel responsivo e voz no WhatsApp
 **Autor:** Claude Opus 5 (Cowork)
 **Commits:** 44b24b6

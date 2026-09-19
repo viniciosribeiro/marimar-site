@@ -465,5 +465,42 @@ export const chatMensagens = pgTable("chat_mensagens", {
   /** "visitante" ou "marina". */
   papel: text("papel").notNull(),
   conteudo: text("conteudo").notNull(),
+  /** A Cecilia marcou esta resposta como errada na revisao. */
+  marcada: boolean("marcada").default(false).notNull(),
+  /** O que a Marina deveria ter dito. Vira conhecimento. */
+  correcao: text("correcao"),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
+});
+
+// ─── Treinamento da Marina ──────────────────────────────────────
+/** Ajustes de voz. Linha unica. */
+export const marinaConfig = pgTable("marina_config", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  voz_id: text("voz_id"),
+  voz_modelo: text("voz_modelo").default("eleven_multilingual_v2").notNull(),
+  /** 0..100 — o painel usa controle deslizante; a conversao para 0..1 fica num lugar so. */
+  voz_estabilidade: integer("voz_estabilidade").default(50).notNull(),
+  voz_semelhanca: integer("voz_semelhanca").default(75).notNull(),
+  voz_velocidade: integer("voz_velocidade").default(100).notNull(),
+  /** Como ela fala. O que antes vivia so na habilidade `estilo-resposta`. */
+  tom: text("tom"),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+});
+
+/**
+ * Tudo que a Cecilia ensina, numa tabela so.
+ *
+ * Um `tipo` em vez de tres tabelas: para quem opera, "coisas que eu ensinei
+ * para a Marina" e um conceito unico.
+ */
+export const marinaConhecimento = pgTable("marina_conhecimento", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  /** "fato" (ela pode dizer) ou "limite" (ela nunca diz). */
+  tipo: text("tipo").default("fato").notNull(),
+  titulo: text("titulo").notNull(),
+  conteudo: text("conteudo").notNull(),
+  ativo: boolean("ativo").default(true).notNull(),
+  ordem: integer("ordem").default(0).notNull(),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
 });

@@ -46,6 +46,10 @@ const GRUPOS: Grupo[] = [
     itens: [{ href: "/admin/leads", label: "Contatos recebidos", icone: "📨" }],
   },
   {
+    grupo: "Atendimento",
+    itens: [{ href: "/admin/marina", label: "Treinar a Marina", icone: "💬" }],
+  },
+  {
     grupo: "Sistema",
     itens: [
       { href: "/admin/integracoes", label: "Integrações", icone: "🔌" },
