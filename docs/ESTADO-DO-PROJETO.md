@@ -22,13 +22,33 @@ npm run db:migrate          # migrations 0009, 0010 e 0011
 npm run db:migrar-fotos     # tira as imagens do WordPress antigo
 ```
 
-## As tres pendencias que importam
+## Resolvido em 20/09/2026: as imagens
 
-1. **Imagens no servidor antigo.** O numero exato esta em
-   `/admin/diagnostico`. Enquanto for maior que zero, a virada de DNS derruba
-   imagem do site. Resolve com `npm run db:migrar-fotos`.
-2. **DNS.** `www.pousadamarimarilhadomel.com.br` ainda serve o WordPress
-   5.8.16 de 2021. Nao virar antes do item 1.
+As 56 fotos importadas do WordPress foram trazidas para o Vercel Blob
+(`npm run db:migrar-fotos`, 56/56, zero falhas). **O servidor antigo pode
+cair agora sem levar nada junto**, e o dominio dele saiu da lista de imagens
+permitidas no `next.config.ts` — para uma imagem antiga reintroduzida por
+engano falhar na hora, e nao no dia em que aquele servidor sair do ar.
+
+O registro de volta ficou em `backups/fotos-2026-09-20-02-32-28.json`, na
+maquina do Vinicios (a pasta esta no `.gitignore`). Para desfazer:
+
+```
+npm run db:migrar-fotos -- --reverter backups/fotos-2026-09-20-02-32-28.json
+```
+
+A conferencia e o contador em `/admin/diagnostico`: verde e zero.
+
+## As pendencias que importam
+
+1. **DNS.** `www.pousadamarimarilhadomel.com.br` ainda serve o WordPress
+   5.8.16 de 2021. O caminho para virar esta livre — e decisao do Vinicios,
+   que ate 20/09 optou por seguir testando na URL da Vercel.
+2. **Nada do que entrou em 19-20/09 foi exercitado por um usuario real.**
+   Gravar audio no site, o botao "ouvir", o upload de documentos, as sete
+   rotas novas do agente, a Marina mandando foto no chat, a aba de cobertura
+   e a correcao de resposta: tudo passou em `tsc`, `lint` e `build`, e nada
+   passou por uma pessoa. E o maior risco aberto do projeto hoje.
 3. **3 quartos faltando** — o motor retorna 10 tipos, o banco tem 7 ativos.
 
 ## Pendencias menores
