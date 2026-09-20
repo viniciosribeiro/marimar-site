@@ -6,6 +6,38 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-20 — A voz valia so para um canal
+**Autor:** Claude Opus 5 (Cowork)
+
+Defeito de desenho meu, achado pelo Vinicios: a aba Voz gravava no nosso
+banco, que governa **so o chat do site**. A Marina do WhatsApp le a voz da
+config do OpenClaw, que o painel nunca tocava. Trocar a voz mudava um canal e
+deixava o outro com a voz antiga, sem dizer nada.
+
+Um painel que promete "a voz da Marina" e entrega metade e pior do que um que
+diz onde mexer: quem opera confia, testa pelo WhatsApp, e conclui que o
+sistema nao funciona.
+
+### Como ficou
+`salvarVoz` agora grava no banco **e** manda para o OpenClaw pelo plugin
+`admin-http-rpc` (`POST /api/v1/admin/rpc`, metodo `config.set`), que vem
+desligado de fabrica e precisa ser ligado uma vez:
+
+```
+openclaw config set plugins.entries.admin-http-rpc.enabled true --strict-json
+```
+
+A falha do segundo passo **nao desfaz** o primeiro: o site ja fica com a voz
+nova e a tela diz o motivo da recusa do WhatsApp, com a resposta crua do
+gateway. Derrubar a acao inteira por causa da segunda metade faria a Cecilia
+perder o que digitou, e esconder o erro traria de volta exatamente o
+problema que estamos consertando.
+
+Os ajustes finos (estabilidade, semelhanca, velocidade) continuam so no site:
+o OpenClaw os expoe sob outro formato, e enviar as cegas arriscaria corromper
+uma config que hoje funciona. Voz e modelo sao o que muda o timbre, que e o
+que se percebe.
+
 ## 2026-09-19 (6) — Revisao do que foi escrito hoje
 **Autor:** Claude Opus 5 (Cowork)
 

@@ -472,6 +472,18 @@ export const chatMensagens = pgTable("chat_mensagens", {
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
 
+/**
+ * Conteudo institucional editavel: travessia, ilha, eventos.
+ *
+ * As constantes de `conteudo-pousada.ts` continuam como padrao; o que estiver
+ * aqui sobrescreve. Mesmo desenho de `lerTema()` e `lerBanner()`.
+ */
+export const conteudoEditavel = pgTable("conteudo_editavel", {
+  chave: text("chave").primaryKey(),
+  dados: jsonb("dados").notNull().default({}),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+});
+
 // ─── Treinamento da Marina ──────────────────────────────────────
 /** Ajustes de voz. Linha unica. */
 export const marinaConfig = pgTable("marina_config", {
