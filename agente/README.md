@@ -24,8 +24,13 @@ pasta local. No terminal do OpenClaw (lshell), a partir da home:
 ```
 git clone https://github.com/viniciosribeiro/marimar-site
 cd marimar-site
-openclaw skills install agente/skills/marimar-pousada
+openclaw skills install ./agente/skills/marimar-pousada
 ```
+
+> O `./` NAO e enfeite. Sem ele o comando falha com
+> `Invalid skill slug: agente/skills/marimar-pousada` — o OpenClaw le um
+> caminho relativo com barras como se fosse um slug do ClawHub
+> (`owner/repo/slug`). O `./` desfaz a ambiguidade.
 
 ### Atualizar depois de mexer na skill
 
@@ -35,10 +40,13 @@ roda uma copia instalada. Toda vez que a skill mudar, repita:
 ```
 cd marimar-site
 git pull
-openclaw skills install agente/skills/marimar-pousada --force
+openclaw skills install ./agente/skills/marimar-pousada --force
 ```
 
-O `--force` e obrigatorio: sem ele o comando para com "Skill already exists".
+Duas coisas obrigatorias nessa linha, e as duas ja custaram tempo:
+- **`./`** — sem ele: `Invalid skill slug`. O OpenClaw le caminho relativo
+  com barras como slug do ClawHub.
+- **`--force`** — sem ele: `Skill already exists`.
 
 > Isto ja custou caro uma vez: a regra que proibe afirmar escassez ("e a
 > ultima unidade") foi escrita, commitada e empurrada — e a Marina continuou
