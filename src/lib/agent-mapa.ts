@@ -142,12 +142,22 @@ export const AREAS: AreaDeConhecimento[] = [
   },
 ];
 
-export type Cobertura = AreaDeConhecimento & { quantos: number | null };
+/**
+ * A area SEM a funcao de contagem.
+ *
+ * O `Omit` nao e capricho de tipo: este objeto atravessa a fronteira
+ * servidor -> cliente para chegar na tela da Cecilia, e funcao nao e
+ * serializavel. Deixar o `contar` dentro derruba a pagina inteira com um
+ * erro de React que nao diz qual propriedade foi — foi exatamente o que
+ * aconteceu na primeira versao.
+ */
+export type Cobertura = Omit<AreaDeConhecimento, "contar"> & { quantos: number | null };
 
 export async function medirCobertura(sql: ReturnType<typeof postgres>): Promise<Cobertura[]> {
   const saida: Cobertura[] = [];
-  for (const a of AREAS) {
-    saida.push({ ...a, quantos: a.contar ? await a.contar(sql) : null });
+  for (const area of AREAS) {
+    const { contar, ...resto } = area;
+    saida.push({ ...resto, quantos: contar ? await contar(sql) : null });
   }
   return saida;
 }
