@@ -6,6 +6,57 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-19 (4) — Auditoria: o que a Marina NAO sabia
+**Autor:** Claude Opus 5 (Cowork)
+**Commit:** 3943e5b
+
+O modulo de treinamento da sessao anterior deixava a Cecilia ensinar, mas nao
+mostrava o que a Marina ja sabia — e o que ela sabia era pouco. O sistema tem
+27 tabelas e 14 paginas de site; a Marina alcancava **cinco tabelas por seis
+rotas**.
+
+### O que ela nao conseguia responder
+
+| Pergunta | Onde o dado sempre esteve | Tinha rota? |
+|---|---|---|
+| "O que tem no cardapio?" | `cardapio_categorias/itens/fotos` | nao |
+| "O quarto tem ar-condicionado?" | `quarto_comodidades` | nao |
+| "O que a pousada tem?" | `pousada_comodidades` | nao |
+| "Tem estacionamento?" | `NAO_DISPONIVEL` | nao |
+| "Que passeios voces fazem?" | `passeios` | nao |
+| "O que os hospedes acham?" | `depoimentos` | nao |
+| "Como e a ilha?" | `SOBRE_A_ILHA`, `ATRACOES` | nao |
+| "Da para casar ai?" | `EVENTOS` | nao |
+| **"Como chego ai?"** | `TRAVESSIA`, `CHEGADA_ETAPAS` | **nao** |
+
+A ultima e provavelmente a pergunta mais feita de todas, e o conteudo vivia
+so numa pagina do site.
+
+### O resumo vazio
+O `resumo_texto` de `/api/agent/pousada` era `"Pousada Marimar — Ilha do
+Mel"`. A skill manda ler o resumo primeiro: check-in, pets e cancelamento
+estavam no `dados` e nenhum resumo apontava para la. Era o caminho mais curto
+para ela responder de cabeca justamente onde errar vira problema na recepcao.
+
+### O que entrou
+Sete rotas: `chegar`, `restaurante`, `passeios`, `ilha`, `eventos`,
+`avaliacoes` e `indice`. Comodidades em `/quartos` e `/pousada`, e o bloco do
+que a pousada **nao** tem — tao importante quanto o do que ela tem, porque
+sem ele "tem estacionamento?" e respondida por deducao.
+
+### `src/lib/agent-mapa.ts` — a peca que o painel pedia
+Uma lista so, lida pelos dois lados: pela Marina em `/api/agent/indice`, para
+saber o que existe antes de improvisar; e pela Cecilia na aba **"O que ela
+sabe hoje"**, com contagem ao vivo por assunto e link para cadastrar onde
+estiver vazio.
+
+Duas listas divergiriam na primeira mudanca, e o resultado seria o pior dos
+dois mundos: um painel dizendo que esta tudo coberto e uma agente sem a rota.
+
+A aba trata vazio como problema, nao como zero: um assunto com rota pronta e
+nenhum cadastro esta tao descoberto quanto um assunto sem rota — e e o tipo
+de buraco que ninguem enxerga sozinho.
+
 ## 2026-09-19 (3) — As imagens saem do WordPress antigo
 **Autor:** Claude Opus 5 (Cowork)
 
