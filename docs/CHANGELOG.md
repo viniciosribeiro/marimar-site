@@ -6,6 +6,46 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-19 (3) — As imagens saem do WordPress antigo
+**Autor:** Claude Opus 5 (Cowork)
+
+### O problema
+A importacao original gravou as URLs de origem
+(`pousadamarimarilhadomel.com.br/wp-content/...`) em vez de copiar os
+arquivos. Funciona hoje por um motivo fragil: o servidor antigo ainda esta de
+pe. Na virada de DNS ele sai do ar e TODAS as imagens somem de uma vez — topo
+da home, galeria, fotos de quarto. E agora tambem as fotos que a Marina manda
+no chat, o que transformou isto de backlog em bloqueio.
+
+### `npm run db:migrar-fotos`
+Varre as **doze** colunas de URL do banco, nao so `midias` — achei imagem
+antiga em `pousada`, `pacotes`, `blocos_home`, `passeios`, `cardapio_itens`,
+`cardapio_fotos`, `banners` e `blocos_itens` tambem. Para cada uma: baixa,
+sobe para o Vercel Blob, reescreve a URL (e o `pathname`, onde existe).
+
+```
+npm run db:migrar-fotos -- --dry    # simula
+npm run db:migrar-fotos             # faz
+```
+
+Decisoes que valem registro:
+
+- **Um envio por arquivo.** Uma foto usada em tres lugares viraria tres
+  copias no Blob — cobradas e divergentes. Um mapa garante um download e um
+  envio, e a entrada so e criada DEPOIS do envio dar certo: guardar antes
+  faria uma falha de rede contaminar todas as linhas seguintes.
+- **Sem transacao unica.** Cada linha e gravada na hora. Parar no meio nao
+  desfaz o que ja foi feito, e rodar de novo continua de onde parou, porque
+  o que ja migrou nao casa mais com o filtro.
+- **Falha nao derruba a migracao.** Uma imagem que o servidor antigo ja nao
+  serve e relatada no fim, com a URL, para substituicao a mao pelo admin.
+
+### O contador no Diagnostico
+Um numero na tela de Diagnostico diz quantas imagens ainda dependem do
+servidor antigo, quebrado por tabela. Existe para tornar visivel um problema
+que e invisivel ate o dia em que explode — e para a conferencia depois da
+migracao ser olhar um numero, em vez de confiar que o script fez o que disse.
+
 ## 2026-09-19 (2) — Voz de verdade no site e o painel de treinamento da Marina
 **Autor:** Claude Opus 5 (Cowork)
 **Commits:** ba8bc4d e o desta entrada

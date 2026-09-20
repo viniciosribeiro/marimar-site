@@ -15,7 +15,8 @@
     "db:seed:admin": "tsx src/db/seed-admin.ts",
     "db:corrigir": "tsx src/db/corrigir-producao.ts",
     "db:migrar-wp": "tsx src/db/migrar-wordpress.ts",
-    "db:baseline": "tsx src/db/baseline.ts"
+    "db:baseline": "tsx src/db/baseline.ts",
+    "db:migrar-fotos": "tsx src/db/migrar-fotos-wp.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
