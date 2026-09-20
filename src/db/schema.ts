@@ -493,6 +493,32 @@ export const marinaConfig = pgTable("marina_config", {
  * Um `tipo` em vez de tres tabelas: para quem opera, "coisas que eu ensinei
  * para a Marina" e um conceito unico.
  */
+/**
+ * Documentos enviados pelo painel.
+ *
+ * O arquivo vive no Blob; o que importa aqui e o TEXTO extraido — a Marina
+ * nao abre PDF. `trecho` entra no contexto de toda conversa; `texto`
+ * completo fica na rota, para ela buscar quando a pergunta pedir. Enfiar um
+ * PDF de 40 paginas em toda conversa multiplicaria o custo por visitante.
+ */
+export const marinaDocumentos = pgTable("marina_documentos", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  nome: text("nome").notNull(),
+  assunto: text("assunto"),
+  tipo: text("tipo").notNull(),
+  url: text("url").notNull(),
+  pathname: text("pathname"),
+  bytes: integer("bytes").default(0).notNull(),
+  texto: text("texto"),
+  trecho: text("trecho"),
+  caracteres: integer("caracteres").default(0).notNull(),
+  /** "lendo" | "pronto" | "falhou" */
+  status: text("status").default("lendo").notNull(),
+  erro: text("erro"),
+  ativo: boolean("ativo").default(true).notNull(),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+});
+
 export const marinaConhecimento = pgTable("marina_conhecimento", {
   id: uuid("id").defaultRandom().primaryKey(),
   /** "fato" (ela pode dizer) ou "limite" (ela nunca diz). */

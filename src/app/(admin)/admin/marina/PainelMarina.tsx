@@ -3,6 +3,9 @@
 import { useState } from "react";
 import type { ConfigMarina, Ensinamento } from "@/lib/marina";
 import type { Cobertura } from "@/lib/agent-mapa";
+import type { Documento } from "@/lib/marina";
+import { upload } from "@vercel/blob/client";
+import { useRouter } from "next/navigation";
 import {
   salvarVoz, salvarTom, salvarEnsinamento,
   alternarEnsinamento, removerEnsinamento, corrigirResposta,
@@ -24,11 +27,11 @@ const ABAS = [
 ];
 
 export function PainelMarina({
-  aba, ok, erro, config, fatos, limites, conversas, cobertura,
+  aba, ok, erro, config, fatos, limites, conversas, cobertura, documentos,
 }: {
   aba: string; ok?: string; erro?: string;
   config: ConfigMarina; fatos: Ensinamento[]; limites: Ensinamento[];
-  conversas: Conversa[]; cobertura: Cobertura[];
+  conversas: Conversa[]; cobertura: Cobertura[]; documentos: Documento[];
 }) {
   const [atual, setAtual] = useState(aba);
 
@@ -53,7 +56,7 @@ export function PainelMarina({
       {atual === "cobertura" && <AbaCobertura cobertura={cobertura} />}
       {atual === "voz" && <AbaVoz config={config} />}
       {atual === "tom" && <AbaTom config={config} />}
-      {atual === "conhecimento" && <AbaEnsinamentos tipo="fato" itens={fatos} />}
+      {atual === "conhecimento" && <AbaEnsinamentos tipo="fato" itens={fatos} documentos={documentos} />}
       {atual === "limites" && <AbaEnsinamentos tipo="limite" itens={limites} />}
       {atual === "conversas" && <AbaConversas conversas={conversas} />}
     </div>
@@ -253,7 +256,7 @@ function AbaTom({ config }: { config: ConfigMarina }) {
 
 /* ── conhecimento e limites ──────────────────────────────────────── */
 
-function AbaEnsinamentos({ tipo, itens }: { tipo: "fato" | "limite"; itens: Ensinamento[] }) {
+function AbaEnsinamentos({ tipo, itens, documentos }: { tipo: "fato" | "limite"; itens: Ensinamento[]; documentos?: Documento[] }) {
   const aba = tipo === "limite" ? "limites" : "conhecimento";
   const ehLimite = tipo === "limite";
 
@@ -264,6 +267,8 @@ function AbaEnsinamentos({ tipo, itens }: { tipo: "fato" | "limite"; itens: Ensi
           ? "Coisas que a Marina nunca deve dizer, mesmo se o hóspede insistir. Use para promessas que a pousada não pode cumprir."
           : "Fatos sobre a pousada que ela passa a tratar como oficiais. Preço e disponibilidade não entram aqui — isso vem do sistema de reservas, sempre ao vivo."}
       </div>
+
+      {!ehLimite && <Documentos itens={documentos ?? []} />}
 
       <form action={salvarEnsinamento} className="space-y-4 rounded-lg border border-gray-200 p-4">
         <input type="hidden" name="tipo" value={tipo} />
@@ -309,6 +314,111 @@ function AbaEnsinamentos({ tipo, itens }: { tipo: "fato" | "limite"; itens: Ensi
                   </button>
                 </form>
               </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+
+/* ── documentos ──────────────────────────────────────────────────── */
+
+const TIPOS_ACEITOS = ".pdf,.docx,.txt,.md,.csv,.jpg,.jpeg,.png,.webp";
+
+/**
+ * Enviar arquivo para ensinar a Marina.
+ *
+ * O arquivo vai direto do navegador para o armazenamento — não passa pelo
+ * servidor — porque uma função serverless recusa corpo acima de ~4,5 MB, e
+ * um PDF de contrato ou uma foto de celular passam disso com folga.
+ *
+ * Depois o servidor tira o texto. É o texto que a Marina lê: guardar só o
+ * arquivo não ensinaria nada, porque ela não abre PDF.
+ */
+function Documentos({ itens }: { itens: Documento[] }) {
+  const router = useRouter();
+  const [enviando, setEnviando] = useState(false);
+  const [assunto, setAssunto] = useState("");
+  const [falha, setFalha] = useState<string | null>(null);
+
+  async function enviarArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!arquivo) return;
+
+    setEnviando(true);
+    setFalha(null);
+    try {
+      const enviado = await upload(`marina/${arquivo.name}`, arquivo, {
+        access: "public",
+        handleUploadUrl: "/api/admin/upload",
+      });
+
+      const r = await fetch("/api/admin/marina/documento", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          url: enviado.url, pathname: enviado.pathname,
+          nome: arquivo.name, tipo: arquivo.type, bytes: arquivo.size,
+          assunto: assunto.trim() || null,
+        }),
+      });
+
+      const dados = await r.json().catch(() => null);
+      if (!r.ok) { setFalha(dados?.erro ?? "Não consegui ler este arquivo."); return; }
+
+      setAssunto("");
+      router.refresh();
+    } catch (err) {
+      setFalha((err as Error).message || "Falha ao enviar o arquivo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function remover(id: string) {
+    await fetch(`/api/admin/marina/documento?id=${id}`, { method: "DELETE" });
+    router.refresh();
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 p-4 space-y-4">
+      <div>
+        <p className="font-semibold text-sm text-gray-900">Ensinar por arquivo</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          PDF, Word, texto, planilha em CSV ou foto. A Marina lê o conteúdo e passa a usar nas
+          respostas. Foto de aviso ou cardápio impresso também funciona — ela transcreve.
+        </p>
+      </div>
+
+      <input value={assunto} onChange={(e) => setAssunto(e.target.value)}
+        placeholder="Assunto (opcional) — ex.: Contrato de hospedagem 2026"
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+
+      <label className={`flex items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 text-sm cursor-pointer transition-colors ${
+        enviando ? "border-gray-200 text-gray-400" : "border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-50"
+      }`}>
+        <input type="file" accept={TIPOS_ACEITOS} onChange={enviarArquivo}
+          disabled={enviando} className="hidden" />
+        {enviando ? "Lendo o arquivo…" : "Escolher arquivo para enviar"}
+      </label>
+
+      {falha && <Aviso tom="erro">{falha}</Aviso>}
+
+      {itens.length > 0 && (
+        <ul className="space-y-2 pt-1">
+          {itens.map((d) => (
+            <li key={d.id} className="flex items-start gap-3 rounded border border-gray-200 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-900 truncate">{d.assunto ?? d.nome}</p>
+                <p className="text-xs text-gray-500 truncate">{d.trecho}</p>
+              </div>
+              <button onClick={() => remover(d.id)}
+                className="shrink-0 text-xs text-red-600 hover:text-red-800 underline">
+                remover
+              </button>
             </li>
           ))}
         </ul>

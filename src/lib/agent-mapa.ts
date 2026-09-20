@@ -132,6 +132,15 @@ export const AREAS: AreaDeConhecimento[] = [
     origem: "fixo",
   },
   {
+    chave: "documentos",
+    titulo: "Documentos que voce enviou",
+    rota: "/api/agent/documentos",
+    responde: ["Tudo que estiver nos PDFs, Word, textos e fotos que voce subir"],
+    origem: "banco",
+    editarEm: "/admin/marina?aba=conhecimento",
+    contar: conta((sql) => sql`SELECT COUNT(*)::int AS n FROM marina_documentos WHERE ativo = true AND status = 'pronto'`),
+  },
+  {
     chave: "conhecimento",
     titulo: "O que você ensinou pelo painel",
     rota: "/api/agent/conhecimento",

@@ -34,7 +34,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (!sessao?.user) throw new Error("Não autorizado");
 
         // Nunca aceitar caminho arbitrario vindo do cliente
-        const pastasPermitidas = ["banners/", "cardapio/", "galeria/", "marca/", "quartos/"];
+        const pastasPermitidas = ["banners/", "cardapio/", "galeria/", "marca/", "marina/", "quartos/"];
         if (!pastasPermitidas.some((pasta) => pathname.startsWith(pasta))) {
           throw new Error("Destino de upload inválido");
         }
@@ -45,15 +45,29 @@ export async function POST(request: Request): Promise<NextResponse> {
            quase sempre e um arquivo que ninguem otimizou. Limites diferentes
            para usos diferentes. */
         const ehBanner = pathname.startsWith("banners/");
+        /* `marina/` e a base de conhecimento: documento, nao foto de site.
+           Aceita PDF, Word e texto alem de imagem, com teto maior — um
+           contrato ou um cardapio escaneado passa de 12 MB sem esforco. */
+        const ehDocumento = pathname.startsWith("marina/");
         const imagens = [
           "image/jpeg", "image/png", "image/webp", "image/avif",
           "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon",
         ];
         const videos = ["video/mp4", "video/webm"];
+        const documentos = [
+          "application/pdf",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/msword",
+          "text/plain", "text/markdown", "text/csv",
+        ];
 
         return {
-          allowedContentTypes: ehBanner ? [...imagens, ...videos] : imagens,
-          maximumSizeInBytes: (ehBanner ? 50 : 12) * 1024 * 1024,
+          allowedContentTypes: ehBanner
+            ? [...imagens, ...videos]
+            : ehDocumento
+              ? [...imagens, ...documentos]
+              : imagens,
+          maximumSizeInBytes: (ehBanner ? 50 : ehDocumento ? 25 : 12) * 1024 * 1024,
           addRandomSuffix: true,
           // Fotos de cardapio mudam pouco: cache longo na borda
           cacheControlMaxAge: 60 * 60 * 24 * 365,

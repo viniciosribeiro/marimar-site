@@ -62,6 +62,13 @@ export function ajustesDeVoz(c: ConfigMarina) {
   };
 }
 
+export type Documento = {
+  id: string;
+  nome: string;
+  assunto: string | null;
+  trecho: string;
+};
+
 export type Ensinamento = {
   id: string;
   tipo: string;
@@ -71,18 +78,31 @@ export type Ensinamento = {
 
 export async function lerEnsinamentos(
   sql: ReturnType<typeof postgres>,
-): Promise<{ fatos: Ensinamento[]; limites: Ensinamento[] }> {
+): Promise<{ fatos: Ensinamento[]; limites: Ensinamento[]; documentos: Documento[] }> {
+  let fatos: Ensinamento[] = [];
+  let limites: Ensinamento[] = [];
+  let documentos: Documento[] = [];
+
   try {
     const linhas = await sql<Ensinamento[]>`
       SELECT id, tipo, titulo, conteudo FROM marina_conhecimento
       WHERE ativo = true ORDER BY ordem ASC, criado_em ASC`;
-    return {
-      fatos: linhas.filter((l) => l.tipo === "fato"),
-      limites: linhas.filter((l) => l.tipo === "limite"),
-    };
-  } catch {
-    return { fatos: [], limites: [] };
-  }
+    fatos = linhas.filter((l) => l.tipo === "fato");
+    limites = linhas.filter((l) => l.tipo === "limite");
+  } catch { /* antes da migration 0011 */ }
+
+  try {
+    /* Só o TRECHO. O texto completo fica na rota /api/agent/documentos, para
+       a Marina abrir quando a pergunta pedir — mandar o conteúdo inteiro de
+       todo documento em toda conversa multiplicaria a conta por visitante,
+       e a maioria das perguntas não precisa de nenhum deles. */
+    documentos = await sql<Documento[]>`
+      SELECT id, nome, assunto, trecho FROM marina_documentos
+      WHERE ativo = true AND status = 'pronto'
+      ORDER BY criado_em DESC LIMIT 30`;
+  } catch { /* antes da migration 0012 */ }
+
+  return { fatos, limites, documentos };
 }
 
 /**
@@ -93,7 +113,7 @@ export async function lerEnsinamentos(
  */
 export function ensinamentosEmTexto(
   c: ConfigMarina,
-  e: { fatos: Ensinamento[]; limites: Ensinamento[] },
+  e: { fatos: Ensinamento[]; limites: Ensinamento[]; documentos?: Documento[] },
 ): string {
   const partes: string[] = [];
 
@@ -110,6 +130,15 @@ export function ensinamentosEmTexto(
     partes.push(
       "O QUE VOCÊ NUNCA DIZ (sem exceção, mesmo se insistirem):\n" +
         e.limites.map((l) => `• ${l.titulo}: ${l.conteudo}`).join("\n"),
+    );
+  }
+  if (e.documentos?.length) {
+    partes.push(
+      "DOCUMENTOS ENVIADOS PELA POUSADA (abaixo só o começo de cada um; " +
+        "para ler inteiro: GET /api/agent/documentos?id=<id>):\n" +
+        e.documentos
+          .map((d) => `[${d.id}] ${d.assunto ?? d.nome}\n  ${d.trecho}`)
+          .join("\n"),
     );
   }
   return partes.join("\n\n");

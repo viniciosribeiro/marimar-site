@@ -6,6 +6,49 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-19 (5) — Ensinar a Marina por arquivo
+**Autor:** Claude Opus 5 (Cowork)
+**Migration:** 0012 · **Requer:** `npm install`
+
+A Cecilia agora arrasta um PDF, um Word, um txt, um CSV ou uma FOTO na aba
+"O que ela sabe" e a Marina passa a usar aquele conteudo. Foto de aviso ou
+de cardapio impresso tambem serve: ela transcreve.
+
+### Como funciona
+O arquivo vai do navegador direto para o Blob — nao passa pelo servidor,
+porque funcao serverless recusa corpo acima de ~4,5 MB e um contrato em PDF
+ou foto de celular passam disso com folga. Depois o servidor baixa, extrai o
+texto e guarda. **E o texto que a Marina le**: guardar so o arquivo nao
+ensinaria nada, porque ela nao abre PDF.
+
+| Formato | Como |
+|---|---|
+| txt, md, csv | direto |
+| PDF | `unpdf` |
+| docx | `mammoth` |
+| imagem | o proprio gateway da Marina, que enxerga imagem |
+
+A imagem reaproveita o que ja esta no ar em vez de pedir mais uma chave: o
+mesmo agente que atende no WhatsApp transcreve a foto.
+
+### A decisao de custo
+Na mensagem de sistema de toda conversa entra so o **trecho** (900
+caracteres) de cada documento. O texto completo fica em
+`/api/agent/documentos?id=<id>`, que a Marina abre quando o trecho indicar
+que a resposta esta ali. Enfiar um PDF de 40 paginas em toda conversa
+multiplicaria a conta por visitante — e a maioria das perguntas nao precisa
+de documento nenhum.
+
+### Falha limpa
+PDF escaneado sai vazio e ninguem entende por que. Agora a mensagem diz o
+que houve e o que fazer ("envie as paginas como foto"). Quando a leitura
+falha, o arquivo e APAGADO do Blob: guardar um PDF ilegivel e pagar
+armazenamento por nada e, pior, deixar na tela um item que parece ensinado.
+
+### Tambem nesta leva
+- `.env.local` ganhou `ELEVENLABS_API_KEY` e `ELEVENLABS_VOICE_ID`. Sem elas
+  o botao de prova de voz falhava em desenvolvimento — so a Vercel tinha.
+
 ## 2026-09-19 (4) — Auditoria: o que a Marina NAO sabia
 **Autor:** Claude Opus 5 (Cowork)
 **Commit:** 3943e5b

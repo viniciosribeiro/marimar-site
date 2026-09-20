@@ -30,7 +30,7 @@ export default async function MarinaPage({
   let pendente = false;
 
   let config = { ...CONFIG_PADRAO, voz_id: process.env.ELEVENLABS_VOICE_ID ?? null };
-  let ensinamentos: Awaited<ReturnType<typeof lerEnsinamentos>> = { fatos: [], limites: [] };
+  let ensinamentos: Awaited<ReturnType<typeof lerEnsinamentos>> = { fatos: [], limites: [], documentos: [] };
   try {
     config = await lerConfig(sql);
     ensinamentos = await lerEnsinamentos(sql);
@@ -104,6 +104,7 @@ export default async function MarinaPage({
         erro={sp.erro}
         config={config}
         fatos={ensinamentos.fatos}
+        documentos={ensinamentos.documentos}
         limites={ensinamentos.limites}
         conversas={conversas}
       />

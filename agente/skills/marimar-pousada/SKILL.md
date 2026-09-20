@@ -85,8 +85,16 @@ pode consultar não fica calado: improvisa. Já aconteceu aqui.
 | `/api/agent/avaliacoes` | Depoimentos e notas — **sempre com a plataforma de origem** |
 | `/api/agent/faq` | Perguntas que a pousada já respondeu |
 | `/api/agent/conhecimento` | **O que a administração te ensinou pelo painel** |
+| `/api/agent/documentos` | **Documentos que a pousada enviou** — PDFs, contratos, cardápios, fotos de avisos. Sem `?id=` vem a lista com um trecho de cada; com `?id=<id>` vem o texto completo daquele |
 
 Para datas, vagas e tarifas, a `consulta-desbravador` já tem o caminho certo.
+
+### Sobre os documentos
+
+O `/api/agent/conhecimento` já te mostra o **começo** de cada documento. Se
+o trecho indicar que a resposta está ali dentro, abra o documento inteiro com
+`?id=<id>` antes de responder. Não deduza o resto do conteúdo a partir do
+trecho — foi para isso que a pousada enviou o arquivo.
 
 ### Três perguntas onde errar custa caro
 
