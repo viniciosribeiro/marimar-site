@@ -201,7 +201,7 @@ async function principal() {
         }
 
         migradas++;
-        console.log(`   ✓ ${antiga.split("/").pop()}`);
+        console.log(`   ${seco ? "·" : "✓"} ${antiga.split("/").pop()}`);
       } catch (e) {
         falhas++;
         const erro = (e as Error).message;
@@ -214,8 +214,17 @@ async function principal() {
   await sql.end();
 
   console.log("\n" + "─".repeat(60));
-  console.log(`Encontradas: ${achadas}   Migradas: ${migradas}   Falhas: ${falhas}`);
-  console.log(`Arquivos enviados: ${jaEnviado.size}${achadas > jaEnviado.size && !seco ? "  (o resto eram repetições)" : ""}`);
+  console.log(
+    seco
+      ? `Encontradas: ${achadas}   Seriam migradas: ${migradas}   Ja com problema: ${falhas}`
+      : `Encontradas: ${achadas}   Migradas: ${migradas}   Falhas: ${falhas}`,
+  );
+  if (!seco) {
+    console.log(
+      `Arquivos enviados: ${jaEnviado.size}` +
+      (achadas > jaEnviado.size ? "  (o resto eram repetições da mesma imagem)" : ""),
+    );
+  }
 
   if (problemas.length) {
     console.log("\n⚠️  As que falharam continuam apontando para o servidor antigo");
