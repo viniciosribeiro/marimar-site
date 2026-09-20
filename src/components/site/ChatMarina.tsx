@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Icone } from "./Icone";
 import { SUGESTOES, SAUDACAO, INDISPONIVEL, LIMITE_AUDIO_SEGUNDOS } from "@/lib/chat";
 
@@ -30,7 +30,15 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
   const [gravando, setGravando] = useState(false);
   const [segundos, setSegundos] = useState(0);
   const [transcrevendo, setTranscrevendo] = useState(false);
-  const [temMicrofone, setTemMicrofone] = useState(false);
+  /* O painel so existe depois de aberto, entao este calculo nunca roda no
+     servidor e nao ha divergencia de hidratacao — por isso da para decidir
+     na criacao do estado em vez de num efeito. */
+  const [temMicrofone, setTemMicrofone] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      typeof MediaRecorder !== "undefined" &&
+      Boolean(navigator.mediaDevices?.getUserMedia),
+  );
   const [sessao] = useState(() => novaSessao());
 
   /* Voz sob demanda. `vozDisponivel` comeca otimista e so vira falso se o
@@ -56,22 +64,23 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
     if (aberto) campoRef.current?.focus();
   }, [aberto]);
 
-  // Fechar o painel silencia o audio: ninguem espera que a voz continue
-  // tocando depois de fechar a janela.
-  useEffect(() => {
-    if (!aberto) {
-      audioRef.current?.pause();
-      audioRef.current = null;
-      setVozTocando(null);
-    }
-  }, [aberto]);
+  /* Fechar silencia o audio: ninguem espera que a voz continue tocando
+     depois de fechar a janela. Fica numa funcao, e nao num efeito que
+     observa `aberto`, porque parar audio e consequencia da ACAO de fechar —
+     um efeito faria o React recalcular a tela so para descobrir isso. */
+  const fechar = useCallback(() => {
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setVozTocando(null);
+    setAberto(false);
+  }, []);
 
   // Esc fecha — a mesma tecla que fecha tudo no resto do site.
   useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => { if (e.key === "Escape") setAberto(false); };
+    const aoTeclar = (e: KeyboardEvent) => { if (e.key === "Escape") fechar(); };
     document.addEventListener("keydown", aoTeclar);
     return () => document.removeEventListener("keydown", aoTeclar);
-  }, []);
+  }, [fechar]);
 
   /* Trava a rolagem do site enquanto o painel cobre a tela.
      Só no celular: no desktop o painel é um cartão no canto e a pessoa
@@ -94,17 +103,12 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
     campo.style.height = Math.min(campo.scrollHeight, 112) + "px";
   }, [rascunho]);
 
-  useEffect(() => {
-    setTemMicrofone(
-      typeof window !== "undefined" &&
-      typeof MediaRecorder !== "undefined" &&
-      Boolean(navigator.mediaDevices?.getUserMedia),
-    );
-    return () => {
-      if (relogioRef.current) clearInterval(relogioRef.current);
-      pararTudo();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Ao desmontar: solta o microfone e o relogio. Sem isto a luzinha da
+  // camera/microfone continua acesa depois de fechar a aba do chat.
+  useEffect(() => () => {
+    if (relogioRef.current) clearInterval(relogioRef.current);
+    try { gravadorRef.current?.stream.getTracks().forEach((t) => t.stop()); } catch {}
+    gravadorRef.current = null;
   }, []);
 
   async function enviar(texto: string, porVoz = false) {
@@ -356,7 +360,7 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
                     : <><path d="M15 3h6v6" /><path d="M9 21H3v-6" /></>}
                 </svg>
               </button>
-              <button onClick={() => setAberto(false)} aria-label="Fechar atendimento"
+              <button onClick={fechar} aria-label="Fechar atendimento"
                 className="p-2 -mr-1 opacity-85 hover:opacity-100">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   strokeWidth="2" strokeLinecap="round" aria-hidden>

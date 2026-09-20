@@ -6,6 +6,46 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-19 (6) — Revisao do que foi escrito hoje
+**Autor:** Claude Opus 5 (Cowork)
+
+Nada de novo: revisao do que entrou nas ultimas horas e nao tinha sido
+exercitado por ninguem.
+
+### A migracao de fotos agora e reversivel
+O script reescrevia a URL no banco de **producao** e nao guardava a antiga.
+Se algo desse errado nao havia volta. Agora cada troca e anotada em
+`backups/fotos-<data>.json` **antes** de acontecer, uma linha por vez — e nao
+no fim, porque um arquivo escrito so no fim seria inutil exatamente na hora
+em que ele mais importa.
+
+```
+npm run db:migrar-fotos -- --reverter backups/fotos-<data>.json
+```
+
+O desfazer so volta atras se o valor atual ainda for o que o script gravou.
+Se alguem trocou a imagem pelo admin depois, a escolha dela vale mais que a
+nossa — desfazer por cima seria apagar trabalho.
+
+### Lint (que nao tinha rodado)
+`tsc` e `build` passavam, mas o lint pegou tres coisas minhas no
+`ChatMarina.tsx`:
+
+- **`setState` dentro de efeito, duas vezes.** O audio parava por um efeito
+  que observava `aberto`; virou uma funcao `fechar()`, porque parar audio e
+  consequencia da ACAO de fechar — um efeito fazia o React recalcular a tela
+  so para descobrir isso.
+- **A deteccao de microfone** saiu do efeito e foi para a criacao do estado.
+  O painel so existe depois de aberto, entao esse calculo nunca roda no
+  servidor e nao ha divergencia de hidratacao.
+- Uma diretiva `eslint-disable` que nao desabilitava nada.
+
+As regex do renderizador de markdown do chat foram testadas a parte (negrito,
+link, URL solta e imagem) — todas casam certo.
+
+Os erros de `any` que sobram no lint sao de rotas antigas
+(`disponibilidade`, `faq`, `pacotes`, o helper `agentOk`), nao desta sessao.
+
 ## 2026-09-19 (5) — Ensinar a Marina por arquivo
 **Autor:** Claude Opus 5 (Cowork)
 **Migration:** 0012 · **Requer:** `npm install`

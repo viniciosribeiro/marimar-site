@@ -14,6 +14,11 @@
  *
  *   npm run db:migrar-fotos -- --dry     # mostra o que faria, sem tocar em nada
  *   npm run db:migrar-fotos              # faz
+ *   npm run db:migrar-fotos -- --reverter backups/fotos-<data>.json
+ *
+ * Toda troca e anotada num arquivo de volta ANTES de acontecer. Sem ele, o
+ * script sobrescreveria a URL antiga e nao haveria como desfazer — e este
+ * script escreve no banco de producao.
  *
  * É seguro rodar de novo: o que já foi migrado não casa mais com o filtro.
  * Se parar no meio, cada linha já gravada continua gravada — não há
@@ -22,6 +27,7 @@
 import { urlDoBanco } from "./env";
 import postgres from "postgres";
 import { put } from "@vercel/blob";
+import { mkdirSync, writeFileSync, readFileSync, appendFileSync } from "node:fs";
 
 /** Os dois domínios do site anterior, com ou sem www. */
 const ANTIGOS = ["pousadamarimarilhadomel.com.br", "pousadamarimar.com.br"];
@@ -43,6 +49,44 @@ const ALVOS: { tabela: string; coluna: string; pathname?: string }[] = [
 ];
 
 const seco = process.argv.includes("--dry");
+const reverterDe = (() => {
+  const i = process.argv.indexOf("--reverter");
+  return i >= 0 ? process.argv[i + 1] : null;
+})();
+
+type Troca = { tabela: string; coluna: string; id: string; antiga: string; nova: string };
+
+/** Desfaz uma migracao, linha por linha, a partir do arquivo de volta. */
+async function reverter(arquivo: string) {
+  const linhas = readFileSync(arquivo, "utf8")
+    .split("\n").filter(Boolean).map((l) => JSON.parse(l) as Troca);
+
+  if (!linhas.length) {
+    console.log("\nArquivo de volta vazio — nada a desfazer.\n");
+    return;
+  }
+
+  const sql = postgres(urlDoBanco(), { max: 1, prepare: false });
+  console.log(`\n↩  Desfazendo ${linhas.length} trocas de ${arquivo}\n`);
+
+  let feitas = 0;
+  for (const t of linhas) {
+    try {
+      /* So volta atras se o valor atual ainda for o que ESTE script gravou.
+         Se alguem trocou a imagem pelo admin depois, a escolha dela vale
+         mais que a nossa — desfazer por cima seria apagar trabalho. */
+      const r = await sql`
+        UPDATE ${sql(t.tabela)} SET ${sql(t.coluna)} = ${t.antiga}
+        WHERE id = ${t.id} AND ${sql(t.coluna)} = ${t.nova}`;
+      if (r.count) { feitas++; console.log(`   ↩ ${t.tabela}.${t.coluna}`); }
+      else console.log(`   ⏭ ${t.tabela}.${t.coluna} — mudou depois, deixei como esta`);
+    } catch (e) {
+      console.log(`   ✗ ${t.tabela}.${t.coluna} — ${(e as Error).message}`);
+    }
+  }
+  await sql.end();
+  console.log(`\nDesfeitas: ${feitas} de ${linhas.length}\n`);
+}
 
 /** Nome do arquivo no Blob, a partir da URL antiga. */
 function destino(url: string): string {
@@ -65,6 +109,8 @@ async function baixar(url: string): Promise<Buffer> {
 }
 
 async function principal() {
+  if (reverterDe) return reverter(reverterDe);
+
   if (!seco && !process.env.BLOB_READ_WRITE_TOKEN) {
     console.error("\n❌ BLOB_READ_WRITE_TOKEN não encontrada em .env.local.");
     console.error("   Traga com: npx vercel env pull .env.local\n");
@@ -73,6 +119,18 @@ async function principal() {
 
   const sql = postgres(urlDoBanco(), { max: 1, prepare: false });
   const filtro = ANTIGOS.map((d) => `%${d}%`);
+
+  /* O arquivo de volta e escrito uma linha por vez, a cada troca, e nao no
+     fim: se o processo morrer no meio, o que ja foi trocado continua
+     registrado. Um arquivo escrito so no fim seria inutil exatamente na
+     hora em que ele mais importa. */
+  let arquivoVolta = "";
+  if (!seco) {
+    mkdirSync("backups", { recursive: true });
+    arquivoVolta = `backups/fotos-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
+    writeFileSync(arquivoVolta, "");
+    console.log(`Registro de volta: ${arquivoVolta}\n`);
+  }
 
   console.log(seco ? "\n🔍 SIMULAÇÃO — nada será alterado\n" : "\n🚚 Migrando imagens do WordPress\n");
 
@@ -124,6 +182,10 @@ async function principal() {
         }
 
         if (!seco) {
+          appendFileSync(arquivoVolta, JSON.stringify({
+            tabela: alvo.tabela, coluna: alvo.coluna, id: linha.id, antiga, nova,
+          }) + "\n");
+
           if (alvo.pathname) {
             const caminho = new URL(nova).pathname.replace(/^\//, "");
             await sql`
@@ -163,6 +225,8 @@ async function principal() {
 
   if (seco) {
     console.log("\nFoi só simulação. Para fazer de verdade:  npm run db:migrar-fotos");
+  } else if (arquivoVolta) {
+    console.log(`\nPara desfazer:  npm run db:migrar-fotos -- --reverter ${arquivoVolta}`);
   } else if (!falhas && achadas) {
     console.log("\n✅ Nenhuma imagem depende mais do servidor antigo.");
   } else if (!achadas) {

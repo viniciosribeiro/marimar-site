@@ -23,3 +23,6 @@ credenciais*
 notas-*.txt
 
 .env*
+
+# Registros de volta da migracao de fotos — contem URLs, nao vao para o git
+backups/

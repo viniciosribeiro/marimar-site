@@ -24,7 +24,12 @@ export async function GET(request: NextRequest) {
 
   return Response.json({
     ok: true,
-    dados: { areas: AREAS.map(({ contar: _, ...resto }) => resto) },
+    // A funcao de contagem nao sai daqui: e util para o painel, nao para
+    // quem consome a rota, e funcao nao sobrevive a um JSON.
+    dados: { areas: AREAS.map((a) => ({
+      chave: a.chave, titulo: a.titulo, rota: a.rota,
+      responde: a.responde, origem: a.origem,
+    })) },
     resumo_texto: linhas.join("\n"),
     fonte: "local",
     consultado_em: new Date().toISOString(),
