@@ -30,9 +30,14 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "reservas.desbravador.com.br" },
       { protocol: "https", hostname: "**.desbravador.com.br" },
-      // Fotos proprias hospedadas fora do motor (Blob, CDN, WordPress legado)
+      // Fotos proprias, hospedadas conosco.
       { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
-      { protocol: "https", hostname: "pousadamarimarilhadomel.com.br" },
+      /* O WordPress antigo saiu daqui em 20/09/2026, depois que as 56 fotos
+         importadas foram trazidas para o Blob (`npm run db:migrar-fotos`).
+         Nao e limpeza: enquanto ele estivesse permitido, uma imagem antiga
+         reintroduzida por engano continuaria carregando em silencio ate o
+         dia em que aquele servidor saisse do ar. Agora falha na hora, que e
+         quando da para consertar. */
     ],
     // O motor serve JPEG pesado; o cache longo evita reprocessar a cada request.
     minimumCacheTTL: 60 * 60 * 24 * 7,
