@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ConfigMarina, Ensinamento } from "@/lib/marina";
+import type { Cobertura } from "@/lib/agent-mapa";
 import {
   salvarVoz, salvarTom, salvarEnsinamento,
   alternarEnsinamento, removerEnsinamento, corrigirResposta,
@@ -14,6 +15,7 @@ type Conversa = {
 };
 
 const ABAS = [
+  { id: "cobertura", rotulo: "O que ela sabe hoje" },
   { id: "voz", rotulo: "Voz" },
   { id: "tom", rotulo: "Jeito de falar" },
   { id: "conhecimento", rotulo: "O que ela sabe" },
@@ -22,10 +24,11 @@ const ABAS = [
 ];
 
 export function PainelMarina({
-  aba, ok, erro, config, fatos, limites, conversas,
+  aba, ok, erro, config, fatos, limites, conversas, cobertura,
 }: {
   aba: string; ok?: string; erro?: string;
-  config: ConfigMarina; fatos: Ensinamento[]; limites: Ensinamento[]; conversas: Conversa[];
+  config: ConfigMarina; fatos: Ensinamento[]; limites: Ensinamento[];
+  conversas: Conversa[]; cobertura: Cobertura[];
 }) {
   const [atual, setAtual] = useState(aba);
 
@@ -47,11 +50,96 @@ export function PainelMarina({
         ))}
       </div>
 
+      {atual === "cobertura" && <AbaCobertura cobertura={cobertura} />}
       {atual === "voz" && <AbaVoz config={config} />}
       {atual === "tom" && <AbaTom config={config} />}
       {atual === "conhecimento" && <AbaEnsinamentos tipo="fato" itens={fatos} />}
       {atual === "limites" && <AbaEnsinamentos tipo="limite" itens={limites} />}
       {atual === "conversas" && <AbaConversas conversas={conversas} />}
+    </div>
+  );
+}
+
+/* ── cobertura ───────────────────────────────────────────────────── */
+
+const ORIGEM = {
+  banco: { rotulo: "Você edita no painel", cor: "text-gray-600" },
+  fixo: { rotulo: "Fixo no sistema", cor: "text-gray-500" },
+  motor: { rotulo: "Ao vivo, do sistema de reservas", cor: "text-blue-700" },
+} as const;
+
+/**
+ * O diagnóstico que faltava.
+ *
+ * Antes desta aba, saber o que a Marina consegue responder exigia ler
+ * código. Quem opera descobria um buraco pelo pior caminho possível: um
+ * hóspede perguntando e ela improvisando.
+ *
+ * O vazio é tratado como problema, e não como "zero": um assunto com rota
+ * pronta e nenhum registro cadastrado está tão descoberto quanto um assunto
+ * sem rota, e é o tipo de buraco que ninguém enxerga sozinho.
+ */
+function AbaCobertura({ cobertura }: { cobertura: Cobertura[] }) {
+  const vazias = cobertura.filter((c) => c.quantos === 0);
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-600">
+        Tudo que a Marina consegue responder hoje, nos dois canais. Onde estiver vazio, ela não
+        sabe — e vai dizer que confirma com a pousada em vez de inventar.
+      </div>
+
+      {vazias.length > 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>{vazias.length} {vazias.length === 1 ? "assunto está vazio" : "assuntos estão vazios"}.</strong>{" "}
+          A Marina não consegue responder sobre {vazias.map((v) => v.titulo.toLowerCase()).join(", ")}.
+          Cadastrar isso é o que mais melhora as respostas dela agora.
+        </div>
+      )}
+
+      <ul className="space-y-3">
+        {cobertura.map((c) => {
+          const vazio = c.quantos === 0;
+          const semTabela = c.quantos === -1;
+          return (
+            <li key={c.chave}
+              className={`rounded-lg border p-4 ${vazio ? "border-amber-300 bg-amber-50/50" : "border-gray-200"}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-gray-900">{c.titulo}</p>
+                  <p className={`text-xs mt-0.5 ${ORIGEM[c.origem].cor}`}>{ORIGEM[c.origem].rotulo}</p>
+                </div>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                  semTabela ? "bg-red-100 text-red-800"
+                    : vazio ? "bg-amber-200 text-amber-900"
+                    : c.quantos === null ? "bg-emerald-100 text-emerald-800"
+                    : "bg-emerald-100 text-emerald-800"
+                }`}>
+                  {semTabela ? "falta migration"
+                    : c.quantos === null ? "pronto"
+                    : `${c.quantos} ${c.quantos === 1 ? "cadastro" : "cadastros"}`}
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-500 mt-2">
+                Responde: {c.responde.join(" · ")}
+              </p>
+
+              {vazio && c.editarEm && (
+                <a href={c.editarEm}
+                  className="inline-block mt-2 text-xs font-medium text-amber-900 underline">
+                  Cadastrar agora →
+                </a>
+              )}
+              {!vazio && c.editarEm && (
+                <a href={c.editarEm} className="inline-block mt-2 text-xs text-gray-500 underline hover:text-gray-900">
+                  Editar →
+                </a>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

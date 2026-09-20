@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { lerConfig, lerEnsinamentos, CONFIG_PADRAO } from "@/lib/marina";
+import { medirCobertura, type Cobertura } from "@/lib/agent-mapa";
 import { PainelMarina } from "./PainelMarina";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +74,13 @@ export default async function MarinaPage({
     pendente = true;
   }
 
+  /* A cobertura é medida ao vivo, não escrita à mão: uma lista estática de
+     "o que ela sabe" mente no dia seguinte à primeira mudança. */
+  let cobertura: Cobertura[] = [];
+  try {
+    cobertura = await medirCobertura(sql);
+  } catch { /* banco fora do ar: a tela abre sem o diagnóstico */ }
+
   await sql.end();
 
   return (
@@ -90,7 +98,8 @@ export default async function MarinaPage({
       )}
 
       <PainelMarina
-        aba={sp.aba ?? "voz"}
+        aba={sp.aba ?? "cobertura"}
+        cobertura={cobertura}
         ok={sp.ok}
         erro={sp.erro}
         config={config}

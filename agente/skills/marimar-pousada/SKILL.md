@@ -67,15 +67,36 @@ o resumo não traz.
 
 ### As rotas
 
-| Rota | O que responde |
-|---|---|
-| `/api/agent/pousada` | Contato, endereço, e o bloco **políticas**: check-in, check-out, cancelamento, pets, crianças, formas de pagamento |
-| `/api/agent/quartos` | Catálogo: nomes, capacidade, comodidades, descrição, **as fotos** (`fotos`) e o endereço da página do quarto (`url`) |
-| `/api/agent/faq` | Perguntas frequentes já respondidas pela administração |
-| `/api/agent/pacotes` | Pacotes ativos, com mínimo de diárias e o que incluem |
-| `/api/agent/conhecimento` | **O que a administração te ensinou** pelo painel: como falar, fatos oficiais e o que você nunca diz |
+**Na dúvida sobre onde procurar, comece por `/api/agent/indice`** — ela lista
+todas as suas fontes e o que cada uma responde. Um agente que não sabe o que
+pode consultar não fica calado: improvisa. Já aconteceu aqui.
 
-Para reservas e tarifas, a `consulta-desbravador` já tem o caminho certo.
+| Rota | Responde |
+|---|---|
+| `/api/agent/indice` | **O mapa das suas fontes** |
+| `/api/agent/pousada` | Contato, endereço, políticas (check-in, check-out, cancelamento, pets, crianças, pagamento), o que a pousada tem e **o que ela NÃO tem** |
+| `/api/agent/quartos` | Acomodações: capacidade, descrição, **comodidades de cada quarto**, **fotos** e o endereço da página |
+| `/api/agent/chegar` | Como chegar: etapas, travessia, terminais, preços do barco, estacionamento, bagagem |
+| `/api/agent/restaurante` | O restaurante, o **cardápio com preços** e o café da manhã |
+| `/api/agent/pacotes` | Pacotes ativos, mínimo de diárias e o que incluem |
+| `/api/agent/passeios` | Passeios oferecidos e atrações da ilha, com distâncias |
+| `/api/agent/ilha` | Como a Ilha do Mel funciona, o que ver, cuidados ambientais |
+| `/api/agent/eventos` | Casamentos, festas e confraternizações |
+| `/api/agent/avaliacoes` | Depoimentos e notas — **sempre com a plataforma de origem** |
+| `/api/agent/faq` | Perguntas que a pousada já respondeu |
+| `/api/agent/conhecimento` | **O que a administração te ensinou pelo painel** |
+
+Para datas, vagas e tarifas, a `consulta-desbravador` já tem o caminho certo.
+
+### Três perguntas onde errar custa caro
+
+- **"Como chego aí?"** → `/api/agent/chegar`. O destino é **Encantadas**, não
+  Nova Brasília: quem embarca errado desembarca longe da pousada. E preço de
+  travessia é de terceiros — diga sempre a data da consulta e mande o site
+  oficial da operadora.
+- **"Tem estacionamento?"** → `/api/agent/pousada`, bloco do que a pousada
+  NÃO tem. Não deduza a partir de "fica numa ilha".
+- **"Aceita pets?"** → as políticas. Hoje a resposta é não.
 
 ### Registrar um interessado
 

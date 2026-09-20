@@ -36,7 +36,23 @@ export async function GET(request: NextRequest) {
     WHERE quarto_id IS NOT NULL AND tipo = 'foto'
     ORDER BY destaque DESC, ordem ASC
   `;
+  /* Comodidades por quarto. Sem isto a Marina descrevia um quarto sem saber
+     se ele tem ar-condicionado — e "tem ar?" e das tres perguntas mais
+     feitas no verao. Uma consulta so, pelo mesmo motivo das fotos. */
+  let comodidades: { quarto_id: string; nome: string }[] = [];
+  try {
+    comodidades = await sql<{ quarto_id: string; nome: string }[]>`
+      SELECT qc.quarto_id, c.nome FROM quarto_comodidades qc
+      JOIN comodidades c ON c.id = qc.comodidade_id
+      WHERE c.ativo = true ORDER BY c.ordem`;
+  } catch { /* tabela ausente neste banco */ }
+
   await sql.end();
+
+  const comodidadesDe = new Map<string, string[]>();
+  for (const c of comodidades) {
+    comodidadesDe.set(c.quarto_id, [...(comodidadesDe.get(c.quarto_id) ?? []), c.nome]);
+  }
 
   const porQuarto = new Map<string, { url: string; alt: string }[]>();
   for (const f of fotos) {
@@ -54,10 +70,15 @@ export async function GET(request: NextRequest) {
     ...q,
     url: `${base}/quartos/${q.slug}`,
     fotos: porQuarto.get(q.id) ?? [],
+    comodidades: comodidadesDe.get(q.id) ?? [],
   }));
 
   const nomes = dados
-    .map((q) => `• ${q.nome} (ate ${q.ocupacao_max} pessoas) — ${q.fotos.length} fotos — ${q.url}`)
+    .map((q) =>
+      `• ${q.nome} (ate ${q.ocupacao_max} pessoas)` +
+      `${q.comodidades.length ? ` — ${q.comodidades.join(", ")}` : " — comodidades nao cadastradas"}` +
+      ` — ${q.fotos.length} fotos — ${q.url}`,
+    )
     .join("\n");
 
   return Response.json({
