@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { BannerCamadas } from "./BannerCamadas";
+import { OndaDivisor } from "./Tropical";
 import type { Banner } from "@/lib/banners";
 
 /**
@@ -54,6 +55,10 @@ export function CarrosselBanners({
     <>
     <section
       className="relative isolate"
+      /* Sobe por baixo do menu, que fica transparente enquanto esta foto
+         estiver no topo (MenuPrincipal procura este atributo). */
+      data-topo-imersivo
+      style={{ marginTop: "calc(-1 * var(--altura-topo))" }}
       onMouseEnter={() => setParado(true)}
       onMouseLeave={() => setParado(false)}
       onFocus={() => setParado(true)}
@@ -78,7 +83,7 @@ export function CarrosselBanners({
             style={{ opacity: i === atual ? 1 : 0, pointerEvents: i === atual ? undefined : "none" }}
             aria-hidden={i !== atual}
           >
-            <BannerCamadas b={b} ativo={i === atual} prioridade={i === 0}>
+            <BannerCamadas b={b} ativo={i === atual} prioridade={i === 0} topoImersivo>
               {i === atual ? children : null}
             </BannerCamadas>
           </div>
@@ -86,7 +91,7 @@ export function CarrosselBanners({
       </div>
 
       {total > 1 && (
-        <div className="absolute bottom-12 sm:bottom-5 left-0 right-0 flex items-center justify-center gap-2">
+        <div className="absolute bottom-14 sm:bottom-16 left-0 right-0 z-10 flex items-center justify-center gap-2">
           {banners.map((b, i) => (
             <button
               key={b.id}
@@ -102,6 +107,10 @@ export function CarrosselBanners({
           ))}
         </div>
       )}
+
+      {/* Onda na base: a foto termina "na areia" da página, em vez de num
+          corte reto. */}
+      <OndaDivisor className="absolute bottom-0 inset-x-0 text-fundo pointer-events-none" />
     </section>
 
     {/* A busca no celular: abaixo da foto, subindo só um pouco sobre a borda

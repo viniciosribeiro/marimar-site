@@ -1,3 +1,5 @@
+import { SeloMarimar } from "./Tropical";
+
 /**
  * O conjunto logo + nome.
  *
@@ -14,7 +16,7 @@
  */
 export function MarcaLockup({
   nome, logoUrl, mostrarNome, texto, subtexto,
-  altura, escuro = false, className = "",
+  altura, escuro = false, sobreFoto = false, className = "",
 }: {
   /** Nome da pousada — usado como alternativo e quando não há texto próprio. */
   nome: string;
@@ -27,6 +29,9 @@ export function MarcaLockup({
   altura: string;
   /** Sobre fundo escuro (rodapé). */
   escuro?: boolean;
+  /** Sobre a foto do topo da home: logo e nome em branco. A logo vira
+      silhueta branca — uma logo escura sobre foto escura some. */
+  sobreFoto?: boolean;
   className?: string;
 }) {
   const rotulo = (texto || "").trim() || nome;
@@ -41,10 +46,11 @@ export function MarcaLockup({
       }}>
       {logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={logoUrl} alt="" aria-hidden className="w-auto shrink-0 transition-marca"
+        <img src={logoUrl} alt="" aria-hidden
+          className={`w-auto shrink-0 transition-[filter,height] duration-300 ${sobreFoto ? "brightness-0 invert drop-shadow-[0_1px_6px_rgb(0_0_0/0.35)]" : ""}`}
           style={{ height: altura }} />
       ) : (
-        <span className="text-2xl shrink-0" aria-hidden>🏝️</span>
+        <SeloMarimar tamanho={36} claro={sobreFoto || escuro} />
       )}
 
       {/* Sem imagem o nome aparece de qualquer jeito: um cabeçalho sem marca
@@ -52,7 +58,7 @@ export function MarcaLockup({
       {(mostrarNome || semImagem) && (
         <span className="min-w-0 leading-tight">
           <span
-            className={`block font-titulo truncate ${escuro ? "text-white" : "text-tinta"}`}
+            className={`block font-titulo truncate transition-colors duration-300 ${escuro || sobreFoto ? "text-white" : "text-tinta"} ${sobreFoto ? "drop-shadow-[0_1px_8px_rgb(0_0_0/0.35)]" : ""}`}
             style={{
               fontSize: "var(--marca-nome-tam)",
               fontWeight: "var(--marca-nome-peso)" as any,
@@ -64,7 +70,7 @@ export function MarcaLockup({
           </span>
           {subtexto && (
             <span
-              className={`block truncate ${escuro ? "text-white/70" : "text-tinta-suave"}`}
+              className={`block truncate ${escuro || sobreFoto ? "text-white/75" : "text-tinta-suave"}`}
               style={{
                 // Derivado do tamanho do nome, não um segundo controle: a
                 // segunda linha é sempre menor e mais espaçada que a primeira,

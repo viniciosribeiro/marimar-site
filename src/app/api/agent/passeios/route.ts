@@ -1,7 +1,7 @@
 import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
 import postgres from "postgres";
-import { ATRACOES, AVISO_DISTANCIAS } from "@/lib/conteudo-pousada";
+import { lerConteudo } from "@/lib/conteudo-editavel";
 import { brl } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
       SELECT nome, descricao, duracao, preco_referencia
       FROM passeios WHERE ativo = true ORDER BY ordem`;
   } catch { /* tabela ausente */ }
+  const { ATRACOES, AVISO_DISTANCIAS } = await lerConteudo(sql);
   await sql.end();
 
   const linhas: string[] = [];

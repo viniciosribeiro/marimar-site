@@ -38,6 +38,12 @@ export default async function QuartosPage({
   const categorias = await sql`SELECT * FROM categorias WHERE ativo = true ORDER BY ordem`;
   const editando = editId ? lista.find((q: any) => q.id === editId) : null;
   const motorRooms = showMotor ? await buscarQuartosMotor() : [];
+  // Comodidades de suíte e quais esta suíte tem: a Marina responde "tem ar?"
+  // com isto, e antes não havia tela para marcar.
+  const comodidades = await sql`SELECT id, nome FROM comodidades WHERE ativo = true AND escopo = 'quarto' ORDER BY ordem, nome`;
+  const marcadas = new Set(
+    editando ? (await sql`SELECT comodidade_id FROM quarto_comodidades WHERE quarto_id = ${editando.id}`).map((r: any) => r.comodidade_id) : []
+  );
   const vinculados = new Set(lista.map((q: any) => q.desbravador_room_id).filter(Boolean));
   await sql.end();
 
@@ -50,7 +56,10 @@ export default async function QuartosPage({
         { name: "desbravador_room_id", label: "Motor ID", defaultValue: editando.desbravador_room_id ?? "", className: "w-32" },
         { name: "ocupacao_max", label: "Ocup. Max", type: "number" as const, defaultValue: editando.ocupacao_max, className: "w-20" },
         { name: "ordem", label: "Ordem", type: "number" as const, defaultValue: editando.ordem, className: "w-20" },
-        { name: "descricao", label: "Descricao", defaultValue: editando.descricao ?? "" },
+        { name: "cama", label: "Cama(s)", defaultValue: editando.cama ?? "", className: "w-48" },
+        { name: "metragem", label: "Metragem (m²)", type: "number" as const, defaultValue: editando.metragem ?? "", className: "w-28" },
+        { name: "vista", label: "Vista", defaultValue: editando.vista ?? "", className: "w-48" },
+        { name: "descricao", label: "Descrição", type: "textarea" as const, defaultValue: editando.descricao ?? "" },
         { name: "ativo", label: "Ativo", type: "checkbox" as const, defaultValue: editando.ativo ? 1 : 0 },
       ]
     : [
@@ -60,8 +69,27 @@ export default async function QuartosPage({
         { name: "desbravador_room_id", label: "Motor ID", className: "w-32" },
         { name: "ocupacao_max", label: "Ocup. Max", type: "number" as const, defaultValue: 2, className: "w-20" },
         { name: "ordem", label: "Ordem", type: "number" as const, defaultValue: 0, className: "w-20" },
-        { name: "descricao", label: "Descricao" },
+        { name: "cama", label: "Cama(s)", className: "w-48" },
+        { name: "metragem", label: "Metragem (m²)", type: "number" as const, className: "w-28" },
+        { name: "vista", label: "Vista", className: "w-48" },
+        { name: "descricao", label: "Descrição", type: "textarea" as const },
+        // Sem este campo a action lia "desligado" e toda suíte nascia inativa.
+        { name: "ativo", label: "Ativo", type: "checkbox" as const, defaultValue: 1 },
       ];
+
+  const listaComodidades = comodidades.length > 0 && (
+    <fieldset className="sm:col-span-2 lg:basis-full border border-gray-100 rounded-lg p-3">
+      <legend className="text-xs font-medium px-1">Comodidades desta suíte</legend>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2 mt-1">
+        {comodidades.map((c: any) => (
+          <label key={c.id} className="flex items-center gap-2 text-xs">
+            <input type="checkbox" name="comodidades" value={c.id} defaultChecked={marcadas.has(c.id)} className="w-4 h-4" />
+            {c.nome}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
 
   return (
     <div className="p-5 sm:p-8">
@@ -79,12 +107,22 @@ export default async function QuartosPage({
         submitLabel={editando ? "Salvar" : "Criar"}
         error={sp.erro}
         ok={sp.ok}
-        extra={editando ? <Link href="/admin/quartos" className="text-sm text-gray-500 py-2">Cancelar</Link> : undefined}
+        extra={
+          <>
+            {listaComodidades}
+            {editando && (
+              <Link href={`/admin/midias?secao=quarto&quarto=${editando.id}`} className="text-sm text-teal-700 py-2 hover:underline">
+                Fotos desta suíte →
+              </Link>
+            )}
+            {editando && <Link href="/admin/quartos" className="text-sm text-gray-500 py-2">Cancelar</Link>}
+          </>
+        }
       />
 
       {showMotor && (
         <div className="bg-white rounded-lg shadow p-4 mt-6">
-          <h2 className="font-semibold text-sm mb-3">Quartos do motor (15-17/Out/2026)</h2>
+          <h2 className="font-semibold text-sm mb-3">Quartos do motor (consulta de exemplo, daqui a uma semana)</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {motorRooms.map((r: any) => (
               <div key={r.id} className={`border rounded p-2 text-xs ${vinculados.has(r.id) ? "bg-green-50 border-green-300" : "bg-gray-50"}`}>
@@ -118,10 +156,10 @@ export default async function QuartosPage({
                 <td className="p-3 font-mono text-xs">{q.desbravador_room_id || "—"}</td>
                 <td className="p-3">{q.ativo ? "✅" : "—"}</td>
                 <td className="p-3 text-right space-x-2">
-                  <Link href={`/admin/quartos?editar=${q.id}`} className="text-teal-600 hover:underline text-xs">Editar</Link>
+                  <Link href={`/admin/quartos?editar=${q.id}`} className="inline-flex items-center text-xs font-medium px-3.5 min-h-10 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">Editar</Link>
                   <form action={alternarAtivoQuarto} className="inline">
                     <input type="hidden" name="id" value={q.id} />
-                    <SubmitButton className="text-amber-600 hover:underline text-xs bg-transparent p-0">{q.ativo ? "Desativar" : "Ativar"}</SubmitButton>
+                    <SubmitButton className="inline-flex items-center text-xs font-medium px-3 min-h-10 rounded-lg text-amber-700 hover:bg-amber-50">{q.ativo ? "Desativar" : "Ativar"}</SubmitButton>
                   </form>
                   <DeleteButton action={excluirQuarto} id={q.id} />
                 </td>

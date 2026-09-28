@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { EVENTOS, CONTATO, COMPLEXO } from "@/lib/conteudo-pousada";
+import { lerContato } from "@/lib/pousada";
+import { COMPLEXO } from "@/lib/conteudo-pousada";
+import { lerConteudo } from "@/lib/conteudo-editavel";
+import { comSql } from "@/lib/db-conexao";
 
 export const metadata: Metadata = {
   title: "Eventos e Casamentos — Pousada Marimar, Ilha do Mel",
   description: "Casamentos, festas e confraternizações em Encantadas, usando o jardim, o restaurante pé na areia e a proximidade do mar.",
 };
 
-export default function EventosPage() {
+export default async function EventosPage() {
+  // Editável em Admin → Textos da ilha e chegada; sem nada salvo, vale o padrão do código.
+  const { EVENTOS } = await comSql(lerConteudo);
+  // WhatsApp salvo em Admin → Dados da pousada (com o número confirmado como reserva).
+  const contato = await lerContato();
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
       <span className="text-marca font-medium text-sm">Celebrações</span>
@@ -46,7 +53,7 @@ export default function EventosPage() {
       <div className="bg-fundo-suave rounded-marca p-7 text-center">
         <h2 className="font-titulo text-xl font-bold text-gray-900 mb-2">Vamos montar o seu</h2>
         <p className="text-sm text-gray-600 leading-relaxed mb-5 max-w-lg mx-auto">{EVENTOS.avisoPendente}</p>
-        <a href={`https://wa.me/${CONTATO.whatsappDigitos}?text=${encodeURIComponent("Olá! Gostaria de informações sobre eventos na Pousada Marimar.")}`}
+        <a href={`https://wa.me/${contato.whatsappDigitos}?text=${encodeURIComponent("Olá! Gostaria de informações sobre eventos na Pousada Marimar.")}`}
           target="_blank" rel="noopener noreferrer"
           className="inline-block bg-marca hover:bg-marca-hover text-marca-texto px-6 py-3 rounded-marca font-semibold transition-marca">
           💬 Falar sobre meu evento

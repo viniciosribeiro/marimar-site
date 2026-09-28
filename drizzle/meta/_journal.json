@@ -106,6 +106,13 @@
       "when": 1790600000000,
       "tag": "0014_pousada_protagonista",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1790610000000,
+      "tag": "0015_fotos_secao_e_faq",
+      "breakpoints": true
     }
   ]
 }

@@ -11,26 +11,36 @@ const db = async () => {
   return postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
 };
 
-export async function criarMidia(f: FormData) {
-  const url=f.get("url") as string; const alt=f.get("alt") as string; const quarto=f.get("quarto_id") as string;
-  if(!url||!alt) redirect("/admin/midias?erro=URL+e+alt+obrigatorios");
-  const s=await db(); await s`INSERT INTO midias (url, alt, quarto_id) VALUES (${url},${alt},${quarto||null})`; await s.end();
-  revalidatePath("/admin/midias"); redirect("/admin/midias?ok=Midia+criada");
-}
-export async function excluirMidia(f: FormData) {
-  const s=await db(); await s`DELETE FROM midias WHERE id=${f.get("id") as string}`; await s.end();
-  revalidatePath("/admin/midias"); redirect("/admin/midias?ok=Excluida");
-}
+// Fotos: ver src/app/(admin)/admin/midias/actions.ts (tela nova, com envio de arquivo e secoes).
+
+/** Textarea "um por linha" → lista sem linhas vazias. */
+const porLinha = (f: FormData, k: string) =>
+  String(f.get(k) ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+/** input type=date → Date ou null. */
+const dataOuNula = (f: FormData, k: string) => {
+  const v = String(f.get(k) ?? "");
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? new Date(v + "T12:00:00") : null;
+};
+/** O site e a Marina leem pacotes: salvar precisa refletir nos dois. */
+const refrescarPacotes = () => { revalidatePath("/pacotes"); revalidatePath("/"); revalidatePath("/admin/pacotes"); };
 
 export async function criarPacote(f: FormData) {
   const nome=f.get("nome") as string; const slug=f.get("slug") as string;
   if(!nome||!slug) redirect("/admin/pacotes?erro=Nome+e+slug+obrigatorios");
-  const s=await db(); await s`INSERT INTO pacotes (nome,slug,descricao,diaria_minima,ordem) VALUES (${nome},${slug},${f.get("descricao") as string},${parseInt(f.get("diaria_minima") as string)||1},${parseInt(f.get("ordem") as string)||0})`; await s.end();
-  revalidatePath("/admin/pacotes"); redirect("/admin/pacotes?ok=Pacote+criado");
+  const s=await db();
+  await s`INSERT INTO pacotes (nome,slug,descricao,inclusos,vigencia_inicio,vigencia_fim,diaria_minima,ordem)
+    VALUES (${nome},${slug},${f.get("descricao") as string},${s.json(porLinha(f,"inclusos"))},${dataOuNula(f,"vigencia_inicio")},${dataOuNula(f,"vigencia_fim")},${parseInt(f.get("diaria_minima") as string)||1},${parseInt(f.get("ordem") as string)||0})`;
+  await s.end();
+  refrescarPacotes(); redirect("/admin/pacotes?ok=Pacote+criado");
 }
 export async function editarPacote(f: FormData) {
-  const s=await db(); await s`UPDATE pacotes SET nome=${f.get("nome") as string},slug=${f.get("slug") as string},descricao=${f.get("descricao") as string},diaria_minima=${parseInt(f.get("diaria_minima") as string)||1},ordem=${parseInt(f.get("ordem") as string)||0},ativo=${f.get("ativo")==="on"} WHERE id=${f.get("id") as string}`; await s.end();
-  revalidatePath("/admin/pacotes"); redirect("/admin/pacotes?ok=Atualizado");
+  const s=await db();
+  await s`UPDATE pacotes SET nome=${f.get("nome") as string},slug=${f.get("slug") as string},descricao=${f.get("descricao") as string},
+    inclusos=${s.json(porLinha(f,"inclusos"))},vigencia_inicio=${dataOuNula(f,"vigencia_inicio")},vigencia_fim=${dataOuNula(f,"vigencia_fim")},
+    diaria_minima=${parseInt(f.get("diaria_minima") as string)||1},ordem=${parseInt(f.get("ordem") as string)||0},ativo=${f.get("ativo")==="on"}
+    WHERE id=${f.get("id") as string}`;
+  await s.end();
+  refrescarPacotes(); redirect("/admin/pacotes?ok=Atualizado");
 }
 export async function excluirPacote(f: FormData) {
   const s=await db(); await s`DELETE FROM pacotes WHERE id=${f.get("id") as string}`; await s.end();
@@ -51,20 +61,42 @@ export async function excluirPasseio(f: FormData) {
   revalidatePath("/admin/passeios"); redirect("/admin/passeios?ok=Excluido");
 }
 
+/**
+ * Politicas: linha unica. Se ela ainda nao existe, e criada — antes o UPDATE
+ * nao achava linha nenhuma e a tela dizia "Politicas salvas" sem ter gravado.
+ */
 export async function salvarPoliticas(f: FormData) {
-  const s=await db(); await s`UPDATE politicas SET diaria_minima_padrao=${parseInt(f.get("diaria_minima") as string)||1},check_in=${f.get("check_in") as string},check_out=${f.get("check_out") as string},cancelamento=${f.get("cancelamento") as string},pet=${f.get("pet")==="on"},pet_texto=${f.get("pet_texto") as string},regras_gerais=${f.get("regras_gerais") as string} WHERE id=${f.get("id") as string}`; await s.end();
-  revalidatePath("/admin/politicas"); redirect("/admin/politicas?ok=Politicas+salvas");
+  const dados = {
+    diaria_minima_padrao: parseInt(f.get("diaria_minima") as string) || 1,
+    check_in: String(f.get("check_in") ?? "").trim() || "14:00",
+    check_out: String(f.get("check_out") ?? "").trim() || "12:00",
+    cancelamento: (f.get("cancelamento") as string) || null,
+    pet: f.get("pet") === "on",
+    pet_texto: (f.get("pet_texto") as string) || null,
+    criancas_texto: (f.get("criancas_texto") as string) || null,
+    regras_gerais: (f.get("regras_gerais") as string) || null,
+  };
+  const s=await db();
+  const [linha] = await s`SELECT id FROM politicas LIMIT 1`;
+  if (linha) {
+    await s`UPDATE politicas SET ${s(dados)}, formas_pagamento=${s.json(porLinha(f,"formas_pagamento"))}, atualizado_em=now() WHERE id=${linha.id}`;
+  } else {
+    await s`INSERT INTO politicas ${s(dados)}`;
+    await s`UPDATE politicas SET formas_pagamento=${s.json(porLinha(f,"formas_pagamento"))}`;
+  }
+  await s.end();
+  revalidatePath("/politicas"); revalidatePath("/admin/politicas"); redirect("/admin/politicas?ok=Politicas+salvas");
 }
 
 export async function criarFaq(f: FormData) {
   const p=f.get("pergunta") as string; const r=f.get("resposta") as string;
   if(!p||!r) redirect("/admin/faq?erro=Preencha+pergunta+e+resposta");
   const s=await db(); await s`INSERT INTO faq (pergunta,resposta,ordem,ativo,visivel_agente) VALUES (${p},${r},${parseInt(f.get("ordem") as string)||0},true,${f.get("visivel_agente")==="on"})`; await s.end();
-  revalidatePath("/admin/faq"); redirect("/admin/faq?ok=FAQ+criada");
+  revalidatePath("/faq"); revalidatePath("/admin/faq"); redirect("/admin/faq?ok=FAQ+criada");
 }
 export async function editarFaq(f: FormData) {
   const s=await db(); await s`UPDATE faq SET pergunta=${f.get("pergunta") as string},resposta=${f.get("resposta") as string},ordem=${parseInt(f.get("ordem") as string)||0},visivel_agente=${f.get("visivel_agente")==="on"},ativo=${f.get("ativo")==="on"} WHERE id=${f.get("id") as string}`; await s.end();
-  revalidatePath("/admin/faq"); redirect("/admin/faq?ok=Atualizada");
+  revalidatePath("/faq"); revalidatePath("/admin/faq"); redirect("/admin/faq?ok=Atualizada");
 }
 export async function excluirFaq(f: FormData) {
   const s=await db(); await s`DELETE FROM faq WHERE id=${f.get("id") as string}`; await s.end();

@@ -19,7 +19,7 @@ import {
  * prévia de mentir: não existe um segundo renderizador para divergir.
  */
 export function BannerCamadas({
-  b, ativo = true, prioridade = false, previa = false, children,
+  b, ativo = true, prioridade = false, previa = false, topoImersivo = false, children,
 }: {
   b: Banner;
   /** Slide visível. Inativo não anima nem toca vídeo. */
@@ -28,6 +28,8 @@ export function BannerCamadas({
   prioridade?: boolean;
   /** Dentro do editor: sem links de verdade e sem vídeo pesado. */
   previa?: boolean;
+  /** Topo da home: a foto passa por baixo do menu transparente. */
+  topoImersivo?: boolean;
   children?: React.ReactNode;
 }) {
   const pos = posicaoClasses(b.posicao, b.centralizar_celular);
@@ -57,8 +59,17 @@ export function BannerCamadas({
       {/* ── 3. textura ── */}
       {textura && <div className="absolute inset-0 -z-10 mix-blend-overlay" style={textura} aria-hidden />}
 
+      {/* Degradê no alto: garante leitura do menu transparente em qualquer
+          foto, inclusive céu claro. */}
+      {topoImersivo && (
+        <div className="absolute inset-x-0 top-0 h-40 -z-10 bg-gradient-to-b from-black/45 via-black/15 to-transparent" aria-hidden />
+      )}
+
       {/* ── 4. conteúdo ── */}
-      <div className={`relative flex-1 flex flex-col min-w-0 px-5 sm:px-8 ${pos.vertical} ${pos.horizontal}`}>
+      <div
+        className={`relative flex-1 flex flex-col min-w-0 px-5 sm:px-8 ${topoImersivo ? "pb-14 sm:pb-20" : ""} ${pos.vertical} ${pos.horizontal}`}
+        style={topoImersivo ? { paddingTop: "calc(var(--altura-topo) + 1.5rem)" } : undefined}
+      >
         {/* `min-w-0` nos dois niveis: em flex, o filho se recusa a encolher
             abaixo do proprio conteudo por padrao, e qualquer coisa larga
             dentro do banner (a caixa de busca, um titulo sem espaco)

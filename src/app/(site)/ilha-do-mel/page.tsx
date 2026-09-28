@@ -1,9 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import {
-  ATRACOES, AVISO_DISTANCIAS, CUIDADOS_AMBIENTAIS, SOBRE_A_ILHA,
-  TRAVESSIA, ATUALIZADO_EM,
-} from "@/lib/conteudo-pousada";
+import { ATUALIZADO_EM } from "@/lib/conteudo-pousada";
+import { lerConteudo } from "@/lib/conteudo-editavel";
+import { comSql } from "@/lib/db-conexao";
 import { brl } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -11,7 +10,9 @@ export const metadata: Metadata = {
   description: "Gruta das Encantadas, praias, trilhas, Farol das Conchas e Fortaleza. Como circular na ilha e o que respeitar.",
 };
 
-export default function IlhaDoMelPage() {
+export default async function IlhaDoMelPage() {
+  // Editável em Admin → Textos da ilha e chegada; sem nada salvo, vale o padrão do código.
+  const { ATRACOES, AVISO_DISTANCIAS, CUIDADOS_AMBIENTAIS, SOBRE_A_ILHA, TRAVESSIA } = await comSql(lerConteudo);
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
       <span className="text-marca font-medium text-sm">Guia</span>

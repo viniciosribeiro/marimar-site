@@ -1,12 +1,14 @@
 import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
-import { SOBRE_A_ILHA, ATRACOES, CUIDADOS_AMBIENTAIS, AVISO_DISTANCIAS } from "@/lib/conteudo-pousada";
+import { lerConteudo } from "@/lib/conteudo-editavel";
+import { comSql } from "@/lib/db-conexao";
 
 export const dynamic = "force-dynamic";
 
 /** A Ilha do Mel: como funciona, o que ver, o que respeitar. */
 export async function GET(request: NextRequest) {
   if (!checkAgentAuth(request)) return agentUnauthorized();
+  const { SOBRE_A_ILHA, ATRACOES, CUIDADOS_AMBIENTAIS, AVISO_DISTANCIAS } = await comSql(lerConteudo);
 
   const linhas = [
     `ACESSO: ${SOBRE_A_ILHA.acesso}`,

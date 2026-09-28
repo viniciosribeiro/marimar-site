@@ -1,5 +1,5 @@
 import { brl, datasExemplo } from "@/lib/format";
-import postgres from "postgres"; import { notFound } from "next/navigation"; import Link from "next/link"; import { fetchTarifas } from "@/lib/worker"; import { buildDeepLink } from "@/lib/deeplink"; import { Gallery } from "@/components/site/Gallery"; import { lerPousada } from "@/lib/pousada";
+import postgres from "postgres"; import { notFound } from "next/navigation"; import Link from "next/link"; import { fetchTarifas } from "@/lib/worker"; import { buildDeepLink } from "@/lib/deeplink"; import { Gallery } from "@/components/site/Gallery"; import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
 
   const p = await lerPousada();
   const comods = await sql`SELECT cm.* FROM comodidades cm JOIN quarto_comodidades qc ON qc.comodidade_id = cm.id WHERE qc.quarto_id = ${q.id}`;
-  const fotos = await sql`SELECT * FROM midias WHERE quarto_id = ${q.id} ORDER BY ordem`;
+  const fotos = await sql`SELECT * FROM midias WHERE quarto_id = ${q.id} ORDER BY destaque DESC, ordem, criado_em`;
   await sql.end();
 
   let preco: any = null;
@@ -32,16 +32,16 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
     ? fotos.map((f: any) => ({ url: f.url, alt: f.alt }))
     : [{ url: "", alt: q.nome }];
 
-  const wa = p?.whatsapp?.replace(/\D/g, "") || "";
+  const wa = digitosWhatsApp(p?.whatsapp);
   const waMsg = `Olá! Tenho interesse no quarto *${q.nome}* da Pousada Marimar.`;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <Link href="/" className="hover:text-marca">Home</Link>
+        <Link href="/" className="inline-block py-2.5 hover:text-marca">Home</Link>
         <span>/</span>
-        <Link href="/quartos" className="hover:text-marca">Quartos</Link>
+        <Link href="/quartos" className="inline-block py-2.5 hover:text-marca">Quartos</Link>
         <span>/</span>
         <span className="text-gray-600">{q.nome}</span>
       </nav>
@@ -49,7 +49,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
         {/* Galeria - ocupa 3 colunas */}
         <div className="lg:col-span-3">
-          <Gallery images={galleryImages} />
+          <Gallery images={galleryImages} titulo={q.nome} />
         </div>
 
         {/* Info - ocupa 2 colunas */}

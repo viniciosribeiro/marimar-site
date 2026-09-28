@@ -4,7 +4,7 @@ import { tituloQuarto, resumir, brl, pluralizar, escassez, dataBR } from "@/lib/
 import Link from "next/link";
 import Image from "next/image";
 import postgres from "postgres";
-import { lerPousada } from "@/lib/pousada";
+import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
   // Ja lida pelo layout nesta mesma requisicao: nao abre outra conexao.
   // Sem o WhatsApp o botao some; a busca de quartos continua.
   const pousadaData = await lerPousada();
-  whatsapp = pousadaData?.whatsapp?.replace(/\D/g, "") || "";
+  whatsapp = digitosWhatsApp(pousadaData?.whatsapp);
 
   if (v && !v.ok) {
     erro = v.motivo === "ordem"
@@ -46,7 +46,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       const locais = ids.length > 0 ? await sql`SELECT q.*, c.nome as cat_nome FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id WHERE q.desbravador_room_id = ANY(${ids})` : [];
       const map = new Map(locais.map((l: any) => [l.desbravador_room_id, l]));
       const quartoIds = locais.map((l: any) => l.id);
-      const fotos = quartoIds.length > 0 ? await sql`SELECT * FROM midias WHERE quarto_id = ANY(${quartoIds}) ORDER BY ordem` : [];
+      const fotos = quartoIds.length > 0 ? await sql`SELECT * FROM midias WHERE quarto_id = ANY(${quartoIds}) ORDER BY destaque DESC, ordem` : [];
       const fotosMap = new Map<string, any[]>();
       for (const f of fotos) { if (!fotosMap.has(f.quarto_id)) fotosMap.set(f.quarto_id, []); fotosMap.get(f.quarto_id)!.push(f); }
 
@@ -80,33 +80,38 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-2">Reservar</h1>
-      <p className="text-gray-500 mb-8">Consulte disponibilidade em tempo real</p>
+      <span className="inline-flex items-center gap-2 text-marca font-semibold text-[0.72rem] uppercase tracking-[0.24em]">
+        <span className="h-px w-6 bg-marca/60" aria-hidden />Reservas
+      </span>
+      <h1 className="font-titulo text-[2.2rem] leading-tight lg:text-5xl font-bold text-tinta mt-3 mb-2">Disponibilidade</h1>
+      <p className="text-tinta-suave mb-8">Tarifas em tempo real, direto com a pousada.</p>
 
-      <form className="bg-white rounded-marca shadow p-4 mb-8 flex flex-col sm:flex-row gap-3 max-w-3xl">
-        <label className="flex-1 min-w-0">
-          <span className="block text-xs text-gray-500 mb-1">Check-in</span>
-          <input type="date" name="check_in" defaultValue={ci} required className="w-full border rounded-lg px-3 py-2 text-sm" />
+      {/* Mesmo padrão da busca da home: campos largos e altos no celular (os
+          seletores tinham a largura do número e eram difíceis de tocar). */}
+      <form className="bg-white rounded-[calc(var(--raio)*1.5)] shadow-marca-forte border border-linha/60 p-4 sm:p-5 mb-10 grid grid-cols-2 sm:grid-cols-5 gap-3 max-w-4xl">
+        <label className="col-span-2 sm:col-span-1 min-w-0">
+          <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Check-in</span>
+          <input type="date" name="check_in" defaultValue={ci} required className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none" />
         </label>
-        <label className="flex-1 min-w-0">
-          <span className="block text-xs text-gray-500 mb-1">Check-out</span>
-          <input type="date" name="check_out" defaultValue={co} required className="w-full border rounded-lg px-3 py-2 text-sm" />
+        <label className="col-span-2 sm:col-span-1 min-w-0">
+          <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Check-out</span>
+          <input type="date" name="check_out" defaultValue={co} required className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none" />
         </label>
-        <label>
-          <span className="block text-xs text-gray-500 mb-1">Adultos</span>
-          <select name="adultos" defaultValue={adultos} className="border rounded-lg px-3 py-2 text-sm"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        <label className="min-w-0">
+          <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Adultos</span>
+          <select name="adultos" defaultValue={adultos} className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none"><option>1</option><option>2</option><option>3</option><option>4</option></select>
         </label>
-        <label>
-          <span className="block text-xs text-gray-500 mb-1">Crianças</span>
-          <select name="criancas" defaultValue={criancas} className="border rounded-lg px-3 py-2 text-sm"><option>0</option><option>1</option><option>2</option><option>3</option></select>
+        <label className="min-w-0">
+          <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Crianças</span>
+          <select name="criancas" defaultValue={criancas} className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none"><option>0</option><option>1</option><option>2</option><option>3</option></select>
         </label>
-        <button type="submit" className="bg-marca text-marca-texto px-6 rounded-lg hover:bg-marca-hover font-medium self-end py-2">Buscar</button>
+        <button type="submit" className="col-span-2 sm:col-span-1 self-end h-12 rounded-full bg-marca text-marca-texto hover:bg-marca-hover font-semibold shadow-marca transition-marca">Buscar</button>
       </form>
 
       {erro && (
         <div className="text-red-700 bg-red-50 border border-red-100 p-4 rounded-lg mb-6">
           <p className="text-sm">{erro}</p>
-          {whatsapp && <a href={`https://wa.me/${whatsapp}`} target="_blank" className="inline-block mt-2 text-sm font-medium text-green-700 hover:underline">💬 Falar no WhatsApp</a>}
+          {whatsapp && <a href={`https://wa.me/${whatsapp}`} target="_blank" className="inline-block mt-1 py-2.5 text-sm font-medium text-green-700 hover:underline">💬 Falar no WhatsApp</a>}
         </div>
       )}
 

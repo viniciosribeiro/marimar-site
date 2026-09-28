@@ -1,23 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CrudForm } from "./CrudForm";
 import { DeleteButton } from "./DeleteButton";
 import { Modal } from "./Modal";
 
 export function CrudPage({ title, subtitle, lista, columns, fields, criarAction, editarAction, excluirAction, editId, novo, erro, ok, basePath }: any) {
   const router = useRouter();
+  const params = useSearchParams();
   const isEdit = !!editId;
-  const [modalOpen, setModalOpen] = useState(false);
-
-  useEffect(() => {
-    if (editId || novo) setModalOpen(true);
-  }, [editId, novo]);
+  /* O botão "+ Novo" leva a ?novo=1. Antes a janela só abria se a PÁGINA
+     repassasse `novo` — e 6 das 7 telas não repassavam: FAQ, pacotes,
+     depoimentos, categorias, comodidades e fotos simplesmente não deixavam
+     criar nada. Agora o próprio componente lê a URL. */
+  const pedido = Boolean(editId || novo || params.get("novo") === "1");
+  // Qual pedido foi fechado: fechar e clicar em "+ Novo" de novo reabre.
+  const chave = `${editId ?? ""}|${params.toString()}`;
+  const [fechadoEm, setFechadoEm] = useState<string | null>(null);
+  const modalOpen = pedido && fechadoEm !== chave;
 
   const closeModal = () => {
-    setModalOpen(false);
+    setFechadoEm(chave);
     router.push(basePath);
   };
 
@@ -79,7 +84,7 @@ export function CrudPage({ title, subtitle, lista, columns, fields, criarAction,
                     <div className="flex items-center justify-end gap-2">
                       {editarAction && (
                         <Link href={`${basePath}?editar=${item.id}`}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+                          className="inline-flex items-center text-xs font-medium px-3.5 min-h-10 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
                           Editar
                         </Link>
                       )}

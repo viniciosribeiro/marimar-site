@@ -10,6 +10,10 @@ interface Field {
   options?: { value: string; label: string }[];
   required?: boolean;
   className?: string;
+  /** textarea: linhas visiveis. */
+  rows?: number;
+  /** Texto de apoio abaixo do campo. */
+  ajuda?: string;
 }
 
 export function CrudForm({
@@ -39,8 +43,23 @@ export function CrudForm({
           if (f.type === "checkbox") {
             return (
               <div key={f.name} className="flex items-center gap-2">
-                <input type="checkbox" name={f.name} defaultChecked={!!f.defaultValue} id={`f-${f.name}`} />
+                <input type="checkbox" name={f.name} defaultChecked={!!f.defaultValue} id={`f-${f.name}`} className="w-4 h-4" />
                 <label htmlFor={`f-${f.name}`} className="text-xs">{f.label}</label>
+              </div>
+            );
+          }
+          if (f.type === "textarea") {
+            return (
+              <div key={f.name} className="sm:col-span-2 lg:basis-full">
+                <label className="block text-xs font-medium mb-1">{f.label}</label>
+                <textarea
+                  name={f.name}
+                  defaultValue={f.defaultValue}
+                  required={f.required}
+                  rows={f.rows ?? 4}
+                  className="w-full border rounded p-2 text-sm leading-relaxed"
+                />
+                {f.ajuda && <p className="text-[11px] text-gray-400 mt-1">{f.ajuda}</p>}
               </div>
             );
           }
@@ -66,6 +85,7 @@ export function CrudForm({
                 required={f.required}
                 className="w-full border rounded p-2 text-sm"
               />
+              {f.ajuda && <p className="text-[11px] text-gray-400 mt-1">{f.ajuda}</p>}
             </div>
           );
         })}

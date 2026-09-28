@@ -1,9 +1,9 @@
 import postgres from "postgres";
 import type { Metadata } from "next";
 import Image from "next/image";
-import {
-  CHEGADA_ETAPAS, TRAVESSIA, ENDERECO, SOBRE_A_ILHA, COMPLEXO, ATUALIZADO_EM, RESTAURANTE,
-} from "@/lib/conteudo-pousada";
+import { ENDERECO, COMPLEXO, ATUALIZADO_EM, RESTAURANTE } from "@/lib/conteudo-pousada";
+import { lerConteudo } from "@/lib/conteudo-editavel";
+import { comSql } from "@/lib/db-conexao";
 import { brl } from "@/lib/format";
 import { RotaInteligente } from "@/components/site/RotaInteligente";
 import {
@@ -24,12 +24,13 @@ async function buscarFotos() {
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     const [capa] = await sql`
-      SELECT url, alt FROM midias WHERE quarto_id IS NULL
-      ORDER BY (alt ILIKE '%aérea%' OR url ILIKE '%dji%') DESC, largura DESC NULLS LAST LIMIT 1
+      SELECT url, alt FROM midias WHERE quarto_id IS NULL AND secao IN ('praia', 'pousada')
+      ORDER BY (alt ILIKE '%aérea%' OR url ILIKE '%dji%') DESC, (secao = 'praia') DESC, largura DESC NULLS LAST LIMIT 1
     `;
     const [fachada] = await sql`
-      SELECT url FROM midias WHERE quarto_id IS NULL AND alt ILIKE '%Pousada Marimar%'
-      ORDER BY largura DESC NULLS LAST LIMIT 1
+      SELECT url FROM midias
+      WHERE quarto_id IS NULL AND (secao = 'restaurante' OR (secao = 'pousada' AND alt ILIKE '%Pousada Marimar%'))
+      ORDER BY (secao = 'restaurante') DESC, destaque DESC, ordem, largura DESC NULLS LAST LIMIT 1
     `;
     await sql.end();
     return { capa: (capa as any)?.url ?? null, fachada: (fachada as any)?.url ?? null };
@@ -42,6 +43,8 @@ async function buscarFotos() {
 const ICONES = ["🚌", "⛴️", "🚶"];
 
 export default async function ComoChegarPage() {
+  // Editável em Admin → Textos da ilha e chegada; sem nada salvo, vale o padrão do código.
+  const { CHEGADA_ETAPAS, TRAVESSIA, SOBRE_A_ILHA } = await comSql(lerConteudo);
   const fotos = await buscarFotos();
 
   return (

@@ -116,6 +116,10 @@ export const midias = pgTable("midias", {
   altura: integer("altura"),
   ordem: integer("ordem").default(0).notNull(),
   destaque: boolean("destaque").default(false).notNull(),
+  /** Onde a foto aparece: ver SECOES_FOTO em src/lib/fotos.ts (migration 0015). */
+  secao: text("secao").default("pousada").notNull(),
+  /** Caminho no Vercel Blob, para apagar o arquivo junto com a linha. */
+  pathname: text("pathname"),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
 
@@ -172,6 +176,8 @@ export const politicas = pgTable("politicas", {
   pet: boolean("pet").default(false),
   pet_texto: text("pet_texto"),
   formas_pagamento: jsonb("formas_pagamento").$type<string[]>().default(sql`'[]'::jsonb`),
+  /** Regras para criancas em texto livre (migration 0015). */
+  criancas_texto: text("criancas_texto"),
   regras_gerais: text("regras_gerais"),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
   atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
@@ -185,7 +191,7 @@ export const faq = pgTable("faq", {
   tags: jsonb("tags").$type<string[]>().default(sql`'[]'::jsonb`),
   ordem: integer("ordem").default(0).notNull(),
   ativo: boolean("ativo").default(true).notNull(),
-  visivel_agente: boolean("visivel_agente").default(false).notNull(),
+  visivel_agente: boolean("visivel_agente").default(true).notNull(),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
 

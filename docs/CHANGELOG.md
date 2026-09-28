@@ -6,6 +6,44 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-28 (3) — Painel x Marina, fotos, menu e home novos
+**Autor:** Claude (Claude Code)
+**Migration:** 0015 · relatório completo: `docs/CHANGELOG-IA.md` ("Terceira rodada")
+
+### O que a pousada salvava e não chegava a lugar nenhum
+- "+ Novo" não abria em 6 telas (FAQ, pacotes, depoimentos, categorias,
+  comodidades, fotos).
+- Editar FAQ, pacote, depoimento, categoria ou comodidade **desativava** o
+  item; toda FAQ criada nascia invisível para a Marina; toda suíte criada
+  nascia inativa.
+- A Marina recebia só os primeiros 200 caracteres de cada FAQ.
+- WhatsApp do site sem o 55 (`wa.me/41995012920` abre um número da Suíça).
+- Sem tela para contato da pousada, comodidades (da pousada e por suíte),
+  crianças, formas de pagamento, itens inclusos de pacote, travessia, ilha e
+  eventos — a Marina usava o que estava fixo no código.
+- Excluir no painel: "Cancelar" excluía mesmo assim.
+
+### Dados falsos do seed chegando à Marina
+FAQs de exemplo ("aceita pets até 15 kg", "12x no cartão, Pix com 5%"),
+políticas de exemplo e "a pousada tem piscina, estacionamento, pet friendly".
+A migration 0015 desliga só o que casa com o texto exato do seed. O
+`db:corrigir` deixou de sobrescrever políticas e depoimentos editados.
+
+### Fotos
+Seção por foto (pousada, suíte, restaurante, café, praia, eventos). Tela de
+fotos nova com envio de arquivo, uma suíte por vez, capa, ordem, mover e
+aviso de foto repetida. Galeria pública por seção e por suíte, com tela
+cheia.
+
+### Visual
+Menu transparente sobre a foto e translúcido ao rolar; menu do celular em
+tela cheia; home editorial com fotos grandes, suítes em carrossel no
+celular, ondas e folhagens em SVG nas cores do tema. `/quartos` e
+`/reservar` no mesmo padrão. Varredura em 360/390/768/1280px.
+
+**Depois do deploy:** `npm run db:migrate` (0015) e reclassificar em Admin →
+Fotos as fotos importadas do WordPress que ficaram em "A pousada".
+
 ## 2026-09-28 (2) — Topo no celular e a pousada como protagonista
 **Autor:** Claude (Claude Code)
 **Migration:** 0014 (só dados; roda com `npm run db:migrate`)

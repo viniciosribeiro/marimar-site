@@ -237,6 +237,15 @@ body {
    compor no GPU. O componente so as aplica quando as animacoes estao
    ligadas (botao do editor + prefers-reduced-motion), entao nao ha
    `@media` aqui: a decisao ja foi tomada antes de a classe existir. */
+/* Foto do visualizador em tela cheia (Lightbox.tsx). */
+@keyframes aparecer {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-[aparecer"] { animation: none !important; }
+}
+
 @keyframes banner-fade {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -346,3 +355,21 @@ body {
     border: 0;
   }
 }
+
+/* Faixas que rolam na horizontal (abas da galeria): rolam com o dedo, sem
+   a barra cinza que o Windows desenha por baixo. */
+.no-scrollbar { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ── Menu do celular: entra deslizando da direita, fundo escurece junto ── */
+@keyframes gaveta-entrar { from { transform: translateX(8%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fundo-entrar { from { opacity: 0; } to { opacity: 1; } }
+.anim-gaveta { animation: gaveta-entrar .35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-gaveta-fundo { animation: fundo-entrar .3s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-gaveta, .anim-gaveta-fundo { animation: none; }
+}
+
+/* Altura do cabecalho — medida em runtime pelo MenuPrincipal. Este valor
+   so vale ate a primeira medicao (e sem JavaScript). */
+:root { --altura-topo: max(4rem, calc(var(--logo-altura) + 1.25rem)); }

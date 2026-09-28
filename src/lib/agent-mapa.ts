@@ -46,7 +46,7 @@ export const AREAS: AreaDeConhecimento[] = [
     rota: "/api/agent/pousada",
     responde: ["Que horas é o check-in?", "Aceita cachorro?", "Como funciona o cancelamento?", "Tem estacionamento?"],
     origem: "banco",
-    editarEm: "/admin/politicas",
+    editarEm: "/admin/pousada",
     contar: conta((sql) => sql`SELECT COUNT(*)::int AS n FROM politicas`),
   },
   {
@@ -70,7 +70,8 @@ export const AREAS: AreaDeConhecimento[] = [
     titulo: "Como chegar na pousada",
     rota: "/api/agent/chegar",
     responde: ["Como chego aí?", "Que barco eu pego?", "Onde deixo o carro?", "Quanto custa a travessia?"],
-    origem: "fixo",
+    origem: "banco",
+    editarEm: "/admin/conteudo",
   },
   {
     chave: "restaurante",
@@ -122,14 +123,16 @@ export const AREAS: AreaDeConhecimento[] = [
     titulo: "A Ilha do Mel",
     rota: "/api/agent/ilha",
     responde: ["Como é a ilha?", "Tem carro lá?", "O que dá para fazer?"],
-    origem: "fixo",
+    origem: "banco",
+    editarEm: "/admin/conteudo",
   },
   {
     chave: "eventos",
     titulo: "Casamentos e eventos",
     rota: "/api/agent/eventos",
     responde: ["Dá para casar aí?", "Vocês recebem confraternização?"],
-    origem: "fixo",
+    origem: "banco",
+    editarEm: "/admin/conteudo",
   },
   {
     chave: "documentos",
