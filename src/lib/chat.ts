@@ -127,27 +127,6 @@ export function vozConfigurada(): boolean {
 }
 
 /**
- * Endereco da sintese na ElevenLabs.
- *
- * `eleven_multilingual_v2` e `apply_text_normalization: "on"` sao os mesmos
- * do WhatsApp, de proposito: a voz da pousada tem que ser uma so, e sem a
- * normalizacao ela le "26/09" como digito solto em vez de data.
- */
-export function urlVoz(): string {
-  const voz = process.env.ELEVENLABS_VOICE_ID;
-  return `https://api.elevenlabs.io/v1/text-to-speech/${voz}`;
-}
-
-export function corpoVoz(texto: string) {
-  return {
-    text: texto,
-    model_id: "eleven_multilingual_v2",
-    language_code: "pt",
-    apply_text_normalization: "on",
-  };
-}
-
-/**
  * Perguntas sugeridas no primeiro contato.
  *
  * Não são enfeite: um campo de texto vazio faz a pessoa não saber o que
