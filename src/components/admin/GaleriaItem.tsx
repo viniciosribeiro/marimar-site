@@ -16,7 +16,7 @@ export function GaleriaItem({ fotos, itemId }: { fotos: any[]; itemId: string })
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
-      {fotos.map((f, i) => (
+      {fotos.map((f) => (
         <figure key={f.id} className={`relative rounded-xl overflow-hidden border bg-white ${
           f.capa ? "border-gray-900 ring-1 ring-gray-900" : "border-gray-200"
         }`}>

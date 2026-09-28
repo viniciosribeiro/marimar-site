@@ -28,24 +28,28 @@ export default async function IntegracoesPage() {
      exatamente quando algo estava fora do ar — a hora em que ela e aberta. */
 
   // Testa Worker Desbravador
-  let workerData: any = null; let workerLat = 0; let workerErr = "";
   const testeWorker = (async () => {
-    try { const t0 = Date.now(); workerData = await fetchTarifas(checkIn, checkOut, 2); workerLat = Date.now() - t0; } catch (e: any) { workerErr = e.message; }
+    try { const t0 = Date.now(); const dados = await fetchTarifas(checkIn, checkOut, 2); return { dados, lat: Date.now() - t0, erro: "" }; }
+    catch (e: any) { return { dados: null, lat: 0, erro: e.message as string }; }
   })();
 
   // Testa API do Agente
-  const agentTests: any = {};
-  const testesAgente = ["pousada", "quartos", "faq", "pacotes"].map(async (ep) => {
-    try { const t0 = Date.now(); const r = await fetch(`${baseUrl}/api/agent/${ep}`, { headers: { Authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(5000) }); agentTests[ep] = { ok: r.ok, status: r.status, lat: Date.now() - t0 }; } catch { agentTests[ep] = { ok: false, status: 0, lat: 0 }; }
+  const endpoints = ["pousada", "quartos", "faq", "pacotes"];
+  const testesAgente = endpoints.map(async (ep) => {
+    try { const t0 = Date.now(); const r = await fetch(`${baseUrl}/api/agent/${ep}`, { headers: { Authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(5000) }); return { ok: r.ok, status: r.status, lat: Date.now() - t0 }; }
+    catch { return { ok: false, status: 0, lat: 0 }; }
   });
 
   // Testa API Disponibilidade pública
-  let dispOk = false; let dispLat = 0;
   const testeDisp = (async () => {
-    try { const t0 = Date.now(); const r = await fetch(`${baseUrl}/api/disponibilidade?check_in=${checkIn}&check_out=${checkOut}&adultos=2`, { signal: AbortSignal.timeout(8000) }); dispOk = r.ok; dispLat = Date.now() - t0; } catch {}
+    try { const t0 = Date.now(); const r = await fetch(`${baseUrl}/api/disponibilidade?check_in=${checkIn}&check_out=${checkOut}&adultos=2`, { signal: AbortSignal.timeout(8000) }); return { ok: r.ok, lat: Date.now() - t0 }; }
+    catch { return { ok: false, lat: 0 }; }
   })();
 
-  await Promise.all([testeWorker, ...testesAgente, testeDisp]);
+  const [worker, resultadosAgente, disp] = await Promise.all([testeWorker, Promise.all(testesAgente), testeDisp]);
+  const workerData: any = worker.dados; const workerLat = worker.lat; const workerErr = worker.erro;
+  const agentTests: any = Object.fromEntries(endpoints.map((ep, k) => [ep, resultadosAgente[k]]));
+  const dispOk = disp.ok; const dispLat = disp.lat;
 
   /* ── Marina no site ──
      Testa o gateway do OpenClaw como o /api/chat faria: mesma URL, mesmo
@@ -285,7 +289,7 @@ export default async function IntegracoesPage() {
           <div>POST /lead → registrar_lead</div>
           <div>&nbsp;</div>
           <div># Testar:</div>
-          <div>curl -H "Authorization: Bearer {apiKey}" {baseUrl}/api/agent/pousada</div>
+          <div>{`curl -H "Authorization: Bearer ${apiKey}" ${baseUrl}/api/agent/pousada`}</div>
         </div>
       </div>
     </div>
