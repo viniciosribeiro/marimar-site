@@ -114,35 +114,28 @@ async function main() {
   console.log(`✅ quarto_comodidades — ${qcCount}`);
 
   // ─── 6. Pousada-Comodidades ────────────────────────────────
-  for (const slug of ["wifi", "restaurante", "internet", "cafe-da-manha", "piscina", "pet-friendly", "berco", "estacionamento", "passeios-guiados", "recepcao-24h", "jardim"]) {
+  // Só o confirmado no briefing. Piscina, pet friendly, estacionamento e
+  // recepção 24h NÃO existem — a Marina lia isto como fato.
+  for (const slug of ["wifi", "wifi-free", "restaurante", "internet", "cafe-da-manha", "jardim"]) {
     const [c] = await sql`SELECT id FROM comodidades WHERE slug = ${slug}`;
     if (c) await sql`INSERT INTO pousada_comodidades (comodidade_id) VALUES (${c.id}) ON CONFLICT DO NOTHING`;
   }
   console.log("✅ pousada_comodidades");
 
   // ─── 7. Políticas ──────────────────────────────────────────
-  await sql`INSERT INTO politicas (diaria_minima_padrao, faixas_crianca, check_in, check_out, cancelamento, pet, pet_texto, formas_pagamento, regras_gerais) VALUES (1,
-    ${JSON.stringify([{ idade_min: 0, idade_max: 5, regra: "gratis", valor: 0 }, { idade_min: 6, idade_max: 11, regra: "percentual", valor: 50 }, { idade_min: 12, idade_max: 17, regra: "valor", valor: 120 }])}::jsonb,
-    '14:00', '12:00',
-    'Cancelamento gratuito ate 7 dias antes. Entre 7 e 3 dias: 50%. Menos de 3 dias: 100%.',
-    true, 'Animais de pequeno porte (ate 15 kg) sob consulta. Taxa de R$ 50/dia.',
-    ${JSON.stringify(["PIX (5% desconto)", "Cartao de credito (ate 12x)", "Cartao de debito"])}::jsonb,
-    'Reserva confirmada com 50% do valor. Proibido fumar areas internas (multa R$ 500).')`;
+  // Valores do briefing da administração (18/09/2026) — não exemplos.
+  await sql`INSERT INTO politicas (diaria_minima_padrao, check_in, check_out, cancelamento, pet, pet_texto, regras_gerais) VALUES (1,
+    '14:00', '11:00',
+    'Reservas não reembolsáveis. Da data da reserva até uma semana antes da hospedagem: taxa de 50%. De uma semana antes até o check-in: taxa de 100%. Condições climáticas não geram automaticamente alteração ou cancelamento.',
+    false, 'Animais de estimação não são aceitos.',
+    'Proibido fumar nas suítes. Barulho permitido somente até 22h. Café da manhã servido das 08h às 10h, incluso na diária.')`;
   console.log("✅ politicas");
 
   // ─── 8. FAQ ────────────────────────────────────────────────
-  const faqs = [
-    { p: "Como chegar na Ilha do Mel?", r: "Acesso por barco: Pontal do Sul (30 min, R$ 30) ou Paranagua (1h30, R$ 25). Do trapiche, 10 min de caminhada.", va: true },
-    { p: "Qual o horario de check-in e check-out?", r: "Check-in a partir das 14h. Check-out ate as 12h.", va: true },
-    { p: "Aceitam criancas?", r: "Sim! Temos quartos familia. Criancas ate 5 anos gratis.", va: true },
-    { p: "Tem Wi-Fi?", r: "Sim, Wi-Fi gratuito em todas as areas.", va: true },
-    { p: "Aceitam pets?", r: "Sim, animais ate 15 kg sob consulta. Taxa de R$ 50/dia.", va: true },
-    { p: "Qual a politica de cancelamento?", r: "Gratuito ate 7 dias antes. Entre 7 e 3 dias: 50%. Menos de 3 dias: 100%.", va: false },
-    { p: "Aceitam pagamento parcelado?", r: "Sim! Cartao em ate 12x, PIX com 5% de desconto.", va: true },
-    { p: "O que devo levar?", r: "Protetor solar, repelente, calcado confortavel, mochila leve e dinheiro em especie.", va: false },
-    { p: "Tem estacionamento?", r: "Nao ha carros na ilha. Estacionamento em Pontal do Sul (~R$ 30/dia).", va: false },
-    { p: "O cafe da manha esta incluso?", r: "Sim! Cafe da manha incluso em todas as diarias.", va: true },
-  ];
+  // As perguntas padrão vivem no código (FAQ_CANONICO), conferidas com o
+  // briefing. As 10 de exemplo que existiam aqui tinham informação falsa
+  // ("aceita pets", "12x no cartão") e chegavam à Marina — ver migration 0015.
+  const faqs: { p: string; r: string; va: boolean }[] = [];
   for (let i = 0; i < faqs.length; i++) {
     await sql`INSERT INTO faq (pergunta, resposta, ordem, ativo, visivel_agente) VALUES (${faqs[i].p}, ${faqs[i].r}, ${i + 1}, true, ${faqs[i].va})`;
   }

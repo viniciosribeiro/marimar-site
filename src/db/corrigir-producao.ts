@@ -5,6 +5,11 @@
  * Idempotente: so altera o que ainda esta errado. Pode rodar quantas vezes
  * quiser. Nada e apagado — registros indevidos sao desativados, nao removidos.
  *
+ * Ate 28/09/2026 isso NAO era verdade para politicas e depoimentos: o script
+ * sobrescrevia as politicas inteiras e desativava TODOS os depoimentos a
+ * cada execucao — rodar de novo apagaria o que a administracao editou pelo
+ * painel. Agora so toca o que ainda esta com o texto de exemplo do seed.
+ *
  *   npm run db:corrigir
  *
  * CADA PASSO E INDEPENDENTE. Na primeira execucao real, um erro de nome de
@@ -83,9 +88,14 @@ async function main() {
   // A coluna e `pet` (boolean) + `pet_texto`, nao `pets`. Foi o que quebrou
   // a primeira execucao.
   await passo("Políticas", async () => {
-    const [existe] = await sql`SELECT id FROM politicas LIMIT 1`;
+    const [existe] = await sql`SELECT id, pet_texto FROM politicas LIMIT 1`;
     if (!existe) {
       console.log("• Tabela politicas vazia — cadastre pelo admin");
+      return;
+    }
+    // Só o texto de EXEMPLO do seed. Política editada pelo painel é da pousada.
+    if ((existe as any).pet_texto !== "Animais de pequeno porte (ate 15 kg) sob consulta. Taxa de R$ 50/dia.") {
+      console.log("• Políticas já editadas pela administração — não tocadas");
       return;
     }
     await sql`
@@ -118,10 +128,12 @@ async function main() {
   // O briefing e explicito: depoimento nao pode ser inventado e qualquer
   // citacao precisa identificar a plataforma de origem.
   await passo("Depoimentos", async () => {
-    const deps = await sql`SELECT id, autor, origem FROM depoimentos WHERE ativo = true`;
+    // Só os SEM plataforma: é o que o briefing proíbe. Os com origem podem
+    // ter sido cadastrados pela administração e ficam.
+    const deps = await sql`SELECT id, autor, origem FROM depoimentos WHERE ativo = true AND coalesce(trim(origem), '') = ''`;
     if (!deps.length) { console.log("• Nenhum depoimento ativo"); return; }
     for (const d of deps) console.log(`   - "${d.autor}" (origem: ${d.origem || "não informada"})`);
-    await sql`UPDATE depoimentos SET ativo = false`;
+    await sql`UPDATE depoimentos SET ativo = false WHERE id = ANY(${deps.map((d: any) => d.id)})`;
     console.log(`✅ ${deps.length} depoimento(s) sem origem verificada desativado(s)`);
     console.log("   O site passa a mostrar as notas agregadas reais das plataformas.");
   });

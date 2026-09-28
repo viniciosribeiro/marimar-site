@@ -370,16 +370,29 @@ export const PENDENTE_CONFIRMACAO = [
    acrescenta o que a administracao cadastrar no admin, sem duplicar.
    ───────────────────────────────────────────────────────────────── */
 
-export const FAQ_CANONICO: { grupo: string; itens: { p: string; r: string }[] }[] = [
+/**
+ * Perguntas frequentes padrão. É uma FUNÇÃO porque cinco respostas citam a
+ * travessia e os eventos, que a pousada edita no painel (Admin → Ilha,
+ * chegada e eventos): como constante, o preço do barco ficava congelado no
+ * valor do código mesmo depois de corrigido. A página /faq chama com o
+ * conteúdo atual; sem argumento, valem os valores do código.
+ */
+export function faqCanonico(
+  c: { TRAVESSIA: { terminais: readonly { endereco: string }[]; avisoDestino: string; duracao: string; estacionamento: string;
+         precos: { ida: number; idaEVolta: number; gratuidade: string; consultadoEm: string } ; operadora: string };
+       EVENTOS: { avisoPendente: string } } = { TRAVESSIA, EVENTOS },
+): { grupo: string; itens: { p: string; r: string }[] }[] {
+  const { TRAVESSIA: T, EVENTOS: E } = c;
+  return [
   {
     grupo: "Localização e chegada",
     itens: [
       { p: "O restaurante e a pousada são a mesma casa?", r: COMPLEXO.respostaFaq },
       { p: "Qual o ponto correto no mapa?", r: `O ponto de referência é o ${RESTAURANTE.nome} (Plus Code ${ENDERECO.plusCode}). O restaurante é da pousada, e a entrada da pousada é por ali.` },
-      { p: "De onde saem os barcos?", r: `Os principais embarques são Pontal do Sul (${TRAVESSIA.terminais[0].endereco}) e Paranaguá (${TRAVESSIA.terminais[1].endereco}).` },
-      { p: "Qual destino devo escolher na travessia?", r: TRAVESSIA.avisoDestino },
-      { p: "Quanto custa e quanto demora a travessia?", r: `O trecho Pontal do Sul–Encantadas leva ${TRAVESSIA.duracao}. Em ${TRAVESSIA.precos.consultadoEm}, a venda oficial indicava cerca de R$ ${TRAVESSIA.precos.ida.toFixed(2).replace(".", ",")} a ida e R$ ${TRAVESSIA.precos.idaEVolta.toFixed(2).replace(".", ",")} ida e volta, com gratuidade para ${TRAVESSIA.precos.gratuidade.toLowerCase()}. Valores e horários mudam sem aviso — confirme no site da ${TRAVESSIA.operadora}.` },
-      { p: "Tem estacionamento?", r: TRAVESSIA.estacionamento },
+      { p: "De onde saem os barcos?", r: `Os principais embarques são Pontal do Sul (${T.terminais[0].endereco}) e Paranaguá (${T.terminais[1].endereco}).` },
+      { p: "Qual destino devo escolher na travessia?", r: T.avisoDestino },
+      { p: "Quanto custa e quanto demora a travessia?", r: `O trecho Pontal do Sul–Encantadas leva ${T.duracao}. Em ${T.precos.consultadoEm}, a venda oficial indicava cerca de R$ ${T.precos.ida.toFixed(2).replace(".", ",")} a ida e R$ ${T.precos.idaEVolta.toFixed(2).replace(".", ",")} ida e volta, com gratuidade para ${T.precos.gratuidade.toLowerCase()}. Valores e horários mudam sem aviso — confirme no site da ${T.operadora}.` },
+      { p: "Tem estacionamento?", r: T.estacionamento },
       { p: "Qual a distância do trapiche até a pousada?", r: "O percurso é curto e feito a pé. Do trapiche de Encantadas você caminha até o Marimar Café Bistrô Bar, o restaurante da pousada, e entra na pousada por ali." },
       { p: "Como levo as malas?", r: "Não há circulação de veículos na ilha, então o trecho do trapiche até a pousada é feito a pé. Leve bagagem que você consiga carregar." },
     ],
@@ -388,7 +401,7 @@ export const FAQ_CANONICO: { grupo: string; itens: { p: string; r: string }[] }[
     grupo: "Estadia",
     itens: [
       { p: "Qual o horário de check-in e check-out?", r: `Check-in a partir das ${POLITICAS.checkIn} e check-out até as ${POLITICAS.checkOut}.` },
-      { p: "Posso chegar mais tarde?", r: `Normalmente aceitamos check-in até as ${POLITICAS.checkInLimite}, porque a chegada depende da travessia da ${TRAVESSIA.operadora}. ${POLITICAS.chegadaTardia}` },
+      { p: "Posso chegar mais tarde?", r: `Normalmente aceitamos check-in até as ${POLITICAS.checkInLimite}, porque a chegada depende da travessia da ${T.operadora}. ${POLITICAS.chegadaTardia}` },
       { p: "O café da manhã está incluso?", r: `Sim. ${CAFE_DA_MANHA.estilo}, servido das ${CAFE_DA_MANHA.horario}.` },
       { p: "Aceitam animais de estimação?", r: POLITICAS.petsTexto },
       { p: "Pode fumar?", r: POLITICAS.fumar },
@@ -402,7 +415,7 @@ export const FAQ_CANONICO: { grupo: string; itens: { p: string; r: string }[] }[
     itens: [
       { p: "A pousada tem restaurante?", r: `Sim. O ${RESTAURANTE.nome} é o restaurante da Pousada Marimar, pé na areia, de frente para a Praia de Encantadas. ${RESTAURANTE.cardapioResumo}` },
       { p: "O restaurante atende quem não está hospedado?", r: RESTAURANTE.avisoPendente },
-      { p: "Fazem eventos e casamentos?", r: `Sim — casamentos, festas e confraternizações, usando o jardim, o restaurante e a proximidade do mar. ${EVENTOS.avisoPendente}` },
+      { p: "Fazem eventos e casamentos?", r: `Sim — casamentos, festas e confraternizações, usando o jardim, o restaurante e a proximidade do mar. ${E.avisoPendente}` },
     ],
   },
   {
@@ -414,3 +427,6 @@ export const FAQ_CANONICO: { grupo: string; itens: { p: string; r: string }[] }[
     ],
   },
 ];
+}
+
+export const FAQ_CANONICO = faqCanonico();

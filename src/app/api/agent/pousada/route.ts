@@ -2,8 +2,9 @@ import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
 import { comSql } from "@/lib/db-conexao";
 import { receberLead } from "@/lib/leads";
+import { lerContato } from "@/lib/pousada";
 import {
-  ENDERECO, CONTATO, CAFE_DA_MANHA, COMODIDADES_CONFIRMADAS, NAO_DISPONIVEL,
+  ENDERECO, CAFE_DA_MANHA, COMODIDADES_CONFIRMADAS, NAO_DISPONIVEL,
 } from "@/lib/conteudo-pousada";
 
 export const dynamic = "force-dynamic";
@@ -37,9 +38,15 @@ export async function GET(request: NextRequest) {
   });
 
   const pol = politicas?.[0] as Record<string, unknown> | undefined;
+  // Contato salvo em Admin → Dados da pousada. Antes era fixo no código e
+  // o que a administração mudasse no painel nunca chegava aqui.
+  const contato = await lerContato(p ?? null);
+  const pagamento = Array.isArray(pol?.formas_pagamento) ? (pol.formas_pagamento as string[]) : [];
   const linhas = [
-    `${p?.nome || "Pousada Marimar"} — ${ENDERECO.completo}`,
-    `WhatsApp: ${CONTATO.whatsapp}`,
+    `${p?.nome || "Pousada Marimar"} — ${p?.endereco || ENDERECO.completo}`,
+    `WhatsApp: ${contato.whatsapp}`,
+    ...(contato.email ? [`E-mail: ${contato.email}`] : []),
+    ...(contato.horarioRecepcao ? [`Recepção: ${contato.horarioRecepcao}`] : []),
     "",
     "POLITICAS (responda SEMPRE com estes valores, nunca de memoria):",
     `• Check-in: ${pol?.check_in ?? "confirmar com a pousada"}`,
@@ -48,6 +55,8 @@ export async function GET(request: NextRequest) {
     `• Cancelamento: ${pol?.cancelamento || "confirmar com a pousada"}`,
     `• Diaria minima padrao: ${pol?.diaria_minima_padrao ?? 1}`,
   ];
+  linhas.push(`• Crianças: ${pol?.criancas_texto || "regras de idade e cobrança dependem da tarifa — consulte a disponibilidade ou confirme com a pousada"}`);
+  linhas.push(`• Pagamento: ${pagamento.length ? pagamento.join(", ") : "confirmar com a pousada"}`);
   if (pol?.regras_gerais) linhas.push(`• Regras gerais: ${pol.regras_gerais}`);
 
   linhas.push(
@@ -65,7 +74,7 @@ export async function GET(request: NextRequest) {
 
   return Response.json({
     ok: true,
-    dados: { pousada: p, politicas: pol || null, comodidades, nao_disponivel: NAO_DISPONIVEL },
+    dados: { pousada: p, contato, politicas: pol || null, comodidades, nao_disponivel: NAO_DISPONIVEL },
     resumo_texto: linhas.join("\n"),
     fonte: "local",
     consultado_em: new Date().toISOString(),

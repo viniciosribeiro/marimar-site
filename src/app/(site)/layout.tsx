@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { lerPousada } from "@/lib/pousada";
+import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 import { MenuPrincipal } from "@/components/site/MenuPrincipal";
 import { MarcaLockup } from "@/components/site/MarcaLockup";
 import { ChatMarina } from "@/components/site/ChatMarina";
@@ -32,7 +32,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   // Mesma consulta do layout raiz, deduplicada por requisicao (lib/pousada.ts).
   const p: Record<string, any> = (await lerPousada()) ?? FALLBACK;
 
-  const wa = p?.whatsapp?.replace(/\D/g, "") || "";
+  const wa = digitosWhatsApp(p?.whatsapp);
   const nome = p?.nome || FALLBACK.nome;
 
   // Faixa de aviso configurada em Admin -> Identidade visual -> Banner.

@@ -1,7 +1,10 @@
 import postgres from "postgres";
+import { lerContato } from "@/lib/pousada";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { FAQ_CANONICO, COMPLEXO, CONTATO } from "@/lib/conteudo-pousada";
+import { faqCanonico, COMPLEXO } from "@/lib/conteudo-pousada";
+import { lerConteudo } from "@/lib/conteudo-editavel";
+import { comSql } from "@/lib/db-conexao";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +14,10 @@ export const metadata: Metadata = {
 };
 
 export default async function FaqPage() {
+  // Respostas que citam travessia e eventos usam o que foi salvo no painel.
+  const FAQ_CANONICO = faqCanonico(await comSql(lerConteudo));
+  // WhatsApp salvo em Admin → Dados da pousada (com o número confirmado como reserva).
+  const contato = await lerContato();
   let extras: any[] = [];
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
@@ -55,7 +62,7 @@ export default async function FaqPage() {
       <div className="mt-12 bg-fundo-suave rounded-marca p-6 text-center">
         <p className="text-sm text-gray-600 mb-4">Não achou o que precisava?</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <a href={`https://wa.me/${CONTATO.whatsappDigitos}`} target="_blank" rel="noopener noreferrer"
+          <a href={`https://wa.me/${contato.whatsappDigitos}`} target="_blank" rel="noopener noreferrer"
             className="bg-marca hover:bg-marca-hover text-marca-texto px-5 py-2.5 rounded-marca text-sm font-semibold transition-marca">
             💬 Perguntar no WhatsApp
           </a>

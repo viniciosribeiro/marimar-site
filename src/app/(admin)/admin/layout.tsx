@@ -9,7 +9,10 @@ import { AdminNav, type Grupo } from "@/components/admin/AdminNav";
 const GRUPOS: Grupo[] = [
   {
     grupo: "Visão geral",
-    itens: [{ href: "/admin", label: "Painel", icone: "📊" }],
+    itens: [
+      { href: "/admin", label: "Painel", icone: "📊" },
+      { href: "/admin/pousada", label: "Dados da pousada", icone: "🏡" },
+    ],
   },
   {
     grupo: "Acomodações",
@@ -35,6 +38,7 @@ const GRUPOS: Grupo[] = [
       { href: "/admin/depoimentos", label: "Depoimentos", icone: "⭐" },
       { href: "/admin/faq", label: "Perguntas frequentes", icone: "❓" },
       { href: "/admin/politicas", label: "Políticas", icone: "📋" },
+      { href: "/admin/conteudo", label: "Ilha, chegada e eventos", icone: "🧭" },
     ],
   },
   {

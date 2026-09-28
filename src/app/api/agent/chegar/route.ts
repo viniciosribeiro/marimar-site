@@ -1,6 +1,8 @@
 import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
-import { TRAVESSIA, CHEGADA_ETAPAS, ENDERECO, SOBRE_A_ILHA } from "@/lib/conteudo-pousada";
+import { ENDERECO } from "@/lib/conteudo-pousada";
+import { lerConteudo } from "@/lib/conteudo-editavel";
+import { comSql } from "@/lib/db-conexao";
 import { brl } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +22,8 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: NextRequest) {
   if (!checkAgentAuth(request)) return agentUnauthorized();
+  // Travessia e etapas editáveis no painel (Admin → Textos da ilha e chegada).
+  const { TRAVESSIA, CHEGADA_ETAPAS, SOBRE_A_ILHA } = await comSql(lerConteudo);
 
   const linhas = [
     `ENDEREÇO: ${ENDERECO.completo ?? [ENDERECO.logradouro, ENDERECO.bairro, ENDERECO.cidade].filter(Boolean).join(", ")}`,

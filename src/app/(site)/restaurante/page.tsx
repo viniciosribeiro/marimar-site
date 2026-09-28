@@ -1,9 +1,10 @@
 import postgres from "postgres";
+import { lerContato } from "@/lib/pousada";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Cardapio } from "@/components/site/Cardapio";
 import {
-  RESTAURANTE, CAFE_DA_MANHA, COMPLEXO, CONTATO, ENDERECO, POLITICAS,
+  RESTAURANTE, CAFE_DA_MANHA, COMPLEXO, ENDERECO, POLITICAS,
 } from "@/lib/conteudo-pousada";
 import {
   Hero, Secao, Onda, TituloSecao, Subtexto, Manuscrita, Aviso, Botao, Selo,
@@ -28,6 +29,8 @@ export const metadata: Metadata = {
  * next.config.ts) para nao quebrar link, QR code ou busca ja indexada.
  */
 export default async function RestaurantePage() {
+  // WhatsApp salvo em Admin → Dados da pousada (com o número confirmado como reserva).
+  const contato = await lerContato();
   let categorias: CategoriaCardapio[] = [];
   let capa: string | null = null;
   let fotoCafe: string | null = null;
@@ -69,14 +72,16 @@ export default async function RestaurantePage() {
     }
 
     const [f1] = await sql`
-      SELECT url FROM midias WHERE quarto_id IS NULL AND alt ILIKE '%Marimar Café Bistrô Bar%'
-      ORDER BY largura DESC NULLS LAST LIMIT 1
+      SELECT url FROM midias
+      WHERE quarto_id IS NULL AND (secao = 'restaurante' OR alt ILIKE '%Marimar Café Bistrô Bar%')
+      ORDER BY (secao = 'restaurante') DESC, destaque DESC, ordem, largura DESC NULLS LAST LIMIT 1
     `;
     capa = (f1 as any)?.url ?? null;
 
     const [f2] = await sql`
-      SELECT url FROM midias WHERE quarto_id IS NULL AND alt ILIKE '%café da manhã%'
-      ORDER BY largura DESC NULLS LAST LIMIT 1
+      SELECT url FROM midias
+      WHERE quarto_id IS NULL AND (secao = 'cafe' OR alt ILIKE '%café da manhã%')
+      ORDER BY (secao = 'cafe') DESC, destaque DESC, ordem, largura DESC NULLS LAST LIMIT 1
     `;
     fotoCafe = (f2 as any)?.url ?? null;
 
@@ -105,7 +110,7 @@ export default async function RestaurantePage() {
         <div className="flex flex-wrap gap-3 mt-7">
           <Botao href="#cardapio" icone="📖">Ver o cardápio</Botao>
           <Botao
-            href={`https://wa.me/${CONTATO.whatsappDigitos}?text=${encodeURIComponent("Olá! Gostaria de reservar uma mesa no Marimar Café Bistrô Bar.")}`}
+            href={`https://wa.me/${contato.whatsappDigitos}?text=${encodeURIComponent("Olá! Gostaria de reservar uma mesa no Marimar Café Bistrô Bar.")}`}
             icone="💬" variante="contorno" externo
           >
             Reservar mesa
@@ -176,7 +181,7 @@ export default async function RestaurantePage() {
               a gente que passamos os pratos do dia e os valores atualizados.
             </p>
             <p className="text-sm text-tinta-suave mb-7">{RESTAURANTE.cardapioResumo}</p>
-            <Botao href={`https://wa.me/${CONTATO.whatsappDigitos}`} icone="💬" externo>
+            <Botao href={`https://wa.me/${contato.whatsappDigitos}`} icone="💬" externo>
               Perguntar no WhatsApp
             </Botao>
           </div>
@@ -202,7 +207,7 @@ export default async function RestaurantePage() {
             </div>
             <div className="flex flex-wrap gap-2 shrink-0">
               <Botao
-                href={`https://wa.me/${CONTATO.whatsappDigitos}?text=${encodeURIComponent("Olá! Gostaria de reservar uma mesa no Marimar Café Bistrô Bar.")}`}
+                href={`https://wa.me/${contato.whatsappDigitos}?text=${encodeURIComponent("Olá! Gostaria de reservar uma mesa no Marimar Café Bistrô Bar.")}`}
                 icone="💬" externo variante="contorno"
               >
                 Reservar mesa
