@@ -3,8 +3,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import postgres from "postgres";
+import { exigirSessao } from "@/lib/admin-sessao";
 
-const sql = () => postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
+// Toda action exige sessao antes de abrir conexao (ver lib/admin-sessao.ts).
+const sql = async () => {
+  await exigirSessao();
+  return postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
+};
 
 export async function criarQuarto(formData: FormData) {
   const nome = formData.get("nome") as string;
@@ -18,9 +23,12 @@ export async function criarQuarto(formData: FormData) {
 
   if (!nome || !slug) redirect("/admin/quartos?erro=Nome+e+slug+obrigatorios");
 
-  const db = sql();
+  const db = await sql();
   const existing = desbravadorRoomId ? await db`SELECT id FROM quartos WHERE desbravador_room_id = ${desbravadorRoomId}` : [];
-  if (existing.length > 0) redirect("/admin/quartos?erro=Este+Motor+ID+ja+esta+vinculado+a+outro+quarto");
+  if (existing.length > 0) {
+    await db.end();
+    redirect("/admin/quartos?erro=Este+Motor+ID+ja+esta+vinculado+a+outro+quarto");
+  }
 
   await db`
     INSERT INTO quartos (nome, slug, categoria_id, desbravador_room_id, ocupacao_max, ordem, descricao, ativo)
@@ -45,10 +53,13 @@ export async function editarQuarto(formData: FormData) {
 
   if (!id || !nome || !slug) redirect("/admin/quartos?erro=Nome+e+slug+obrigatorios");
 
-  const db = sql();
+  const db = await sql();
   if (desbravadorRoomId) {
     const dup = await db`SELECT id FROM quartos WHERE desbravador_room_id = ${desbravadorRoomId} AND id != ${id}`;
-    if (dup.length > 0) redirect("/admin/quartos?erro=Este+Motor+ID+ja+esta+vinculado");
+    if (dup.length > 0) {
+      await db.end();
+      redirect("/admin/quartos?erro=Este+Motor+ID+ja+esta+vinculado");
+    }
   }
 
   await db`
@@ -66,7 +77,7 @@ export async function editarQuarto(formData: FormData) {
 export async function excluirQuarto(formData: FormData) {
   const id = formData.get("id") as string;
   if (!id) redirect("/admin/quartos?erro=ID+invalido");
-  const db = sql();
+  const db = await sql();
   await db`DELETE FROM quartos WHERE id=${id}`;
   await db.end();
   revalidatePath("/admin/quartos");
@@ -75,7 +86,7 @@ export async function excluirQuarto(formData: FormData) {
 
 export async function alternarAtivoQuarto(formData: FormData) {
   const id = formData.get("id") as string;
-  const db = sql();
+  const db = await sql();
   await db`UPDATE quartos SET ativo = NOT ativo WHERE id=${id}`;
   await db.end();
   revalidatePath("/admin/quartos");

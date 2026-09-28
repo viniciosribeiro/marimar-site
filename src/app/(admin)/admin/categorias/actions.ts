@@ -3,8 +3,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import postgres from "postgres";
+import { exigirSessao } from "@/lib/admin-sessao";
 
-const sql = () => postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
+// Toda action exige sessao antes de abrir conexao (ver lib/admin-sessao.ts).
+const sql = async () => {
+  await exigirSessao();
+  return postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
+};
 
 export async function criarCategoria(formData: FormData) {
   const nome = formData.get("nome") as string;
@@ -14,7 +19,7 @@ export async function criarCategoria(formData: FormData) {
 
   if (!nome || !slug) redirect("/admin/categorias?erro=Nome+e+slug+obrigatorios");
 
-  const db = sql();
+  const db = await sql();
   await db`INSERT INTO categorias (nome, slug, descricao, ordem) VALUES (${nome}, ${slug}, ${descricao}, ${ordem})`;
   await db.end();
 
@@ -32,7 +37,7 @@ export async function editarCategoria(formData: FormData) {
 
   if (!id || !nome || !slug) redirect("/admin/categorias?erro=Nome+e+slug+obrigatorios");
 
-  const db = sql();
+  const db = await sql();
   await db`UPDATE categorias SET nome=${nome}, slug=${slug}, descricao=${descricao}, ordem=${ordem}, ativo=${ativo} WHERE id=${id}`;
   await db.end();
 
@@ -44,7 +49,7 @@ export async function excluirCategoria(formData: FormData) {
   const id = formData.get("id") as string;
   if (!id) redirect("/admin/categorias?erro=ID+invalido");
 
-  const db = sql();
+  const db = await sql();
   await db`DELETE FROM categorias WHERE id=${id}`;
   await db.end();
 
