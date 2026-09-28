@@ -1,4 +1,4 @@
-import postgres from "postgres";
+import { lerPousada } from "@/lib/pousada";
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
@@ -14,14 +14,8 @@ export const metadata: Metadata = {
 };
 
 export default async function APousadaPage() {
-  let p: any = null;
-  try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
-    [p] = await sql`SELECT * FROM pousada LIMIT 1`;
-    await sql.end();
-  } catch (e) {
-    console.error("[APousada] banco indisponivel:", (e as Error).message);
-  }
+  // Ja lida pelo layout nesta requisicao (lib/pousada.ts); null se o banco cair.
+  const p = await lerPousada();
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">

@@ -4,6 +4,7 @@ import { tituloQuarto, resumir, brl, pluralizar, escassez, dataBR } from "@/lib/
 import Link from "next/link";
 import Image from "next/image";
 import postgres from "postgres";
+import { lerPousada } from "@/lib/pousada";
 
 export const dynamic = "force-dynamic";
 
@@ -24,15 +25,10 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
     : null;
   tarifas?.catch(() => {}); // o erro e tratado no await abaixo
 
-  const sql0 = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
-  try {
-    const [pousadaData] = await sql0`SELECT whatsapp, nome FROM pousada LIMIT 1`;
-    whatsapp = pousadaData?.whatsapp?.replace(/\D/g, "") || "";
-  } catch {
-    // Sem o WhatsApp o botao some; a busca de quartos continua.
-  } finally {
-    await sql0.end();
-  }
+  // Ja lida pelo layout nesta mesma requisicao: nao abre outra conexao.
+  // Sem o WhatsApp o botao some; a busca de quartos continua.
+  const pousadaData = await lerPousada();
+  whatsapp = pousadaData?.whatsapp?.replace(/\D/g, "") || "";
 
   if (v && !v.ok) {
     erro = v.motivo === "ordem"

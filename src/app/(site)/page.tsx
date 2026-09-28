@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { lerPousada } from "@/lib/pousada";
 import { lerBanner } from "@/lib/banners";
 import { agruparItens } from "@/lib/blocos";
 import { RenderBloco, type Bloco, type DadosHome } from "@/components/site/BlocosHome";
@@ -34,9 +35,10 @@ export default async function HomePage() {
   let itensBlocos: any[] = [];
   let pacotesTopo: any[] = [];
 
+  pousada = await lerPousada(); // ja lida pelo layout nesta requisicao
+
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
   try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
-    [pousada] = await sql`SELECT * FROM pousada LIMIT 1`;
 
     quartos = await sql`
       SELECT q.*, c.nome AS cat_nome,
@@ -109,10 +111,10 @@ export default async function HomePage() {
       FROM blocos_home ORDER BY ordem, criado_em
     `;
     blocos = linhas as unknown as (Bloco & { ativo: boolean })[];
-
-    await sql.end();
   } catch (e) {
     console.error("[HomePage] banco indisponivel:", (e as Error).message);
+  } finally {
+    await sql.end().catch(() => {});
   }
 
   const dados: DadosHome = {

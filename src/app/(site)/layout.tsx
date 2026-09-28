@@ -1,5 +1,5 @@
 import Link from "next/link";
-import postgres from "postgres";
+import { lerPousada } from "@/lib/pousada";
 import { MenuPrincipal } from "@/components/site/MenuPrincipal";
 import { MarcaLockup } from "@/components/site/MarcaLockup";
 import { ChatMarina } from "@/components/site/ChatMarina";
@@ -29,15 +29,8 @@ const FALLBACK: Record<string, any> = {
 };
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  let p: Record<string, any> = FALLBACK;
-  try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
-    const [row] = await sql`SELECT to_jsonb(x) AS dados FROM pousada x LIMIT 1`;
-    await sql.end();
-    if (row?.dados) p = row.dados as Record<string, any>;
-  } catch (e) {
-    console.error("[SiteLayout] banco indisponivel, usando fallback:", (e as Error).message);
-  }
+  // Mesma consulta do layout raiz, deduplicada por requisicao (lib/pousada.ts).
+  const p: Record<string, any> = (await lerPousada()) ?? FALLBACK;
 
   const wa = p?.whatsapp?.replace(/\D/g, "") || "";
   const nome = p?.nome || FALLBACK.nome;

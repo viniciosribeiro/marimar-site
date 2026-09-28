@@ -1,5 +1,5 @@
 import { brl, datasExemplo } from "@/lib/format";
-import postgres from "postgres"; import { notFound } from "next/navigation"; import Link from "next/link"; import { fetchTarifas } from "@/lib/worker"; import { buildDeepLink } from "@/lib/deeplink"; import { Gallery } from "@/components/site/Gallery";
+import postgres from "postgres"; import { notFound } from "next/navigation"; import Link from "next/link"; import { fetchTarifas } from "@/lib/worker"; import { buildDeepLink } from "@/lib/deeplink"; import { Gallery } from "@/components/site/Gallery"; import { lerPousada } from "@/lib/pousada";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
     ? fetchTarifas(exemplo.checkIn, exemplo.checkOut, 2).catch(() => null)
     : Promise.resolve(null);
 
-  const [p] = await sql`SELECT * FROM pousada LIMIT 1`;
+  const p = await lerPousada();
   const comods = await sql`SELECT cm.* FROM comodidades cm JOIN quarto_comodidades qc ON qc.comodidade_id = cm.id WHERE qc.quarto_id = ${q.id}`;
   const fotos = await sql`SELECT * FROM midias WHERE quarto_id = ${q.id} ORDER BY ordem`;
   await sql.end();
