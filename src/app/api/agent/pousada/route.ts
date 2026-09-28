@@ -1,20 +1,12 @@
-import { checkAgentAuth } from "@/lib/agent-auth";
+import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
-import postgres from "postgres";
+import { comSql } from "@/lib/db-conexao";
+import { receberLead } from "@/lib/leads";
 import {
   ENDERECO, CONTATO, CAFE_DA_MANHA, COMODIDADES_CONFIRMADAS, NAO_DISPONIVEL,
 } from "@/lib/conteudo-pousada";
 
-function checkAuth(request: NextRequest): boolean {
-  return checkAgentAuth(request);
-}
-
-function agentOk(dados: any, resumo: string) {
-  return Response.json({ ok: true, dados, resumo_texto: resumo, fonte: "local", consultado_em: new Date().toISOString() });
-}
-function agentErr(msg: string, status = 400) {
-  return Response.json({ ok: false, erro: msg }, { status });
-}
+export const dynamic = "force-dynamic";
 
 /**
  * A pousada: contato, politicas e o que existe (ou nao) na propriedade.
@@ -29,19 +21,20 @@ function agentErr(msg: string, status = 400) {
  * ele, "tem estacionamento?" e respondida por deducao.
  */
 export async function GET(request: NextRequest) {
-  if (!checkAuth(request)) return agentErr("Nao autorizado", 401);
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
-  const [p] = await sql`SELECT * FROM pousada LIMIT 1`;
-  const politicas = await sql`SELECT * FROM politicas LIMIT 1`;
+  if (!checkAgentAuth(request)) return agentUnauthorized();
+  const { p, politicas, comodidades } = await comSql(async (sql) => {
+    const [p] = await sql`SELECT * FROM pousada LIMIT 1`;
+    const politicas = await sql`SELECT * FROM politicas LIMIT 1`;
 
-  let comodidades: { nome: string }[] = [];
-  try {
-    comodidades = await sql<{ nome: string }[]>`
-      SELECT c.nome FROM pousada_comodidades pc
-      JOIN comodidades c ON c.id = pc.comodidade_id
-      WHERE c.ativo = true ORDER BY c.ordem`;
-  } catch { /* tabela ausente neste banco */ }
-  await sql.end();
+    let comodidades: { nome: string }[] = [];
+    try {
+      comodidades = await sql<{ nome: string }[]>`
+        SELECT c.nome FROM pousada_comodidades pc
+        JOIN comodidades c ON c.id = pc.comodidade_id
+        WHERE c.ativo = true ORDER BY c.ordem`;
+    } catch { /* tabela ausente neste banco */ }
+    return { p, politicas, comodidades };
+  });
 
   const pol = politicas?.[0] as Record<string, unknown> | undefined;
   const linhas = [
@@ -70,18 +63,17 @@ export async function GET(request: NextRequest) {
     ...NAO_DISPONIVEL.map((n) => `• ${n.item} — ${n.motivo}`),
   );
 
-  return agentOk(
-    { pousada: p, politicas: pol || null, comodidades, nao_disponivel: NAO_DISPONIVEL },
-    linhas.join("\n"),
-  );
+  return Response.json({
+    ok: true,
+    dados: { pousada: p, politicas: pol || null, comodidades, nao_disponivel: NAO_DISPONIVEL },
+    resumo_texto: linhas.join("\n"),
+    fonte: "local",
+    consultado_em: new Date().toISOString(),
+  });
 }
 
+/** Registro de lead — duplicava /api/agent/lead; agora e a mesma funcao. */
 export async function POST(request: NextRequest) {
-  if (!checkAuth(request)) return agentErr("Nao autorizado", 401);
-  const { nome, telefone, email, mensagem } = await request.json();
-  if (!nome) return agentErr("Nome obrigatorio");
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
-  await sql`INSERT INTO leads (nome, telefone, email, mensagem, origem) VALUES (${nome}, ${telefone || null}, ${email || null}, ${mensagem || null}, 'agente')`;
-  await sql.end();
-  return agentOk({}, "Lead registrado com sucesso");
+  if (!checkAgentAuth(request)) return agentUnauthorized();
+  return receberLead(request);
 }

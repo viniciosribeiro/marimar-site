@@ -1,19 +1,26 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import postgres from "postgres";
+import { registrarLead } from "@/lib/leads";
 
 export async function enviarContato(formData: FormData) {
-  const nome = formData.get("nome") as string;
-  const telefone = formData.get("telefone") as string;
-  const email = formData.get("email") as string;
-  const mensagem = formData.get("mensagem") as string;
+  // Campo-armadilha: invisivel para pessoas, robos de spam preenchem tudo.
+  // Finge sucesso para o robo nao tentar de novo com outra estrategia.
+  if (formData.get("site_web")) redirect("/contato?ok=Mensagem+enviada");
 
-  if (!nome) redirect("/contato?erro=Nome+obrigatorio");
-
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
-  await sql`INSERT INTO leads (nome, telefone, email, mensagem, origem) VALUES (${nome}, ${telefone || null}, ${email || null}, ${mensagem || null}, 'site')`;
-  await sql.end();
+  let gravou = false;
+  try {
+    gravou = await registrarLead({
+      nome: formData.get("nome"),
+      telefone: formData.get("telefone"),
+      email: formData.get("email"),
+      mensagem: formData.get("mensagem"),
+    }, "site");
+  } catch (e) {
+    console.error("[contato] nao gravou:", (e as Error).message);
+    redirect("/contato?erro=Nao+conseguimos+enviar+agora.+Tente+de+novo+ou+fale+pelo+WhatsApp.");
+  }
+  if (!gravou) redirect("/contato?erro=Informe+seu+nome.");
 
   redirect("/contato?ok=Mensagem+enviada");
 }

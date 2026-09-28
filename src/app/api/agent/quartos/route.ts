@@ -1,6 +1,8 @@
 import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
-import postgres from "postgres";
+import { comSql } from "@/lib/db-conexao";
+
+export const dynamic = "force-dynamic";
 
 /**
  * Catálogo de acomodações para a Marina.
@@ -19,39 +21,41 @@ import postgres from "postgres";
 export async function GET(request: NextRequest) {
   if (!checkAgentAuth(request)) return agentUnauthorized();
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
+  const { lista, fotos, comodidades } = await comSql(async (sql) => {
+    const lista = await sql`
+      SELECT q.*, c.nome as cat_nome
+      FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id
+      WHERE q.ativo = true ORDER BY q.ordem
+    `;
 
-  const lista = await sql`
-    SELECT q.*, c.nome as cat_nome
-    FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id
-    WHERE q.ativo = true ORDER BY q.ordem
-  `;
+    /* As fotos vêm numa consulta só, e não uma por quarto: são poucos quartos
+       hoje, mas uma consulta por item é a coisa que sempre volta como lentidão
+       quando o catálogo cresce. Seis por quarto é o que cabe numa conversa —
+       mandar quinze fotos no WhatsApp de alguém é agressão, não atendimento. */
+    const fotos = await sql<{ quarto_id: string; url: string; alt: string }[]>`
+      SELECT quarto_id, url, alt FROM midias
+      WHERE quarto_id IS NOT NULL AND tipo = 'foto'
+      ORDER BY destaque DESC, ordem ASC
+    `;
+    /* Comodidades por quarto. Sem isto a Marina descrevia um quarto sem saber
+       se ele tem ar-condicionado — e "tem ar?" e das tres perguntas mais
+       feitas no verao. Uma consulta so, pelo mesmo motivo das fotos. */
+    let comodidades: { quarto_id: string; nome: string }[] = [];
+    try {
+      comodidades = await sql<{ quarto_id: string; nome: string }[]>`
+        SELECT qc.quarto_id, c.nome FROM quarto_comodidades qc
+        JOIN comodidades c ON c.id = qc.comodidade_id
+        WHERE c.ativo = true ORDER BY c.ordem`;
+    } catch { /* tabela ausente neste banco */ }
 
-  /* As fotos vêm numa consulta só, e não uma por quarto: são poucos quartos
-     hoje, mas uma consulta por item é a coisa que sempre volta como lentidão
-     quando o catálogo cresce. Seis por quarto é o que cabe numa conversa —
-     mandar quinze fotos no WhatsApp de alguém é agressão, não atendimento. */
-  const fotos = await sql<{ quarto_id: string; url: string; alt: string }[]>`
-    SELECT quarto_id, url, alt FROM midias
-    WHERE quarto_id IS NOT NULL AND tipo = 'foto'
-    ORDER BY destaque DESC, ordem ASC
-  `;
-  /* Comodidades por quarto. Sem isto a Marina descrevia um quarto sem saber
-     se ele tem ar-condicionado — e "tem ar?" e das tres perguntas mais
-     feitas no verao. Uma consulta so, pelo mesmo motivo das fotos. */
-  let comodidades: { quarto_id: string; nome: string }[] = [];
-  try {
-    comodidades = await sql<{ quarto_id: string; nome: string }[]>`
-      SELECT qc.quarto_id, c.nome FROM quarto_comodidades qc
-      JOIN comodidades c ON c.id = qc.comodidade_id
-      WHERE c.ativo = true ORDER BY c.ordem`;
-  } catch { /* tabela ausente neste banco */ }
-
-  await sql.end();
+    return { lista, fotos, comodidades };
+  });
 
   const comodidadesDe = new Map<string, string[]>();
   for (const c of comodidades) {
-    comodidadesDe.set(c.quarto_id, [...(comodidadesDe.get(c.quarto_id) ?? []), c.nome]);
+    const atual = comodidadesDe.get(c.quarto_id);
+    if (atual) atual.push(c.nome);
+    else comodidadesDe.set(c.quarto_id, [c.nome]);
   }
 
   const porQuarto = new Map<string, { url: string; alt: string }[]>();
