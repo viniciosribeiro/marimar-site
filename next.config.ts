@@ -23,6 +23,18 @@ const nextConfig: NextConfig = {
       { source: "/cafe-da-manha", destination: "/restaurante#cafe-da-manha", permanent: true },
     ];
   },
+  /**
+   * robots e sitemap sao gerados em /api/robots e /api/sitemap, mas
+   * buscadores so procuram /robots.txt e /sitemap.xml — e o robots apontava
+   * para um /sitemap.xml que nao existia. O rewrite serve os dois nos
+   * enderecos padrao sem mudar a URL.
+   */
+  async rewrites() {
+    return [
+      { source: "/robots.txt", destination: "/api/robots" },
+      { source: "/sitemap.xml", destination: "/api/sitemap" },
+    ];
+  },
   images: {
     // As fotos dos quartos vivem no motor Desbravador. Passando por next/image
     // elas sao redimensionadas, convertidas para AVIF/WebP e cacheadas na borda

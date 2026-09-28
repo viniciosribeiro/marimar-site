@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { fetchTarifas } from "@/lib/worker";
+import { datasExemplo } from "@/lib/format";
 import { contarDominioAntigo } from "@/lib/dominio-antigo";
 export const dynamic = "force-dynamic";
 export default async function DiagnosticoPage() {
@@ -9,7 +10,8 @@ export default async function DiagnosticoPage() {
   let workerStatus="Testando..."; let workerJson=null; let erro=""; let latencia=0;
   try {
     const t0=Date.now();
-    const data=await fetchTarifas("2026-10-15","2026-10-17",2);
+    const { checkIn, checkOut } = datasExemplo();
+    const data=await fetchTarifas(checkIn,checkOut,2);
     latencia=Date.now()-t0;
     workerStatus=`Online (${latencia}ms)`;
     workerJson=data;

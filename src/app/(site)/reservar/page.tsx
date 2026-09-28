@@ -1,30 +1,47 @@
-import { fetchTarifas } from "@/lib/worker";
+import { fetchTarifas, validarConsulta } from "@/lib/worker";
 import { buildDeepLink } from "@/lib/deeplink";
 import { tituloQuarto, resumir, brl, pluralizar, escassez, dataBR } from "@/lib/format";
 import Link from "next/link";
 import Image from "next/image";
 import postgres from "postgres";
+import { lerPousada } from "@/lib/pousada";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReservarPage({ searchParams }: { searchParams: Promise<{ check_in?: string; check_out?: string; adultos?: string; criancas?: string }> }) {
   const sp = await searchParams;
   const ci = sp.check_in; const co = sp.check_out;
-  const adultos = parseInt(sp.adultos || "2"); const criancas = parseInt(sp.criancas || "0");
+  // Datas e hospedes passam pela mesma validacao das rotas de API: antes,
+  // "adultos=abc" virava NaN e check-out antes do check-in ia ao motor.
+  const v = ci && co ? validarConsulta({ checkIn: ci, checkOut: co, adultos: sp.adultos, criancas: sp.criancas }) : null;
+  const adultos = v?.ok ? v.consulta.adultos : 2;
+  const criancas = v?.ok ? v.consulta.criancas : 0;
   let resultados: any[] = []; let erro = ""; let noites = 0; let whatsapp = "";
   let avisoCrianca = "";
 
-  const sql0 = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
-  const [pousadaData] = await sql0`SELECT whatsapp, nome FROM pousada LIMIT 1`;
-  await sql0.end();
+  // O motor e a parte lenta: a consulta comeca antes do banco, em paralelo.
+  const tarifas = v?.ok
+    ? fetchTarifas(v.consulta.checkIn, v.consulta.checkOut, adultos, criancas)
+    : null;
+  tarifas?.catch(() => {}); // o erro e tratado no await abaixo
+
+  // Ja lida pelo layout nesta mesma requisicao: nao abre outra conexao.
+  // Sem o WhatsApp o botao some; a busca de quartos continua.
+  const pousadaData = await lerPousada();
   whatsapp = pousadaData?.whatsapp?.replace(/\D/g, "") || "";
 
-  if (ci && co) {
+  if (v && !v.ok) {
+    erro = v.motivo === "ordem"
+      ? "A data de saída precisa ser depois da data de entrada."
+      : "Não entendemos as datas escolhidas. Escolha de novo no formulário abaixo.";
+  }
+
+  if (ci && co && tarifas) {
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
     try {
       noites = Math.round((new Date(co + "T12:00").getTime() - new Date(ci + "T12:00").getTime()) / 86400000);
-      const data = await fetchTarifas(ci, co, adultos, criancas);
+      const data = await tarifas;
       avisoCrianca = data.aviso_crianca || "";
-      const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
       const ids = [...data.quartos, ...data.indisponiveis].map(r => r.id);
       const locais = ids.length > 0 ? await sql`SELECT q.*, c.nome as cat_nome FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id WHERE q.desbravador_room_id = ANY(${ids})` : [];
       const map = new Map(locais.map((l: any) => [l.desbravador_room_id, l]));
@@ -32,7 +49,6 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       const fotos = quartoIds.length > 0 ? await sql`SELECT * FROM midias WHERE quarto_id = ANY(${quartoIds}) ORDER BY ordem` : [];
       const fotosMap = new Map<string, any[]>();
       for (const f of fotos) { if (!fotosMap.has(f.quarto_id)) fotosMap.set(f.quarto_id, []); fotosMap.get(f.quarto_id)!.push(f); }
-      await sql.end();
 
       resultados = [...data.quartos, ...data.indisponiveis].map(r => {
         const l = map.get(r.id);
@@ -54,6 +70,8 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       });
     } catch {
       erro = "Não conseguimos consultar a disponibilidade agora. Tente novamente em instantes ou fale com a gente no WhatsApp.";
+    } finally {
+      await sql.end();
     }
   }
 

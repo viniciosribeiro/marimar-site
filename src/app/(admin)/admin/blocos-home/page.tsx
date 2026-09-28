@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 /** Explica o que cada tipo de seção mostra, em linguagem de operação. */
 const DESCRICAO: Record<string, { nome: string; texto: string; icone: string }> = {
   hero:         { nome: "Topo do site",       icone: "🖼", texto: "Foto grande, nome da pousada e a busca de disponibilidade." },
-  complexo:     { nome: "Restaurante e pousada", icone: "🏖", texto: "Explica que o restaurante fica na frente e a pousada aos fundos." },
+  complexo:     { nome: "Restaurante e pousada", icone: "🏖", texto: "Apresenta a pousada e o restaurante próprio pé na areia." },
   diferenciais: { nome: "O que está incluso", icone: "✨", texto: "Café da manhã, Wi-Fi, ar-condicionado, proximidade do trapiche." },
   quartos:      { nome: "Nossas suítes",      icone: "🛏", texto: "Mostra até 6 quartos ativos, com foto de capa." },
   restaurante:  { nome: "Restaurante e café", icone: "🍤", texto: "Marimar Café Bistrô Bar e o café da manhã incluso." },

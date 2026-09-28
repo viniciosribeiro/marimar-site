@@ -20,8 +20,10 @@ src/app/(admin)/admin/<entidade>/
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import postgres from "postgres";
+import { exigirSessao } from "@/lib/admin-sessao";
 
 export async function criarXxx(formData: FormData) {
+  await exigirSessao(); // 0. SEMPRE a primeira linha (ver "Erros a evitar", 9)
   // 1. Lê campos do formData
   // 2. Valida (erro → redirect com ?erro=Mensagem)
   // 3. INSERT no banco
@@ -87,3 +89,8 @@ const fields = [
 6. **SEMPRE** passe erros via `?erro=Mensagem+URL+encoded` no redirect
 7. **NUNCA** crie server action no mesmo arquivo do componente
 8. **SEMPRE** use `postgres(process.env.DATABASE_URL!, { max: 1 })` dentro da action — conexão por request
+   (ou `comSql()` de `src/lib/db-conexao.ts`, que fecha a conexão mesmo se a consulta falhar)
+9. **SEMPRE** comece a action com `await exigirSessao()` (`src/lib/admin-sessao.ts`).
+   Server Action é um endpoint POST público: a página ser protegida NÃO protege a action.
+   Até 28/09/2026, 29 actions do admin podiam ser chamadas sem login.
+10. **NUNCA** leia o id do usuário do `formData` — use o da sessão (`exigirSessao()` retorna a sessão)

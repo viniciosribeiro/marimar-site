@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import postgres from "postgres";
+import { lerPousada } from "@/lib/pousada";
 import { textoIdeal } from "@/lib/contraste";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -11,18 +11,7 @@ import {
   lerTema, temaParaCss, pilhaFonte, pilhaManuscrita, TODAS_AS_FONTES,
 } from "@/lib/tema";
 
-async function lerPousada(): Promise<Record<string, any> | null> {
-  try {
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 3, prepare: false });
-    // to_jsonb evita nomear colunas: funciona antes e depois de qualquer
-    // migration que acrescente campo na tabela.
-    const [row] = await sql`SELECT to_jsonb(p) AS dados FROM pousada p LIMIT 1`;
-    await sql.end();
-    return (row?.dados as Record<string, any>) ?? null;
-  } catch {
-    return null;
-  }
-}
+// Uma consulta por requisicao, compartilhada com o layout do site (lib/pousada.ts).
 
 export async function generateMetadata(): Promise<Metadata> {
   const p = await lerPousada();

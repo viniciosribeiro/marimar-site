@@ -6,15 +6,15 @@ import { CrudForm } from "@/components/admin/CrudForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import Link from "next/link";
+import { urlTarifas } from "@/lib/worker";
+import { datasExemplo } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 async function buscarQuartosMotor(): Promise<any[]> {
   try {
-    const res = await fetch(
-      `https://pousadahub.viniciosribeiro.workers.dev/tarifas?slug=pousada-ilha-do-mel-marimar&check_in=2026-10-15&check_out=2026-10-17&adultos=2`,
-      { signal: AbortSignal.timeout(8000) }
-    );
+    const { checkIn, checkOut } = datasExemplo();
+    const res = await fetch(urlTarifas(checkIn, checkOut, 2), { signal: AbortSignal.timeout(8000) });
     if (!res.ok) return [];
     const data = await res.json();
     return [...(data.quartos || []), ...(data.indisponiveis || [])];

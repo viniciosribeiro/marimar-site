@@ -6,6 +6,105 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-28 (2) — Topo no celular e a pousada como protagonista
+**Autor:** Claude (Claude Code)
+**Migration:** 0014 (só dados; roda com `npm run db:migrate`)
+
+### A busca cobria a foto do topo no celular
+A caixa de datas era desenhada DENTRO do banner. No celular ela ocupava
+quase a altura toda e a foto sumia. Agora, abaixo de `sm`, a busca vai
+logo abaixo da foto, subindo só um pouco sobre a borda (`BuscaNoCelular`
+em `CarrosselBanners.tsx`); no computador nada muda. O mesmo vale para o
+topo sem banner. A altura mínima dos banners no celular diminuiu
+(`ALTURAS` em `lib/banners.ts`), porque já não precisa abrigar a busca.
+
+### Botões flutuantes
+"Falar com a Marina" e o WhatsApp ficavam empilhados no canto e cobriam
+uma coluna de texto em toda página. No celular agora ficam lado a lado,
+numa linha só, e o da Marina diz só "Marina". O rodapé ganhou folga
+embaixo para a última linha não ficar sob eles.
+
+### "Um complexo, duas partes" → a pousada em primeiro lugar
+Decisão do Vinicios, que substitui o briefing de 18/09: a ênfase em
+"pousada anexada aos fundos do restaurante" afastava quem escolhe onde se
+hospedar. Novo texto em `COMPLEXO` (`conteudo-pousada.ts`), que alimenta
+topo, rodapé, FAQ, como chegar, a pousada, galeria, quartos, eventos e as
+respostas da Marina. Na home, a seção virou "Hospedagem com restaurante pé
+na areia", com o cartão da pousada primeiro.
+
+O que NÃO mudou, por ser fato: as suítes não ficam na areia. E para quem
+está chegando, a orientação continua sendo ir até o restaurante — agora
+dita como "a entrada da pousada é por ali".
+
+A migration 0014 troca o título da seção e a `descricao_curta` da pousada
+**só se ainda estiverem com o texto padrão antigo**; o que foi editado pelo
+painel fica como está.
+
+**Conferir no painel depois do deploy:** Admin → Cartões das seções (se
+houver cartões cadastrados para a seção da pousada, eles mandam no texto e
+na ordem) e Admin → Identidade visual → descrição para buscadores.
+
+## 2026-09-28 — Revisao geral: seguranca, bugs e performance
+**Autor:** Claude (Claude Code)
+
+Relatorio completo, com pendencias priorizadas: **`docs/CHANGELOG-IA.md`**.
+Sem migration, sem env var nova, sem dependencia nova.
+
+- 🔴 `trocarSenha` usava o `userId` de um input hidden: qualquer POST trocava
+  a senha de qualquer conta. Agora usa a sessao e encerra a sessao depois
+  (o JWT com `mustReset` prendia a pessoa em loop na tela de troca).
+- 🔴 29 Server Actions do admin nao checavam sessao
+  (`lib/admin-actions.ts`, categorias, comodidades, quartos). Novo
+  `exigirSessao()` em `lib/admin-sessao.ts`.
+- Data fixa `2026-10-15` em seis lugares, inclusive o link "Reservar" da
+  pagina do quarto → `datasExemplo()`.
+- `/contato` nao mostrava a confirmacao de envio; telefone > 20 caracteres
+  dava 500. Lead num lugar so: `lib/leads.ts`.
+- Validacao de datas/hospedes (`validarConsulta()`) nas duas rotas de
+  disponibilidade e no `/reservar`.
+- `/robots.txt` e `/sitemap.xml` nao existiam (so em `/api/...`).
+- Conexoes que vazavam em erro → `comSql()` em `lib/db-conexao.ts`.
+- Performance: a linha da `pousada` era lida 3-4x por pagina, com conexao
+  nova cada vez → `lerPousada()` com `cache()`; motor em paralelo com o
+  banco em `/reservar` e `/quartos/[slug]`; testes de `/admin/integracoes`
+  em paralelo.
+- `package-lock.json` sincronizado (`npm ci` falhava).
+
+**Pendente e importante:** a `AGENT_API_KEY` aparece inteira no HTML de
+`/admin/integracoes`; login sem limite por IP; contato sem limite de envio.
+Ver secao 5 do `CHANGELOG-IA.md`.
+## 2026-09-20 — A voz valia so para um canal
+**Autor:** Claude Opus 5 (Cowork)
+
+Defeito de desenho meu, achado pelo Vinicios: a aba Voz gravava no nosso
+banco, que governa **so o chat do site**. A Marina do WhatsApp le a voz da
+config do OpenClaw, que o painel nunca tocava. Trocar a voz mudava um canal e
+deixava o outro com a voz antiga, sem dizer nada.
+
+Um painel que promete "a voz da Marina" e entrega metade e pior do que um que
+diz onde mexer: quem opera confia, testa pelo WhatsApp, e conclui que o
+sistema nao funciona.
+
+### Como ficou
+`salvarVoz` agora grava no banco **e** manda para o OpenClaw pelo plugin
+`admin-http-rpc` (`POST /api/v1/admin/rpc`, metodo `config.set`), que vem
+desligado de fabrica e precisa ser ligado uma vez:
+
+```
+openclaw config set plugins.entries.admin-http-rpc.enabled true --strict-json
+```
+
+A falha do segundo passo **nao desfaz** o primeiro: o site ja fica com a voz
+nova e a tela diz o motivo da recusa do WhatsApp, com a resposta crua do
+gateway. Derrubar a acao inteira por causa da segunda metade faria a Cecilia
+perder o que digitou, e esconder o erro traria de volta exatamente o
+problema que estamos consertando.
+
+Os ajustes finos (estabilidade, semelhanca, velocidade) continuam so no site:
+o OpenClaw os expoe sob outro formato, e enviar as cegas arriscaria corromper
+uma config que hoje funciona. Voz e modelo sao o que muda o timbre, que e o
+que se percebe.
+
 ## 2026-09-19 (6) — Revisao do que foi escrito hoje
 **Autor:** Claude Opus 5 (Cowork)
 

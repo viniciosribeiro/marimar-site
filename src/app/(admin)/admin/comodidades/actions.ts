@@ -3,8 +3,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import postgres from "postgres";
+import { exigirSessao } from "@/lib/admin-sessao";
 
-const sql = () => postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
+// Toda action exige sessao antes de abrir conexao (ver lib/admin-sessao.ts).
+const sql = async () => {
+  await exigirSessao();
+  return postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
+};
 
 export async function criarComodidade(formData: FormData) {
   const nome = formData.get("nome") as string;
@@ -15,7 +20,7 @@ export async function criarComodidade(formData: FormData) {
 
   if (!nome || !slug) redirect("/admin/comodidades?erro=Nome+e+slug+obrigatorios");
 
-  const db = sql();
+  const db = await sql();
   await db`INSERT INTO comodidades (nome, slug, icone, escopo, ordem) VALUES (${nome}, ${slug}, ${icone || "check"}, ${escopo || "quarto"}, ${ordem})`;
   await db.end();
 
@@ -34,7 +39,7 @@ export async function editarComodidade(formData: FormData) {
 
   if (!id || !nome || !slug) redirect("/admin/comodidades?erro=Nome+e+slug+obrigatorios");
 
-  const db = sql();
+  const db = await sql();
   await db`UPDATE comodidades SET nome=${nome}, slug=${slug}, icone=${icone || "check"}, escopo=${escopo || "quarto"}, ordem=${ordem}, ativo=${ativo} WHERE id=${id}`;
   await db.end();
 
@@ -45,7 +50,7 @@ export async function editarComodidade(formData: FormData) {
 export async function excluirComodidade(formData: FormData) {
   const id = formData.get("id") as string;
   if (!id) redirect("/admin/comodidades?erro=ID+invalido");
-  const db = sql();
+  const db = await sql();
   await db`DELETE FROM comodidades WHERE id=${id}`;
   await db.end();
   revalidatePath("/admin/comodidades");

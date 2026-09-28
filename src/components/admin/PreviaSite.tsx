@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { temaParaCss, pilhaFonte, pilhaManuscrita, type Tema } from "@/lib/tema";
+import { datasExemplo } from "@/lib/format";
 
 /**
  * Previa do site REAL, com o tema em rascunho aplicado.
@@ -16,12 +17,14 @@ import { temaParaCss, pilhaFonte, pilhaManuscrita, type Tema } from "@/lib/tema"
  * divergiriam e a previa passaria a mentir.
  */
 
+const EXEMPLO = datasExemplo();
+
 const PAGINAS = [
   { href: "/", nome: "Início" },
   { href: "/quartos", nome: "Acomodações" },
   { href: "/restaurante", nome: "Restaurante" },
   { href: "/como-chegar", nome: "Como chegar" },
-  { href: "/reservar?check_in=2026-10-15&check_out=2026-10-17&adultos=2", nome: "Reserva" },
+  { href: `/reservar?check_in=${EXEMPLO.checkIn}&check_out=${EXEMPLO.checkOut}&adultos=2`, nome: "Reserva" },
 ];
 
 const TELAS = [

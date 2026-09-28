@@ -15,7 +15,7 @@ export const metadata = { title: "Cartões das seções — Marimar Admin" };
  */
 const BLOCOS_COM_CARTOES: Record<string, { nome: string; formato: string }> = {
   complexo: {
-    nome: "Um complexo, duas partes",
+    nome: "A pousada e o restaurante",
     formato: "Cartões grandes com foto, ícone e link. Dois é o esperado; o terceiro em diante entra numa grade abaixo.",
   },
   diferenciais: {

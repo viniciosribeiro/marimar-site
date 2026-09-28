@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import postgres from "postgres";
 import { auth } from "@/lib/auth";
+import { sincronizarVoz } from "@/lib/openclaw-config";
 
 async function conectar() {
   const s = await auth();
@@ -45,7 +46,24 @@ export async function salvarVoz(fd: FormData) {
     await sql`INSERT INTO marina_config ${sql(dados)}`;
   }
   await sql.end();
-  voltar("Voz salva", "voz");
+
+  /* O banco governa o chat do site; o WhatsApp le a voz da config do
+     OpenClaw. Sem este segundo passo, trocar a voz mudava um canal e
+     deixava o outro com a voz antiga sem avisar — que foi exatamente o que
+     aconteceu. A falha aqui NAO desfaz o salvamento: o site ja esta com a
+     voz nova, e derrubar a acao inteira faria perder o que foi digitado. */
+  if (dados.voz_id) {
+    const eco = await sincronizarVoz(dados.voz_id, dados.voz_modelo);
+    if (!eco.ok) {
+      voltar(
+        `Voz salva para o site, mas o WhatsApp nao aceitou: ${eco.erro}`,
+        "voz",
+        true,
+      );
+    }
+  }
+
+  voltar("Voz salva nos dois canais", "voz");
 }
 
 export async function salvarTom(fd: FormData) {

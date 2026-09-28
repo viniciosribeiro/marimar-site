@@ -74,7 +74,7 @@ export default function AvaliacoesPage() {
         <div className="grid sm:grid-cols-2 gap-5">
           {AVALIACOES.depoimentos.map((d, i) => (
             <blockquote key={i} className="bg-white rounded-marca p-6 border border-gray-100 shadow-marca">
-              <p className="text-sm text-gray-600 leading-relaxed italic">"{d.texto}"</p>
+              <p className="text-sm text-gray-600 leading-relaxed italic">“{d.texto}”</p>
               <footer className="mt-4 pt-3 border-t border-gray-100 text-xs">
                 <span className="font-semibold text-gray-800">{d.autor}</span>
                 <span className="text-gray-400"> · via {d.plataforma}</span>

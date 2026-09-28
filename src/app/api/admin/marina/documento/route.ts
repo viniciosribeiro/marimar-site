@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import postgres from "postgres";
 import { del } from "@vercel/blob";
 import { extrairTexto, lerImagem, fazerTrecho } from "@/lib/extrair-texto";
+import { comSql } from "@/lib/db-conexao";
+import { urlDoNossoBlob } from "@/lib/blob";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +34,10 @@ export async function POST(req: Request) {
   const bytes = Number(corpo?.bytes) || 0;
 
   if (!url || !nome) return Response.json({ erro: "Arquivo não recebido." }, { status: 400 });
+  // So arquivos do NOSSO Blob: esta rota baixa a URL e, se a leitura falhar,
+  // apaga o arquivo. Aceitar qualquer endereco permitiria buscar URL externa
+  // pelo servidor ou apagar um banner passando a URL dele.
+  if (!urlDoNossoBlob(url)) return Response.json({ erro: "Endereço de arquivo inválido." }, { status: 400 });
 
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
 
@@ -42,7 +48,7 @@ export async function POST(req: Request) {
     if (tipo.startsWith("image/")) {
       ({ texto, aviso } = await lerImagem(url));
     } else {
-      const r = await fetch(url);
+      const r = await fetch(url, { signal: AbortSignal.timeout(30000) });
       if (!r.ok) throw new Error("não consegui baixar o arquivo enviado");
       ({ texto, aviso } = await extrairTexto(await r.arrayBuffer(), tipo, nome));
     }
@@ -85,11 +91,12 @@ export async function DELETE(req: Request) {
   const id = searchParams.get("id");
   if (!id) return Response.json({ erro: "Documento não informado." }, { status: 400 });
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
-  const [doc] = await sql<{ url: string }[]>`
-    SELECT url FROM marina_documentos WHERE id = ${id}`;
-  await sql`DELETE FROM marina_documentos WHERE id = ${id}`;
-  await sql.end();
+  const doc = await comSql(async (sql) => {
+    const [doc] = await sql<{ url: string }[]>`
+      SELECT url FROM marina_documentos WHERE id = ${id}`;
+    await sql`DELETE FROM marina_documentos WHERE id = ${id}`;
+    return doc;
+  });
 
   if (doc?.url) { try { await del(doc.url); } catch {} }
   return Response.json({ ok: true });

@@ -92,6 +92,20 @@
       "when": 1789935000000,
       "tag": "0012_marina_documentos",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789990000000,
+      "tag": "0013_conteudo_editavel",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790600000000,
+      "tag": "0014_pousada_protagonista",
+      "breakpoints": true
     }
   ]
 }

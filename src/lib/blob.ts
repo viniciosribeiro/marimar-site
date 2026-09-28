@@ -21,3 +21,13 @@ export function caminhoFoto(pasta: string, id: string, nomeArquivo: string): str
 
 export const LIMITE_BYTES = 12 * 1024 * 1024;
 export const TIPOS_ACEITOS = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+
+/** URL https servida pelo Vercel Blob (onde o upload do painel grava). */
+export function urlDoNossoBlob(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && u.hostname.endsWith(".public.blob.vercel-storage.com");
+  } catch {
+    return false;
+  }
+}

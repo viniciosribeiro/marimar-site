@@ -60,7 +60,10 @@ export function LightboxCardapio({
         const dx = e.changedTouches[0].clientX - toqueX.current;
         const dy = e.changedTouches[0].clientY - toqueY.current;
         if (Math.abs(dy) > 90 && Math.abs(dy) > Math.abs(dx)) aoFechar();
-        else if (Math.abs(dx) > 50) (dx < 0 ? proxima() : anterior());
+        else if (Math.abs(dx) > 50) {
+          if (dx < 0) proxima();
+          else anterior();
+        }
         toqueX.current = null; toqueY.current = null;
       }}
     >

@@ -29,7 +29,6 @@ export default async function TrocarSenhaPage({
       )}
 
       <form action={trocarSenha} className="bg-white rounded-lg shadow p-6 space-y-4">
-        <input type="hidden" name="userId" value={(session.user as any).id} />
         <div>
           <label className="block text-sm font-medium mb-1">Nova senha</label>
           <input type="password" name="senha" required minLength={12}

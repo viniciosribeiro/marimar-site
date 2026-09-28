@@ -118,3 +118,20 @@ export function escassez(unidades: number | null | undefined): string | null {
 export function dataBR(iso: string): string {
   return new Date(iso + "T12:00").toLocaleDateString("pt-BR");
 }
+
+/**
+ * Datas de exemplo para consultar o motor quando nao ha datas escolhidas
+ * (preco "a partir de" na pagina do quarto, testes do painel).
+ *
+ * Ate 28/09/2026 varios lugares usavam "2026-10-15" fixo: depois dessa data
+ * o site mostraria preco e link de reserva para uma estadia no passado.
+ * Uma semana a frente evita tanto o "hoje ja lotado" quanto a virada de fuso.
+ */
+export function datasExemplo(diasAFrente = 7, noites = 2): { checkIn: string; checkOut: string } {
+  const dia = 86400000;
+  const inicio = Date.now() + diasAFrente * dia;
+  return {
+    checkIn: new Date(inicio).toISOString().slice(0, 10),
+    checkOut: new Date(inicio + noites * dia).toISOString().slice(0, 10),
+  };
+}

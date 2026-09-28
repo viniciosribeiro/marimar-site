@@ -1,35 +1,49 @@
 import { NextRequest } from "next/server";
-import { fetchTarifas } from "@/lib/worker";
+import { fetchTarifas, validarConsulta } from "@/lib/worker";
 import { buildDeepLink } from "@/lib/deeplink";
 import postgres from "postgres";
 
 export const dynamic = "force-dynamic";
 
+type QuartoLocal = {
+  id: string; nome: string; slug: string; cama: string | null; metragem: number | null;
+  desbravador_room_id: string; diaria_minima: number | null;
+};
+
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams;
-  const checkIn = q.get("check_in");
-  const checkOut = q.get("check_out");
-  const adultos = parseInt(q.get("adultos") || "2");
-  const criancas = parseInt(q.get("criancas") || "0");
-
-  if (!checkIn || !checkOut) {
-    return Response.json({ ok: false, erro: "check_in e check_out obrigatorios" }, { status: 400 });
+  const v = validarConsulta({
+    checkIn: q.get("check_in"), checkOut: q.get("check_out"),
+    adultos: q.get("adultos"), criancas: q.get("criancas"),
+  });
+  if (!v.ok) {
+    return Response.json({ ok: false, erro: v.erro }, { status: 400 });
   }
+  const { checkIn, checkOut, adultos, criancas } = v.consulta;
 
   try {
     const workerData = await fetchTarifas(checkIn, checkOut, adultos, criancas);
 
     // Merge com dados locais
-    const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
-    const allIds = [...workerData.quartos, ...workerData.indisponiveis].map(r => r.id);
-    const locais = allIds.length > 0
-      ? await sql`SELECT id, nome, slug, descricao, cama, metragem, desbravador_room_id, diaria_minima FROM quartos WHERE desbravador_room_id = ANY(${allIds})`
-      : [];
+    const todos = [...workerData.quartos, ...workerData.indisponiveis];
+    const allIds = todos.map(r => r.id);
+    let locais: QuartoLocal[] = [];
+    if (allIds.length > 0) {
+      const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
+      try {
+        locais = await sql<QuartoLocal[]>`SELECT id, nome, slug, cama, metragem, desbravador_room_id, diaria_minima FROM quartos WHERE desbravador_room_id = ANY(${allIds})`;
+      } finally {
+        await sql.end();
+      }
+    }
 
-    const localMap = new Map(locais.map((l: any) => [l.desbravador_room_id, l]));
+    const localMap = new Map(locais.map((l) => [l.desbravador_room_id, l]));
+    // O link de reserva depende so da consulta, nao do quarto.
+    const deepLink = buildDeepLink({ checkIn, checkOut, adultos, criancas });
 
-    const merged = [...workerData.quartos, ...workerData.indisponiveis].map(r => {
+    const merged = todos.map(r => {
       const local = localMap.get(r.id);
+      const diariaMinima = local?.diaria_minima ?? r.estadia_minima;
       return {
         id: local?.id ?? r.id,
         desbravador_room_id: r.id,
@@ -44,18 +58,16 @@ export async function GET(request: NextRequest) {
         valor_crianca: r.valor_crianca,
         moeda: "BRL",
         ocupacao_max: r.ocupacao_max,
-        diaria_minima: local?.diaria_minima ?? r.estadia_minima,
-        atende_diaria_minima: workerData.noites >= (local?.diaria_minima ?? r.estadia_minima),
+        diaria_minima: diariaMinima,
+        atende_diaria_minima: workerData.noites >= diariaMinima,
         pacote: r.pacote,
         comodidades: r.comodidades || [],
         fotos: r.fotos || [],
         cama: local?.cama ?? null,
         metragem: local?.metragem ?? null,
-        deep_link: buildDeepLink({ checkIn, checkOut, adultos, criancas }),
+        deep_link: deepLink,
       };
     });
-
-    await sql.end();
 
     return Response.json({
       ok: true,

@@ -319,12 +319,16 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
         <button
           onClick={() => setAberto(true)}
           aria-label="Abrir atendimento"
-          className="fixed bottom-24 right-5 z-40 flex items-center gap-2 bg-marca text-marca-texto pl-4 pr-5 py-3 rounded-full shadow-marca-forte hover:bg-marca-hover transition-marca"
+          /* No celular fica na MESMA linha do botao do WhatsApp, a esquerda
+             dele, e com rotulo curto: empilhados, os dois cobriam uma coluna
+             inteira de texto e cartoes em toda pagina. */
+          className="fixed bottom-4 right-[4.5rem] sm:bottom-24 sm:right-5 z-40 flex items-center gap-2 h-[3.25rem] sm:h-auto bg-marca text-marca-texto pl-3 pr-4 sm:pl-4 sm:pr-5 sm:py-3 rounded-full shadow-marca-forte hover:bg-marca-hover transition-marca"
         >
           <span className="flex items-center justify-center w-6 h-6 rounded-full bg-white/20 shrink-0" aria-hidden>
             <Icone nome="coracao" tamanho={14} />
           </span>
-          <span className="text-sm font-semibold">Falar com a Marina</span>
+          <span className="text-sm font-semibold sm:hidden">Marina</span>
+          <span className="text-sm font-semibold hidden sm:inline">Falar com a Marina</span>
         </button>
       )}
 
