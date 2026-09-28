@@ -301,11 +301,13 @@ Pedido do Vinicios, a partir de um print do celular.
 | Banners mais baixos no celular (a busca não mora mais dentro deles) | `ALTURAS` em `src/lib/banners.ts` |
 | Botões "Marina" e WhatsApp numa linha só no celular; rodapé com folga embaixo | `ChatMarina.tsx`, `(site)/layout.tsx` |
 | Pousada como protagonista em todo texto para hóspede; fim do "anexada aos fundos" | `COMPLEXO`, `DIFERENCIAIS`, `RESTAURANTE`, `CHEGADA_ETAPAS`, FAQ em `conteudo-pousada.ts`; `BlocosHome`, `a-pousada`, `restaurante`, `como-chegar`; textos de prévia no admin |
-| Migration de dados 0013 (só troca texto padrão antigo) | `drizzle/0013_pousada_protagonista.sql` |
+| Migration de dados 0014 (só troca texto padrão antigo). Era 0013; renumerada porque outra sessão já tinha criado a `0013_conteudo_editavel` | `drizzle/0014_pousada_protagonista.sql` |
 
 Verificado com Postgres local (migrations + `db:seed` + `db:corrigir`),
 banner de teste e prints em 390px e 1280px, antes e depois. `tsc` e
 `next build` limpos. A migration foi rodada duas vezes (é idempotente).
+
+**Juntado depois:** o commit `320310c` (voz do painel também no WhatsApp + tabela `conteudo_editavel`, migration 0013), que estava só na máquina do Vinicios. Pendência dele: `sincronizarVoz()` grava `voz_id` e modelo na config do OpenClaw sem validar formato; um erro de digitação no modelo pode calar a voz do WhatsApp até ser corrigido no painel.
 
 ## Pendente desta rodada
 

@@ -18,7 +18,7 @@
 **O que so existe depois de rodar**
 
 ```
-npm run db:migrate          # migrations 0009 a 0013 (0013: titulo da secao da pousada, 28/09)
+npm run db:migrate          # migrations 0009 a 0014 (0013: conteudo_editavel; 0014: titulo da secao da pousada, 28/09)
 npm run db:migrar-fotos     # tira as imagens do WordPress antigo
 ```
 

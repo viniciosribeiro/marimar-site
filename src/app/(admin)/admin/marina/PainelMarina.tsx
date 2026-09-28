@@ -187,6 +187,12 @@ function AbaVoz({ config }: { config: ConfigMarina }) {
 
   return (
     <form action={salvarVoz} className="space-y-6 max-w-2xl">
+      <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-600">
+        Ao salvar, a voz passa a valer nos <strong>dois canais</strong>: o chat do site e o
+        WhatsApp. Se o WhatsApp recusar, a mensagem aqui em cima diz o motivo — e o site já
+        estará com a voz nova de qualquer forma.
+      </div>
+
       <Campo
         rotulo="ID da voz"
         ajuda="É o código da voz escolhida na ElevenLabs. Lá em Voices, abra a voz e copie o ID."
