@@ -94,3 +94,14 @@ const fields = [
    Server Action é um endpoint POST público: a página ser protegida NÃO protege a action.
    Até 28/09/2026, 29 actions do admin podiam ser chamadas sem login.
 10. **NUNCA** leia o id do usuário do `formData` — use o da sessão (`exigirSessao()` retorna a sessão)
+11. **SEMPRE** que a action ler um checkbox (`ativo`, `visivel_agente`, `destaque`…),
+    o campo TEM de estar no formulário de edição. Checkbox ausente chega como
+    "desligado": até 28/09/2026, editar FAQ, pacote, depoimento, categoria ou
+    comodidade desativava o item, e toda FAQ criada nascia invisível para a Marina.
+12. **Nada salvo no painel pode ficar só no banco.** Se o dado responde uma pergunta
+    de hóspede, confira que a rota da Marina (`src/app/api/agent/*`) o lê e que o
+    site o mostra. Contato vem de `lerContato()`; travessia/ilha/eventos de
+    `lerConteudo()`; fotos por `midias.secao` (`src/lib/fotos.ts`).
+13. Campos de texto longo usam `type: "textarea"` no `CrudForm`; o texto de apoio
+    vai em `ajuda`. Botões e links de ação com no mínimo 40px de altura
+    (`min-h-10`): o painel é usado no celular, na recepção.

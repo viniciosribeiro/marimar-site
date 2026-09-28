@@ -322,3 +322,92 @@ banner de teste e prints em 390px e 1280px, antes e depois. `tsc` e
 - A skill da Marina no OpenClaw (`agente/`) não citava "fundos"; as rotas da
   API já saem com o texto novo. Vale uma conversa de teste perguntando "onde
   fica a pousada?".
+
+---
+
+# Terceira rodada — 28/09/2026: painel x Marina, fotos e visual
+
+Pedido do Vinicios: varredura da Marina e do painel ("a cliente salva e não
+aplica"), fotos misturadas (galeria da pousada com a do restaurante, suítes
+com as mesmas fotos), responsividade, e menu/home mais bonitos e tropicais.
+
+## Auditoria: painel → site → Marina
+
+| # | Achado | Correção |
+|---|---|---|
+| 1 | "+ Novo" não abria em 6 telas: `CrudPage` só abria com a prop `novo`, que as páginas não passavam | `CrudPage` lê `?novo=1` da URL |
+| 2 | Editar FAQ/pacote/depoimento/categoria/comodidade **desativava** o item (checkbox ausente = desligado) | Checkboxes `ativo` nos formulários de edição |
+| 3 | Toda FAQ criada nascia com `visivel_agente = false` (não havia o campo) | Campo "A Marina usa esta resposta" (marcado por padrão); migration liga as FAQs ativas |
+| 4 | Toda suíte criada nascia inativa | Checkbox "Ativo" marcado na criação |
+| 5 | `/api/agent/faq` cortava a resposta em 200 caracteres | Resposta inteira |
+| 6 | WhatsApp sem o 55: `wa.me/41995012920` | `digitosWhatsApp()` em `lib/pousada.ts`, usado em todo o site |
+| 7 | Marina e 3 páginas usavam WhatsApp fixo no código | `lerContato()`; tela **Dados da pousada** |
+| 8 | Sem tela para comodidades da pousada nem por suíte | Checkbox "A pousada oferece" em Comodidades; lista de comodidades no form da suíte |
+| 9 | Suíte sem campos cama/metragem/vista (a Marina lê) | Campos no form |
+| 10 | Políticas sem crianças nem formas de pagamento (a skill promete) | `politicas.criancas_texto` (0015) + formas de pagamento; rota `/pousada` responde os dois |
+| 11 | Salvar políticas sem linha no banco: "salvas" e nada gravado | Cria a linha se faltar |
+| 12 | Pacotes: descrição, inclusos e validade não chegavam à Marina; pacote vencido seguia oferecido | Campos no form; rota filtra por validade |
+| 13 | `lerConteudo()` (travessia/ilha/eventos) existia e ninguém usava; sem tela | Tela **Ilha, chegada e eventos**; site e rotas da Marina leem dela; data da consulta do barco automática |
+| 14 | FAQ canônica congelava o preço do barco | `faqCanonico(conteudo)` |
+| 15 | Eventos: a Marina era proibida de dizer capacidade mesmo se cadastrada | Diz quando houver |
+| 16 | Excluir: "Cancelar" dentro do form sem `type="button"` excluía | Corrigido |
+| 17 | Admin → Políticas estourava 540px no celular (JSON de depuração) | Removido |
+
+### Dados falsos do seed (grave)
+O `db:seed` criava FAQs, políticas e comodidades de EXEMPLO com informação
+falsa — "aceita pets até 15 kg, R$ 50/dia", "cartão em 12x, Pix 5% de
+desconto", "cancelamento grátis até 7 dias", check-out 12h, piscina,
+estacionamento, recepção 24h — e 7 das FAQs estavam visíveis para a Marina,
+contradizendo a própria rota `/pousada` ("NÃO aceita animais"). Se o banco de
+produção nasceu desse seed, a Marina podia estar dizendo isso.
+A migration 0015 desliga **só** o que casa com o texto exato do seed (nada
+editado pela pousada é tocado) e remove os vínculos "a pousada tem" (que só
+o seed criava, pois não havia tela). O seed foi corrigido. O
+`db:corrigir` sobrescrevia políticas e desativava TODOS os depoimentos a
+cada execução — agora só toca texto de exemplo.
+
+## Fotos
+- `midias.secao` e `midias.pathname` (0015). Preenchimento inicial pelas
+  mesmas pistas que o site já usava (texto alternativo).
+- **Admin → Fotos** refeita (`admin/midias`): envio direto ao Blob
+  (`UploadMidias`), abas por seção, uma suíte por vez com aviso das sem foto,
+  capa/topo, ordem, mover entre seções e suítes, descrição, exclusão que só
+  apaga o arquivo se nenhuma outra linha usar a mesma URL, etiqueta
+  **"Repetida N×"**.
+- Galeria pública por seção e por suíte (`GaleriaSecoes`), `Lightbox`
+  compartilhado (deslizar, teclado, Esc, safe-area do iPhone).
+- Restaurante e Como chegar escolhem foto pela seção.
+
+## Visual
+- `Tropical.tsx`: folha de palmeira, onda e selo em SVG com `currentColor`.
+- Menu: transparente sobre a foto (só quando a página tem
+  `data-topo-imersivo`), vidro ao rolar, altura medida em `--altura-topo`;
+  menu do celular em tela cheia.
+- Home reescrita (`BlocosHome.tsx`), mesma API de blocos. `CartaoSuite`
+  compartilhado com `/quartos`. `/reservar` com o formulário novo.
+
+## Verificação
+- Postgres local com migrations, seed e `db:corrigir`; usuário admin local.
+- Pelo navegador (Playwright): criar e editar FAQ pelo "+ Novo" (continua
+  ativa, chega inteira à Marina); salvar Dados da pousada (WhatsApp novo no
+  site com 55 e na rota `/pousada`); mover foto repetida para outra seção;
+  "Cancelar" da exclusão mantém a foto.
+- Migration 0015 aplicada e reaplicada; passo das políticas testado em
+  transação com o texto de exemplo.
+- Varredura automática de 16 páginas públicas + 9 do painel em 360, 390,
+  768 e 1280px: nenhuma página pública com estouro horizontal.
+- `tsc` e `next build` limpos.
+
+**Não testado:** banco de produção, envio real ao Vercel Blob (sem token
+local — testado o caminho "por endereço"), gateway do OpenClaw.
+
+## Pendências desta rodada
+1. **Rodar `npm run db:migrate`** (0015) depois do deploy.
+2. **Reclassificar as fotos do WordPress** em Admin → Fotos: a 0015 só
+   separou restaurante/café pelo texto alternativo; o resto ficou em "A pousada".
+3. Atrações da ilha ainda só no código.
+4. Corpo das páginas A pousada, FAQ, Políticas, Contato, Eventos e
+   Avaliações ainda nos cartões antigos (o cabeçalho já é o novo).
+5. Lint: 185 (168 `any`); os 6 `any` novos seguem o estilo das telas do painel.
+6. Os botões flutuantes (Marina + WhatsApp) ainda cobrem uma faixa do
+   conteúdo no celular — inerente a botão flutuante.

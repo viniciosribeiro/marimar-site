@@ -18,7 +18,7 @@
 **O que so existe depois de rodar**
 
 ```
-npm run db:migrate          # migrations 0009 a 0014 (0013: conteudo_editavel; 0014: titulo da secao da pousada, 28/09)
+npm run db:migrate          # migrations 0009 a 0015 (0015: fotos por secao, FAQs e dados falsos do seed — 28/09)
 npm run db:migrar-fotos     # tira as imagens do WordPress antigo
 ```
 
@@ -47,6 +47,17 @@ de qualquer conta; Server Actions do admin sem sessao). Ao criar Server Action
 nova no admin, a primeira linha e `await exigirSessao()`
 (`src/lib/admin-sessao.ts`). Nunca escrever data fixa: `datasExemplo()`.
 
+## Painel x Marina e visual novo (28/09/2026, segunda revisao)
+
+O painel salvava coisas que nunca chegavam ao site nem a Marina ("+ Novo"
+nao abria em 6 telas; editar desativava; FAQ invisivel; WhatsApp sem o 55;
+contato fixo no codigo). Corrigido — detalhes em `docs/CHANGELOG-IA.md`,
+"Terceira rodada". Telas novas: **Dados da pousada**, **Ilha, chegada e
+eventos**, **Fotos** (por secao e por suite). Galeria publica por secao.
+Menu e home redesenhados (tropical, SVG nas cores do tema:
+`src/components/site/Tropical.tsx`). Manual da operacao:
+`docs/manual-admin.md`.
+
 ## As pendencias que importam
 
 1. **DNS.** `www.pousadamarimarilhadomel.com.br` ainda serve o WordPress
@@ -69,10 +80,13 @@ nova no admin, a primeira linha e `await exigirSessao()`
   OpenClaw. Falta ver o que o gateway expoe.
 - 13 itens em `PENDENTE_CONFIRMACAO`, em `src/lib/conteudo-pousada.ts`.
   **Nao publicar nenhum sem confirmacao da pousada.**
-- Design system ainda nao aplicado em `a-pousada`, `ilha-do-mel`, `galeria`,
-  `faq`, `politicas`, `contato`, `eventos`, `avaliacoes`.
-- Galeria categorizada com lightbox.
+- Visual novo (28/09) na home, menu, galeria, `/quartos`, `/reservar` e no
+  cabecalho das paginas internas; o corpo de `a-pousada`, `faq`, `politicas`,
+  `contato`, `eventos`, `avaliacoes` ainda usa os cartoes antigos.
+- Atracoes da ilha (Gruta, Farol…) ainda so no codigo — sem tela.
 - Redesenhar o admin no padrao editorial do site.
+- Fotos importadas do WordPress entraram como "A pousada": reclassificar em
+  Admin → Fotos (a migration 0015 so separou o que o texto alternativo dizia).
 
 ## O que este sistema NAO faz
 
