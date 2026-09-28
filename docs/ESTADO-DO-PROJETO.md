@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 19/09/2026.
+> Atualizado em 28/09/2026.
 
 ## Onde estamos
 
@@ -39,6 +39,14 @@ npm run db:migrar-fotos -- --reverter backups/fotos-2026-09-20-02-32-28.json
 
 A conferencia e o contador em `/admin/diagnostico`: verde e zero.
 
+## Revisao geral de 28/09/2026
+
+Seguranca, bugs e performance revisados; relatorio e pendencias priorizadas
+em **`docs/CHANGELOG-IA.md`**. Duas falhas graves corrigidas (troca de senha
+de qualquer conta; Server Actions do admin sem sessao). Ao criar Server Action
+nova no admin, a primeira linha e `await exigirSessao()`
+(`src/lib/admin-sessao.ts`). Nunca escrever data fixa: `datasExemplo()`.
+
 ## As pendencias que importam
 
 1. **DNS.** `www.pousadamarimarilhadomel.com.br` ainda serve o WordPress
@@ -52,6 +60,10 @@ A conferencia e o contador em `/admin/diagnostico`: verde e zero.
 3. **3 quartos faltando** — o motor retorna 10 tipos, o banco tem 7 ativos.
 
 ## Pendencias menores
+
+- **Seguranca (da revisao de 28/09):** `AGENT_API_KEY` exibida inteira em
+  `/admin/integracoes`; login sem limite por IP; contato sem limite de
+  envio. Detalhes e sugestoes em `docs/CHANGELOG-IA.md`, secao 5.
 
 - As conversas do **WhatsApp** nao aparecem na revisao do painel: ficam no
   OpenClaw. Falta ver o que o gateway expoe.
@@ -126,6 +138,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | `docs/ESTADO-DO-PROJETO.md` | **este arquivo** — visao geral e ponto de entrada |
 | `docs/HANDOFF-PROXIMO-AGENTE.md` | prompt pronto para retomar o trabalho e fazer o deploy |
 | `docs/CHANGELOG.md` | historico datado de mudancas |
+| `docs/CHANGELOG-IA.md` | revisao geral de 28/09/2026: o que foi corrigido e pendencias priorizadas |
 | `docs/contrato-api.md` | contrato completo do Worker PousadaHub (todos os campos) |
 | `docs/padrao-crud.md` | convencoes das telas de admin |
 | `docs/openclaw-integracao.md` | como a Marina consome a API |
@@ -177,9 +190,9 @@ Deploy da terceira sessão validado contra `marimar-site-rnkyimtse.vercel.app`:
 |---|---|
 | 8 | Upload de mídia só aceita URL — sem upload de arquivo (falta Vercel Blob ou S3) |
 | 9 | `audit_log` existe no schema mas nao e populado pelas server actions |
-| 10 | Sem testes automatizados. `src/lib/format.ts` é puro e seria o primeiro bom alvo |
+| 10 | Sem testes automatizados. Primeiros alvos: `validarConsulta()`/`urlTarifas()` em `src/lib/worker.ts` e `src/lib/format.ts` (casos prontos no `CHANGELOG-IA.md`) |
 | 11 | Coluna dedicada `hero_url` em `pousada` (hoje o hero deduz da tabela `midias`) |
-| 12 | Lint tem ~23 erros pré-existentes (`any`, `react-hooks/purity` com `Date.now`, aspas não escapadas) — não bloqueiam o build |
+| 12 | Lint tem 182 problemas pré-existentes (162 são `any`; medido em 28/09) — antes dizia ~23 (`any`, `react-hooks/purity` com `Date.now`, aspas não escapadas) — não bloqueiam o build |
 | 13 | Seletor de crianças não pede idade, mas o motor tem faixas etárias (`politica_crianca`) |
 | 14 | `src/middleware.ts` usa a convenção `middleware`, deprecada no Next 16 — o build avisa e sugere `npx @next/codemod@canary middleware-to-proxy .`. Funciona hoje; não mexido de propósito porque esse arquivo teve um bug de redirect loop corrigido há pouco (`0f8cb73`) e a troca merece teste dedicado |
 

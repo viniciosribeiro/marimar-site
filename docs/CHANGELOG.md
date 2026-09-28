@@ -6,6 +6,36 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-28 — Revisao geral: seguranca, bugs e performance
+**Autor:** Claude (Claude Code)
+
+Relatorio completo, com pendencias priorizadas: **`docs/CHANGELOG-IA.md`**.
+Sem migration, sem env var nova, sem dependencia nova.
+
+- 🔴 `trocarSenha` usava o `userId` de um input hidden: qualquer POST trocava
+  a senha de qualquer conta. Agora usa a sessao e encerra a sessao depois
+  (o JWT com `mustReset` prendia a pessoa em loop na tela de troca).
+- 🔴 29 Server Actions do admin nao checavam sessao
+  (`lib/admin-actions.ts`, categorias, comodidades, quartos). Novo
+  `exigirSessao()` em `lib/admin-sessao.ts`.
+- Data fixa `2026-10-15` em seis lugares, inclusive o link "Reservar" da
+  pagina do quarto → `datasExemplo()`.
+- `/contato` nao mostrava a confirmacao de envio; telefone > 20 caracteres
+  dava 500. Lead num lugar so: `lib/leads.ts`.
+- Validacao de datas/hospedes (`validarConsulta()`) nas duas rotas de
+  disponibilidade e no `/reservar`.
+- `/robots.txt` e `/sitemap.xml` nao existiam (so em `/api/...`).
+- Conexoes que vazavam em erro → `comSql()` em `lib/db-conexao.ts`.
+- Performance: a linha da `pousada` era lida 3-4x por pagina, com conexao
+  nova cada vez → `lerPousada()` com `cache()`; motor em paralelo com o
+  banco em `/reservar` e `/quartos/[slug]`; testes de `/admin/integracoes`
+  em paralelo.
+- `package-lock.json` sincronizado (`npm ci` falhava).
+
+**Pendente e importante:** a `AGENT_API_KEY` aparece inteira no HTML de
+`/admin/integracoes`; login sem limite por IP; contato sem limite de envio.
+Ver secao 5 do `CHANGELOG-IA.md`.
+
 ## 2026-09-19 (6) — Revisao do que foi escrito hoje
 **Autor:** Claude Opus 5 (Cowork)
 
