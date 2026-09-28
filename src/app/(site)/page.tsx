@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import { lerPousada } from "@/lib/pousada";
+import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 import { lerBanner } from "@/lib/banners";
 import { agruparItens } from "@/lib/blocos";
 import { RenderBloco, type Bloco, type DadosHome } from "@/components/site/BlocosHome";
@@ -34,6 +34,7 @@ export default async function HomePage() {
   let banners: any[] = [];
   let itensBlocos: any[] = [];
   let pacotesTopo: any[] = [];
+  let fotosSecao: { secao: string; url: string; alt: string }[] = [];
 
   pousada = await lerPousada(); // ja lida pelo layout nesta requisicao
 
@@ -63,6 +64,18 @@ export default async function HomePage() {
       SELECT slug, nome, descricao AS resumo FROM pacotes
       WHERE ativo = true ORDER BY ordem, criado_em LIMIT 3
     `;
+
+    /* A foto principal de cada seção (a destacada, senão a primeira), para
+       os blocos da pousada, do restaurante e da faixa final. Isolada: antes
+       da migration 0015 a coluna `secao` não existe. */
+    try {
+      fotosSecao = await sql`
+        SELECT DISTINCT ON (secao) secao, url, alt FROM midias
+        WHERE quarto_id IS NULL
+        ORDER BY secao, destaque DESC, ordem, criado_em`;
+    } catch (e) {
+      console.warn("[HomePage] fotos por secao indisponiveis (migration 0015?):", (e as Error).message);
+    }
 
     [heroMidia] = await sql`
       SELECT url, alt FROM midias WHERE destaque = true
@@ -123,10 +136,11 @@ export default async function HomePage() {
     faqs,
     heroUrl: heroMidia?.url || pousada?.og_image_url || null,
     heroAlt: heroMidia?.alt || null,
-    wa: pousada?.whatsapp?.replace(/\D/g, "") || "",
+    wa: digitosWhatsApp(pousada?.whatsapp),
     banners: banners.map(lerBanner),
     itens: agruparItens(itensBlocos),
     pacotes: pacotesTopo as any,
+    fotos: Object.fromEntries(fotosSecao.map((f) => [f.secao, { url: f.url, alt: f.alt }])),
   };
 
   const todos = blocos as (Bloco & { ativo?: boolean })[];

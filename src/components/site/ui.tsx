@@ -1,3 +1,4 @@
+import { FolhaPalmeira, OndaDivisor } from "./Tropical";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -191,8 +192,10 @@ export function Hero({
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-white/60 to-transparent" />
         </>
       )}
+      {/* Folhagem tropical — a mesma linguagem da home nas páginas internas. */}
+      <FolhaPalmeira className="absolute -right-16 -top-10 w-72 lg:w-96 -z-10 text-marca/[0.09] rotate-[28deg] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-20 lg:pt-20 lg:pb-28 relative">
         {/* A coluna do hero acompanha o alinhamento escolhido no editor:
             centralizada, ela ganha `margin-inline: auto` e o texto vai ao
             centro; a esquerda, fica exatamente como estava. */}
@@ -217,17 +220,18 @@ export function Hero({
         </div>
 
         {manuscrita && (
-          <Manuscrita tamanho="lg" className="absolute right-8 xl:right-20 top-12 -rotate-6 text-right">
+          <Manuscrita tamanho="lg" className="hidden md:block absolute right-8 xl:right-20 top-12 -rotate-6 text-right">
             {manuscrita}
           </Manuscrita>
         )}
 
         {legenda && (
-          <span className="hidden sm:block absolute bottom-4 right-6 text-[11px] text-white bg-tinta/55 backdrop-blur-sm px-2.5 py-1 rounded">
+          <span className="hidden sm:block absolute bottom-16 right-6 text-[11px] text-white bg-tinta/55 backdrop-blur-sm px-2.5 py-1 rounded">
             {legenda}
           </span>
         )}
       </div>
+      <OndaDivisor className="absolute bottom-0 inset-x-0 text-fundo" />
     </section>
   );
 }

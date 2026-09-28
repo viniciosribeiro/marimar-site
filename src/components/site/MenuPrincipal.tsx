@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAVEGACAO, grupoAtivo, type GrupoNav } from "@/lib/navegacao";
 import { MarcaLockup } from "./MarcaLockup";
+import { FolhaPalmeira } from "./Tropical";
 
 type Props = {
   nome: string;
@@ -66,8 +67,11 @@ export function MenuPrincipal({
   const [gaveta, setGaveta] = useState(false);
   const [sanfona, setSanfona] = useState<string | null>(null);
   const [compacto, setCompacto] = useState(false);
+  /** A página começa com uma foto que pede o topo transparente por cima. */
+  const [imersivo, setImersivo] = useState(false);
 
   const barraRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
   const fecharTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* Fecha tudo ao navegar. Sem isto o painel fica aberto por cima da
@@ -77,6 +81,28 @@ export function MenuPrincipal({
     setGaveta(false);
     setSanfona(null);
   }, [pathname]);
+
+  /* Topo transparente sobre a foto. Só liga se a página realmente começa
+     com uma foto marcada com `data-topo-imersivo` (o topo da home): se a
+     administração reordenar os blocos e a foto sair do topo, o cabeçalho
+     volta a ser sólido sozinho, em vez de ficar branco sobre branco. */
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setImersivo(!!document.querySelector("[data-topo-imersivo]")));
+    return () => cancelAnimationFrame(id);
+  }, [pathname]);
+
+  /* A altura real do cabeçalho vira `--altura-topo`: é quanto a foto do
+     topo sobe para ficar por baixo dele, e onde as abas fixas da galeria
+     param. Medida, e não calculada, porque depende da logo e do arranjo. */
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const medir = () => document.documentElement.style.setProperty("--altura-topo", `${el.offsetHeight}px`);
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   /* Cabecalho condensa depois do primeiro rolar. Ganha altura para a marca
      respirar no topo da pagina e devolve tela enquanto a pessoa le. */
@@ -133,6 +159,8 @@ export function MenuPrincipal({
   }, []);
 
   const wa = whatsappDigitos && whatsappDigitos.length >= 10 ? whatsappDigitos : null;
+  /** Transparente só no topo da página imersiva e com nenhum painel aberto. */
+  const sobreFoto = imersivo && !compacto && !painel;
 
   /* `minHeight`, nao `height`: com o nome ACIMA ou ABAIXO da logo o conjunto
      fica mais alto que a imagem, e uma altura fechada o cortaria. O minimo
@@ -153,6 +181,7 @@ export function MenuPrincipal({
         aberto={painel === grupo.rotulo}
         onAbrir={() => abrir(grupo.rotulo)}
         onAlternar={() => setPainel((a) => (a === grupo.rotulo ? null : grupo.rotulo))}
+        claro={sobreFoto}
       />
     ));
 
@@ -165,6 +194,7 @@ export function MenuPrincipal({
         texto={nomeTexto}
         subtexto={nomeSubtexto}
         altura={compacto ? "var(--logo-altura-compacta)" : "var(--logo-altura)"}
+        sobreFoto={sobreFoto}
       />
     </Link>
   );
@@ -177,14 +207,20 @@ export function MenuPrincipal({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Falar no WhatsApp"
-          className="hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-marca text-[#25D366] hover:bg-[#25D366]/10 transition-marca"
+          className={`hidden sm:inline-flex items-center justify-center h-11 w-11 rounded-full transition-marca ${
+            sobreFoto ? "text-white hover:bg-white/15" : "text-[#1faa59] hover:bg-[#25D366]/10"
+          }`}
         >
           <IconeWhats size={20} />
         </a>
       )}
       <Link
         href="/reservar"
-        className="hidden sm:inline-flex items-center bg-marca hover:bg-marca-hover text-marca-texto px-4 lg:px-5 py-2.5 rounded-marca text-sm font-semibold shadow-marca transition-marca"
+        className={`hidden sm:inline-flex items-center gap-2 px-5 lg:px-6 h-11 rounded-full text-sm font-semibold transition-marca ${
+          sobreFoto
+            ? "bg-white text-tinta hover:bg-white/90 shadow-[0_8px_24px_-8px_rgb(0_0_0/0.45)]"
+            : "bg-marca hover:bg-marca-hover text-marca-texto shadow-marca"
+        }`}
       >
         Reservar
       </Link>
@@ -193,7 +229,11 @@ export function MenuPrincipal({
         onClick={() => setGaveta(true)}
         aria-label="Abrir menu"
         aria-expanded={gaveta}
-        className="lg:hidden flex items-center gap-2 -mr-1 pl-2.5 pr-3 py-2 rounded-marca text-tinta border border-linha hover:bg-areia transition-marca"
+        className={`lg:hidden flex items-center gap-2 -mr-1 pl-3 pr-3.5 h-11 rounded-full border transition-marca ${
+          sobreFoto
+            ? "text-white border-white/50 bg-white/10 backdrop-blur-md hover:bg-white/20"
+            : "text-tinta border-linha bg-white/70 hover:bg-areia"
+        }`}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           strokeWidth="2" strokeLinecap="round" aria-hidden>
@@ -209,8 +249,14 @@ export function MenuPrincipal({
   return (
     <>
     <header
-      className={`sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b transition-marca ${
-        compacto ? "border-linha shadow-sm" : "border-transparent"
+      ref={headerRef}
+      data-sobre-foto={sobreFoto || undefined}
+      className={`sticky top-0 z-50 border-b transition-[background-color,border-color,box-shadow] duration-500 ${
+        sobreFoto
+          ? "bg-transparent border-transparent"
+          : `bg-white/85 backdrop-blur-xl backdrop-saturate-150 ${
+              compacto ? "border-linha/80 shadow-[0_10px_30px_-18px_rgb(18_50_79/0.35)]" : "border-linha/40"
+            }`
       }`}
     >
       <div
@@ -304,17 +350,24 @@ export function MenuPrincipal({
 /* ───────────────────────── item do desktop ───────────────────────── */
 
 function ItemDesktop({
-  grupo, ativo, aberto, onAbrir, onAlternar,
+  grupo, ativo, aberto, onAbrir, onAlternar, claro = false,
 }: {
   grupo: GrupoNav;
   ativo: boolean;
   aberto: boolean;
   onAbrir: () => void;
   onAlternar: () => void;
+  /** Sobre a foto do topo: texto branco. */
+  claro?: boolean;
 }) {
-  const marca = `after:absolute after:left-3 after:right-3 after:bottom-3 after:h-0.5 after:rounded-full after:transition-marca ${
-    ativo ? "after:bg-marca" : "after:bg-transparent"
+  /* Indicador da página atual: um traço curto e centrado, que cresce no
+     hover — mais discreto que o sublinhado de ponta a ponta. */
+  const marca = `after:absolute after:left-1/2 after:-translate-x-1/2 after:bottom-3 after:h-[2px] after:rounded-full after:transition-all after:duration-300 ${
+    ativo ? `after:w-5 ${claro ? "after:bg-white" : "after:bg-marca"}` : `after:w-0 hover:after:w-5 ${claro ? "after:bg-white/80" : "after:bg-marca/60"}`
   }`;
+  const cor = claro
+    ? ativo || aberto ? "text-white" : "text-white/85 hover:text-white"
+    : ativo || aberto ? "text-marca" : "text-tinta hover:text-marca";
 
   if (!grupo.itens?.length) {
     return (
@@ -322,9 +375,7 @@ function ItemDesktop({
         href={grupo.href}
         onMouseEnter={onAbrir}
         aria-current={ativo ? "page" : undefined}
-        className={`relative flex items-center px-3 text-sm font-medium transition-marca ${marca} ${
-          ativo ? "text-marca" : "text-tinta-suave hover:text-marca"
-        }`}
+        className={`relative flex items-center px-3.5 text-[0.93rem] font-medium tracking-[0.01em] transition-marca ${marca} ${cor} ${claro ? "drop-shadow-[0_1px_6px_rgb(0_0_0/0.35)]" : ""}`}
       >
         {grupo.rotulo}
       </Link>
@@ -352,9 +403,7 @@ function ItemDesktop({
         onKeyDown={(e) => { if (e.key === "ArrowDown") { e.preventDefault(); onAbrir(); } }}
         aria-expanded={aberto}
         aria-haspopup="true"
-        className={`relative flex items-center gap-1.5 px-3 text-sm font-medium transition-marca ${marca} ${
-          ativo || aberto ? "text-marca" : "text-tinta-suave hover:text-marca"
-        }`}
+        className={`relative flex items-center gap-1.5 px-3.5 text-[0.93rem] font-medium tracking-[0.01em] transition-marca ${marca} ${cor} ${claro ? "drop-shadow-[0_1px_6px_rgb(0_0_0/0.35)]" : ""}`}
       >
         {grupo.rotulo}
         <Chevron className={`transition-transform duration-200 ${aberto ? "rotate-180" : ""}`} />
@@ -366,16 +415,17 @@ function ItemDesktop({
           role="group"
           aria-label={grupo.rotulo}
         >
-          <div className="rounded-marca border border-linha bg-white shadow-marca-forte overflow-hidden">
-            <p className="px-4 pt-3.5 pb-2 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-tinta-suave/70">
+          <div className="relative rounded-2xl border border-linha/70 bg-white/95 backdrop-blur-xl shadow-[0_24px_60px_-20px_rgb(18_50_79/0.35)] overflow-hidden">
+            <FolhaPalmeira className="absolute -right-8 -bottom-10 w-40 text-marca/[0.07] rotate-[20deg] pointer-events-none" />
+            <p className="relative px-5 pt-4 pb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-marca">
               {grupo.rotulo}
             </p>
-            <div className="pb-2">
+            <div className="relative pb-3 px-2">
               {grupo.itens.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group block px-4 py-2.5 hover:bg-areia transition-marca"
+                  className="group block px-3 py-2.5 rounded-xl hover:bg-areia/80 transition-marca"
                 >
                   <span className="flex items-center gap-2 text-[0.94rem] font-semibold text-tinta group-hover:text-marca transition-marca">
                     {item.rotulo}
@@ -398,6 +448,15 @@ function ItemDesktop({
 
 /* ────────────────────────── gaveta do celular ────────────────────────── */
 
+/**
+ * Menu do celular em tela cheia.
+ *
+ * Antes era uma gaveta branca de 88% da largura com links de 16px — lista
+ * de sistema, não de pousada. Agora: fundo areia com folhagem, títulos
+ * grandes na fonte da marca, cada grupo abre no lugar (sanfona), e a ação
+ * que importa ("Ver disponibilidade") fica presa embaixo, acima da barra
+ * de gestos do iPhone (`safe-area-inset-bottom`).
+ */
 function Gaveta({
   nome, logoUrl, mostrarNome, nomeTexto, nomeSubtexto, pathname, sanfona, setSanfona, fechar,
   wa, whatsappExibicao, instagram, instagramUser,
@@ -417,14 +476,21 @@ function Gaveta({
   instagramUser: string;
 }) {
   return (
-    <div className="lg:hidden fixed inset-0 z-[60]">
-      <div className="absolute inset-0 bg-tinta/50 backdrop-blur-sm" onClick={fechar} aria-hidden />
+    <div className="lg:hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Menu">
+      <div className="absolute inset-0 bg-tinta/40 backdrop-blur-sm anim-gaveta-fundo" onClick={fechar} aria-hidden />
 
       <nav
-        className="absolute right-0 top-0 h-full w-[88vw] max-w-sm bg-white shadow-2xl flex flex-col"
+        className="absolute inset-0 sm:left-auto sm:w-[26rem] bg-areia flex flex-col overflow-hidden anim-gaveta"
         aria-label="Navegação"
       >
-        <div className="h-16 shrink-0 flex items-center justify-between px-4 border-b border-linha">
+        {/* Folhagem de fundo — decoração, fica atrás de tudo. */}
+        <FolhaPalmeira className="absolute -right-16 -top-10 w-72 text-marca/[0.08] rotate-[35deg] pointer-events-none" />
+        <FolhaPalmeira className="absolute -left-20 bottom-24 w-64 text-acento/[0.09] -rotate-[140deg] pointer-events-none" />
+
+        <div
+          className="relative shrink-0 flex items-center justify-between px-5 pb-3"
+          style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+        >
           <MarcaLockup
             nome={nome}
             logoUrl={logoUrl}
@@ -435,98 +501,93 @@ function Gaveta({
             className="min-w-0"
           />
           <button onClick={fechar} aria-label="Fechar menu"
-            className="p-2 -mr-2 text-tinta-suave hover:text-tinta rounded-marca">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            className="shrink-0 w-11 h-11 rounded-full bg-white text-tinta shadow-marca flex items-center justify-center hover:bg-white/80 transition-marca">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               strokeWidth="2" strokeLinecap="round" aria-hidden>
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain">
-          {NAVEGACAO.map((grupo) => {
-            const ativo = grupoAtivo(pathname, grupo);
-            const aberto = sanfona === grupo.rotulo;
-
-            if (!grupo.itens?.length) {
-              return (
-                <Link
-                  key={grupo.rotulo}
-                  href={grupo.href}
-                  aria-current={ativo ? "page" : undefined}
-                  className={`flex items-center px-5 py-4 text-base font-semibold border-b border-linha/60 transition-marca ${
-                    ativo ? "text-marca bg-marca-sutil" : "text-tinta active:bg-areia"
-                  }`}
-                >
-                  {grupo.rotulo}
-                </Link>
-              );
-            }
-
-            return (
-              <div key={grupo.rotulo} className="border-b border-linha/60">
-                {/* Toque de 56px de altura: a sanfona evita a lista de 17
-                    links que a pessoa teria de rolar para achar "Contato". */}
-                <button
-                  onClick={() => setSanfona(aberto ? null : grupo.rotulo)}
-                  aria-expanded={aberto}
-                  className={`w-full flex items-center justify-between gap-3 px-5 py-4 text-base font-semibold text-left transition-marca ${
-                    ativo ? "text-marca" : "text-tinta"
-                  }`}
-                >
-                  <span className="flex items-center gap-2 min-w-0">
-                    {ativo && <span className="h-1.5 w-1.5 rounded-full bg-marca shrink-0" aria-hidden />}
-                    <span className="truncate">{grupo.rotulo}</span>
+        <div className="relative flex-1 overflow-y-auto overscroll-contain px-5 pt-4 pb-6">
+          <ul className="space-y-1">
+            {NAVEGACAO.map((grupo, n) => {
+              const ativo = grupoAtivo(pathname, grupo);
+              const aberto = sanfona === grupo.rotulo;
+              const titulo = (
+                <span className="flex items-baseline gap-3 min-w-0">
+                  <span className="text-[0.7rem] font-semibold tabular-nums text-marca/70 w-5 shrink-0">
+                    {String(n + 1).padStart(2, "0")}
                   </span>
-                  <Chevron className={`shrink-0 text-tinta-suave transition-transform duration-200 ${aberto ? "rotate-180" : ""}`} />
-                </button>
+                  <span className={`font-titulo text-[1.65rem] leading-tight truncate ${ativo ? "text-marca" : "text-tinta"}`}>
+                    {grupo.rotulo}
+                  </span>
+                </span>
+              );
 
-                {aberto && (
-                  <div className="bg-areia/60 pb-2">
-                    {grupo.itens.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className="block px-5 py-3 border-l-2 border-linha ml-5 mr-3 active:bg-white transition-marca"
-                      >
-                        <span className="block text-[0.95rem] font-medium text-tinta">{item.rotulo}</span>
-                        {item.descricao && (
-                          <span className="block text-[0.78rem] leading-snug text-tinta-suave mt-0.5">
-                            {item.descricao}
-                          </span>
-                        )}
-                      </Link>
-                    ))}
+              if (!grupo.itens?.length) {
+                return (
+                  <li key={grupo.rotulo}>
+                    <Link href={grupo.href} aria-current={ativo ? "page" : undefined}
+                      className="flex items-center justify-between py-3 border-b border-linha/70">
+                      {titulo}
+                      <span className="text-marca text-lg" aria-hidden>→</span>
+                    </Link>
+                  </li>
+                );
+              }
+
+              return (
+                <li key={grupo.rotulo} className="border-b border-linha/70">
+                  <button
+                    onClick={() => setSanfona(aberto ? null : grupo.rotulo)}
+                    aria-expanded={aberto}
+                    className="w-full flex items-center justify-between gap-3 py-3 text-left"
+                  >
+                    {titulo}
+                    <span className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
+                      aberto ? "bg-marca text-marca-texto rotate-180" : "bg-white text-tinta"
+                    }`}>
+                      <Chevron />
+                    </span>
+                  </button>
+
+                  <div className={`grid transition-[grid-template-rows] duration-300 ${aberto ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+                    <div className="overflow-hidden">
+                      <div className="pl-8 pb-4 space-y-1">
+                        {grupo.itens.map((item) => (
+                          <Link key={item.href} href={item.href} tabIndex={aberto ? 0 : -1}
+                            className="block rounded-xl px-3 py-2.5 bg-white/70 hover:bg-white active:bg-white transition-marca">
+                            <span className="block text-[0.98rem] font-semibold text-tinta">{item.rotulo}</span>
+                            {item.descricao && (
+                              <span className="block text-[0.8rem] leading-snug text-tinta-suave mt-0.5">{item.descricao}</span>
+                            )}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
+                </li>
+              );
+            })}
+          </ul>
 
-          <div className="px-5 py-5 space-y-2">
+          <div className="grid grid-cols-2 gap-2 mt-6">
             {wa && (
-              <a
-                href={`https://wa.me/${wa}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2.5 text-sm text-tinta-suave hover:text-tinta transition-marca"
-              >
-                <span className="text-[#25D366]"><IconeWhats /></span>
-                {whatsappExibicao || "Falar no WhatsApp"}
+              <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm text-tinta shadow-marca">
+                <span className="text-[#1faa59] shrink-0"><IconeWhats /></span>
+                <span className="truncate">{whatsappExibicao || "WhatsApp"}</span>
               </a>
             )}
-            <a
-              href={instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2.5 text-sm text-tinta-suave hover:text-tinta transition-marca"
-            >
+            <a href={instagram} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm text-tinta shadow-marca">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" aria-hidden>
+                strokeWidth="2" strokeLinecap="round" aria-hidden className="shrink-0 text-marca">
                 <rect x="2" y="2" width="20" height="20" rx="5" />
                 <circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
               </svg>
-              {instagramUser}
+              <span className="truncate">{instagramUser}</span>
             </a>
           </div>
         </div>
@@ -534,14 +595,15 @@ function Gaveta({
         {/* O CTA fica fixo no rodape da gaveta: e a acao que a pousada quer
             de qualquer ponto da lista, sem obrigar a rolar de volta. */}
         <div
-          className="shrink-0 p-4 border-t border-linha bg-white"
-          style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+          className="relative shrink-0 px-5 pt-3 bg-gradient-to-t from-areia via-areia to-areia/0"
+          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
         >
           <Link
             href="/reservar"
-            className="block text-center bg-marca hover:bg-marca-hover text-marca-texto py-3.5 rounded-marca font-semibold shadow-marca transition-marca"
+            className="flex items-center justify-center gap-2 bg-marca hover:bg-marca-hover text-marca-texto h-14 rounded-full font-semibold text-base shadow-marca-forte transition-marca"
           >
             Ver disponibilidade
+            <span aria-hidden>→</span>
           </Link>
         </div>
       </nav>
