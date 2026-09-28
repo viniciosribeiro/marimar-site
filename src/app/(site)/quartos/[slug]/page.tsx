@@ -1,4 +1,4 @@
-import { brl, tituloQuarto } from "@/lib/format";
+import { brl, datasExemplo } from "@/lib/format";
 import postgres from "postgres"; import { notFound } from "next/navigation"; import Link from "next/link"; import { fetchTarifas } from "@/lib/worker"; import { buildDeepLink } from "@/lib/deeplink"; import { Gallery } from "@/components/site/Gallery";
 
 export const dynamic = "force-dynamic";
@@ -8,20 +8,25 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const [q] = await sql`SELECT q.*, c.nome as cat_nome FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id WHERE q.slug = ${slug} AND q.ativo = true`;
   if (!q) { await sql.end(); notFound(); }
+
+  // Preço ao vivo. A consulta ao motor (a parte lenta, ~1s) começa já e
+  // corre em paralelo com o resto do banco, em vez de esperar por ele.
+  const exemplo = datasExemplo();
+  const tarifas = q.desbravador_room_id
+    ? fetchTarifas(exemplo.checkIn, exemplo.checkOut, 2).catch(() => null)
+    : Promise.resolve(null);
+
   const [p] = await sql`SELECT * FROM pousada LIMIT 1`;
   const comods = await sql`SELECT cm.* FROM comodidades cm JOIN quarto_comodidades qc ON qc.comodidade_id = cm.id WHERE qc.quarto_id = ${q.id}`;
   const fotos = await sql`SELECT * FROM midias WHERE quarto_id = ${q.id} ORDER BY ordem`;
   await sql.end();
 
-  // Preço ao vivo
   let preco: any = null;
-  try {
-    if (q.desbravador_room_id) {
-      const data = await fetchTarifas("2026-10-15", "2026-10-17", 2);
-      const found = [...data.quartos, ...data.indisponiveis].find((r: any) => r.id === q.desbravador_room_id);
-      if (found) preco = found;
-    }
-  } catch {}
+  const data = await tarifas;
+  if (data) {
+    const found = [...data.quartos, ...data.indisponiveis].find((r: any) => r.id === q.desbravador_room_id);
+    if (found) preco = found;
+  }
 
   const galleryImages = fotos.length > 0
     ? fotos.map((f: any) => ({ url: f.url, alt: f.alt }))
@@ -105,7 +110,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
                   )}
                   <div className="flex flex-col gap-2 mt-4">
                     <a
-                      href={buildDeepLink({ checkIn: "2026-10-15", checkOut: "2026-10-17", adultos: 2 })}
+                      href={buildDeepLink({ checkIn: exemplo.checkIn, checkOut: exemplo.checkOut, adultos: 2 })}
                       target="_blank"
                       className="block text-center bg-marca text-marca-texto py-3 rounded-marca font-medium hover:bg-marca-hover transition-colors"
                     >

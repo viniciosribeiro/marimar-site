@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"; import { redirect } from "next/navigation"; import { fetchTarifas } from "@/lib/worker"; import postgres from "postgres"; import { headers } from "next/headers";
 import { gatewayConfigurado, urlGateway, cabecalhosGateway } from "@/lib/chat";
 import { alternarChat } from "./chat-actions";
+import { datasExemplo } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -20,19 +21,31 @@ export default async function IntegracoesPage() {
 
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
 
+  const { checkIn, checkOut } = datasExemplo();
+
+  /* Os testes de rede correm em paralelo. Em sequencia, com os timeouts
+     somados (12s + 4x5s + 8s), a tela podia levar mais de 40s para abrir
+     exatamente quando algo estava fora do ar — a hora em que ela e aberta. */
+
   // Testa Worker Desbravador
   let workerData: any = null; let workerLat = 0; let workerErr = "";
-  try { const t0 = Date.now(); workerData = await fetchTarifas("2026-10-15", "2026-10-17", 2); workerLat = Date.now() - t0; } catch (e: any) { workerErr = e.message; }
+  const testeWorker = (async () => {
+    try { const t0 = Date.now(); workerData = await fetchTarifas(checkIn, checkOut, 2); workerLat = Date.now() - t0; } catch (e: any) { workerErr = e.message; }
+  })();
 
   // Testa API do Agente
   const agentTests: any = {};
-  for (const ep of ["pousada", "quartos", "faq", "pacotes"]) {
+  const testesAgente = ["pousada", "quartos", "faq", "pacotes"].map(async (ep) => {
     try { const t0 = Date.now(); const r = await fetch(`${baseUrl}/api/agent/${ep}`, { headers: { Authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(5000) }); agentTests[ep] = { ok: r.ok, status: r.status, lat: Date.now() - t0 }; } catch { agentTests[ep] = { ok: false, status: 0, lat: 0 }; }
-  }
+  });
 
   // Testa API Disponibilidade pública
   let dispOk = false; let dispLat = 0;
-  try { const t0 = Date.now(); const r = await fetch(`${baseUrl}/api/disponibilidade?check_in=2026-10-15&check_out=2026-10-17&adultos=2`, { signal: AbortSignal.timeout(8000) }); dispOk = r.ok; dispLat = Date.now() - t0; } catch {}
+  const testeDisp = (async () => {
+    try { const t0 = Date.now(); const r = await fetch(`${baseUrl}/api/disponibilidade?check_in=${checkIn}&check_out=${checkOut}&adultos=2`, { signal: AbortSignal.timeout(8000) }); dispOk = r.ok; dispLat = Date.now() - t0; } catch {}
+  })();
+
+  await Promise.all([testeWorker, ...testesAgente, testeDisp]);
 
   /* ── Marina no site ──
      Testa o gateway do OpenClaw como o /api/chat faria: mesma URL, mesmo
