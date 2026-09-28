@@ -74,7 +74,7 @@ export function GaleriaSecoes({
                 <p className="text-xs text-tinta-suave mt-0.5">{g.fotos.length === 1 ? "1 foto" : `${g.fotos.length} fotos`}</p>
               </div>
               {g.href && (
-                <Link href={g.href} className="text-sm font-semibold text-marca hover:text-marca-hover shrink-0">
+                <Link href={g.href} className="inline-flex items-center py-3 text-sm font-semibold text-marca hover:text-marca-hover shrink-0">
                   Ver a suíte →
                 </Link>
               )}

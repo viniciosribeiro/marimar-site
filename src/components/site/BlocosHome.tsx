@@ -1,12 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { tituloQuarto, resumir } from "@/lib/format";
 import { CarrosselBanners, BuscaNoCelular } from "./CarrosselBanners";
 import type { Banner } from "@/lib/banners";
 import { IconeCirculo, Icone, OndaTitulo } from "./Icone";
 import { BuscaHome } from "./BuscaHome";
 import { Manuscrita } from "./ui";
 import { FolhaPalmeira, OndaDivisor } from "./Tropical";
+import { CartaoSuite } from "./CartaoSuite";
 import type { ItemBloco } from "@/lib/blocos";
 import {
   COMPLEXO, DIFERENCIAIS, DESTAQUES_TOPO, CAFE_DA_MANHA, RESTAURANTE,
@@ -339,36 +339,7 @@ function Quartos({ t, s, d }: { t: string | null; s: string | null; d: DadosHome
       <ul className="flex lg:grid lg:grid-cols-3 gap-4 lg:gap-6 overflow-x-auto lg:overflow-visible snap-x snap-mandatory no-scrollbar px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-px-4 pb-2">
         {d.quartos.map((q: any) => (
           <li key={q.id} className="snap-start shrink-0 w-[82%] sm:w-[46%] lg:w-auto">
-            <Link href={`/quartos/${q.slug}`}
-              className={`group relative isolate flex flex-col justify-end aspect-[4/5] overflow-hidden ${RAIO_G} bg-areia shadow-[0_24px_50px_-28px_rgb(18_50_79/0.6)]`}>
-              {q.foto ? (
-                <Image src={q.foto} alt={q.foto_alt || tituloQuarto(q.nome)} fill
-                  sizes="(max-width: 640px) 82vw, (max-width: 1024px) 46vw, 33vw"
-                  className="object-cover -z-10 transition-transform duration-[1.2s] ease-out group-hover:scale-105" />
-              ) : (
-                <div className="-z-10"><FundoSemFoto /></div>
-              )}
-              <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-              {q.cat_nome && (
-                <span className="absolute top-4 left-4 rounded-full bg-white/90 backdrop-blur px-3 py-1 text-[0.72rem] font-semibold text-tinta">
-                  {tituloQuarto(q.cat_nome)}
-                </span>
-              )}
-
-              <div className="p-5 sm:p-6 text-white">
-                <h3 className="font-titulo text-2xl font-bold text-white">{tituloQuarto(q.nome)}</h3>
-                <p className="text-sm text-white/80 mt-1.5 line-clamp-2">{resumir(q.descricao || q.descricao_motor, 90)}</p>
-                <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-white/20">
-                  <span className="text-xs text-white/85 flex flex-wrap gap-x-3 gap-y-1">
-                    <span>Até {q.ocupacao_max} pessoas</span>
-                    {q.cama && <span>{q.cama}</span>}
-                    {q.metragem && <span>{q.metragem} m²</span>}
-                  </span>
-                  <span className="shrink-0 w-10 h-10 rounded-full bg-white text-tinta flex items-center justify-center transition-transform group-hover:translate-x-1" aria-hidden>→</span>
-                </div>
-              </div>
-            </Link>
+            <CartaoSuite q={q} sizes="(max-width: 640px) 82vw, (max-width: 1024px) 46vw, 33vw" />
           </li>
         ))}
       </ul>
@@ -462,7 +433,7 @@ function Avaliacoes({ t, s }: { t: string | null; s: string | null }) {
         </ul>
         <p className="text-xs text-tinta-suave/80 text-center mt-5">Notas consultadas em {AVALIACOES.consultadoEm} · sujeitas a alteração</p>
         <div className="text-center mt-6">
-          <Link href="/avaliacoes" className="inline-flex items-center gap-2 text-sm text-marca font-semibold hover:gap-3 transition-all">Ver detalhes por critério <span aria-hidden>→</span></Link>
+          <Link href="/avaliacoes" className="inline-flex items-center gap-2 py-3 text-sm text-marca font-semibold hover:gap-3 transition-all">Ver detalhes por critério <span aria-hidden>→</span></Link>
         </div>
       </div>
     </section>
@@ -569,7 +540,7 @@ function Faq({ t, s, d }: { t: string | null; s: string | null; d: DadosHome }) 
         ))}
       </div>
       <div className="text-center mt-8">
-        <Link href="/faq" className="inline-flex items-center gap-2 text-sm text-marca font-semibold hover:gap-3 transition-all">Ver todas as dúvidas <span aria-hidden>→</span></Link>
+        <Link href="/faq" className="inline-flex items-center gap-2 py-3 text-sm text-marca font-semibold hover:gap-3 transition-all">Ver todas as dúvidas <span aria-hidden>→</span></Link>
       </div>
     </section>
   );

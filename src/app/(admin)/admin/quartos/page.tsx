@@ -156,10 +156,10 @@ export default async function QuartosPage({
                 <td className="p-3 font-mono text-xs">{q.desbravador_room_id || "—"}</td>
                 <td className="p-3">{q.ativo ? "✅" : "—"}</td>
                 <td className="p-3 text-right space-x-2">
-                  <Link href={`/admin/quartos?editar=${q.id}`} className="text-teal-600 hover:underline text-xs">Editar</Link>
+                  <Link href={`/admin/quartos?editar=${q.id}`} className="inline-flex items-center text-xs font-medium px-3.5 min-h-10 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">Editar</Link>
                   <form action={alternarAtivoQuarto} className="inline">
                     <input type="hidden" name="id" value={q.id} />
-                    <SubmitButton className="text-amber-600 hover:underline text-xs bg-transparent p-0">{q.ativo ? "Desativar" : "Ativar"}</SubmitButton>
+                    <SubmitButton className="inline-flex items-center text-xs font-medium px-3 min-h-10 rounded-lg text-amber-700 hover:bg-amber-50">{q.ativo ? "Desativar" : "Ativar"}</SubmitButton>
                   </form>
                   <DeleteButton action={excluirQuarto} id={q.id} />
                 </td>

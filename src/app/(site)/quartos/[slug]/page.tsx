@@ -39,9 +39,9 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <Link href="/" className="hover:text-marca">Home</Link>
+        <Link href="/" className="inline-block py-2.5 hover:text-marca">Home</Link>
         <span>/</span>
-        <Link href="/quartos" className="hover:text-marca">Quartos</Link>
+        <Link href="/quartos" className="inline-block py-2.5 hover:text-marca">Quartos</Link>
         <span>/</span>
         <span className="text-gray-600">{q.nome}</span>
       </nav>

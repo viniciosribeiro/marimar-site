@@ -84,7 +84,7 @@ export function CrudPage({ title, subtitle, lista, columns, fields, criarAction,
                     <div className="flex items-center justify-end gap-2">
                       {editarAction && (
                         <Link href={`${basePath}?editar=${item.id}`}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+                          className="inline-flex items-center text-xs font-medium px-3.5 min-h-10 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
                           Editar
                         </Link>
                       )}
