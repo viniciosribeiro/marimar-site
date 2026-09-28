@@ -18,7 +18,7 @@
 **O que so existe depois de rodar**
 
 ```
-npm run db:migrate          # migrations 0009, 0010 e 0011
+npm run db:migrate          # migrations 0009 a 0013 (0013: titulo da secao da pousada, 28/09)
 npm run db:migrar-fotos     # tira as imagens do WordPress antigo
 ```
 
@@ -97,6 +97,12 @@ unica coisa que de fato melhora as respostas.
 - Conexao SQL: `postgres(process.env.DATABASE_URL!, { max: 1 })` + `await sql.end()`
 - **Idioma:** codigo, tabelas, colunas e rotas em **portugues sem acento**
   (`disponibilidade`, `criado_em`, `visivel_agente`). Mantenha o padrao.
+- ⚠️ **A Pousada Marimar é a protagonista; o restaurante é DELA.** Decisão do
+  Vinicios em 28/09/2026, que **substitui** o briefing de 18/09
+  (`docs/briefing/`): não repetir "pousada anexada aos fundos" nas páginas.
+  O que continua valendo: as suítes NÃO ficam na areia — "pé na areia" é
+  sempre o restaurante. Textos centralizados em `COMPLEXO`
+  (`src/lib/conteudo-pousada.ts`).
 - ⚠️ **Mas todo texto que o HÓSPEDE lê vai acentuado e por extenso.** "Diária",
   "Até 4 pessoas", "2 noites" (nunca "noite(s)"). Valores em BRL passam por
   `brl()`, nomes de quarto por `tituloQuarto()`, textos longos por `resumir()`.

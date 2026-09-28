@@ -51,6 +51,7 @@ export function CarrosselBanners({
   if (total === 0) return null;
 
   return (
+    <>
     <section
       className="relative isolate"
       onMouseEnter={() => setParado(true)}
@@ -85,7 +86,7 @@ export function CarrosselBanners({
       </div>
 
       {total > 1 && (
-        <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center gap-2">
+        <div className="absolute bottom-12 sm:bottom-5 left-0 right-0 flex items-center justify-center gap-2">
           {banners.map((b, i) => (
             <button
               key={b.id}
@@ -102,5 +103,16 @@ export function CarrosselBanners({
         </div>
       )}
     </section>
+
+    {/* A busca no celular: abaixo da foto, subindo só um pouco sobre a borda
+        dela. Dentro do banner ela cobria a imagem quase inteira e a foto
+        se perdia. No computador continua sobre o banner (BannerCamadas). */}
+    {children && <BuscaNoCelular>{children}</BuscaNoCelular>}
+    </>
   );
+}
+
+/** Caixa de busca abaixo da foto, só abaixo de `sm`. Usada também pelo topo sem banner. */
+export function BuscaNoCelular({ children }: { children: React.ReactNode }) {
+  return <div className="sm:hidden relative z-10 -mt-8 px-4 [&>div]:mt-0">{children}</div>;
 }

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "A Pousada — Pousada Marimar, Encantadas, Ilha do Mel",
-  description: "Administração familiar em Encantadas, com restaurante pé na areia na frente e as acomodações anexadas aos fundos, a poucos passos do trapiche.",
+  description: "Administração familiar em Encantadas, a poucos passos do trapiche, com restaurante próprio pé na areia: o Marimar Café Bistrô Bar.",
 };
 
 export default async function APousadaPage() {
@@ -25,24 +25,24 @@ export default async function APousadaPage() {
 
       {/* ─── O COMPLEXO ─── */}
       <section className="mb-12">
-        <h2 className="font-titulo text-2xl font-bold text-gray-900 mb-5">Como o complexo é organizado</h2>
+        <h2 className="font-titulo text-2xl font-bold text-gray-900 mb-5">A pousada e o restaurante</h2>
         <div className="grid sm:grid-cols-[1fr_auto_1fr] gap-4 sm:gap-2 items-stretch">
-          <div className="bg-marca-sutil border border-marca-borda rounded-marca p-6">
-            <div className="text-3xl mb-3">🏖️</div>
-            <h3 className="font-semibold text-gray-900 mb-1.5">{RESTAURANTE.nome}</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">{RESTAURANTE.posicao}</p>
-          </div>
-          <div className="flex sm:flex-col items-center justify-center gap-2 py-2">
-            <div className="h-px sm:h-full sm:w-px flex-1 bg-gray-200" />
-            <span className="text-xs text-tinta-suave whitespace-nowrap px-2 shrink-0">anexada aos fundos</span>
-            <div className="h-px sm:h-full sm:w-px flex-1 bg-gray-200" />
-          </div>
           <div className="bg-white border border-gray-200 rounded-marca p-6 shadow-marca">
             <div className="text-3xl mb-3">🛏️</div>
             <h3 className="font-semibold text-gray-900 mb-1.5">Pousada Marimar</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              As acomodações ficam logo atrás do restaurante, a poucos passos do trapiche de Encantadas.
+              Suítes climatizadas, café da manhã incluso e administração familiar, a poucos passos do trapiche de Encantadas.
             </p>
+          </div>
+          <div className="flex sm:flex-col items-center justify-center gap-2 py-2">
+            <div className="h-px sm:h-full sm:w-px flex-1 bg-gray-200" />
+            <span className="text-xs text-tinta-suave whitespace-nowrap px-2 shrink-0">com restaurante próprio</span>
+            <div className="h-px sm:h-full sm:w-px flex-1 bg-gray-200" />
+          </div>
+          <div className="bg-marca-sutil border border-marca-borda rounded-marca p-6">
+            <div className="text-3xl mb-3">🏖️</div>
+            <h3 className="font-semibold text-gray-900 mb-1.5">{RESTAURANTE.nome}</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">{RESTAURANTE.posicao}</p>
           </div>
         </div>
       </section>
@@ -63,7 +63,7 @@ export default async function APousadaPage() {
               </p>
               <p>
                 O que não mudou foi a posição: de frente para o mar, a poucos passos do trapiche por onde chega
-                quem visita Encantadas, com o restaurante na frente e as acomodações logo atrás.
+                quem visita Encantadas, com o restaurante da casa pé na areia.
               </p>
               <p className="text-gray-400 text-xs">
                 Este texto pode ser editado no painel administrativo, em Identidade Visual e dados da pousada.

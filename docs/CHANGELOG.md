@@ -6,6 +6,44 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-28 (2) — Topo no celular e a pousada como protagonista
+**Autor:** Claude (Claude Code)
+**Migration:** 0013 (só dados; roda com `npm run db:migrate`)
+
+### A busca cobria a foto do topo no celular
+A caixa de datas era desenhada DENTRO do banner. No celular ela ocupava
+quase a altura toda e a foto sumia. Agora, abaixo de `sm`, a busca vai
+logo abaixo da foto, subindo só um pouco sobre a borda (`BuscaNoCelular`
+em `CarrosselBanners.tsx`); no computador nada muda. O mesmo vale para o
+topo sem banner. A altura mínima dos banners no celular diminuiu
+(`ALTURAS` em `lib/banners.ts`), porque já não precisa abrigar a busca.
+
+### Botões flutuantes
+"Falar com a Marina" e o WhatsApp ficavam empilhados no canto e cobriam
+uma coluna de texto em toda página. No celular agora ficam lado a lado,
+numa linha só, e o da Marina diz só "Marina". O rodapé ganhou folga
+embaixo para a última linha não ficar sob eles.
+
+### "Um complexo, duas partes" → a pousada em primeiro lugar
+Decisão do Vinicios, que substitui o briefing de 18/09: a ênfase em
+"pousada anexada aos fundos do restaurante" afastava quem escolhe onde se
+hospedar. Novo texto em `COMPLEXO` (`conteudo-pousada.ts`), que alimenta
+topo, rodapé, FAQ, como chegar, a pousada, galeria, quartos, eventos e as
+respostas da Marina. Na home, a seção virou "Hospedagem com restaurante pé
+na areia", com o cartão da pousada primeiro.
+
+O que NÃO mudou, por ser fato: as suítes não ficam na areia. E para quem
+está chegando, a orientação continua sendo ir até o restaurante — agora
+dita como "a entrada da pousada é por ali".
+
+A migration 0013 troca o título da seção e a `descricao_curta` da pousada
+**só se ainda estiverem com o texto padrão antigo**; o que foi editado pelo
+painel fica como está.
+
+**Conferir no painel depois do deploy:** Admin → Cartões das seções (se
+houver cartões cadastrados para a seção da pousada, eles mandam no texto e
+na ordem) e Admin → Identidade visual → descrição para buscadores.
+
 ## 2026-09-28 — Revisao geral: seguranca, bugs e performance
 **Autor:** Claude (Claude Code)
 

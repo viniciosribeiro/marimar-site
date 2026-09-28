@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { tituloQuarto, resumir } from "@/lib/format";
-import { CarrosselBanners } from "./CarrosselBanners";
+import { CarrosselBanners, BuscaNoCelular } from "./CarrosselBanners";
 import type { Banner } from "@/lib/banners";
 import { IconeCirculo, Icone, OndaTitulo } from "./Icone";
 import { BuscaHome } from "./BuscaHome";
@@ -115,7 +115,8 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
   }
 
   return (
-    <section className="relative isolate text-white py-24 lg:py-32 overflow-hidden bg-gradient-to-br from-marca via-marca-hover to-marca-escura">
+    <>
+    <section className="relative isolate text-white py-16 sm:py-24 lg:py-32 overflow-hidden bg-gradient-to-br from-marca via-marca-hover to-marca-escura">
       {img && (
         <>
           <Image src={img} alt={d.heroAlt || nome} fill priority sizes="100vw" className="object-cover -z-10" />
@@ -142,48 +143,53 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
           ))}
         </ul>
 
-        {busca}
+        {/* Mesma regra do carrossel: no celular a busca vai abaixo da foto. */}
+        <div className="hidden sm:block">{busca}</div>
       </div>
     </section>
+    <BuscaNoCelular>{busca}</BuscaNoCelular>
+    </>
   );
 }
 
 /* ══════════════ COMPLEXO ══════════════ */
 function Complexo({ t, s, itens }: { t: string | null; s: string | null; itens: ItemBloco[] }) {
   /* Sem itens cadastrados valem os dois cartões do conteúdo canônico: quem
-     nunca abrir a tela do admin não perde o que já estava no ar. */
+     nunca abrir a tela do admin não perde o que já estava no ar.
+     A POUSADA vem primeiro: ela é a protagonista, e o restaurante é dela
+     (decisão de 28/09/2026 — ver COMPLEXO em conteudo-pousada.ts). */
   const cartoes: ItemBloco[] = itens.length
     ? itens
     : [
         {
-          id: "restaurante", icone: "talheres", cor: "coral",
-          titulo: RESTAURANTE.nome,
-          texto: "Na parte da frente, pé na areia, de frente para a Praia de Encantadas. Gastronomia, drinks e o melhor visual da ilha.",
-          imagem_url: null, href: "/restaurante", cta_texto: "Conheça o restaurante",
-        },
-        {
           id: "pousada", icone: "cama", cor: "mata",
           titulo: "Pousada Marimar",
-          texto: "As acomodações ficam logo atrás do restaurante, a poucos passos do trapiche. Conforto, privacidade e a essência da Ilha do Mel.",
-          imagem_url: null, href: "/quartos", cta_texto: "Conheça as acomodações",
+          texto: "Suítes climatizadas com café da manhã incluso, a poucos passos do trapiche de Encantadas. Administração familiar e atendimento acolhedor.",
+          imagem_url: null, href: "/quartos", cta_texto: "Conheça as suítes",
+        },
+        {
+          id: "restaurante", icone: "talheres", cor: "coral",
+          titulo: RESTAURANTE.nome,
+          texto: "O restaurante da pousada, pé na areia, de frente para a Praia de Encantadas. Peixes, camarões, drinks e o melhor visual da ilha.",
+          imagem_url: null, href: "/restaurante", cta_texto: "Conheça o restaurante",
         },
       ];
 
   return (
     <section className="bg-fundo-suave secao-py">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Cabecalho sobre={s || "Como funciona"} titulo={t || "Um complexo, duas partes"} />
+        <Cabecalho sobre={s || "A pousada"} titulo={t || "Hospedagem com restaurante pé na areia"} />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr] lg:gap-4 items-stretch">
           <CartaoComplexo item={cartoes[0]} />
 
-          {/* O conector é informação, não enfeite: é ele que diz que os dois
-              cartões são partes do MESMO lugar. Vira horizontal no celular,
+          {/* O conector diz que os dois cartões são o MESMO lugar — a
+              pousada e o restaurante dela. Vira horizontal no celular,
               onde os cartões ficam um sobre o outro. */}
           <div className="flex lg:flex-col items-center justify-center gap-3 lg:py-10 lg:w-28">
             <span className="h-px lg:h-auto lg:w-px flex-1 bg-linha" aria-hidden />
             <span className="text-[0.62rem] uppercase tracking-[0.18em] text-tinta-suave text-center leading-tight shrink-0">
-              Anexada<br className="hidden lg:block" /> aos fundos
+              Com restaurante<br className="hidden lg:block" /> próprio
             </span>
             <OndaTitulo className="shrink-0 hidden lg:block" />
             <span className="h-px lg:h-auto lg:w-px flex-1 bg-linha" aria-hidden />

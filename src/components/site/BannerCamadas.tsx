@@ -111,7 +111,10 @@ export function BannerCamadas({
             </div>
           )}
 
-          {children}
+          {/* No celular a busca NAO fica aqui dentro: ela ocupava quase a
+              altura toda do banner e cobria a foto. O carrossel desenha a
+              busca logo abaixo do banner nessa largura (CarrosselBanners). */}
+          {children && <div className="hidden sm:block">{children}</div>}
         </div>
       </div>
     </div>

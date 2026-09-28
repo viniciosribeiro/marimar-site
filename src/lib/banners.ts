@@ -72,10 +72,13 @@ export const POSICOES: Posicao[] = [
  * disponibilidade para fora. `svh` usa a altura MENOR, a que sempre existe.
  */
 export const ALTURAS: Record<Banner["altura"], string> = {
-  compacto: "min-h-[22rem] sm:min-h-[26rem]",
-  medio: "min-h-[28rem] sm:min-h-[34rem]",
-  alto: "min-h-[34rem] sm:min-h-[42rem]",
-  tela: "min-h-[100svh]",
+  /* No celular a busca fica ABAIXO do banner (CarrosselBanners), entao o
+     banner nao precisa mais de altura para abriga-la: menor, a foto aparece
+     inteira e as abas da busca continuam visiveis sem rolar. */
+  compacto: "min-h-[18rem] sm:min-h-[26rem]",
+  medio: "min-h-[22rem] sm:min-h-[34rem]",
+  alto: "min-h-[26rem] sm:min-h-[42rem]",
+  tela: "min-h-[80svh] sm:min-h-[100svh]",
 };
 
 export const LARGURAS: Record<Banner["largura_texto"], string> = {

@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Como chegar na Pousada Marimar — Encantadas, Ilha do Mel",
-  description: "Passo a passo: chegue a Pontal do Sul, embarque para Encantadas e caminhe até o Marimar Café Bistrô Bar. A pousada fica anexada aos fundos.",
+  description: "Passo a passo: chegue a Pontal do Sul, embarque para Encantadas e caminhe até a Pousada Marimar, com entrada pelo Marimar Café Bistrô Bar, o restaurante da pousada.",
 };
 
 /** Foto por categoria, a partir do alt gerado na migração do WordPress. */
@@ -152,7 +152,7 @@ export default async function ComoChegarPage() {
           <div className="grid lg:grid-cols-[minmax(0,17rem)_1fr] gap-6 items-center">
             {fotos.fachada ? (
               <div className="relative h-44 lg:h-40 rounded-marca overflow-hidden">
-                <Image src={fotos.fachada} alt={`${RESTAURANTE.nome}, na frente do complexo`} fill
+                <Image src={fotos.fachada} alt={`${RESTAURANTE.nome}, o restaurante da Pousada Marimar`} fill
                   sizes="(max-width: 1024px) 100vw, 17rem" className="object-cover" />
               </div>
             ) : (
@@ -166,7 +166,7 @@ export default async function ComoChegarPage() {
           </div>
 
           <Manuscrita className="absolute right-6 bottom-6 -rotate-3 text-right max-w-[13rem]">
-            Restaurante pé na areia<br />e pousada aos fundos
+            A entrada é pelo<br />nosso restaurante
           </Manuscrita>
         </div>
       </Secao>

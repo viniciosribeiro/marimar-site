@@ -217,7 +217,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                 </p>
                 <Selecao rotulo="Corpo do texto" valor={tema.fonteCorpo} aoMudar={(v) => set("fonteCorpo", v)} opcoes={FONTES_CORPO} />
                 <p style={{ fontFamily: tema.fonteCorpo, lineHeight: tema.alturaLinha }} className="text-sm text-gray-600 mt-2 mb-5">
-                  O Marimar Café Bistrô Bar fica em frente ao mar, e a pousada logo aos fundos.
+                  A Pousada Marimar tem restaurante próprio pé na areia, de frente para o mar.
                 </p>
                 <div className="border-t border-gray-100 pt-4">
                   <Selecao rotulo="Anotações à mão" valor={tema.fonteManuscrita} aoMudar={(v) => set("fonteManuscrita", v)} opcoes={FONTES_MANUSCRITA} />
@@ -337,9 +337,9 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                   <p className="text-[13px] text-gray-600 leading-relaxed"
                     lang="pt-BR"
                     style={{ textAlign: tema.alinhamento.justificado ? "justify" : "left", hyphens: "auto" }}>
-                    O Marimar Café Bistrô Bar fica de frente para a Praia de Encantadas,
-                    e a Pousada Marimar está anexada logo aos fundos do restaurante, a
-                    poucos passos do trapiche.
+                    A Pousada Marimar fica em Encantadas, a poucos passos do trapiche,
+                    e tem restaurante próprio pé na areia: o Marimar Café Bistrô Bar,
+                    de frente para a Praia de Encantadas.
                   </p>
                 </div>
                 <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
@@ -596,7 +596,7 @@ function PreviaTitulo({ centro, fonte }: { centro: boolean; fonte: string }) {
       <div className="flex items-baseline gap-3">
         {centro && traco}
         <span className="font-bold text-[#12324f] whitespace-nowrap" style={{ fontFamily: fonte }}>
-          Um complexo, duas partes
+          Hospedagem com restaurante pé na areia
         </span>
         {traco}
       </div>

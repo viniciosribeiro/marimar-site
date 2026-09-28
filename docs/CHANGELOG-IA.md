@@ -286,3 +286,37 @@ reais, e `/admin/integracoes`.
 
 - Comece pelas pendências **5.1 a 5.4** (segurança). Depois 5.10 (testes) — ela
   torna todas as outras mais seguras de fazer.
+
+---
+
+# Segunda rodada — 28/09/2026: topo no celular e posicionamento
+
+Pedido do Vinicios, a partir de um print do celular.
+
+## Feito
+
+| O quê | Onde |
+|---|---|
+| Busca de datas saiu de cima da foto no celular; vai logo abaixo, sobrepondo só a borda. Computador sem mudança. | `CarrosselBanners.tsx` (`BuscaNoCelular`), `BannerCamadas.tsx`, `BlocosHome.tsx` (topo sem banner) |
+| Banners mais baixos no celular (a busca não mora mais dentro deles) | `ALTURAS` em `src/lib/banners.ts` |
+| Botões "Marina" e WhatsApp numa linha só no celular; rodapé com folga embaixo | `ChatMarina.tsx`, `(site)/layout.tsx` |
+| Pousada como protagonista em todo texto para hóspede; fim do "anexada aos fundos" | `COMPLEXO`, `DIFERENCIAIS`, `RESTAURANTE`, `CHEGADA_ETAPAS`, FAQ em `conteudo-pousada.ts`; `BlocosHome`, `a-pousada`, `restaurante`, `como-chegar`; textos de prévia no admin |
+| Migration de dados 0013 (só troca texto padrão antigo) | `drizzle/0013_pousada_protagonista.sql` |
+
+Verificado com Postgres local (migrations + `db:seed` + `db:corrigir`),
+banner de teste e prints em 390px e 1280px, antes e depois. `tsc` e
+`next build` limpos. A migration foi rodada duas vezes (é idempotente).
+
+## Pendente desta rodada
+
+- **Cartões cadastrados no admin** para a seção da pousada (`blocos_itens`)
+  mandam no texto e na ordem e não foram tocados — não há como vê-los daqui.
+  Conferir em Admin → Cartões das seções.
+- **`seo_description`** da pousada é editada no painel; se tiver "aos
+  fundos", trocar em Admin → Identidade visual.
+- `docs/briefing/briefing-administracao-2026-09-18.txt` continua pedindo a
+  frase antiga. Não editei o briefing (é registro histórico); a decisão nova
+  está no `ESTADO-DO-PROJETO.md`, seção 5, e no comentário de `COMPLEXO`.
+- A skill da Marina no OpenClaw (`agente/`) não citava "fundos"; as rotas da
+  API já saem com o texto novo. Vale uma conversa de teste perguntando "onde
+  fica a pousada?".

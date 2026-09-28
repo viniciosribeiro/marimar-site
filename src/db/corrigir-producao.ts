@@ -16,8 +16,9 @@ import postgres from "postgres";
 
 const TELEFONE_REAL = "(41) 99501-2920";
 
+// Mesma frase de COMPLEXO.fraseLonga (src/lib/conteudo-pousada.ts), 28/09/2026.
 const DESCRICAO_CORRETA =
-  "O Marimar Café Bistrô Bar fica em frente ao mar. A Pousada Marimar está anexada logo aos fundos do restaurante, a poucos passos do trapiche de Encantadas.";
+  "A Pousada Marimar fica em Encantadas, a poucos passos do trapiche, e tem restaurante próprio pé na areia: o Marimar Café Bistrô Bar, de frente para o mar.";
 
 let clienteAberto: { end: () => Promise<void> } | null = null;
 
@@ -142,7 +143,7 @@ async function main() {
   await passo("Seções da home", async () => {
     const ORDEM: { tipo: string; titulo: string | null }[] = [
       { tipo: "hero", titulo: null },
-      { tipo: "complexo", titulo: "Um complexo, duas partes" },
+      { tipo: "complexo", titulo: "Hospedagem com restaurante pé na areia" },
       { tipo: "diferenciais", titulo: "O que está incluso na sua estadia" },
       { tipo: "quartos", titulo: "Nossas suítes" },
       { tipo: "restaurante", titulo: "Marimar Café Bistrô Bar" },

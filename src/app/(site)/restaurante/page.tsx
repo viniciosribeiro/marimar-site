@@ -126,7 +126,7 @@ export default async function RestaurantePage() {
             </div>
           </div>
           <Manuscrita className="absolute right-6 bottom-6 -rotate-3 text-right max-w-[13rem]">
-            Restaurante na frente,<br />pousada aos fundos
+            O restaurante<br />da Pousada Marimar
           </Manuscrita>
         </div>
       </Secao>

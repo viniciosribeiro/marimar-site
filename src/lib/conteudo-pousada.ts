@@ -32,20 +32,28 @@ export const ATUALIZADO_EM = "18/09/2026";
    ───────────────────────────────────────────────────────────────── */
 
 /**
- * O Marimar Cafe Bistro Bar fica NA FRENTE, pe na areia.
- * A Pousada Marimar fica ANEXADA AOS FUNDOS do restaurante.
+ * A Pousada Marimar e a protagonista; o Marimar Cafe Bistro Bar e o
+ * restaurante DELA, pe na areia.
  *
- * Os quartos NAO devem ser apresentados como se estivessem sobre a areia.
- * Esta frase deve aparecer em todas as paginas relevantes.
+ * Decisao do Vinicios em 28/09/2026, substituindo a do briefing de 18/09:
+ * a frase antiga ("restaurante na frente, pousada anexada aos fundos") em
+ * todas as paginas dava a impressao de que a pousada era um anexo do
+ * restaurante — e afastava quem estava escolhendo onde se hospedar.
+ *
+ * O que NAO muda, porque e fato e protege o hospede de frustracao: as
+ * suites NAO ficam na areia. Nunca escreva "suites pe na areia" ou "quartos
+ * de frente para o mar". "Pe na areia" e sempre o restaurante.
+ * Para quem esta chegando, o ponto de referencia continua sendo o
+ * restaurante (ver CHEGADA_ETAPAS) — isso e orientacao, nao posicionamento.
  */
 export const COMPLEXO = {
-  frase: "Restaurante pé na areia na parte da frente e Pousada Marimar anexada logo aos fundos",
+  frase: "Pousada Marimar, com restaurante próprio pé na areia, a poucos passos do trapiche de Encantadas",
   fraseLonga:
-    "O Marimar Café Bistrô Bar fica em frente ao mar. A Pousada Marimar está anexada logo aos fundos do restaurante, a poucos passos do trapiche de Encantadas.",
+    "A Pousada Marimar fica em Encantadas, a poucos passos do trapiche, e tem restaurante próprio pé na areia: o Marimar Café Bistrô Bar, de frente para o mar.",
   fraseRodape:
-    "Restaurante pé na areia na parte da frente; Pousada Marimar anexada logo aos fundos, a poucos passos do trapiche de Encantadas.",
+    "Pousada Marimar, com restaurante próprio pé na areia, a poucos passos do trapiche de Encantadas.",
   respostaFaq:
-    "O Marimar Café Bistrô Bar fica pé na areia na parte da frente. A Pousada Marimar pertence ao mesmo complexo e está anexada logo aos fundos do restaurante.",
+    "São a mesma casa. O Marimar Café Bistrô Bar é o restaurante da Pousada Marimar: fica pé na areia, de frente para a Praia de Encantadas, e as suítes ficam no mesmo complexo, junto a ele.",
 } as const;
 
 /* ─────────────────────────────────────────────────────────────────
@@ -87,10 +95,10 @@ export const ENDERECO = {
   cep: "83251-000",
   completo: "Praia de Encantadas, s/n — Ilha do Mel, Paranaguá/PR, CEP 83251-000",
   plusCode: "CMJM+JW",
-  /** Ponto do mapa = o RESTAURANTE, usado como referencia para a pousada aos fundos. */
+  /** Ponto do mapa = o RESTAURANTE da pousada, que e onde fica a entrada. */
   lat: -25.5684375,
   lng: -48.3151875,
-  rotuloMapa: "Marimar Café Bistrô Bar — restaurante pé na areia; Pousada Marimar anexada aos fundos",
+  rotuloMapa: "Pousada Marimar — entrada pelo Marimar Café Bistrô Bar, o restaurante da pousada",
 } as const;
 
 /**
@@ -125,8 +133,8 @@ export const DESTAQUES_TOPO = [
    cartoes saia com oito estilos graficos diferentes — e nenhum emoji aceita
    a cor da marca. */
 export const DIFERENCIAIS = [
-  { icone: "talheres", cor: "coral", titulo: "Restaurante próprio pé na areia", texto: "O Marimar Café Bistrô Bar fica na parte da frente do complexo, de frente para a Praia de Encantadas." },
-  { icone: "caminhar", cor: "mar", titulo: "A poucos passos do trapiche", texto: "Percurso curto e a pé desde o trapiche de Encantadas até o restaurante — a pousada fica logo atrás." },
+  { icone: "talheres", cor: "coral", titulo: "Restaurante próprio pé na areia", texto: "O Marimar Café Bistrô Bar é o restaurante da pousada, de frente para a Praia de Encantadas." },
+  { icone: "caminhar", cor: "mar", titulo: "A poucos passos do trapiche", texto: "Percurso curto e a pé desde o trapiche de Encantadas até a pousada." },
   { icone: "cafe", cor: "areia", titulo: "Café da manhã incluso", texto: "Self-service servido das 08h às 10h, com pães, bolos, lanches naturais, frios, frutas frescas e sucos." },
   { icone: "ar", cor: "mar", titulo: "Suítes climatizadas", texto: "Ar-condicionado, banheiro privativo e TV nas acomodações." },
   { icone: "wifi", cor: "noite", titulo: "Wi-Fi gratuito", texto: "Internet sem fio nas dependências da pousada." },
@@ -191,7 +199,7 @@ export const TRAVESSIA = {
 export const CHEGADA_ETAPAS = [
   { n: 1, titulo: "Chegue a Pontal do Sul", texto: "De Curitiba, siga pela BR-277 rumo ao litoral até Pontal do Sul. A Viação Graciosa comercializa o trecho Curitiba–Pontal do Sul. De avião, o aeroporto de referência é o Afonso Pena (CWB), seguido de deslocamento rodoviário até o litoral." },
   { n: 2, titulo: "Embarque para Encantadas", texto: "A travessia da ABALINE leva cerca de 30 minutos. Confirme que o destino é Encantadas, não Nova Brasília." },
-  { n: 3, titulo: "Caminhe até o Marimar Café Bistrô Bar", texto: "Do trapiche de Encantadas o percurso é curto e a pé. Chegue ao restaurante, que fica pé na areia, e acesse a Pousada Marimar anexada logo aos fundos." },
+  { n: 3, titulo: "Caminhe até o Marimar Café Bistrô Bar", texto: "Do trapiche de Encantadas o percurso é curto e a pé. Siga até o Marimar Café Bistrô Bar, o restaurante da pousada, pé na areia: a entrada da Pousada Marimar é por ali." },
 ] as const;
 
 export const SOBRE_A_ILHA = {
@@ -258,7 +266,7 @@ export const CUIDADOS_AMBIENTAIS = [
 
 export const RESTAURANTE = {
   nome: "Marimar Café Bistrô Bar",
-  posicao: "Parte da frente do complexo, pé na areia, de frente para a Praia de Encantadas.",
+  posicao: "O restaurante da Pousada Marimar, pé na areia, de frente para a Praia de Encantadas.",
   cardapioResumo: "Peixes, camarões, saladas, pratos frios e quentes, drinks e bebidas.",
   /**
    * PENDENTE: horarios completos, cardapio com precos, atendimento ao publico
@@ -366,13 +374,13 @@ export const FAQ_CANONICO: { grupo: string; itens: { p: string; r: string }[] }[
   {
     grupo: "Localização e chegada",
     itens: [
-      { p: "Qual a diferença entre o restaurante e a pousada?", r: COMPLEXO.respostaFaq },
-      { p: "Qual o ponto correto no mapa?", r: `O ponto de referência é o ${RESTAURANTE.nome} (Plus Code ${ENDERECO.plusCode}). A entrada da pousada é pelos fundos do restaurante.` },
+      { p: "O restaurante e a pousada são a mesma casa?", r: COMPLEXO.respostaFaq },
+      { p: "Qual o ponto correto no mapa?", r: `O ponto de referência é o ${RESTAURANTE.nome} (Plus Code ${ENDERECO.plusCode}). O restaurante é da pousada, e a entrada da pousada é por ali.` },
       { p: "De onde saem os barcos?", r: `Os principais embarques são Pontal do Sul (${TRAVESSIA.terminais[0].endereco}) e Paranaguá (${TRAVESSIA.terminais[1].endereco}).` },
       { p: "Qual destino devo escolher na travessia?", r: TRAVESSIA.avisoDestino },
       { p: "Quanto custa e quanto demora a travessia?", r: `O trecho Pontal do Sul–Encantadas leva ${TRAVESSIA.duracao}. Em ${TRAVESSIA.precos.consultadoEm}, a venda oficial indicava cerca de R$ ${TRAVESSIA.precos.ida.toFixed(2).replace(".", ",")} a ida e R$ ${TRAVESSIA.precos.idaEVolta.toFixed(2).replace(".", ",")} ida e volta, com gratuidade para ${TRAVESSIA.precos.gratuidade.toLowerCase()}. Valores e horários mudam sem aviso — confirme no site da ${TRAVESSIA.operadora}.` },
       { p: "Tem estacionamento?", r: TRAVESSIA.estacionamento },
-      { p: "Qual a distância do trapiche até a pousada?", r: "O percurso é curto e feito a pé. Do trapiche de Encantadas você caminha até o restaurante, que fica pé na areia, e entra na pousada pelos fundos." },
+      { p: "Qual a distância do trapiche até a pousada?", r: "O percurso é curto e feito a pé. Do trapiche de Encantadas você caminha até o Marimar Café Bistrô Bar, o restaurante da pousada, e entra na pousada por ali." },
       { p: "Como levo as malas?", r: "Não há circulação de veículos na ilha, então o trecho do trapiche até a pousada é feito a pé. Leve bagagem que você consiga carregar." },
     ],
   },
@@ -392,7 +400,7 @@ export const FAQ_CANONICO: { grupo: string; itens: { p: string; r: string }[] }[
   {
     grupo: "Restaurante e serviços",
     itens: [
-      { p: "A pousada tem restaurante?", r: `Sim. O ${RESTAURANTE.nome} pertence à Pousada Marimar e fica na parte da frente do complexo, pé na areia. ${RESTAURANTE.cardapioResumo}` },
+      { p: "A pousada tem restaurante?", r: `Sim. O ${RESTAURANTE.nome} é o restaurante da Pousada Marimar, pé na areia, de frente para a Praia de Encantadas. ${RESTAURANTE.cardapioResumo}` },
       { p: "O restaurante atende quem não está hospedado?", r: RESTAURANTE.avisoPendente },
       { p: "Fazem eventos e casamentos?", r: `Sim — casamentos, festas e confraternizações, usando o jardim, o restaurante e a proximidade do mar. ${EVENTOS.avisoPendente}` },
     ],
