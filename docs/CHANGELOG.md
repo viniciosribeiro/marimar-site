@@ -6,6 +6,23 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-29 — Tela de atrações da ilha
+**Autor:** Claude (Claude Code)
+**Migration:** nenhuma (usa a linha `ilha` de `conteudo_editavel`, da 0013)
+
+- Nova tela **Admin → Atrações da ilha** (`/admin/atracoes`): criar, editar,
+  excluir e reordenar. Grava `ATRACOES` na linha `ilha` preservando os
+  outros textos da ilha. Enquanto ninguém salvar, valem as do código.
+- **A home ignorava o painel:** o bloco de localização lia `ATRACOES` e
+  `TRAVESSIA` direto de `conteudo-pousada.ts`. Agora recebe os dois de
+  `lerConteudo()` pelo `DadosHome`.
+- A Marina recebia "(null)" nas atrações sem distância (Praias e trilhas)
+  em `/api/agent/ilha` e `/api/agent/passeios`. Sem distância, agora não
+  escreve nada.
+
+**Não testado com banco:** `tsc` e `build` limpos, lint sem erro novo; a
+tela não foi usada por uma pessoa.
+
 ## 2026-09-28 (3) — Painel x Marina, fotos, menu e home novos
 **Autor:** Claude (Claude Code)
 **Migration:** 0015 · relatório completo: `docs/CHANGELOG-IA.md` ("Terceira rodada")

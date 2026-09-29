@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { CrudForm } from "@/components/admin/CrudForm";
@@ -79,7 +80,8 @@ export default async function ConteudoPage({
           ]}
         />
         <p className="text-xs text-gray-400 mt-2">
-          As atrações (Gruta, Farol, Fortaleza…) ainda são editadas no código.
+          As atrações (Gruta, Farol, Fortaleza…) ficam em{" "}
+          <Link href="/admin/atracoes" className="underline">Atrações da ilha</Link>.
         </p>
       </section>
 

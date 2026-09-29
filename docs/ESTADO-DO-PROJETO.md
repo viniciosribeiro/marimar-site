@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 28/09/2026.
+> Atualizado em 29/09/2026.
 
 ## Onde estamos
 
@@ -83,7 +83,7 @@ Menu e home redesenhados (tropical, SVG nas cores do tema:
 - Visual novo (28/09) na home, menu, galeria, `/quartos`, `/reservar` e no
   cabecalho das paginas internas; o corpo de `a-pousada`, `faq`, `politicas`,
   `contato`, `eventos`, `avaliacoes` ainda usa os cartoes antigos.
-- Atracoes da ilha (Gruta, Farol…) ainda so no codigo — sem tela.
+- Atracoes da ilha: tela nova em `/admin/atracoes` (29/09), ainda nao usada por uma pessoa.
 - Redesenhar o admin no padrao editorial do site.
 - Fotos importadas do WordPress entraram como "A pousada": reclassificar em
   Admin → Fotos (a migration 0015 so separou o que o texto alternativo dizia).

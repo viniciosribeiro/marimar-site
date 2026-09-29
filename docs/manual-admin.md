@@ -104,6 +104,13 @@ data "consultado em" atualiza sozinha — a Marina sempre diz ao hóspede de
 quando é o valor. Capacidade de eventos em branco = a Marina diz "sob
 consulta" e não informa número.
 
+### Atrações da ilha
+Gruta, Farol, Fortaleza, praias e trilhas. Criar, editar, excluir e mudar a
+ordem (setas ↑ ↓). O **texto completo** vai para a página Ilha do Mel e é o
+que a Marina conta ao hóspede; o **resumo** vai para o cartão da home, e só
+as marcadas como **destaque** aparecem lá. Distância em branco = nenhuma
+distância é mostrada nem dita pela Marina.
+
 ## Aparência
 
 ### Identidade visual
