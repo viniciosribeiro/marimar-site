@@ -127,6 +127,13 @@
       "when": 1790710000000,
       "tag": "0017_regras_hospedagem_adicionais",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790720000000,
+      "tag": "0018_midias_videos_roteiros",
+      "breakpoints": true
     }
   ]
 }

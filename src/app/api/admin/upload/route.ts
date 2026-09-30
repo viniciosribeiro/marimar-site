@@ -34,7 +34,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (!sessao?.user) throw new Error("Não autorizado");
 
         // Nunca aceitar caminho arbitrario vindo do cliente
-        const pastasPermitidas = ["banners/", "cardapio/", "galeria/", "marca/", "marina/", "quartos/"];
+        const pastasPermitidas = ["banners/", "cardapio/", "galeria/", "marca/", "marina/", "quartos/", "midias/"];
         if (!pastasPermitidas.some((pasta) => pathname.startsWith(pasta))) {
           throw new Error("Destino de upload inválido");
         }
@@ -49,11 +49,17 @@ export async function POST(request: Request): Promise<NextResponse> {
            Aceita PDF, Word e texto alem de imagem, com teto maior — um
            contrato ou um cardapio escaneado passa de 12 MB sem esforco. */
         const ehDocumento = pathname.startsWith("marina/");
+        /* `midias/` é a biblioteca de mídia (fotos e vídeos dos quartos, da
+           pousada e dos roteiros da Marina). O vídeo chega já comprimido
+           pelo navegador (720p, ~70 MB para 5 min); o teto maior cobre o
+           aparelho sem codificador, que envia o original (ver
+           src/lib/midia-cliente.ts). */
+        const ehBiblioteca = pathname.startsWith("midias/");
         const imagens = [
           "image/jpeg", "image/png", "image/webp", "image/avif",
           "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon",
         ];
-        const videos = ["video/mp4", "video/webm"];
+        const videos = ["video/mp4", "video/webm", "video/quicktime"];
         const documentos = [
           "application/pdf",
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -62,12 +68,12 @@ export async function POST(request: Request): Promise<NextResponse> {
         ];
 
         return {
-          allowedContentTypes: ehBanner
+          allowedContentTypes: ehBanner || ehBiblioteca
             ? [...imagens, ...videos]
             : ehDocumento
               ? [...imagens, ...documentos]
               : imagens,
-          maximumSizeInBytes: (ehBanner ? 50 : ehDocumento ? 25 : 12) * 1024 * 1024,
+          maximumSizeInBytes: (ehBiblioteca ? 210 : ehBanner ? 50 : ehDocumento ? 25 : 12) * 1024 * 1024,
           addRandomSuffix: true,
           // Fotos de cardapio mudam pouco: cache longo na borda
           cacheControlMaxAge: 60 * 60 * 24 * 365,

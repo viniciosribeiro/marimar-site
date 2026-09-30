@@ -18,7 +18,12 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
 
   const p = await lerPousada();
   const comods = await sql`SELECT cm.* FROM comodidades cm JOIN quarto_comodidades qc ON qc.comodidade_id = cm.id WHERE qc.quarto_id = ${q.id}`;
-  const fotos = await sql`SELECT * FROM midias WHERE quarto_id = ${q.id} ORDER BY destaque DESC, ordem, criado_em`;
+  /* Fotos para a galeria; vídeos à parte (migration 0018). O filtro por
+     tipo é o que impede um vídeo de virar uma "foto" quebrada na galeria. */
+  const fotos = await sql`SELECT * FROM midias WHERE quarto_id = ${q.id} AND tipo = 'foto' ORDER BY destaque DESC, ordem, criado_em`;
+  const videos = await sql<{ id: string; url: string; titulo: string | null; descricao: string | null; thumb_url: string | null; alt: string }[]>`
+    SELECT id, url, titulo, descricao, thumb_url, alt FROM midias
+    WHERE quarto_id = ${q.id} AND tipo = 'video' ORDER BY ordem, criado_em`.catch(() => []);
   await sql.end();
 
   let preco: any = null;
@@ -50,6 +55,26 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
         {/* Galeria - ocupa 3 colunas */}
         <div className="lg:col-span-3">
           <Gallery images={galleryImages} titulo={q.nome} />
+          {videos.length > 0 && (
+            <section className="mt-8" aria-label="Vídeos da suíte">
+              <h2 className="font-titulo text-xl font-bold text-tinta mb-3">Vídeos da suíte</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {videos.map((v) => (
+                  <figure key={v.id} className="overflow-hidden rounded-marca border border-linha/60 bg-white">
+                    {/* preload="none": vídeo só baixa quando a pessoa aperta play. */}
+                    <video src={v.url} poster={v.thumb_url ?? undefined} controls playsInline preload="none"
+                      className="aspect-video w-full bg-tinta object-cover" aria-label={v.titulo ?? v.alt} />
+                    {(v.titulo || v.descricao) && (
+                      <figcaption className="p-3">
+                        {v.titulo && <p className="text-sm font-semibold text-tinta">{v.titulo}</p>}
+                        {v.descricao && <p className="text-xs text-tinta-suave mt-0.5 leading-relaxed">{v.descricao}</p>}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
 
         {/* Info - ocupa 2 colunas */}

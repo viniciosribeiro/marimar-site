@@ -21,14 +21,14 @@ export default async function QuartosPage() {
     lista = await sql`
       SELECT q.*, c.nome AS cat_nome,
         COALESCE(
-          (SELECT m.url FROM midias m WHERE m.quarto_id = q.id AND m.destaque = true ORDER BY m.ordem LIMIT 1),
-          (SELECT m.url FROM midias m WHERE m.quarto_id = q.id ORDER BY m.ordem LIMIT 1)
+          (SELECT m.url FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto' AND m.destaque = true ORDER BY m.ordem LIMIT 1),
+          (SELECT m.url FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto' ORDER BY m.ordem LIMIT 1)
         ) AS foto,
         COALESCE(
-          (SELECT m.alt FROM midias m WHERE m.quarto_id = q.id AND m.destaque = true ORDER BY m.ordem LIMIT 1),
-          (SELECT m.alt FROM midias m WHERE m.quarto_id = q.id ORDER BY m.ordem LIMIT 1)
+          (SELECT m.alt FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto' AND m.destaque = true ORDER BY m.ordem LIMIT 1),
+          (SELECT m.alt FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto' ORDER BY m.ordem LIMIT 1)
         ) AS foto_alt,
-        (SELECT count(*)::int FROM midias m WHERE m.quarto_id = q.id) AS total_fotos
+        (SELECT count(*)::int FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto') AS total_fotos
       FROM quartos q
       LEFT JOIN categorias c ON q.categoria_id = c.id
       WHERE q.ativo = true

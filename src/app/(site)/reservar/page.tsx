@@ -67,7 +67,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       const locais = ids.length > 0 ? await sql`SELECT q.*, c.nome as cat_nome FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id WHERE q.desbravador_room_id = ANY(${ids})` : [];
       const map = new Map(locais.map((l: any) => [l.desbravador_room_id, l]));
       const quartoIds = locais.map((l: any) => l.id);
-      const fotos = quartoIds.length > 0 ? await sql`SELECT * FROM midias WHERE quarto_id = ANY(${quartoIds}) ORDER BY destaque DESC, ordem` : [];
+      const fotos = quartoIds.length > 0 ? await sql`SELECT * FROM midias WHERE quarto_id = ANY(${quartoIds}) AND tipo = 'foto' ORDER BY destaque DESC, ordem` : [];
       const fotosMap = new Map<string, any[]>();
       for (const f of fotos) { if (!fotosMap.has(f.quarto_id)) fotosMap.set(f.quarto_id, []); fotosMap.get(f.quarto_id)!.push(f); }
 

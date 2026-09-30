@@ -21,7 +21,7 @@ export default async function GaleriaPage() {
       SELECT m.url, m.alt, m.secao, m.quarto_id, q.nome AS quarto_nome, q.slug AS quarto_slug
       FROM midias m
       LEFT JOIN quartos q ON q.id = m.quarto_id
-      WHERE m.tipo = 'foto' AND (m.quarto_id IS NULL OR q.ativo = true)
+      WHERE m.tipo = 'foto' AND m.secao <> 'orientacao' AND (m.quarto_id IS NULL OR q.ativo = true)
       ORDER BY q.ordem NULLS FIRST, m.destaque DESC, m.ordem, m.criado_em`);
   } catch (e) {
     console.error("[Galeria] banco indisponivel:", (e as Error).message);

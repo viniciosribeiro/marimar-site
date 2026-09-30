@@ -73,14 +73,14 @@ export default async function RestaurantePage() {
 
     const [f1] = await sql`
       SELECT url FROM midias
-      WHERE quarto_id IS NULL AND (secao = 'restaurante' OR alt ILIKE '%Marimar Café Bistrô Bar%')
+      WHERE quarto_id IS NULL AND tipo = 'foto' AND (secao = 'restaurante' OR alt ILIKE '%Marimar Café Bistrô Bar%')
       ORDER BY (secao = 'restaurante') DESC, destaque DESC, ordem, largura DESC NULLS LAST LIMIT 1
     `;
     capa = (f1 as any)?.url ?? null;
 
     const [f2] = await sql`
       SELECT url FROM midias
-      WHERE quarto_id IS NULL AND (secao = 'cafe' OR alt ILIKE '%café da manhã%')
+      WHERE quarto_id IS NULL AND tipo = 'foto' AND (secao = 'cafe' OR alt ILIKE '%café da manhã%')
       ORDER BY (secao = 'cafe') DESC, destaque DESC, ordem, largura DESC NULLS LAST LIMIT 1
     `;
     fotoCafe = (f2 as any)?.url ?? null;

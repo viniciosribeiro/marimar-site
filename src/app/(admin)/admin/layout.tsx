@@ -28,7 +28,7 @@ const GRUPOS: Grupo[] = [
       { href: "/admin/quartos", label: "Quartos", icone: "quartos" },
       { href: "/admin/categorias", label: "Categorias", icone: "categorias" },
       { href: "/admin/comodidades", label: "Comodidades", icone: "comodidades" },
-      { href: "/admin/midias", label: "Fotos", icone: "fotos" },
+      { href: "/admin/midias", label: "Fotos e vídeos", icone: "fotos" },
     ],
   },
   {

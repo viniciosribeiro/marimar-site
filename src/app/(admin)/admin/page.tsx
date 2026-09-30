@@ -43,7 +43,7 @@ export default async function DashboardPage() {
         (SELECT count(*) FROM leads WHERE lido = false)::int        AS leads_novos,
         (SELECT count(*) FROM leads)::int                           AS leads_total,
         (SELECT count(*) FROM midias)::int                          AS midias,
-        (SELECT count(*) FROM midias WHERE destaque = true AND quarto_id IS NULL)::int AS hero,
+        (SELECT count(*) FROM midias WHERE destaque = true AND quarto_id IS NULL AND tipo = 'foto')::int AS hero,
         (SELECT count(*) FROM pacotes WHERE ativo = true)::int      AS pacotes,
         (SELECT count(*) FROM faq WHERE ativo = true)::int          AS faq,
         (SELECT count(*) FROM depoimentos WHERE ativo = true)::int  AS depoimentos
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
     leadsRecentes = await sql`SELECT nome, telefone, origem, lido, criado_em FROM leads ORDER BY criado_em DESC LIMIT 5`;
     const [f] = await sql`
       SELECT count(*)::int AS c FROM quartos q
-      WHERE q.ativo = true AND NOT EXISTS (SELECT 1 FROM midias m WHERE m.quarto_id = q.id)
+      WHERE q.ativo = true AND NOT EXISTS (SELECT 1 FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto')
     `;
     semFoto = (f as any).c;
     /* A Marina no painel inicial: é o que mais muda no dia a dia. Cada

@@ -30,3 +30,7 @@ backups/
 # saidas dos testes visuais (testes/capturas.mjs, testes/e2e-marina.mjs)
 capturas/
 e2e-falha.png
+
+# rascunhos locais de teste
+testes/.tmp/
+public/_teste/

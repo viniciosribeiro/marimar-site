@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { registrarFoto } from "@/app/(admin)/admin/cardapio/actions";
+import { prepararFoto, ehImagem, ErroMidia } from "@/lib/midia-cliente";
 
 /**
  * Envio de fotos direto para o Vercel Blob.
@@ -16,8 +17,8 @@ import { registrarFoto } from "@/app/(admin)/admin/cardapio/actions";
  * de 8 MB leva tempo e sem barra parece travado.
  */
 
-const TIPOS = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-const LIMITE = 12 * 1024 * 1024;
+const ACEITAR = "image/*,.heic,.heif";
+const LIMITE = 40 * 1024 * 1024;
 
 type EmEnvio = { nome: string; progresso: number; erro?: string };
 
@@ -27,11 +28,12 @@ export function UploadFotos({
   const [fila, setFila] = useState<EmEnvio[]>([]);
   const [arrastando, setArrastando] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const enviar = useCallback(async (arquivos: File[]) => {
     const validos = arquivos.filter((f) => {
-      if (!TIPOS.includes(f.type)) return false;
+      if (!ehImagem(f)) return false;
       if (f.size > LIMITE) return false;
       return true;
     });
@@ -44,8 +46,8 @@ export function UploadFotos({
           nome: f.name,
           progresso: 0,
           erro: f.size > LIMITE
-            ? `Muito grande (${(f.size / 1024 / 1024).toFixed(1)} MB). O limite é 12 MB.`
-            : "Formato não aceito. Use JPG, PNG ou WebP.",
+            ? `Muito grande (${(f.size / 1024 / 1024).toFixed(1)} MB). O limite é 40 MB.`
+            : "Isto não é uma foto. Use JPG, PNG, WebP ou HEIC (iPhone).",
         })),
       ]);
     }
@@ -56,13 +58,17 @@ export function UploadFotos({
     // import dinamico: o SDK so e baixado quando realmente vai enviar algo
     const { upload } = await import("@vercel/blob/client");
 
-    for (const arquivo of validos) {
+    for (const original of validos) {
+      const arquivo = original;
       try {
-        const limpo = arquivo.name
+        /* Reduz para no máximo 2400 px e converte HEIC do iPhone em JPEG. */
+        const pronta = await prepararFoto(original);
+        const limpo = pronta.nome
           .toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
           .replace(/[^a-z0-9.]+/g, "-").slice(-60);
 
-        const blob = await upload(`cardapio/${itemId}/${limpo}`, arquivo, {
+        const blob = await upload(`cardapio/${itemId}/${limpo}`, pronta.blob, {
+          contentType: pronta.tipo,
           access: "public",
           handleUploadUrl: "/api/admin/upload",
           onUploadProgress: ({ percentage }) => {
@@ -72,13 +78,13 @@ export function UploadFotos({
 
         const r = await registrarFoto({
           itemId, url: blob.url, pathname: blob.pathname,
-          alt: nomeItem, bytes: arquivo.size,
+          alt: nomeItem, bytes: pronta.blob.size,
         });
         if (!r.ok) throw new Error(r.erro ?? "Falha ao gravar no banco");
 
         setFila((q) => q.filter((e) => e.nome !== arquivo.name));
       } catch (e) {
-        const msg = (e as Error).message;
+        const msg = e instanceof ErroMidia ? e.message : `Não consegui enviar (${(e as Error).message}).`;
         setFila((q) => q.map((x) => (x.nome === arquivo.name ? { ...x, erro: msg } : x)));
       }
     }
@@ -127,12 +133,17 @@ export function UploadFotos({
         >
           escolher do computador
         </button>
-        <p className="text-xs text-tinta-suave/80 mt-2">JPG, PNG ou WebP · até 12 MB cada · várias de uma vez</p>
+        <span className="text-sm text-tinta"> ou </span>
+        <button type="button" onClick={() => cameraRef.current?.click()}
+          className="text-sm font-semibold text-tinta underline underline-offset-2">
+          tirar com a câmera
+        </button>
+        <p className="text-xs text-tinta-suave/80 mt-2">JPG, PNG, WebP ou HEIC · otimizadas automaticamente · várias de uma vez</p>
 
         <input
           ref={inputRef}
           type="file"
-          accept={TIPOS.join(",")}
+          accept={ACEITAR}
           multiple
           className="sr-only"
           onChange={(e) => {
@@ -140,6 +151,8 @@ export function UploadFotos({
             e.target.value = "";
           }}
         />
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="sr-only"
+          onChange={(e) => { enviar(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
       </div>
 
       {fila.length > 0 && (
