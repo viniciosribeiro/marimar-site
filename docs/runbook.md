@@ -52,6 +52,8 @@ Vercel (Production + Preview). Faltar variavel na Vercel e a causa mais comum de
 | `WORKER_TIMEOUT_MS` | — | default 12000 |
 | `TARIFAS_CACHE_TTL` | — | TTL do cache de tarifas |
 | `AGENT_API_KEY` | ✅ | **min. 16 chars.** Sem ela as rotas do agente retornam 401 (fail-closed) |
+| `CRON_SECRET` | — | min. 16 chars. Chave do agendador de `/api/cron/chamados` (prazos dos chamados). Sem ela, o agendador usa a `AGENT_API_KEY` |
+| `OPENCLAW_ENVIO_METODO` | — | método do RPC do gateway para mandar WhatsApp (padrão `send`). Ver `docs/fluxo-escalonamento.md` |
 
 Sincronizar da Vercel para local:
 

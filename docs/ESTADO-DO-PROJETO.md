@@ -18,7 +18,7 @@
 **O que so existe depois de rodar**
 
 ```
-npm run db:migrate          # migrations 0009 a 0018 (0018: fotos, vídeos e roteiros da Marina — 30/09)
+npm run db:migrate          # migrations 0009 a 0019 (0019: equipe, chamados e aprendizado da Marina — 30/09)
 npm run db:migrar-fotos     # tira as imagens do WordPress antigo
 ```
 
@@ -73,15 +73,22 @@ Proxima ferramenta: **`docs/HANDOFF-PROXIMO-AGENTE.md`**.
 de até 16 MB para o WhatsApp. Marina → **Mídias de orientação**: roteiros com
 vídeo que ela manda etapa por etapa. Tudo em **`docs/fluxo-midia.md`**.
 
-## Fotos, vídeos e roteiros da Marina (30/09/2026, fim do dia)
+## Escalonamento e aprendizado da Marina (30/09/2026, quinta entrega)
 
-`/admin/midias` virou a biblioteca central (álbuns, arrastar, capa, lote,
-"onde é usada"). Vídeos de até 5 min comprimidos no próprio aparelho; versão
-de até 16 MB para o WhatsApp. Marina → **Mídias de orientação**: roteiros com
-vídeo que ela manda etapa por etapa. Tudo em **`docs/fluxo-midia.md`**.
+Quando a Marina não sabe, ela pergunta pelo WhatsApp a quem cuida do assunto
+(**`/admin/equipe`**) e devolve a resposta ao cliente no canal dele (WhatsApp
+ou chat do site). A resposta da equipe vira **aprendizado** (fila de revisão em
+Marina → Aprendizado) e ela passa a responder sozinha. Panorama em
+**`/admin/cerebro`**. Tudo em **`docs/fluxo-escalonamento.md`**.
 
 ## As pendencias que importam
 
+000. **Escalonamento (30/09, quinta entrega):** rodar a migration **0019**,
+   reinstalar a skill `marimar-pousada`, cadastrar a equipe em
+   `/admin/equipe`, usar "Testar envio" (confirma se o método `send` do
+   gateway funciona no OpenClaw real — **não verificado daqui**), ligar o
+   escalonamento e configurar um agendador a cada 5 min para
+   `/api/cron/chamados`. Aprendizado começa em "Só depois de aprovado".
 00. **Mídia (30/09, quarta entrega):** rodar a migration 0018, reinstalar a
    skill `marimar-pousada` no OpenClaw e testar num celular de verdade (foto
    HEIC, vídeo pela câmera, selo "WhatsApp ok"). O caminho MP4/H.264 não pôde
@@ -219,7 +226,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | `docs/fluxo-painel-marina.md` | como o treinamento sai do painel e chega a Marina, e como provar |
 | `docs/design-system-admin.md` | componentes, tokens e regras visuais do painel |
 | `docs/fluxo-midia.md` | fotos, vídeos, compressão no navegador, limites do WhatsApp e roteiros da Marina |
-| `docs/fluxo-midia.md` | fotos, vídeos, compressão no navegador, limites do WhatsApp e roteiros da Marina |
+| `docs/fluxo-escalonamento.md` | escalonamento para a equipe, base de aprendizado, Cérebro da Marina, segurança |
 | `docs/runbook.md` | deploy, env vars, incidentes, rotacao de chave |
 | `docs/samples/` | amostras de payload do Worker |
 | `AGENTS.md` | regras do Next.js 16 (bloco gerado pelo `next dev`) |
@@ -267,6 +274,7 @@ Deploy da terceira sessão validado contra `marimar-site-rnkyimtse.vercel.app`:
 |---|---|
 | 8 | Resolvido em 30/09: upload de foto e vídeo direto para o Vercel Blob (biblioteca `/admin/midias`) |
 | 9 | `audit_log` existe no schema mas nao e populado pelas server actions |
+| 9b | Escalonamento: agrupamento por significado é léxico (sinônimos + trigramas); embeddings seriam melhores. Números da equipe reconhecidos pela Marina (LLM), não por regra do OpenClaw. Cliente do site que fecha a aba perde a resposta. Ver `docs/fluxo-escalonamento.md`, "Próximos passos" |
 | 10 | Testes: existem desde 30/09 (`npm test`, `testes/e2e-marina.mjs`). Faltam `validarConsulta()`/`urlTarifas()` em `src/lib/worker.ts` e `src/lib/format.ts` (casos prontos no `CHANGELOG-IA.md`) |
 | 11 | Coluna dedicada `hero_url` em `pousada` (hoje o hero deduz da tabela `midias`) |
 | 12 | Lint: 179 problemas em 30/09 (eram 182; nenhum nos arquivos novos) — pré-existentes (162 são `any`; medido em 28/09) — antes dizia ~23 (`any`, `react-hooks/purity` com `Date.now`, aspas não escapadas) — não bloqueiam o build |

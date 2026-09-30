@@ -17,10 +17,11 @@ import { AbaVoz } from "./AbaVoz";
 import { AbaHistorico } from "./AbaHistorico";
 import { AbaRegras } from "./AbaRegras";
 import { AbaRoteiros } from "./AbaRoteiros";
+import { AbaAprendizado } from "./AbaAprendizado";
 
 export type AbaId =
   | "visao" | "conhecimento" | "testar" | "sem-resposta" | "conversas"
-  | "documentos" | "roteiros" | "regras" | "personalidade" | "voz" | "historico";
+  | "documentos" | "aprendizado" | "roteiros" | "regras" | "personalidade" | "voz" | "historico";
 
 /**
  * O módulo da Marina, organizado pelo que a Cecília quer FAZER:
@@ -50,6 +51,7 @@ export function PainelMarina({ dados, abaInicial }: { dados: DadosMarina; abaIni
     { id: "sem-resposta", rotulo: "Sem resposta", contador: s.lacunas, alerta: s.lacunas > 0 },
     { id: "conversas", rotulo: "Conversas", contador: dados.conversas.length },
     { id: "documentos", rotulo: "Documentos", contador: dados.documentos.length, alerta: s.docsFalhos > 0 },
+    { id: "aprendizado", rotulo: "Aprendizado", contador: dados.aprendizado.filter((a) => a.status === "pendente" || (a.status === "ativo" && (!a.revisado || !!a.conflito_id))).length, alerta: dados.aprendizado.some((a) => a.status === "pendente") },
     { id: "roteiros", rotulo: "Mídias de orientação", contador: dados.roteiros.filter((r) => r.ativo).length },
     { id: "regras", rotulo: "Crianças e adicionais" },
     { id: "personalidade", rotulo: "Personalidade e regras" },
@@ -71,6 +73,7 @@ export function PainelMarina({ dados, abaInicial }: { dados: DadosMarina; abaIni
       {aba === "sem-resposta" && <AbaLacunas lacunas={dados.lacunas} ensinar={ensinar} />}
       {aba === "conversas" && <AbaConversas conversas={dados.conversas} />}
       {aba === "documentos" && <AbaDocumentos documentos={dados.documentos} />}
+      {aba === "aprendizado" && <AbaAprendizado itens={dados.aprendizado} modo={dados.aprendizadoModo} conflitos={dados.conflitos} />}
       {aba === "roteiros" && <AbaRoteiros roteiros={dados.roteiros} midias={dados.midiasEscolha} blobOk={dados.blobOk} />}
       {aba === "regras" && <AbaRegras regras={dados.regras} adicionais={dados.adicionais} />}
       {aba === "personalidade" && (

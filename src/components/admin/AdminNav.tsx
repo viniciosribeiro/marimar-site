@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Home, BedDouble, FolderTree, Sparkles, Images, UtensilsCrossed,
   GalleryHorizontalEnd, Blocks, LayoutGrid, Gift, Compass, Star, HelpCircle, ScrollText,
   Map, Palmtree, Palette, Inbox, MessageCircleHeart, Plug, Stethoscope, Users,
-  ExternalLink, KeyRound, LogOut, PanelLeftClose, PanelLeftOpen, Menu, X, type LucideIcon,
+  ExternalLink, KeyRound, Brain, Headset, LogOut, PanelLeftClose, PanelLeftOpen, Menu, X, type LucideIcon,
 } from "lucide-react";
 import { Toaster } from "./ui-cliente";
 import { cn } from "./ui";
@@ -30,7 +30,7 @@ const ICONES: Record<string, LucideIcon> = {
   comodidades: Sparkles, fotos: Images, cardapio: UtensilsCrossed, banners: GalleryHorizontalEnd,
   blocos: Blocks, cartoes: LayoutGrid, pacotes: Gift, passeios: Compass, depoimentos: Star,
   faq: HelpCircle, politicas: ScrollText, conteudo: Map, atracoes: Palmtree, visual: Palette,
-  leads: Inbox, marina: MessageCircleHeart, integracoes: Plug, diagnostico: Stethoscope, usuarios: Users,
+  leads: Inbox, marina: MessageCircleHeart, cerebro: Brain, equipe: Headset, integracoes: Plug, diagnostico: Stethoscope, usuarios: Users,
 };
 
 const CHAVE_RECOLHIDO = "marimar:menu-recolhido";

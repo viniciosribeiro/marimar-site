@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, boolean, timestamp, integer, doublePrecision, jsonb, uuid, primaryKey, index, pgEnum, numeric, real, bigint } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, boolean, timestamp, integer, doublePrecision, jsonb, uuid, primaryKey, index, pgEnum, numeric, real, bigint, date } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 // ─── Enums ───────────────────────────────────────────────────────
@@ -492,6 +492,8 @@ export const chatMensagens = pgTable("chat_mensagens", {
   correcao: text("correcao"),
   /** A resposta da Marina parece "não sei" — entra em Perguntas sem resposta. */
   sem_resposta: boolean("sem_resposta").default(false).notNull(),
+  /** Resposta que veio da equipe por um chamado (migration 0019). */
+  chamado_id: uuid("chamado_id"),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
 
@@ -678,3 +680,101 @@ export const marinaRoteiroEtapas = pgTable("marina_roteiro_etapas", {
   ativo: boolean("ativo").default(true).notNull(),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
+
+// ─── Escalonamento e aprendizado (migration 0019) ───────────────
+// Fluxo: docs/fluxo-escalonamento.md
+
+export const equipeContatos = pgTable("equipe_contatos", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  nome: text("nome").notNull(),
+  numero: text("numero").notNull(),
+  setores: jsonb("setores").default(["geral"]).notNull(),
+  dias: jsonb("dias").default([0, 1, 2, 3, 4, 5, 6]).notNull(),
+  hora_inicio: text("hora_inicio").default("08:00").notNull(),
+  hora_fim: text("hora_fim").default("20:00").notNull(),
+  ordem: integer("ordem").default(0).notNull(),
+  ativo: boolean("ativo").default(true).notNull(),
+  ultimo_teste_em: timestamp("ultimo_teste_em"),
+  ultimo_teste_ok: boolean("ultimo_teste_ok"),
+  ultimo_teste_erro: text("ultimo_teste_erro"),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+});
+
+export const marinaEscalonamentoConfig = pgTable("marina_escalonamento_config", {
+  id: integer("id").default(1).primaryKey(),
+  ativo: boolean("ativo").default(false).notNull(),
+  lembrete_min: integer("lembrete_min").default(20).notNull(),
+  proximo_min: integer("proximo_min").default(45).notNull(),
+  aviso_cliente_min: integer("aviso_cliente_min").default(30).notNull(),
+  desistir_min: integer("desistir_min").default(240).notNull(),
+  whatsapp_modo: text("whatsapp_modo").default("web").notNull(),
+  template_cliente: text("template_cliente"),
+  template_equipe: text("template_equipe"),
+  template_idioma: text("template_idioma").default("pt_BR").notNull(),
+  aprendizado_modo: text("aprendizado_modo").default("aprovacao").notNull(),
+  validade_dias: integer("validade_dias").default(30).notNull(),
+  atualizado_por: text("atualizado_por"),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+});
+
+export const marinaChamados = pgTable("marina_chamados", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  codigo: text("codigo").notNull(),
+  status: text("status").default("aguardando").notNull(),
+  canal: text("canal").notNull(),
+  destino: text("destino"),
+  pergunta: text("pergunta").notNull(),
+  contexto: text("contexto"),
+  setor: text("setor").default("geral").notNull(),
+  categoria: text("categoria").default("geral").notNull(),
+  contato_id: uuid("contato_id").references(() => equipeContatos.id, { onDelete: "set null" }),
+  tentativas: jsonb("tentativas").default([]).notNull(),
+  notificado_em: timestamp("notificado_em"),
+  lembrete_em: timestamp("lembrete_em"),
+  cliente_avisado_em: timestamp("cliente_avisado_em"),
+  resposta_equipe: text("resposta_equipe"),
+  respondido_por: text("respondido_por"),
+  respondido_em: timestamp("respondido_em"),
+  resposta_final: text("resposta_final"),
+  entregue_em: timestamp("entregue_em"),
+  entrega_erro: text("entrega_erro"),
+  ultima_msg_cliente_em: timestamp("ultima_msg_cliente_em").defaultNow().notNull(),
+  aprendizado_id: uuid("aprendizado_id"),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+}, (t) => [index("marina_chamados_status_idx").on(t.status, t.criado_em), index("marina_chamados_codigo_idx").on(t.codigo)]);
+
+export const marinaAprendizado = pgTable("marina_aprendizado", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  pergunta: text("pergunta").notNull(),
+  variacoes: jsonb("variacoes").default([]).notNull(),
+  resposta: text("resposta").notNull(),
+  categoria: text("categoria").default("geral").notNull(),
+  status: text("status").default("pendente").notNull(),
+  revisado: boolean("revisado").default(false).notNull(),
+  confianca: real("confianca").default(0.6).notNull(),
+  origem: text("origem").default("chamado").notNull(),
+  origem_canal: text("origem_canal"),
+  chamado_id: uuid("chamado_id"),
+  respondido_por: text("respondido_por"),
+  usos: integer("usos").default(0).notNull(),
+  ultimo_uso_em: timestamp("ultimo_uso_em"),
+  valido_ate: date("valido_ate"),
+  conflito_id: uuid("conflito_id"),
+  conhecimento_id: uuid("conhecimento_id"),
+  revisado_por: text("revisado_por"),
+  revisado_em: timestamp("revisado_em"),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+}, (t) => [index("marina_aprendizado_status_idx").on(t.status)]);
+
+export const marinaEventos = pgTable("marina_eventos", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tipo: text("tipo").notNull(),
+  canal: text("canal"),
+  categoria: text("categoria"),
+  referencia: uuid("referencia"),
+  valor: real("valor"),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+}, (t) => [index("marina_eventos_tipo_idx").on(t.tipo, t.criado_em)]);

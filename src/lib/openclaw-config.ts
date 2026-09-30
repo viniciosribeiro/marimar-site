@@ -29,6 +29,15 @@ function configurado(): boolean {
  * causa da segunda metade faria a Cecília perder o que digitou.
  */
 async function rpc(method: string, params: Record<string, unknown>): Promise<Resultado> {
+  const r = await chamarRpc(method, params);
+  return r.ok ? { ok: true } : r;
+}
+
+/**
+ * O mesmo RPC, devolvendo o que o gateway respondeu. Usado pelo envio de
+ * WhatsApp da equipe (src/lib/envio-whatsapp.ts).
+ */
+export async function chamarRpc(method: string, params: Record<string, unknown>): Promise<{ ok: true; dados: unknown } | { ok: false; erro: string }> {
   if (!configurado()) return { ok: false, erro: "O gateway do OpenClaw não está configurado." };
 
   const base = process.env.OPENCLAW_GATEWAY_URL!.replace(/\/+$/, "");
@@ -48,15 +57,24 @@ async function rpc(method: string, params: Record<string, unknown>): Promise<Res
       /* O corpo do erro é o que diz se o plugin está desligado, se o token
          foi recusado ou se o formato do parâmetro está errado. Levar ele
          para a tela evita a próxima meia hora de adivinhação. */
-      return { ok: false, erro: `gateway respondeu ${r.status}: ${texto.slice(0, 300)}` };
+      let detalhe = texto.slice(0, 300);
+      try {
+        const j = JSON.parse(texto);
+        const m = typeof j?.error === "object" ? j.error?.message : j?.error ?? j?.message;
+        if (typeof m === "string" && m) detalhe = m.slice(0, 300);
+      } catch { /* corpo sem JSON: vai como veio */ }
+      return { ok: false, erro: `gateway respondeu ${r.status}: ${detalhe}` };
     }
 
+    let dados: unknown = null;
     try {
-      const dados = JSON.parse(texto);
-      if (dados?.error) return { ok: false, erro: String(dados.error?.message ?? dados.error).slice(0, 300) };
+      dados = JSON.parse(texto);
+      const d = dados as { error?: { message?: string } | string; ok?: boolean };
+      if (d?.error) return { ok: false, erro: String(typeof d.error === "object" ? d.error.message ?? JSON.stringify(d.error) : d.error).slice(0, 300) };
+      if (d?.ok === false) return { ok: false, erro: texto.slice(0, 300) };
     } catch { /* resposta sem JSON e com status 2xx: consideramos aceita */ }
 
-    return { ok: true };
+    return { ok: true, dados };
   } catch (e) {
     return { ok: false, erro: (e as Error).message };
   }

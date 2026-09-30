@@ -152,6 +152,12 @@ partir da próxima conversa**. As abas, na ordem em que se usa:
 - **Documentos** — PDF, Word, texto, CSV ou foto. Ela lê, divide em trechos e
   procura dentro quando a pergunta pede. Se um arquivo não puder ser lido,
   aparece o motivo e o botão "Tentar de novo".
+- **Aprendizado** — as respostas que a equipe deu aos chamados. Em "Só depois
+  de aprovado" (recomendado), ela só usa depois que alguém aprovar; em "Na
+  hora", usa na próxima pergunta parecida e você revisa depois. Para cada uma:
+  **Aprovar**, **Editar** (inclusive "vale até", para preço e horário),
+  **Rejeitar** ou **Tornar oficial** (vira uma pergunta e resposta em
+  Conhecimento). O que foi cadastrado à mão sempre vale mais.
 - **Mídias de orientação** — roteiros com vídeo para quem pergunta como
   chegar, onde pegar o barco, onde fica o restaurante. Cada roteiro tem
   **palavras-chave** (o que as pessoas escrevem) e **etapas** na ordem: um
@@ -171,6 +177,29 @@ partir da próxima conversa**. As abas, na ordem em que se usa:
 **Preço e vaga não se ensinam** — vêm ao vivo do sistema de reservas. Mas
 regras de como contar (criança como adulto, por exemplo) se ensinam, e ela
 segue ao consultar.
+
+### Equipe responsável
+Quem a Marina chama quando não sabe a resposta.
+- **Equipe**: cadastre cada pessoa com o WhatsApp, os assuntos que atende
+  ("Qualquer assunto" recebe o que ninguém mais atende), os dias e o horário.
+  Arraste para mudar a prioridade. Use **Testar envio** — se não chegar, o
+  erro aparece ali mesmo.
+- **Como funciona para a equipe**: chega no WhatsApp "🙋 Chamado #K7Q2" com a
+  pergunta do cliente. É só **responder àquela mensagem** (ou escrever #K7Q2 e
+  a resposta). A Marina ajusta o tom e manda ao cliente. Com mais de um
+  chamado aberto, use o código.
+- **Chamados**: quem está esperando, quem foi avisado e quando, e o que o
+  cliente recebeu. Dá para **responder pelo painel**, tentar entregar de novo
+  ou cancelar.
+- **Prazos e WhatsApp**: ligar/desligar, em quantos minutos lembrar a pessoa,
+  passar para a próxima, avisar o cliente e desistir (aí o cliente recebe o
+  WhatsApp/telefone da recepção cadastrado em Dados da pousada).
+
+### Cérebro da Marina
+O panorama do que ela sabe: quanto de cada assunto (cadastrado, aprendido,
+mídias), o mapa das áreas e de quem da equipe responde cada uma, quanto ela
+resolve sozinha ao longo do tempo, o que aprendeu por último e o que precisa
+de você. Escolha o período (7, 30, 90 dias) e o canal no alto.
 
 ## Sistema
 
