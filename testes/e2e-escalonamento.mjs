@@ -96,10 +96,19 @@ try {
   ok(ch1 && !/Ana|Souza/.test(ch1.pergunta), "site: nome do cliente não foi guardado na pergunta");
   const aviso1 = (await enviadas()).find((m) => m.para === `+${GERAL}`);
   ok(aviso1 && aviso1.texto.includes(`#${ch1.codigo}`) && /chat do site/.test(aviso1.texto), "site: equipe avisada com código e canal");
+  const [lac1] = await sql`SELECT chamado_id, aviso_erro FROM marina_lacunas WHERE status = 'aberta' AND chamado_id = ${ch1.id}`;
+  ok(!!lac1 && lac1.aviso_erro === null, "sem resposta: a pergunta entra na lista ligada ao chamado");
+  await pag.goto(`${BASE}/admin/marina?aba=sem-resposta`); await pag.waitForTimeout(1500);
+  ok(await pag.getByText(/Equipe avisada/).first().isVisible(), "sem resposta: o painel mostra que a equipe foi avisada");
 
   const resp1 = await agente("/api/agent/chamados/resposta", { numero: "+55 (41) 93333-4444", texto: "Sim, todas as suítes têm cofre digital.", citado: aviso1?.texto });
   ok(resp1.dados?.respondido && resp1.dados?.entregue, "site: resposta da equipe (citando a mensagem, sem digitar código) entregue");
-  ok(resp1.dados?.aprendizado === "pendente", "site: modo aprovação — aprendizado foi para a fila");
+  ok(resp1.dados?.confirmando === true && /Posso guardar esta resposta/.test(resp1.resumo_texto) && /SIM/.test(resp1.resumo_texto),
+    "confirmação: depois de entregar, a Marina pergunta à equipe se pode guardar");
+  ok((await sql`SELECT count(*)::int AS n FROM marina_aprendizado`)[0].n === 0, "confirmação: nada guardado antes de a equipe confirmar");
+  const conf1 = await agente("/api/agent/chamados/resposta", { numero: GERAL, texto: "sim" });
+  ok(conf1.dados?.confirmacao === "guardado" && /revisão no painel/.test(conf1.resumo_texto), "confirmação: “sim” guarda (modo aprovação → fila do painel)");
+  ok((await sql`SELECT status FROM marina_aprendizado`)[0]?.status === "pendente", "site: modo aprovação — aprendizado foi para a fila");
   const poll = await (await fetch(`${BASE}/api/chat/chamados?sessao=${sessao}&depois=2020-01-01`)).json();
   ok(poll.mensagens.some((m) => /cofre digital/.test(m.texto)) && poll.pendentes === 0, "site: o chat do cliente recebe a resposta, no tom da Marina");
   const [ch1b] = await sql`SELECT destino, status FROM marina_chamados WHERE id = ${ch1.id}`;
@@ -148,10 +157,19 @@ try {
   await pag.goto(`${BASE}/admin/marina?aba=aprendizado`); await pag.waitForTimeout(1500);
   await pag.getByRole("button", { name: /Na hora \(automático\)/ }).click(); await pag.waitForTimeout(1200);
   const c = await agente("/api/agent/chamados", { pergunta: "Tem secador de cabelo no quarto?", cliente: "41977770003" });
+  ok((await sql`SELECT count(*)::int AS n FROM marina_chamados WHERE confirmacao_etapa IS NOT NULL`)[0].n === 0,
+    "confirmação: chamado novo para a mesma pessoa fecha as confirmações pendentes (vão para a fila)");
   const rc = await agente("/api/agent/chamados/resposta", { numero: GERAL, texto: `#${c.dados.codigo} Sim, todo banheiro tem secador.` });
-  ok(rc.dados?.aprendizado === "ativo", "automático: aprendeu na hora");
+  ok(rc.dados?.confirmando === true, "automático: pergunta antes de guardar");
+  const alt = await agente("/api/agent/chamados/resposta", { numero: GERAL, texto: "Todas as suítes têm secador, fica no armário do banheiro." });
+  ok(alt.dados?.confirmacao === "alterado" && /Ficou assim/.test(alt.resumo_texto) && /armário do banheiro/.test(alt.resumo_texto) && /Confirma\?/.test(alt.resumo_texto),
+    "confirmação: alteração → mostra como ficou e pede confirmação de novo");
+  const fim = await agente("/api/agent/chamados/resposta", { numero: GERAL, texto: "Sim!" });
+  ok(fim.dados?.confirmacao === "guardado" && /Da próxima vez eu respondo sozinha/.test(fim.resumo_texto), "automático: aprendeu na hora, com a versão alterada");
+  const nao = await agente("/api/agent/chamados/resposta", { numero: GERAL, texto: "não" });
+  ok(nao.dados?.confirmacao === undefined, "confirmação: depois de confirmada, um “não” solto não mexe em nada");
   const treino = await agente("/api/agent/conhecimento");
-  ok(/APRENDIDO COM A EQUIPE/.test(treino.resumo_texto) && /secador/.test(treino.resumo_texto), "automático: já está no treinamento que o WhatsApp lê");
+  ok(/APRENDIDO COM A EQUIPE/.test(treino.resumo_texto) && /armário do banheiro/.test(treino.resumo_texto), "automático: já está no treinamento que o WhatsApp lê");
   const uso = await agente("/api/agent/aprendizado/uso", { pergunta: "vcs tem secador de cabelo?", canal: "whatsapp" });
   ok(uso.dados?.contado === true, "whatsapp: uso do aprendido registrado");
   const repetida = await agente("/api/agent/chamados", { pergunta: "Tem secador de cabelo no quarto?", cliente: "41977770003" });

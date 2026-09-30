@@ -74,7 +74,7 @@ export function PainelMarina({ dados, abaInicial, categoriaInicial, novoInicial 
         <AbaConhecimento dados={dados} ensinar={ensinar} verHistorico={setHistoricoDe} categoriaInicial={categoriaInicial} />
       )}
       {aba === "testar" && <AbaTeste dados={dados} ensinar={ensinar} />}
-      {aba === "sem-resposta" && <AbaLacunas lacunas={dados.lacunas} ensinar={ensinar} />}
+      {aba === "sem-resposta" && <AbaLacunas lacunas={dados.lacunas} ensinar={ensinar} escalonamentoAtivo={dados.escalonamentoAtivo ?? false} />}
       {aba === "conversas" && <AbaConversas conversas={dados.conversas} />}
       {aba === "documentos" && <AbaDocumentos documentos={dados.documentos} />}
       {aba === "aprendizado" && <AbaAprendizado itens={dados.aprendizado} modo={dados.aprendizadoModo} conflitos={dados.conflitos} />}

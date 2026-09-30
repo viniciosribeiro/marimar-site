@@ -21,6 +21,10 @@ export type Conversa = { sessao: string; inicio: string; fim: string; trocas: Tr
 
 export type Lacuna = {
   id: string; pergunta: string; resposta: string | null; canal: string; status: string; criado_em: string;
+  /** Migration 0020: o chamado para a equipe e a situação do aviso. */
+  chamado?: { codigo: string; status: string; quem: string | null; ok: boolean | null; erro: string | null; em: string | null } | null;
+  aviso_erro?: string | null;
+  tem_sessao?: boolean;
 };
 
 export type EntradaHistorico = {
@@ -43,6 +47,8 @@ export type DadosMarina = {
   documentos: DocumentoPainel[];
   conversas: Conversa[];
   lacunas: Lacuna[];
+  /** O aviso à equipe (escalonamento) está ligado? */
+  escalonamentoAtivo?: boolean;
   historico: EntradaHistorico[];
   cobertura: Cobertura[];
   saude: Saude;

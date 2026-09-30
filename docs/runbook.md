@@ -53,7 +53,7 @@ Vercel (Production + Preview). Faltar variavel na Vercel e a causa mais comum de
 | `TARIFAS_CACHE_TTL` | — | TTL do cache de tarifas |
 | `AGENT_API_KEY` | ✅ | **min. 16 chars.** Sem ela as rotas do agente retornam 401 (fail-closed) |
 | `CRON_SECRET` | — | min. 16 chars. Chave do agendador de `/api/cron/chamados` (prazos dos chamados). Sem ela, o agendador usa a `AGENT_API_KEY` |
-| `OPENCLAW_ENVIO` | — | como o site manda WhatsApp pela Marina: `auto` (padrão: ferramenta, depois agente), `ferramenta`, `agente` ou `rpc:<método>`. Ver `docs/fluxo-escalonamento.md` |
+| `OPENCLAW_ENVIO` | — | como o site manda WhatsApp: `auto` (padrão: ferramenta `message` do gateway; a Marina só entra se a ferramenta não existir, e precisa devolver o id da mensagem), `ferramenta`, `agente` ou `rpc:<método>`. Ver `docs/fluxo-escalonamento.md` e "Liberar a ferramenta de mensagens" abaixo |
 
 Sincronizar da Vercel para local:
 
@@ -138,3 +138,32 @@ npm run db:studio      # Drizzle Studio
 - [ ] Admin → Integracoes: 4 cards verdes
 - [ ] `curl -H "Authorization: Bearer <chave>" .../api/agent/pousada` → 200
 - [ ] `curl .../api/agent/pousada` (sem header) → **401** (nunca 200)
+
+
+## Liberar a ferramenta de mensagens (WhatsApp da equipe)
+
+O site avisa a equipe pelo `POST /tools/invoke` do gateway, com a ferramenta
+`message`. **Na instalação padrão do OpenClaw o perfil de ferramentas é
+`coding`, que NÃO inclui `message`** (docs do pacote: `gateway/config-tools.md`).
+Aí o gateway responde 404. Até 30/09 o site caía para "pedir à Marina", e ela
+podia responder "ENVIADO" sem ter mandado nada: foi o "Testar envio diz que
+foi e nada chega". Hoje o site mostra o 404 com este nome.
+
+No terminal da Hostinger:
+
+```bash
+openclaw config get tools.profile          # "coding" (ou vazio) = message fora
+openclaw config get tools.alsoAllow        # o que já está liberado a mais
+openclaw config set tools.alsoAllow '["message"]' --strict-json   # se já houver itens, inclua-os na lista
+openclaw gateway restart
+openclaw channels status                   # o WhatsApp precisa estar conectado
+```
+
+Depois, no painel, **Equipe responsável → Testar envio**. O teste só diz
+"✓ O WhatsApp confirmou a entrega" quando o WhatsApp devolve o id da
+mensagem. O envio pede entrega obrigatória (`bestEffort: false`): sem isso, o
+OpenClaw responde "ok" mesmo quando o WhatsApp não entrega.
+
+O `/tools/invoke` é uma superfície de operador (o token do gateway dá
+acesso total): mantenha o gateway atrás de HTTPS e com token forte, como já
+está para o chat do site.

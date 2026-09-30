@@ -308,3 +308,56 @@ export function textoAoClienteAoEscalar(algumNoHorario: boolean, canal: string):
     ? `Essa eu prefiro confirmar com a equipe da pousada para não te passar nada errado. Já perguntei e te respondo ${onde} assim que me retornarem 😊`
     : `Essa eu prefiro confirmar com a equipe da pousada para não te passar nada errado. Já deixei a pergunta com eles — como estão fora do horário agora, pode levar um pouquinho, mas te respondo ${onde} 😊`;
 }
+
+/* ── confirmação do aprendizado pelo WhatsApp ─────────────────────── */
+
+/**
+ * O que a pessoa da equipe respondeu quando a Marina perguntou se pode
+ * guardar a resposta: sim, não, ou uma versão nova (qualquer outro texto).
+ * Só respostas CURTAS contam como sim/não — "sim, mas o café é até 10h30"
+ * é uma alteração, não um sim.
+ */
+export function lerConfirmacao(texto: string): { tipo: "sim" } | { tipo: "nao" } | { tipo: "alterar"; texto: string } {
+  const t = texto.trim();
+  const curto = t.replace(/[.!?,;:\s]+$/g, "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  if (curto.length <= 24) {
+    if (/^(sim|s|pode|pode sim|pode guardar|guarda|guardar|ok|okay|isso|isso mesmo|confirmo|confirmado|confirma|claro|beleza|blz|certo|correto|perfeito|👍|✅|👌)$/.test(curto)) return { tipo: "sim" };
+    if (/^(nao|n|nao guarda|nao guardar|nao precisa|descarta|descartar|deixa|deixa pra la|esquece|cancela|cancelar|👎|❌)$/.test(curto)) return { tipo: "nao" };
+  }
+  return { tipo: "alterar", texto: t.slice(0, 3000) };
+}
+
+const aspas = (s: string) => `“${s.trim().slice(0, 900)}”`;
+
+/** Primeira pergunta, logo depois de entregar ao cliente. */
+export function textoPedirConfirmacao(codigo: string, resposta: string): string {
+  return [
+    `📚 Posso guardar esta resposta para eu responder sozinha da próxima vez? (#${codigo})`,
+    "",
+    aspas(resposta),
+    "",
+    "Responda *SIM* para guardar, *NÃO* para não guardar, ou escreva como prefere que eu responda.",
+  ].join("\n");
+}
+
+/** Depois de uma alteração: mostra como ficou e pede confirmação de novo. */
+export function textoConfirmarVersao(codigo: string, versao: string): string {
+  return [
+    `Ficou assim (#${codigo}):`,
+    "",
+    aspas(versao),
+    "",
+    "Confirma? Responda *SIM* para guardar, *NÃO* para descartar, ou mande outra versão.",
+  ].join("\n");
+}
+
+export function textoConfirmacaoFeita(status: string | null): string {
+  if (status === "ativo") return "📚 Guardado! Da próxima vez eu respondo sozinha. Obrigada! 🙏";
+  if (status === "oficial") return "📚 Esse assunto já tem uma resposta oficial no painel — mantive a oficial. Obrigada!";
+  return "📚 Guardado! Vai para a revisão no painel (Marina → Aprendizado) e passa a valer assim que for aprovado. Obrigada! 🙏";
+}
+
+export const TEXTO_NAO_GUARDAR = "Tudo bem, não vou guardar. A resposta ao cliente já foi entregue. 👍";
+
+/** Depois de 24 h sem resposta, a confirmação caduca e a resposta vai para a fila do painel. */
+export const HORAS_CONFIRMACAO = 24;

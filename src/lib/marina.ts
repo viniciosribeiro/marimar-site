@@ -401,22 +401,37 @@ export const pareceSemResposta = (texto: string) => SEM_RESPOSTA.some((r) => r.t
 
 export async function registrarLacuna(
   sql: Sql,
-  l: { pergunta: string; resposta?: string | null; canal: string; sessao?: string | null },
+  l: { pergunta: string; resposta?: string | null; canal: string; sessao?: string | null; chamadoId?: string | null; avisoErro?: string | null },
 ) {
   const pergunta = l.pergunta.trim().slice(0, 600);
   if (pergunta.length < 4) return;
   try {
     /* A mesma pergunta aberta nos últimos 7 dias não entra de novo: a lista
-       é de ASSUNTOS a treinar, não um log. */
+       é de ASSUNTOS a treinar, não um log. Mas o vínculo com o chamado (ou o
+       motivo de a equipe não ter sido avisada) é atualizado. */
     const [igual] = await sql<{ id: string }[]>`
       SELECT id FROM marina_lacunas
       WHERE status = 'aberta' AND lower(pergunta) = lower(${pergunta})
         AND criado_em > now() - interval '7 days' LIMIT 1`;
-    if (igual) return;
-    await registrarEvento(sql, "lacuna", { canal: l.canal.slice(0, 20) });
-    await sql`
-      INSERT INTO marina_lacunas (pergunta, resposta, canal, sessao)
-      VALUES (${pergunta}, ${l.resposta?.slice(0, 2000) ?? null}, ${l.canal.slice(0, 20)}, ${l.sessao ?? null})`;
+    if (igual) {
+      if (l.chamadoId !== undefined || l.avisoErro !== undefined) {
+        await sql`UPDATE marina_lacunas SET chamado_id = coalesce(${l.chamadoId ?? null}, chamado_id), aviso_erro = ${l.avisoErro ?? null} WHERE id = ${igual.id}`.catch(() => {});
+      }
+      return;
+    }
+    /* Com chamado aberto, o Cérebro já contou uma "escalada": não conta de novo. */
+    if (!l.chamadoId) await registrarEvento(sql, "lacuna", { canal: l.canal.slice(0, 20) });
+    try {
+      await sql`
+        INSERT INTO marina_lacunas (pergunta, resposta, canal, sessao, chamado_id, aviso_erro)
+        VALUES (${pergunta}, ${l.resposta?.slice(0, 2000) ?? null}, ${l.canal.slice(0, 20)}, ${l.sessao ?? null},
+          ${l.chamadoId ?? null}, ${l.avisoErro?.slice(0, 500) ?? null})`;
+    } catch {
+      /* antes da migration 0020 */
+      await sql`
+        INSERT INTO marina_lacunas (pergunta, resposta, canal, sessao)
+        VALUES (${pergunta}, ${l.resposta?.slice(0, 2000) ?? null}, ${l.canal.slice(0, 20)}, ${l.sessao ?? null})`;
+    }
   } catch { /* antes da migration 0016 */ }
 }
 

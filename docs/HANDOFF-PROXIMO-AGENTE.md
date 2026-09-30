@@ -49,11 +49,16 @@ acesso à produção e sem credenciais):
    foto HEIC, vídeo pela câmera, selo "WhatsApp ok" na biblioteca; um roteiro
    em Marina → Mídias de orientação e "como chego?" no WhatsApp.
 
-5. **Escalonamento no OpenClaw real:** cadastrar a equipe em `/admin/equipe`,
-   "Testar envio" (confirma o método `send` do RPC; se falhar, ajustar
-   `OPENCLAW_ENVIO`; o RPC de administração não aceita `send`), ligar, e simular: pergunta desconhecida no
-   WhatsApp → mensagem chega à equipe → resposta citando → cliente recebe.
-   Agendador de 5 min para `/api/cron/chamados`.
+5. **Escalonamento no OpenClaw real:** migration 0020; liberar a ferramenta
+   `message` no OpenClaw (`tools.alsoAllow`, ver `docs/runbook.md`, "Liberar a
+   ferramenta de mensagens" — o perfil padrão `coding` não a inclui e o
+   `/tools/invoke` dá 404); reinstalar a skill; "Testar envio" deve mostrar
+   "✓ O WhatsApp confirmou a entrega (mensagem <id>)". Depois simular:
+   pergunta desconhecida → aviso chega à equipe → resposta → cliente recebe →
+   Marina pergunta "posso guardar?" → SIM/NÃO/versão nova. Agendador de 5
+   min para `/api/cron/chamados`. O código do OpenClaw pode ser lido sem
+   rede de produção: `npm pack openclaw` e procurar em `package/dist`
+   (`message-action-runner-*.js`, `tools-invoke-shared-*.js`).
 
 6. **Rota com os serviços reais:** abrir `/como-chegar` num celular com 4G
    (OpenFreeMap, OSRM e Photon só foram testados com `testes/mapa-simulado.mjs`).

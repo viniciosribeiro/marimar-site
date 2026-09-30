@@ -1,7 +1,7 @@
 import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
 import { comSql } from "@/lib/db-conexao";
-import { abrirChamado, talvezProcessarPrazos } from "@/lib/escalonamento";
+import { abrirChamado, talvezProcessarPrazos, vinculoDaAbertura } from "@/lib/escalonamento";
 import { normalizarNumero } from "@/lib/escalonamento-base";
 import { registrarLacuna } from "@/lib/marina";
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       contexto: typeof corpo?.contexto === "string" ? corpo.contexto : null,
       assunto: typeof corpo?.assunto === "string" ? corpo.assunto : null,
     });
-    if (!a.ok && a.motivo === "desligado") await registrarLacuna(sql, { pergunta, canal: "whatsapp" });
+    if (a.ok || a.motivo === "desligado") await registrarLacuna(sql, { pergunta, canal: "whatsapp", ...vinculoDaAbertura(a) });
     await talvezProcessarPrazos(sql);
     return a;
   });

@@ -96,6 +96,16 @@ resposta vai só para o chamado do código. Se voltar `entregar_manual`
 (o site não conseguiu mandar), **você** manda aquele texto, exatamente, para
 o número indicado. Se voltar `equipe: false`, é um hóspede: atenda normal.
 
+**Confirmação do aprendizado.** Depois de entregar, o `resumo_texto` termina
+perguntando à pessoa se pode guardar a resposta ("Responda SIM, NÃO ou
+escreva como prefere"). Mande essa pergunta **exatamente como veio**. A
+resposta seguinte da pessoa — "sim", "não" ou uma versão nova do texto —
+**também vai para a mesma rota** `/api/agent/chamados/resposta`, sem você
+interpretar nem guardar nada por conta própria. O site cuida de tudo:
+mostra a versão alterada e pede outra confirmação, guarda ou descarta. Você
+só repassa o `resumo_texto` de cada volta. Toda mensagem de alguém da equipe
+vai para essa rota, até um simples "sim" ou "👍".
+
 ## Quando não souber: pergunte à equipe
 
 Se a resposta não está no treinamento, nas rotas nem nos documentos, **não

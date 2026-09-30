@@ -5,7 +5,7 @@ import {
   INDISPONIVEL, CONTEXTO_CANAL,
 } from "@/lib/chat";
 import { montarTreinamento, pareceSemResposta, registrarLacuna } from "@/lib/marina";
-import { abrirChamado, lerConfigEscalonamento, talvezProcessarPrazos } from "@/lib/escalonamento";
+import { abrirChamado, lerConfigEscalonamento, talvezProcessarPrazos, vinculoDaAbertura } from "@/lib/escalonamento";
 import { registrarUso } from "@/lib/aprendizado";
 
 export const runtime = "nodejs";
@@ -188,9 +188,14 @@ export async function POST(req: Request) {
                 const contexto = anteriores.filter((m) => m.papel === "visitante" && m.conteudo !== mensagem)
                   .slice(-3).map((m) => m.conteudo.slice(0, 160)).join(" / ");
                 const a = await abrirChamado(conexao, { canal: "site", destino: sessao, pergunta: mensagem, contexto: contexto || null });
-                if (!a.ok) await registrarLacuna(conexao, { pergunta: mensagem, resposta: completa, canal: "site", sessao });
+                /* Sempre na lista "Sem resposta", com o chamado (ou o motivo de
+                   a equipe não ter sido avisada) — o painel mostra os dois juntos. */
+                await registrarLacuna(conexao, { pergunta: mensagem, resposta: completa, canal: "site", sessao, ...vinculoDaAbertura(a) });
               } else if (semResposta) {
-                await registrarLacuna(conexao, { pergunta: mensagem, resposta: completa, canal: "site", sessao });
+                await registrarLacuna(conexao, {
+                  pergunta: mensagem, resposta: completa, canal: "site", sessao, chamadoId: null,
+                  avisoErro: "O aviso à equipe está desligado (Equipe responsável → Prazos e WhatsApp).",
+                });
               } else {
                 /* Respondeu. Se foi com algo aprendido, conta o uso. */
                 await registrarUso(conexao, mensagem, "site");

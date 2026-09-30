@@ -613,6 +613,9 @@ export const marinaLacunas = pgTable("marina_lacunas", {
   /** "aberta" | "resolvida" | "ignorada" */
   status: text("status").default("aberta").notNull(),
   conhecimento_id: uuid("conhecimento_id"),
+  /** 0020: o chamado aberto para a equipe, ou por que não foi possível avisar. */
+  chamado_id: uuid("chamado_id"),
+  aviso_erro: text("aviso_erro"),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
   resolvido_em: timestamp("resolvido_em"),
 });
@@ -741,6 +744,11 @@ export const marinaChamados = pgTable("marina_chamados", {
   entrega_erro: text("entrega_erro"),
   ultima_msg_cliente_em: timestamp("ultima_msg_cliente_em").defaultNow().notNull(),
   aprendizado_id: uuid("aprendizado_id"),
+  /** Confirmação do aprendizado pelo WhatsApp (0020): 'pergunta' | 'final' | null. */
+  confirmacao_etapa: text("confirmacao_etapa"),
+  confirmacao_texto: text("confirmacao_texto"),
+  confirmacao_contato_id: uuid("confirmacao_contato_id"),
+  confirmacao_em: timestamp("confirmacao_em"),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
   atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
 }, (t) => [index("marina_chamados_status_idx").on(t.status, t.criado_em), index("marina_chamados_codigo_idx").on(t.codigo)]);

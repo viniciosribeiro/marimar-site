@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 30/09/2026.
+> Atualizado em 30/09/2026 (sétima entrega: aviso à equipe confirmado e aprendizado com confirmação).
 
 ## Onde estamos
 
@@ -18,7 +18,7 @@
 **O que so existe depois de rodar**
 
 ```
-npm run db:migrate          # migrations 0009 a 0019 (0019: equipe, chamados e aprendizado da Marina — 30/09)
+npm run db:migrate          # migrations 0009 a 0020 (0020: confirmação do aprendizado e Sem resposta ligada aos chamados — 30/09)
 npm run db:migrar-fotos     # tira as imagens do WordPress antigo
 ```
 
@@ -92,6 +92,14 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+00000. **Aviso à equipe (30/09, sétima entrega):** rodar a migration **0020**.
+   No OpenClaw:
+   - liberar a ferramenta `message`: `openclaw config set tools.alsoAllow '["message"]' --strict-json` e `openclaw gateway restart` (ver `docs/runbook.md`);
+   - conferir `openclaw channels status`;
+   - reinstalar a skill `marimar-pousada`.
+
+   Depois, "Testar envio" precisa dizer "✓ O WhatsApp confirmou a entrega".
+   Com o OpenClaw real, **não foi verificado daqui**.
 0000. **Rota (30/09, sexta entrega):** abrir `/como-chegar` num celular com
    4G e traçar uma rota de verdade — OpenFreeMap, OSRM e Photon **não foram
    testados daqui** (só o simulador). Depois, em **Rota e mapa**, arrastar o

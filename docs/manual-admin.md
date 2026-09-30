@@ -224,23 +224,61 @@ Quem a Marina chama quando não sabe a resposta.
   passar para a próxima, avisar o cliente e desistir (aí o cliente recebe o
   WhatsApp/telefone da recepção cadastrado em Dados da pousada).
 
-#### “Testar envio” diz que foi, mas não chegou
-O site só sabe que o OpenClaw **aceitou** o pedido. Para descobrir onde parou,
-no terminal da Hostinger (onde você instala a skill), mande uma mensagem
-direto pelo OpenClaw, trocando pelo seu número:
+#### “Testar envio”: o que cada resposta quer dizer
+Desde 30/09 (sexta entrega) o site só diz **“✓ O WhatsApp confirmou a
+entrega”** quando o WhatsApp devolve o número da mensagem. Antes, bastava o
+OpenClaw “aceitar” o pedido. Ele aceitava mesmo quando o WhatsApp não
+entregava, e por isso aparecia “enviado” sem nada chegar.
+
+| O que aparece | O que fazer |
+|---|---|
+| ✓ O WhatsApp confirmou a entrega | Chegou. Se não aparecer no celular, o número cadastrado está errado (veja o teste do 9 abaixo). |
+| O WhatsApp da pousada está DESCONECTADO | No terminal da Hostinger: `openclaw channels status`. Se estiver desconectado: `openclaw channels login --channel whatsapp` e leia o QR com o celular da pousada. |
+| o OpenClaw tentou e o WhatsApp não entregou | No terminal: `openclaw logs --follow` e aperte “Testar envio” de novo; o motivo aparece ali. |
+| a ferramenta de mensagens não está liberada no gateway (404) | A política de ferramentas do OpenClaw bloqueia a ferramenta `message`. Veja `docs/runbook.md`, “Liberar a ferramenta de mensagens”. |
+| o gateway recusou a chave (401/403) | O `OPENCLAW_GATEWAY_TOKEN` na Vercel está diferente do OpenClaw. |
+
+**Teste do 9.** No terminal da Hostinger, trocando pelo seu número:
 
 ```
 openclaw message send --channel whatsapp --target +5566996888843 --message "teste 1"
 openclaw message send --channel whatsapp --target +556696888843 --message "teste 2"
 ```
 
-- Chegou o **teste 1**: o WhatsApp funciona; o problema é o caminho do site —
-  mande a mensagem que apareceu na tela ao testar para quem cuida do sistema.
-- Chegou só o **teste 2** (sem o 9 depois do DDD): o WhatsApp deste número está
+- Chegou o **teste 1**: o WhatsApp funciona. Se o painel ainda dá erro,
+  mande a mensagem da tela para quem cuida do sistema.
+- Chegou só o **teste 2** (sem o 9 depois do DDD): o WhatsApp desse número está
   registrado sem o 9. Cadastre o número assim na equipe.
-- Não chegou nenhum: o WhatsApp da pousada no OpenClaw não está conectado ou
-  não pode mandar para números novos — veja a mensagem de erro que o comando
-  mostrou.
+- Não chegou nenhum: o WhatsApp da pousada no OpenClaw não está conectado.
+  Veja a mensagem de erro que o comando mostrou.
+
+#### Quando a equipe responde pelo WhatsApp: guardar ou não
+Depois de entregar a resposta ao cliente, a Marina pergunta a quem
+respondeu:
+
+> 📚 Posso guardar esta resposta para eu responder sozinha da próxima vez?
+> “…” — Responda *SIM*, *NÃO*, ou escreva como prefere que eu responda.
+
+- **SIM**: guarda. Em “Na hora (automático)” ela já passa a responder
+  sozinha. Em “Só depois de aprovado”, a resposta vai para Marina →
+  Aprendizado, esperando a aprovação.
+- **NÃO**: não guarda (o cliente já recebeu a resposta).
+- **Qualquer outro texto** é a versão que a pessoa prefere. A Marina mostra
+  “Ficou assim: … Confirma?” e espera outro SIM, NÃO ou mais uma versão.
+
+Se ninguém responder em 24 horas, ou se a mesma pessoa receber um chamado
+novo antes, a resposta vai para a fila de revisão do painel. Nada se perde.
+
+#### Sem resposta (Marina → Sem resposta)
+Cada pergunta que a Marina não soube mostra, ao lado, o que aconteceu com o
+aviso à equipe:
+- 📨 avisada (quem e quando);
+- o aviso não chegou (com o motivo);
+- equipe não avisada (por exemplo, com o escalonamento desligado).
+
+O botão **Avisar a equipe** (ou **Avisar de novo**) manda o chamado pelo
+WhatsApp na hora. A pergunta sai da lista quando a equipe responde ou quando
+você ensina a resposta ali mesmo.
 
 ### Cérebro da Marina
 O panorama do que ela sabe: quanto de cada assunto (cadastrado, aprendido,
