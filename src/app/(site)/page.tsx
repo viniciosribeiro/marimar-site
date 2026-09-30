@@ -2,6 +2,7 @@ import postgres from "postgres";
 import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 import { lerBanner } from "@/lib/banners";
 import { agruparItens } from "@/lib/blocos";
+import { lerConteudo, padroes, type Conteudo } from "@/lib/conteudo-editavel";
 import { RenderBloco, type Bloco, type DadosHome } from "@/components/site/BlocosHome";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,8 @@ export default async function HomePage() {
   let itensBlocos: any[] = [];
   let pacotesTopo: any[] = [];
   let fotosSecao: { secao: string; url: string; alt: string }[] = [];
+  // Atrações e travessia editadas no painel; sem banco, valem as do código.
+  let conteudo: Conteudo = padroes();
 
   pousada = await lerPousada(); // ja lida pelo layout nesta requisicao
 
@@ -117,6 +120,8 @@ export default async function HomePage() {
       console.warn("[HomePage] itens dos blocos indisponiveis (migration 0007?):", (e as Error).message);
     }
 
+    conteudo = await lerConteudo(sql); // não lança: sem a tabela, volta o padrão
+
     // Traz ativos e inativos: precisamos saber quais tipos JA existem,
     // para nao reinserir um que foi escondido de proposito.
     const linhas = await sql`
@@ -141,6 +146,8 @@ export default async function HomePage() {
     itens: agruparItens(itensBlocos),
     pacotes: pacotesTopo as any,
     fotos: Object.fromEntries(fotosSecao.map((f) => [f.secao, { url: f.url, alt: f.alt }])),
+    atracoes: conteudo.ATRACOES,
+    travessia: conteudo.TRAVESSIA,
   };
 
   const todos = blocos as (Bloco & { ativo?: boolean })[];

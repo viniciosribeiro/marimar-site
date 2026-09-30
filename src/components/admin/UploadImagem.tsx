@@ -114,15 +114,15 @@ export function UploadImagem({
   return (
     <div className="mb-5">
       <div className="flex items-baseline justify-between mb-1.5">
-        <label className="text-xs font-medium text-gray-600">{rotulo}</label>
+        <label className="text-xs font-medium text-tinta-suave">{rotulo}</label>
         {valor && !enviando && (
           <button type="button" onClick={() => aoEnviar("")}
-            className="text-[11px] text-gray-400 hover:text-red-600">remover</button>
+            className="text-[11px] text-tinta-suave/80 hover:text-red-600">remover</button>
         )}
       </div>
 
       {valor && !base64 && (
-        <div className="mb-2 p-3 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-100">
+        <div className="mb-2 p-3 bg-fundo-suave rounded-lg flex items-center justify-center border border-linha/60">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={valor} alt="" className={`${previewClasse} w-auto object-contain`} />
         </div>
@@ -142,12 +142,12 @@ export function UploadImagem({
       ) : (
         <div className="flex gap-2">
           <button type="button" onClick={() => inputRef.current?.click()} disabled={enviando}
-            className="flex-1 border border-dashed border-gray-300 rounded-lg px-3 py-2.5 text-xs text-gray-600 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50">
+            className="flex-1 border border-dashed border-linha rounded-lg px-3 py-2.5 text-xs text-tinta-suave hover:border-gray-400 hover:bg-fundo-suave disabled:opacity-50">
             {enviando ? `Enviando… ${Math.round(progresso)}%` : valor ? "Trocar imagem" : "Escolher arquivo"}
           </button>
           {valor && aoExtrairCores && (
             <button type="button" onClick={extrair}
-              className="border border-gray-300 rounded-lg px-3 py-2.5 text-xs text-gray-700 hover:bg-gray-50 whitespace-nowrap">
+              className="border border-linha rounded-lg px-3 py-2.5 text-xs text-tinta hover:bg-fundo-suave whitespace-nowrap">
               🎨 Cores da logo
             </button>
           )}
@@ -155,12 +155,12 @@ export function UploadImagem({
       )}
 
       {enviando && (
-        <div className="h-1 bg-gray-100 rounded-full overflow-hidden mt-2">
-          <div className="h-full bg-gray-900 transition-all" style={{ width: `${progresso}%` }} />
+        <div className="h-1 bg-areia/70 rounded-full overflow-hidden mt-2">
+          <div className="h-full bg-marca transition-all" style={{ width: `${progresso}%` }} />
         </div>
       )}
       {erro && <p className="text-[11px] text-red-600 mt-1.5">{erro}</p>}
-      {ajuda && !erro && <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">{ajuda}</p>}
+      {ajuda && !erro && <p className="text-[11px] text-tinta-suave/80 mt-1.5 leading-relaxed">{ajuda}</p>}
 
       <input ref={inputRef} type="file" className="sr-only"
         accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon"

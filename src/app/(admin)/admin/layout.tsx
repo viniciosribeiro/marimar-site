@@ -1,4 +1,5 @@
 import { AdminNav, type Grupo } from "@/components/admin/AdminNav";
+import "./admin.css";
 
 /**
  * Menu agrupado por finalidade. Antes eram 15 itens chapados numa lista
@@ -10,64 +11,59 @@ const GRUPOS: Grupo[] = [
   {
     grupo: "Visão geral",
     itens: [
-      { href: "/admin", label: "Painel", icone: "📊" },
-      { href: "/admin/pousada", label: "Dados da pousada", icone: "🏡" },
+      { href: "/admin", label: "Painel", icone: "painel" },
+      { href: "/admin/pousada", label: "Dados da pousada", icone: "pousada" },
+    ],
+  },
+  {
+    grupo: "Atendimento",
+    itens: [
+      { href: "/admin/marina", label: "Marina (atendimento)", icone: "marina" },
+      { href: "/admin/leads", label: "Contatos recebidos", icone: "leads" },
     ],
   },
   {
     grupo: "Acomodações",
     itens: [
-      { href: "/admin/quartos", label: "Quartos", icone: "🛏" },
-      { href: "/admin/categorias", label: "Categorias", icone: "📁" },
-      { href: "/admin/comodidades", label: "Comodidades", icone: "✅" },
-      { href: "/admin/midias", label: "Fotos", icone: "🖼" },
+      { href: "/admin/quartos", label: "Quartos", icone: "quartos" },
+      { href: "/admin/categorias", label: "Categorias", icone: "categorias" },
+      { href: "/admin/comodidades", label: "Comodidades", icone: "comodidades" },
+      { href: "/admin/midias", label: "Fotos", icone: "fotos" },
     ],
   },
   {
     grupo: "Restaurante",
-    itens: [{ href: "/admin/cardapio", label: "Cardápio digital", icone: "🍽" }],
+    itens: [{ href: "/admin/cardapio", label: "Cardápio digital", icone: "cardapio" }],
   },
   {
     grupo: "Conteúdo do site",
     itens: [
-      { href: "/admin/banners", label: "Banners do topo", icone: "🖼" },
-      { href: "/admin/blocos-home", label: "Blocos da Home", icone: "🧱" },
-      { href: "/admin/cartoes", label: "Cartões das seções", icone: "🗂" },
-      { href: "/admin/pacotes", label: "Pacotes", icone: "🎁" },
-      { href: "/admin/passeios", label: "Passeios", icone: "🧭" },
-      { href: "/admin/depoimentos", label: "Depoimentos", icone: "⭐" },
-      { href: "/admin/faq", label: "Perguntas frequentes", icone: "❓" },
-      { href: "/admin/politicas", label: "Políticas", icone: "📋" },
-      { href: "/admin/conteudo", label: "Ilha, chegada e eventos", icone: "🧭" },
+      { href: "/admin/banners", label: "Banners do topo", icone: "banners" },
+      { href: "/admin/blocos-home", label: "Blocos da Home", icone: "blocos" },
+      { href: "/admin/cartoes", label: "Cartões das seções", icone: "cartoes" },
+      { href: "/admin/pacotes", label: "Pacotes", icone: "pacotes" },
+      { href: "/admin/passeios", label: "Passeios", icone: "passeios" },
+      { href: "/admin/depoimentos", label: "Depoimentos", icone: "depoimentos" },
+      { href: "/admin/faq", label: "Perguntas frequentes", icone: "faq" },
+      { href: "/admin/politicas", label: "Políticas", icone: "politicas" },
+      { href: "/admin/conteudo", label: "Ilha, chegada e eventos", icone: "conteudo" },
+      { href: "/admin/atracoes", label: "Atrações da ilha", icone: "atracoes" },
     ],
   },
   {
     grupo: "Aparência",
-    itens: [{ href: "/admin/identidade-visual", label: "Identidade visual", icone: "🎨" }],
-  },
-  {
-    grupo: "Hóspedes",
-    itens: [{ href: "/admin/leads", label: "Contatos recebidos", icone: "📨" }],
-  },
-  {
-    grupo: "Atendimento",
-    itens: [{ href: "/admin/marina", label: "Treinar a Marina", icone: "💬" }],
+    itens: [{ href: "/admin/identidade-visual", label: "Identidade visual", icone: "visual" }],
   },
   {
     grupo: "Sistema",
     itens: [
-      { href: "/admin/integracoes", label: "Integrações", icone: "🔌" },
-      { href: "/admin/diagnostico", label: "Diagnóstico", icone: "🩺" },
-      { href: "/admin/usuarios", label: "Usuários", icone: "👥" },
+      { href: "/admin/integracoes", label: "Integrações", icone: "integracoes" },
+      { href: "/admin/diagnostico", label: "Diagnóstico", icone: "diagnostico" },
+      { href: "/admin/usuarios", label: "Usuários", icone: "usuarios" },
     ],
   },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-gray-50 lg:flex">
-      <AdminNav grupos={GRUPOS} nome="Marimar" />
-      <main className="flex-1 min-w-0">{children}</main>
-    </div>
-  );
+  return <AdminNav grupos={GRUPOS} nome="Pousada Marimar">{children}</AdminNav>;
 }

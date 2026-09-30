@@ -111,11 +111,11 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
           </Alerta>
         )}
 
-        <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xl overflow-x-auto">
+        <div className="flex gap-1 mb-4 bg-areia/70 p-1 rounded-xl overflow-x-auto">
           {ABAS.map((a) => (
             <button key={a.id} type="button" onClick={() => setAba(a.id)}
               className={`shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                aba === a.id ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+                aba === a.id ? "bg-white shadow text-tinta" : "text-tinta-suave hover:text-tinta"
               }`}>
               <span aria-hidden className="mr-1">{a.icone}</span>{a.nome}
             </button>
@@ -131,35 +131,35 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                   return (
                     <button key={c.id} type="button" onClick={() => setTema((t) => ({ ...t, ...c.tema }))}
                       className={`text-left p-3 rounded-xl border-2 transition-all ${
-                        ativo ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"
+                        ativo ? "border-gray-900 bg-fundo-suave" : "border-linha/80 hover:border-linha"
                       }`}>
                       <div className="flex gap-1 mb-2">
                         <span className="flex-1 h-5 rounded" style={{ background: c.tema.marca }} />
                         <span className="w-4 h-5 rounded" style={{ background: c.tema.acento }} />
                       </div>
-                      <p className="text-sm font-semibold text-gray-900">{c.nome}</p>
-                      <p className="text-[11px] text-gray-500 leading-snug mt-0.5">{c.desc}</p>
+                      <p className="text-sm font-semibold text-tinta">{c.nome}</p>
+                      <p className="text-[11px] text-tinta-suave leading-snug mt-0.5">{c.desc}</p>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="mt-5 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
+              <div className="mt-5 pt-4 border-t border-linha/60 flex flex-wrap gap-2">
                 <button type="button" onClick={exportar}
-                  className="text-xs border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50">
+                  className="text-xs border border-linha px-3 py-2 rounded-lg hover:bg-fundo-suave">
                   ⬇ Exportar tema
                 </button>
-                <label className="text-xs border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <label className="text-xs border border-linha px-3 py-2 rounded-lg hover:bg-fundo-suave cursor-pointer">
                   ⬆ Importar tema
                   <input type="file" accept="application/json" className="sr-only"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) importar(f); e.target.value = ""; }} />
                 </label>
                 <button type="button" onClick={() => setTema(salvo)} disabled={!mudou}
-                  className="text-xs border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-40">
+                  className="text-xs border border-linha px-3 py-2 rounded-lg hover:bg-fundo-suave disabled:opacity-40">
                   ↩ Descartar mudanças
                 </button>
               </div>
-              <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+              <p className="text-[11px] text-tinta-suave/80 mt-2 leading-relaxed">
                 Exportar serve para repetir esta identidade em outra propriedade, ou guardar
                 um estado antes de experimentar.
               </p>
@@ -175,8 +175,8 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                 <Contraste cor={tema.acento} />
 
                 {sugestoes.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <p className="text-xs font-medium text-gray-600 mb-2">Cores encontradas na logo</p>
+                  <div className="mt-4 pt-4 border-t border-linha/60">
+                    <p className="text-xs font-medium text-tinta-suave mb-2">Cores encontradas na logo</p>
                     <div className="flex flex-wrap gap-2">
                       {sugestoes.map((c) => (
                         <button key={c} type="button" onClick={() => set("marca", c)}
@@ -185,7 +185,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                           style={{ background: c }} />
                       ))}
                     </div>
-                    <p className="text-[11px] text-gray-400 mt-2">Clique para usar como cor principal.</p>
+                    <p className="text-[11px] text-tinta-suave/80 mt-2">Clique para usar como cor principal.</p>
                   </div>
                 )}
               </Card>
@@ -197,9 +197,9 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                     ["base", 0], ["hover", -12], ["escura", -38],
                   ].map(([nome, mix]) => (
                     <div key={nome as string} className="text-center">
-                      <div className="h-10 rounded-lg border border-gray-200 mb-1"
+                      <div className="h-10 rounded-lg border border-linha/80 mb-1"
                         style={{ background: `color-mix(in oklab, ${tema.marca}, ${Number(mix) > 0 ? "white" : "black"} ${Math.abs(Number(mix))}%)` }} />
-                      <span className="text-[9px] text-gray-500">{nome}</span>
+                      <span className="text-[9px] text-tinta-suave">{nome}</span>
                     </div>
                   ))}
                 </div>
@@ -212,21 +212,21 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
               <Card titulo="Famílias">
                 <Selecao rotulo="Títulos" valor={tema.fonteTitulo} aoMudar={(v) => set("fonteTitulo", v)} opcoes={FONTES_TITULO} />
                 <p style={{ fontFamily: tema.fonteTitulo, fontWeight: tema.pesoTitulo }}
-                  className="text-2xl text-gray-900 my-3 py-3 border-y border-gray-100">
+                  className="text-2xl text-tinta my-3 py-3 border-y border-linha/60">
                   Pousada Marimar
                 </p>
                 <Selecao rotulo="Corpo do texto" valor={tema.fonteCorpo} aoMudar={(v) => set("fonteCorpo", v)} opcoes={FONTES_CORPO} />
-                <p style={{ fontFamily: tema.fonteCorpo, lineHeight: tema.alturaLinha }} className="text-sm text-gray-600 mt-2 mb-5">
+                <p style={{ fontFamily: tema.fonteCorpo, lineHeight: tema.alturaLinha }} className="text-sm text-tinta-suave mt-2 mb-5">
                   A Pousada Marimar tem restaurante próprio pé na areia, de frente para o mar.
                 </p>
-                <div className="border-t border-gray-100 pt-4">
+                <div className="border-t border-linha/60 pt-4">
                   <Selecao rotulo="Anotações à mão" valor={tema.fonteManuscrita} aoMudar={(v) => set("fonteManuscrita", v)} opcoes={FONTES_MANUSCRITA} />
-                  <p className="text-[11px] text-gray-500 leading-relaxed mt-1">
+                  <p className="text-[11px] text-tinta-suave leading-relaxed mt-1">
                     Frases decorativas ao lado dos títulos. <strong>nenhuma</strong> desliga —
                     o site continua completo, só sem elas.
                   </p>
                   {tema.fonteManuscrita !== "nenhuma" && (
-                    <p style={{ fontFamily: tema.fonteManuscrita }} className="text-2xl text-gray-700 mt-2">
+                    <p style={{ fontFamily: tema.fonteManuscrita }} className="text-2xl text-tinta mt-2">
                       Um paraíso sem pressa
                     </p>
                   )}
@@ -238,13 +238,13 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                   {ESCALAS.map((e) => (
                     <button key={e.v} type="button" onClick={() => set("escala", e.v)}
                       className={`w-full text-left px-3 py-2 rounded-lg border-2 transition-all ${
-                        tema.escala === e.v ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"
+                        tema.escala === e.v ? "border-gray-900 bg-fundo-suave" : "border-linha/80 hover:border-linha"
                       }`}>
                       <span className="flex items-baseline justify-between gap-2">
-                        <span className="text-sm font-medium text-gray-900">{e.nome}</span>
-                        <span className="text-[10px] text-gray-400 font-mono">{e.v}</span>
+                        <span className="text-sm font-medium text-tinta">{e.nome}</span>
+                        <span className="text-[10px] text-tinta-suave/80 font-mono">{e.v}</span>
                       </span>
-                      <span className="block text-[11px] text-gray-500">{e.desc}</span>
+                      <span className="block text-[11px] text-tinta-suave">{e.desc}</span>
                     </button>
                   ))}
                 </div>
@@ -256,10 +256,10 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                 <Faixa rotulo="Peso dos títulos" valor={tema.pesoTitulo} min={500} max={800} passo={100}
                   formato={(v) => String(v)} aoMudar={(v) => set("pesoTitulo", v)} />
 
-                <div className="mt-4 pt-4 border-t border-gray-100 space-y-1.5"
+                <div className="mt-4 pt-4 border-t border-linha/60 space-y-1.5"
                   style={{ fontFamily: tema.fonteTitulo, fontWeight: tema.pesoTitulo }}>
                   {[4, 3, 2, 1].map((n) => (
-                    <p key={n} className="text-gray-900 truncate"
+                    <p key={n} className="text-tinta truncate"
                       style={{ fontSize: `${tema.textoBase * Math.pow(tema.escala, n)}px`, lineHeight: 1.1 }}>
                       Título {n}
                     </p>
@@ -271,12 +271,12 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
 
           {aba === "forma" && (
             <Card titulo="Forma e ritmo" ajuda="Vale para cartões, botões e campos do site inteiro.">
-              <p className="text-xs font-medium text-gray-600 mb-2">Arredondamento</p>
+              <p className="text-xs font-medium text-tinta-suave mb-2">Arredondamento</p>
               <div className="flex gap-2 mb-5">
                 {[0, 6, 12, 20].map((v) => (
                   <button key={v} type="button" onClick={() => set("raio", v)}
                     className={`flex-1 py-3 text-xs border-2 transition-all ${
-                      tema.raio === v ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"
+                      tema.raio === v ? "border-gray-900 bg-fundo-suave" : "border-linha/80 hover:border-linha"
                     }`} style={{ borderRadius: `${v}px` }}>
                     {v === 0 ? "Reto" : v === 6 ? "Suave" : v === 12 ? "Médio" : "Redondo"}
                   </button>
@@ -289,7 +289,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
               <Faixa rotulo="Respiro entre seções" valor={tema.densidade} min={0.7} max={1.4} passo={0.05}
                 formato={(v) => v < 0.9 ? "compacto" : v > 1.15 ? "espaçoso" : "confortável"}
                 aoMudar={(v) => set("densidade", v)} />
-              <p className="text-[11px] text-gray-400 -mt-2 mb-3 leading-relaxed">
+              <p className="text-[11px] text-tinta-suave/80 -mt-2 mb-3 leading-relaxed">
                 Site com muita foto pede mais ar; site com muito texto pede menos.
               </p>
 
@@ -304,7 +304,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                 ajuda="Só vale em tela larga: no celular os três viram logo + botão Menu, que é o único arranjo que cabe.">
                 <Arranjos valor={tema.alinhamento.topo}
                   aoMudar={(v) => set("alinhamento", { ...tema.alinhamento, topo: v as any })} />
-                <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+                <p className="text-[11px] text-tinta-suave/80 mt-3 leading-relaxed">
                   Este é o único controle desta aba que a prévia ao lado só mostra
                   <strong> depois de publicar</strong> — ele muda a estrutura da
                   página, não só uma cor ou medida.
@@ -322,7 +322,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                 <Selecao rotulo="Alinhamento" valor={tema.alinhamento.hero}
                   aoMudar={(v) => set("alinhamento", { ...tema.alinhamento, hero: v as any })}
                   opcoes={[["esquerda", "À esquerda"], ["centro", "Centralizado"]]} />
-                <p className="text-[11px] text-gray-400 -mt-1 leading-relaxed">
+                <p className="text-[11px] text-tinta-suave/80 -mt-1 leading-relaxed">
                   À esquerda, o texto fica sobre a parte clara da foto. Centralizado
                   pede uma foto com o meio limpo — confira na prévia.
                 </p>
@@ -333,8 +333,8 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                   descricao="As duas margens alinhadas, como em livro."
                   ligado={tema.alinhamento.justificado}
                   aoMudar={(v) => set("alinhamento", { ...tema.alinhamento, justificado: v })} />
-                <div className="rounded-lg border border-gray-200 p-3 bg-gray-50">
-                  <p className="text-[13px] text-gray-600 leading-relaxed"
+                <div className="rounded-lg border border-linha/80 p-3 bg-fundo-suave">
+                  <p className="text-[13px] text-tinta-suave leading-relaxed"
                     lang="pt-BR"
                     style={{ textAlign: tema.alinhamento.justificado ? "justify" : "left", hyphens: "auto" }}>
                     A Pousada Marimar fica em Encantadas, a poucos passos do trapiche,
@@ -342,7 +342,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                     de frente para a Praia de Encantadas.
                   </p>
                 </div>
-                <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+                <p className="text-[11px] text-tinta-suave/80 mt-2 leading-relaxed">
                   Aplicado só a partir de tablet. Na coluna estreita do celular o
                   justificado abre buracos entre as palavras e fica pior que o
                   alinhado à esquerda — por isso lá ele não entra.
@@ -362,13 +362,13 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                   quadrado e uma assinatura horizontal com a mesma altura em
                   pixels ocupam pesos visuais bem diferentes no topo. Por isso
                   a altura é sua, não do código. */}
-              <div className="border-t border-gray-100 pt-4 mt-1">
+              <div className="border-t border-linha/60 pt-4 mt-1">
                 <PreviaLockup logo={logo} nome={nomeDaPousada} tema={tema} />
 
                 <Faixa rotulo="Altura no topo" valor={tema.logo.altura} min={24} max={88} passo={2}
                   formato={(v) => `${v} px`}
                   aoMudar={(v) => set("logo", { ...tema.logo, altura: v })} />
-                <p className="text-[11px] text-gray-400 -mt-2 mb-4 leading-relaxed">
+                <p className="text-[11px] text-tinta-suave/80 -mt-2 mb-4 leading-relaxed">
                   A barra do topo cresce junto — a logo não fica espremida. Depois
                   que a pessoa rola a página ela encolhe sozinha, para devolver tela.
                 </p>
@@ -384,15 +384,15 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                   aoMudar={(v) => set("logo", { ...tema.logo, mostrarNome: v })} />
 
                 {tema.logo.mostrarNome && (
-                  <div className="border-t border-gray-100 pt-4 mt-1">
-                    <p className="text-xs font-medium text-gray-600 mb-2">Onde o nome fica</p>
+                  <div className="border-t border-linha/60 pt-4 mt-1">
+                    <p className="text-xs font-medium text-tinta-suave mb-2">Onde o nome fica</p>
                     <PosicaoNome valor={tema.logo.nome.posicao}
                       aoMudar={(v) => setNome({ posicao: v as any })} />
 
                     <Campo rotulo="Texto" valor={tema.logo.nome.texto ?? ""}
                       placeholder={nomeDaPousada}
                       aoMudar={(v) => setNome({ texto: v || null })} />
-                    <p className="text-[11px] text-gray-400 -mt-2 mb-4 leading-relaxed">
+                    <p className="text-[11px] text-tinta-suave/80 -mt-2 mb-4 leading-relaxed">
                       Em branco, usa o nome da pousada. Útil quando a logo já diz
                       uma parte e o texto deve dizer a outra.
                     </p>
@@ -400,7 +400,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                     <Campo rotulo="Segunda linha" valor={tema.logo.nome.subtexto ?? ""}
                       placeholder="Ex.: POUSADA"
                       aoMudar={(v) => setNome({ subtexto: v || null })} />
-                    <p className="text-[11px] text-gray-400 -mt-2 mb-4 leading-relaxed">
+                    <p className="text-[11px] text-tinta-suave/80 -mt-2 mb-4 leading-relaxed">
                       Menor e mais espaçada, derivada do tamanho do nome — não é um
                       segundo controle, para as duas linhas nunca saírem tortas
                       entre si.
@@ -430,7 +430,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                 previewClasse="h-8" ajuda="Ícone da aba do navegador. Quadrado, 512×512." />
               <UploadImagem rotulo="Imagem de compartilhamento" valor={og} aoEnviar={setOg} pasta="marca" configurado={blobOk}
                 previewClasse="h-20" ajuda="Aparece quando o link é enviado no WhatsApp. Ideal 1200×630." />
-              <p className="text-[11px] text-gray-400 leading-relaxed">
+              <p className="text-[11px] text-tinta-suave/80 leading-relaxed">
                 A foto grande do topo do site não sai daqui: vem de <strong>Fotos</strong>,
                 da imagem marcada como destaque e sem quarto vinculado.
               </p>
@@ -456,11 +456,11 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                 placeholder="Pousada Marimar — Reserva Oficial" />
               <Campo rotulo="Descrição" valor={seoDesc} aoMudar={setSeoDesc} max={160} textarea
                 placeholder="Pousada em Encantadas, Ilha do Mel…" />
-              <div className="mt-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
-                <p className="text-[10px] text-gray-400 mb-1">Prévia no Google</p>
+              <div className="mt-4 border border-linha/80 rounded-lg p-3 bg-fundo-suave">
+                <p className="text-[10px] text-tinta-suave/80 mb-1">Prévia no Google</p>
                 <p className="text-[#1a0dab] text-sm truncate">{seoTitle || "Pousada Marimar — Reserva Oficial"}</p>
                 <p className="text-[#006621] text-xs">pousadamarimarilhadomel.com.br</p>
-                <p className="text-gray-600 text-xs line-clamp-2">{seoDesc || "Adicione uma descrição."}</p>
+                <p className="text-tinta-suave text-xs line-clamp-2">{seoDesc || "Adicione uma descrição."}</p>
               </div>
             </Card>
           )}
@@ -472,7 +472,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
       {/* ═══════════ PRÉVIA ═══════════ */}
       <div className="min-w-0 xl:sticky xl:top-6">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Prévia ao vivo</p>
+          <p className="text-xs font-semibold text-tinta-suave/80 uppercase tracking-wider">Prévia ao vivo</p>
           {mudou && <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">não publicado</span>}
         </div>
 
@@ -480,11 +480,11 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
 
         <div className="flex gap-2 mt-4">
           <button type="button" onClick={publicar} disabled={!mudou || enviando}
-            className="flex-1 bg-gray-900 hover:bg-gray-800 disabled:opacity-40 text-white py-3 rounded-xl font-semibold text-sm transition-colors">
+            className="flex-1 bg-marca hover:bg-marca-hover disabled:opacity-40 text-marca-texto py-3 rounded-xl font-semibold text-sm transition-colors">
             {enviando ? "Publicando…" : mudou ? "Publicar no site" : "Nada para publicar"}
           </button>
           <a href="/" target="_blank" rel="noopener noreferrer"
-            className="px-4 py-3 border border-gray-300 rounded-xl text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap">
+            className="px-4 py-3 border border-linha rounded-xl text-sm text-tinta hover:bg-fundo-suave whitespace-nowrap">
             Abrir site ↗
           </a>
         </div>
@@ -516,8 +516,8 @@ function RelatorioAcessibilidade({ tema }: { tema: Tema }) {
         {checagens.map((c) => (
           <li key={c.nome} className="flex items-center gap-3 text-xs">
             <span className={c.passa ? "text-green-600" : "text-amber-600"} aria-hidden>{c.passa ? "✓" : "⚠"}</span>
-            <span className="flex-1 text-gray-700">{c.nome}</span>
-            <span className={`font-mono ${c.passa ? "text-gray-500" : "text-amber-700 font-semibold"}`}>
+            <span className="flex-1 text-tinta">{c.nome}</span>
+            <span className={`font-mono ${c.passa ? "text-tinta-suave" : "text-amber-700 font-semibold"}`}>
               {c.razao}:1
             </span>
           </li>
@@ -558,7 +558,7 @@ function Arranjos({ valor, aoMudar }: { valor: string; aoMudar: (v: string) => v
       {opcoes.map((o) => (
         <button key={o.id} type="button" onClick={() => aoMudar(o.id)}
           className={`text-left p-2.5 rounded-lg border-2 transition-all ${
-            valor === o.id ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"
+            valor === o.id ? "border-gray-900 bg-fundo-suave" : "border-linha/80 hover:border-linha"
           }`}>
           <svg viewBox="0 0 120 34" className="w-full mb-2" aria-hidden>
             <rect x="0" y="0" width="120" height="34" rx="3" fill="#fff" stroke="#e5e7eb" />
@@ -580,8 +580,8 @@ function Arranjos({ valor, aoMudar }: { valor: string; aoMudar: (v: string) => v
               <rect x="99" y="12" width="14" height="10" rx="2" fill="#b45309" />
             </>)}
           </svg>
-          <p className="text-xs font-medium text-gray-900">{o.nome}</p>
-          <p className="text-[10px] text-gray-500 leading-snug mt-0.5">{o.desc}</p>
+          <p className="text-xs font-medium text-tinta">{o.nome}</p>
+          <p className="text-[10px] text-tinta-suave leading-snug mt-0.5">{o.desc}</p>
         </button>
       ))}
     </div>
@@ -592,7 +592,7 @@ function Arranjos({ valor, aoMudar }: { valor: string; aoMudar: (v: string) => v
 function PreviaTitulo({ centro, fonte }: { centro: boolean; fonte: string }) {
   const traco = <span className="h-px flex-1 bg-gray-300" />;
   return (
-    <div className="rounded-lg border border-gray-200 p-4 bg-gray-50 mt-1">
+    <div className="rounded-lg border border-linha/80 p-4 bg-fundo-suave mt-1">
       <div className="flex items-baseline gap-3">
         {centro && traco}
         <span className="font-bold text-[#12324f] whitespace-nowrap" style={{ fontFamily: fonte }}>
@@ -635,9 +635,9 @@ function PreviaLockup({ logo, nome, tema }: { logo: string; nome: string; tema: 
 
   return (
     <div className="mb-4">
-      <p className="text-xs font-medium text-gray-600 mb-2">Como fica no topo</p>
-      <div className="rounded-lg border border-gray-200 overflow-hidden bg-white" style={vars}>
-        <div className="flex items-center gap-2.5 px-4 border-b border-gray-200"
+      <p className="text-xs font-medium text-tinta-suave mb-2">Como fica no topo</p>
+      <div className="rounded-lg border border-linha/80 overflow-hidden bg-white" style={vars}>
+        <div className="flex items-center gap-2.5 px-4 border-b border-linha/80"
           style={{ minHeight: alturaBarra }}>
           <MarcaLockup
             nome={nome}
@@ -652,9 +652,9 @@ function PreviaLockup({ logo, nome, tema }: { logo: string; nome: string; tema: 
             Reservar
           </span>
         </div>
-        <div className="h-8 bg-gray-50" />
+        <div className="h-8 bg-fundo-suave" />
       </div>
-      <p className="text-[11px] text-gray-400 mt-1.5">Barra de {alturaBarra}px</p>
+      <p className="text-[11px] text-tinta-suave/80 mt-1.5">Barra de {alturaBarra}px</p>
     </div>
   );
 }
@@ -678,10 +678,10 @@ function PosicaoNome({ valor, aoMudar }: { valor: string; aoMudar: (v: string) =
       {opcoes.map((o) => (
         <button key={o.id} type="button" onClick={() => aoMudar(o.id)}
           className={`p-2 rounded-lg border-2 transition-all ${
-            valor === o.id ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"
+            valor === o.id ? "border-gray-900 bg-fundo-suave" : "border-linha/80 hover:border-linha"
           }`}>
           <svg viewBox="0 0 72 40" className="w-full" aria-hidden>{desenho[o.id]}</svg>
-          <p className="text-[10px] font-medium text-gray-700 mt-1">{o.nome}</p>
+          <p className="text-[10px] font-medium text-tinta mt-1">{o.nome}</p>
         </button>
       ))}
     </div>
@@ -690,9 +690,9 @@ function PosicaoNome({ valor, aoMudar }: { valor: string; aoMudar: (v: string) =
 
 function Card({ titulo, ajuda, children }: { titulo: string; ajuda?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h3 className="font-semibold text-gray-900 mb-1">{titulo}</h3>
-      {ajuda && <p className="text-xs text-gray-500 mb-4 leading-relaxed">{ajuda}</p>}
+    <div className="bg-white rounded-xl border border-linha/80 p-5">
+      <h3 className="font-semibold text-tinta mb-1">{titulo}</h3>
+      {ajuda && <p className="text-xs text-tinta-suave mb-4 leading-relaxed">{ajuda}</p>}
       {children}
     </div>
   );
@@ -725,11 +725,11 @@ function Cor({ rotulo, valor, aoMudar }: { rotulo: string; valor: string; aoMuda
   return (
     <div className="flex items-center gap-3 mb-3">
       <input type="color" value={valor} onChange={(e) => aoMudar(e.target.value)}
-        className="w-11 h-11 rounded-lg border border-gray-200 cursor-pointer shrink-0" />
+        className="w-11 h-11 rounded-lg border border-linha/80 cursor-pointer shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-gray-600 mb-1">{rotulo}</p>
+        <p className="text-xs font-medium text-tinta-suave mb-1">{rotulo}</p>
         <input value={valor} onChange={(e) => aoMudar(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-mono" />
+          className="w-full border border-linha/80 rounded-lg px-3 py-1.5 text-sm font-mono" />
       </div>
     </div>
   );
@@ -740,9 +740,9 @@ function Selecao({ rotulo, valor, aoMudar, opcoes }: { rotulo: string; valor: st
     Array.isArray(o) ? ([o[0], o[1]] as [string, string]) : ([o, o] as [string, string]));
   return (
     <div className="mb-3">
-      <label className="block text-xs font-medium text-gray-600 mb-1">{rotulo}</label>
+      <label className="block text-xs font-medium text-tinta-suave mb-1">{rotulo}</label>
       <select value={valor} onChange={(e) => aoMudar(e.target.value)}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+        className="w-full border border-linha/80 rounded-lg px-3 py-2 text-sm bg-white">
         {norm.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
     </div>
@@ -756,12 +756,12 @@ function Faixa({ rotulo, valor, min, max, passo, formato, aoMudar }: {
   return (
     <div className="mb-4">
       <div className="flex justify-between items-baseline mb-1.5">
-        <label className="text-xs font-medium text-gray-600">{rotulo}</label>
-        <span className="text-xs text-gray-500 font-medium">{formato(valor)}</span>
+        <label className="text-xs font-medium text-tinta-suave">{rotulo}</label>
+        <span className="text-xs text-tinta-suave font-medium">{formato(valor)}</span>
       </div>
       <input type="range" min={min} max={max} step={passo} value={valor}
         onChange={(e) => aoMudar(Number(e.target.value))}
-        className="w-full accent-gray-900" />
+        className="w-full accent-[var(--marca)]" />
     </div>
   );
 }
@@ -774,12 +774,12 @@ function Campo({ rotulo, valor, aoMudar, placeholder, max, textarea }: {
   return (
     <div className="mb-3">
       <div className="flex justify-between items-baseline mb-1">
-        <label className="text-xs font-medium text-gray-600">{rotulo}</label>
-        {max && <span className={`text-[10px] ${valor.length > max ? "text-red-500 font-medium" : "text-gray-400"}`}>{valor.length}/{max}</span>}
+        <label className="text-xs font-medium text-tinta-suave">{rotulo}</label>
+        {max && <span className={`text-[10px] ${valor.length > max ? "text-red-500 font-medium" : "text-tinta-suave/80"}`}>{valor.length}/{max}</span>}
       </div>
       <Tag value={valor} onChange={(e: any) => aoMudar(e.target.value)} placeholder={placeholder}
         rows={textarea ? 3 : undefined}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        className="w-full border border-linha/80 rounded-lg px-3 py-2 text-sm" />
     </div>
   );
 }
@@ -790,11 +790,11 @@ function Interruptor({ rotulo, descricao, ligado, aoMudar }: {
   return (
     <label className="flex items-start justify-between gap-4 py-3 cursor-pointer">
       <span className="min-w-0">
-        <span className="block text-sm font-medium text-gray-800">{rotulo}</span>
-        {descricao && <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">{descricao}</span>}
+        <span className="block text-sm font-medium text-tinta">{rotulo}</span>
+        {descricao && <span className="block text-xs text-tinta-suave mt-0.5 leading-relaxed">{descricao}</span>}
       </span>
       <input type="checkbox" checked={ligado} onChange={(e) => aoMudar(e.target.checked)} className="sr-only" />
-      <span className={`w-11 h-6 rounded-full transition-colors relative shrink-0 mt-0.5 ${ligado ? "bg-gray-900" : "bg-gray-300"}`}>
+      <span className={`w-11 h-6 rounded-full transition-colors relative shrink-0 mt-0.5 ${ligado ? "bg-marca" : "bg-gray-300"}`}>
         <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all ${ligado ? "left-[22px]" : "left-0.5"}`} />
       </span>
     </label>

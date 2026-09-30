@@ -29,11 +29,11 @@ export function PainelCartoes({ secoes, cartoes, blobOk }: {
 
   if (editando) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6">
-        <h2 className="font-semibold text-gray-900">
+      <div className="bg-white border border-linha/80 rounded-xl p-5 sm:p-6">
+        <h2 className="font-semibold text-tinta">
           {editando.cartao ? "Editar cartão" : "Novo cartão"}
         </h2>
-        <p className="text-xs text-gray-400 mb-5">em {editando.secao.nome}</p>
+        <p className="text-xs text-tinta-suave/80 mb-5">em {editando.secao.nome}</p>
         <FormCartao cartao={editando.cartao} secao={editando.secao} blobOk={blobOk}
           aoFechar={() => setEditando(null)} />
       </div>
@@ -47,16 +47,16 @@ export function PainelCartoes({ secoes, cartoes, blobOk }: {
         return (
           <section key={secao.id}>
             <div className="flex flex-wrap items-baseline justify-between gap-3 mb-1">
-              <h2 className="font-semibold text-gray-900">{secao.nome}</h2>
+              <h2 className="font-semibold text-tinta">{secao.nome}</h2>
               <button onClick={() => setEditando({ cartao: null, secao })}
-                className="text-sm font-medium text-gray-900 border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-50">
+                className="text-sm font-medium text-tinta border border-linha rounded-lg px-3 py-1.5 hover:bg-fundo-suave">
                 Novo cartão
               </button>
             </div>
-            <p className="text-[11px] text-gray-400 mb-3 leading-relaxed max-w-2xl">{secao.formato}</p>
+            <p className="text-[11px] text-tinta-suave/80 mb-3 leading-relaxed max-w-2xl">{secao.formato}</p>
 
             {doBloco.length === 0 ? (
-              <p className="text-sm text-gray-500 border border-dashed border-gray-300 rounded-xl p-5">
+              <p className="text-sm text-tinta-suave border border-dashed border-linha rounded-xl p-5">
                 Nenhum cartão cadastrado — a seção mostra o conteúdo padrão do
                 site. O primeiro cartão criado <strong>substitui</strong> todos os
                 padrões desta seção.
@@ -65,7 +65,7 @@ export function PainelCartoes({ secoes, cartoes, blobOk }: {
               <ul className="space-y-2">
                 {doBloco.map((c, i) => (
                   <li key={c.id}
-                    className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col sm:flex-row gap-3 sm:items-center">
+                    className="bg-white border border-linha/80 rounded-xl p-3 flex flex-col sm:flex-row gap-3 sm:items-center">
                     {c.imagem_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={c.imagem_url} alt="" className="w-full sm:w-24 h-20 sm:h-16 object-cover rounded-lg shrink-0" />
@@ -74,11 +74,11 @@ export function PainelCartoes({ secoes, cartoes, blobOk }: {
                     )}
 
                     <div className="flex-1 min-w-0">
-                      <p className={`font-medium truncate ${c.ativo ? "text-gray-900" : "text-gray-400 line-through"}`}>
+                      <p className={`font-medium truncate ${c.ativo ? "text-tinta" : "text-tinta-suave/80 line-through"}`}>
                         {c.titulo}
                       </p>
-                      {c.texto && <p className="text-xs text-gray-500 line-clamp-2 leading-snug">{c.texto}</p>}
-                      {c.href && <p className="text-[11px] text-gray-400 mt-0.5 truncate">→ {c.href}</p>}
+                      {c.texto && <p className="text-xs text-tinta-suave line-clamp-2 leading-snug">{c.texto}</p>}
+                      {c.href && <p className="text-[11px] text-tinta-suave/80 mt-0.5 truncate">→ {c.href}</p>}
                     </div>
 
                     <div className="flex gap-1.5 shrink-0">
@@ -86,7 +86,7 @@ export function PainelCartoes({ secoes, cartoes, blobOk }: {
                       <Acao acao={moverCartao} id={c.id} extra={{ direcao: "baixo" }} desabilitado={i === doBloco.length - 1}>↓</Acao>
                       <Acao acao={alternarCartao} id={c.id}>{c.ativo ? "Desligar" : "Ligar"}</Acao>
                       <button onClick={() => setEditando({ cartao: c, secao })}
-                        className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">
+                        className="px-2.5 py-1.5 text-xs border border-linha/80 rounded-lg text-tinta-suave hover:bg-fundo-suave">
                         Editar
                       </button>
                       <Acao acao={excluirCartao} id={c.id} perigo confirmar="Excluir este cartão?">Excluir</Acao>
@@ -123,20 +123,20 @@ function FormCartao({ cartao, secao, blobOk, aoFechar }: {
       <input type="hidden" name="imagem_url" value={imagem} />
       <input type="hidden" name="imagem_pathname" value={pathname} />
 
-      <div className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-lg p-3">
+      <div className="flex items-center gap-4 bg-fundo-suave border border-linha/80 rounded-lg p-3">
         <IconeCirculo nome={icone} cor={cor} tamanho={52} />
-        <p className="text-xs text-gray-500 leading-relaxed">
+        <p className="text-xs text-tinta-suave leading-relaxed">
           É assim que o ícone aparece no site. Escolha abaixo o desenho e a cor.
         </p>
       </div>
 
       <div>
-        <p className="text-xs font-medium text-gray-600 mb-2">Ícone</p>
+        <p className="text-xs font-medium text-tinta-suave mb-2">Ícone</p>
         <div className="grid grid-cols-7 sm:grid-cols-10 gap-1.5">
           {ICONES.map((n) => (
             <button key={n} type="button" onClick={() => setIcone(n)} title={n} aria-label={n}
               className={`flex items-center justify-center p-1.5 rounded-lg border-2 transition-all ${
-                icone === n ? "border-gray-900 bg-gray-50" : "border-transparent hover:border-gray-200"
+                icone === n ? "border-gray-900 bg-fundo-suave" : "border-transparent hover:border-linha/80"
               }`}>
               <IconeCirculo nome={n} cor={cor} tamanho={30} />
             </button>
@@ -145,12 +145,12 @@ function FormCartao({ cartao, secao, blobOk, aoFechar }: {
       </div>
 
       <div>
-        <p className="text-xs font-medium text-gray-600 mb-2">Cor</p>
+        <p className="text-xs font-medium text-tinta-suave mb-2">Cor</p>
         <div className="flex flex-wrap gap-1.5">
           {CORES.map((c) => (
             <button key={c} type="button" onClick={() => setCor(c)} title={c} aria-label={c}
               className={`p-1 rounded-lg border-2 transition-all ${
-                cor === c ? "border-gray-900" : "border-transparent hover:border-gray-200"
+                cor === c ? "border-gray-900" : "border-transparent hover:border-linha/80"
               }`}>
               <IconeCirculo nome={icone} cor={c} tamanho={32} />
             </button>
@@ -176,17 +176,17 @@ function FormCartao({ cartao, secao, blobOk, aoFechar }: {
         </>
       )}
 
-      <label className="flex items-center gap-2 text-sm text-gray-700">
-        <input type="checkbox" name="ativo" defaultChecked={cartao?.ativo ?? true} className="w-4 h-4 accent-gray-900" />
+      <label className="flex items-center gap-2 text-sm text-tinta">
+        <input type="checkbox" name="ativo" defaultChecked={cartao?.ativo ?? true} className="w-4 h-4 accent-[var(--marca)]" />
         Ativo
       </label>
 
       <div className="flex gap-2">
-        <button type="submit" className="bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium">
+        <button type="submit" className="bg-marca text-marca-texto px-5 py-2.5 rounded-lg text-sm font-medium">
           {cartao ? "Salvar alterações" : "Criar cartão"}
         </button>
         <button type="button" onClick={aoFechar}
-          className="px-5 py-2.5 rounded-lg text-sm text-gray-600 border border-gray-200">
+          className="px-5 py-2.5 rounded-lg text-sm text-tinta-suave border border-linha/80">
           Cancelar
         </button>
       </div>
@@ -200,9 +200,9 @@ function Campo({ rotulo, nome, padrao, placeholder, textarea }: {
   const Tag: any = textarea ? "textarea" : "input";
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1.5">{rotulo}</label>
+      <label className="block text-xs font-medium text-tinta-suave mb-1.5">{rotulo}</label>
       <Tag name={nome} defaultValue={padrao} placeholder={placeholder} rows={textarea ? 2 : undefined}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
+        className="w-full border border-linha/80 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
     </div>
   );
 }
@@ -218,7 +218,7 @@ function Acao({ acao, id, extra, children, perigo, confirmar, desabilitado }: {
       {extra && Object.entries(extra).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
       <button type="submit" disabled={desabilitado}
         className={`px-2.5 py-1.5 text-xs border rounded-lg disabled:opacity-30 ${
-          perigo ? "border-red-200 text-red-600 hover:bg-red-50" : "border-gray-200 text-gray-600 hover:bg-gray-50"
+          perigo ? "border-red-200 text-red-600 hover:bg-red-50" : "border-linha/80 text-tinta-suave hover:bg-fundo-suave"
         }`}>
         {children}
       </button>

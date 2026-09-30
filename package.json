@@ -16,7 +16,9 @@
     "db:corrigir": "tsx src/db/corrigir-producao.ts",
     "db:migrar-wp": "tsx src/db/migrar-wordpress.ts",
     "db:baseline": "tsx src/db/baseline.ts",
-    "db:migrar-fotos": "tsx src/db/migrar-fotos-wp.ts"
+    "db:migrar-fotos": "tsx src/db/migrar-fotos-wp.ts",
+    "test": "tsx --test testes/unit/*.test.ts",
+    "test:e2e": "node testes/e2e-marina.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

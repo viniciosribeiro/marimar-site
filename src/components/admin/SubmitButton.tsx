@@ -1,10 +1,13 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { botao } from "./ui";
+import { Girando } from "./ui-cliente";
 
+/** Botão de enviar com estado "Salvando…". Sem `className`, usa o botão primário do design system. */
 export function SubmitButton({
   children,
-  className = "bg-teal-600 text-white px-4 py-2 rounded text-sm hover:bg-teal-700 disabled:opacity-50",
+  className,
   disabled = false,
 }: {
   children: React.ReactNode;
@@ -14,8 +17,9 @@ export function SubmitButton({
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending || disabled} className={className}>
-      {pending ? "Salvando..." : children}
+    <button type="submit" disabled={pending || disabled} className={className ?? botao("primario")}>
+      {pending && !className && <Girando />}
+      {pending ? "Salvando…" : children}
     </button>
   );
 }

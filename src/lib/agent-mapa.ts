@@ -136,21 +136,21 @@ export const AREAS: AreaDeConhecimento[] = [
   },
   {
     chave: "documentos",
-    titulo: "Documentos que voce enviou",
+    titulo: "Documentos que você enviou",
     rota: "/api/agent/documentos",
-    responde: ["Tudo que estiver nos PDFs, Word, textos e fotos que voce subir"],
+    responde: ["Tudo o que estiver nos PDFs, Word, textos e fotos que você enviar"],
     origem: "banco",
-    editarEm: "/admin/marina?aba=conhecimento",
+    editarEm: "/admin/marina?aba=documentos",
     contar: conta((sql) => sql`SELECT COUNT(*)::int AS n FROM marina_documentos WHERE ativo = true AND status = 'pronto'`),
   },
   {
     chave: "conhecimento",
     titulo: "O que você ensinou pelo painel",
     rota: "/api/agent/conhecimento",
-    responde: ["Tudo que você escrever nas abas de conhecimento, limites e jeito de falar"],
+    responde: ["Informações, perguntas e respostas, regras e jeito de falar ensinados no painel"],
     origem: "banco",
-    editarEm: "/admin/marina",
-    contar: conta((sql) => sql`SELECT COUNT(*)::int AS n FROM marina_conhecimento WHERE ativo = true`),
+    editarEm: "/admin/marina?aba=conhecimento",
+    contar: conta((sql) => sql`SELECT COUNT(*)::int AS n FROM marina_conhecimento WHERE ativo = true AND excluido_em IS NULL`),
   },
 ];
 

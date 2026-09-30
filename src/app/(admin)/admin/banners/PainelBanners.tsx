@@ -10,8 +10,8 @@ export function PainelBanners({ banners, blobOk }: { banners: Banner[]; blobOk: 
 
   if (aberto) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6">
-        <h2 className="font-semibold text-gray-900 mb-5">
+      <div className="bg-white border border-linha/80 rounded-xl p-5 sm:p-6">
+        <h2 className="font-semibold text-tinta mb-5">
           {editando ? "Editar banner" : "Novo banner"}
         </h2>
         <FormBanner banner={editando} blobOk={blobOk} aoFechar={() => setEditando(undefined)} />
@@ -22,14 +22,14 @@ export function PainelBanners({ banners, blobOk }: { banners: Banner[]; blobOk: 
   return (
     <>
       <button onClick={() => setEditando(null)}
-        className="mb-5 bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium">
+        className="mb-5 bg-marca text-marca-texto px-5 py-2.5 rounded-lg text-sm font-medium">
         Novo banner
       </button>
 
       {banners.length === 0 ? (
-        <div className="border border-dashed border-gray-300 rounded-xl p-8 text-center">
-          <p className="text-sm text-gray-600 mb-1">Nenhum banner cadastrado.</p>
-          <p className="text-xs text-gray-400 leading-relaxed max-w-md mx-auto">
+        <div className="border border-dashed border-linha rounded-xl p-8 text-center">
+          <p className="text-sm text-tinta-suave mb-1">Nenhum banner cadastrado.</p>
+          <p className="text-xs text-tinta-suave/80 leading-relaxed max-w-md mx-auto">
             Sem nenhum, o topo da home continua usando a foto marcada como
             destaque em <strong>Fotos</strong> — o comportamento antigo. O
             primeiro banner cadastrado assume o lugar dela.
@@ -39,21 +39,21 @@ export function PainelBanners({ banners, blobOk }: { banners: Banner[]; blobOk: 
         <ul className="space-y-3">
           {banners.map((b, i) => (
             <li key={b.id}
-              className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col sm:flex-row gap-4">
-              <div className="relative w-full sm:w-44 h-28 shrink-0 rounded-lg overflow-hidden bg-gray-100">
+              className="bg-white border border-linha/80 rounded-xl p-3 flex flex-col sm:flex-row gap-4">
+              <div className="relative w-full sm:w-44 h-28 shrink-0 rounded-lg overflow-hidden bg-areia/70">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={b.imagem_url} alt={b.alt ?? ""} className="w-full h-full object-cover" />
                 {!b.ativo && (
                   <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-                    <span className="text-[11px] font-semibold text-gray-600">Desligado</span>
+                    <span className="text-[11px] font-semibold text-tinta-suave">Desligado</span>
                   </div>
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 truncate">{b.titulo || "Sem título"}</p>
+                <p className="font-semibold text-tinta truncate">{b.titulo || "Sem título"}</p>
                 {b.subtitulo && (
-                  <p className="text-sm text-gray-500 line-clamp-2 leading-snug mt-0.5">{b.subtitulo}</p>
+                  <p className="text-sm text-tinta-suave line-clamp-2 leading-snug mt-0.5">{b.subtitulo}</p>
                 )}
                 <div className="flex flex-wrap gap-2 mt-2">
                   {b.cta_texto && <Selo>{b.cta_texto} → {b.cta_href || "sem link"}</Selo>}
@@ -75,7 +75,7 @@ export function PainelBanners({ banners, blobOk }: { banners: Banner[]; blobOk: 
                 </Acao>
                 <Acao acao={alternarBanner} id={b.id}>{b.ativo ? "Desligar" : "Ligar"}</Acao>
                 <button onClick={() => setEditando(b)}
-                  className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">
+                  className="px-2.5 py-1.5 text-xs border border-linha/80 rounded-lg text-tinta-suave hover:bg-fundo-suave">
                   Editar
                 </button>
                 <Acao acao={excluirBanner} id={b.id} perigo
@@ -94,7 +94,7 @@ export function PainelBanners({ banners, blobOk }: { banners: Banner[]; blobOk: 
 function Selo({ children, tom = "normal" }: { children: React.ReactNode; tom?: "normal" | "alerta" }) {
   return (
     <span className={`text-[11px] px-2 py-1 rounded ${
-      tom === "alerta" ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-gray-100 text-gray-600"
+      tom === "alerta" ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-areia/70 text-tinta-suave"
     }`}>
       {children}
     </span>
@@ -136,7 +136,7 @@ function Acao({ acao, id, extra, children, perigo, confirmar, desabilitado }: {
       {extra && Object.entries(extra).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
       <button type="submit" disabled={desabilitado}
         className={`w-full px-2.5 py-1.5 text-xs border rounded-lg disabled:opacity-30 ${
-          perigo ? "border-red-200 text-red-600 hover:bg-red-50" : "border-gray-200 text-gray-600 hover:bg-gray-50"
+          perigo ? "border-red-200 text-red-600 hover:bg-red-50" : "border-linha/80 text-tinta-suave hover:bg-fundo-suave"
         }`}>
         {children}
       </button>

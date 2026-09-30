@@ -11,20 +11,20 @@ import { definirCapa, moverFoto, excluirFoto, salvarLegenda } from "@/app/(admin
  */
 export function GaleriaItem({ fotos, itemId }: { fotos: any[]; itemId: string }) {
   if (fotos.length === 0) {
-    return <p className="text-xs text-gray-400 mb-3">Nenhuma foto ainda. A primeira enviada vira a capa.</p>;
+    return <p className="text-xs text-tinta-suave/80 mb-3">Nenhuma foto ainda. A primeira enviada vira a capa.</p>;
   }
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
       {fotos.map((f) => (
         <figure key={f.id} className={`relative rounded-xl overflow-hidden border bg-white ${
-          f.capa ? "border-gray-900 ring-1 ring-gray-900" : "border-gray-200"
+          f.capa ? "border-gray-900 ring-1 ring-gray-900" : "border-linha/80"
         }`}>
-          <div className="relative aspect-[4/3] bg-gray-100">
+          <div className="relative aspect-[4/3] bg-areia/70">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={f.url} alt={f.alt ?? ""} className="w-full h-full object-cover" loading="lazy" />
             {f.capa && (
-              <span className="absolute top-2 left-2 text-[10px] font-semibold bg-gray-900 text-white px-2 py-0.5 rounded-full">
+              <span className="absolute top-2 left-2 text-[10px] font-semibold bg-marca text-marca-texto px-2 py-0.5 rounded-full">
                 capa
               </span>
             )}
@@ -37,9 +37,9 @@ export function GaleriaItem({ fotos, itemId }: { fotos: any[]; itemId: string })
                 name="alt"
                 defaultValue={f.alt ?? ""}
                 placeholder="Descrição da foto"
-                className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2 py-1 text-[11px]"
+                className="flex-1 min-w-0 border border-linha/80 rounded-lg px-2 py-1 text-[11px]"
               />
-              <SubmitButton className="text-[11px] text-gray-500 hover:text-gray-900 px-1.5 bg-transparent">
+              <SubmitButton className="text-[11px] text-tinta-suave hover:text-tinta px-1.5 bg-transparent">
                 ok
               </SubmitButton>
             </form>
@@ -50,7 +50,7 @@ export function GaleriaItem({ fotos, itemId }: { fotos: any[]; itemId: string })
                   <input type="hidden" name="id" value={f.id} />
                   <input type="hidden" name="item_id" value={itemId} />
                   <input type="hidden" name="direcao" value="esquerda" />
-                  <SubmitButton className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-gray-700 bg-transparent p-0 text-xs disabled:opacity-30">
+                  <SubmitButton className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-tinta bg-transparent p-0 text-xs disabled:opacity-30">
                     ◀
                   </SubmitButton>
                 </form>
@@ -58,7 +58,7 @@ export function GaleriaItem({ fotos, itemId }: { fotos: any[]; itemId: string })
                   <input type="hidden" name="id" value={f.id} />
                   <input type="hidden" name="item_id" value={itemId} />
                   <input type="hidden" name="direcao" value="direita" />
-                  <SubmitButton className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-gray-700 bg-transparent p-0 text-xs disabled:opacity-30">
+                  <SubmitButton className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-tinta bg-transparent p-0 text-xs disabled:opacity-30">
                     ▶
                   </SubmitButton>
                 </form>
@@ -69,7 +69,7 @@ export function GaleriaItem({ fotos, itemId }: { fotos: any[]; itemId: string })
                   <form action={definirCapa}>
                     <input type="hidden" name="id" value={f.id} />
                     <input type="hidden" name="item_id" value={itemId} />
-                    <SubmitButton className="text-[11px] text-gray-600 hover:text-gray-900 px-1.5 py-1 rounded hover:bg-gray-100 bg-transparent">
+                    <SubmitButton className="text-[11px] text-tinta-suave hover:text-tinta px-1.5 py-1 rounded hover:bg-areia/70 bg-transparent">
                       capa
                     </SubmitButton>
                   </form>

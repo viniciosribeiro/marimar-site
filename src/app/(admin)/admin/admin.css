@@ -1,0 +1,14 @@
+/* Animações do painel. Curtas de propósito: servem para dizer "algo
+   mudou", não para enfeitar. Quem pediu movimento reduzido não vê. */
+@keyframes entrar { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes subir { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes deslizar { from { opacity: .6; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@media (max-width: 639px) {
+  @keyframes deslizar { from { opacity: .6; transform: translateY(32px); } to { opacity: 1; transform: none; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .painel-admin *, .painel-admin *::before, .painel-admin *::after {
+    animation-duration: .01ms !important; transition-duration: .01ms !important;
+  }
+}
+.painel-admin { font-family: var(--font-geist-sans), system-ui, sans-serif; color: var(--tinta); }

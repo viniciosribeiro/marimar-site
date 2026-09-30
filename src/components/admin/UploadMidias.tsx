@@ -108,21 +108,21 @@ export function UploadMidias({
           if (imgs.length) enviar(imgs);
         }}
         className={`rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center transition-colors ${
-          arrastando ? "border-teal-600 bg-teal-50" : "border-gray-300 bg-white hover:border-gray-400"
+          arrastando ? "border-teal-600 bg-teal-50" : "border-linha bg-white hover:border-gray-400"
         }`}
       >
         <p className="text-3xl mb-2" aria-hidden>📷</p>
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-tinta">
           Arraste as fotos de <strong>{rotulo}</strong> para cá
         </p>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="mt-3 inline-flex items-center justify-center rounded-xl bg-gray-900 text-white text-sm font-semibold px-5 py-2.5 hover:bg-gray-700"
+          className="mt-3 inline-flex items-center justify-center rounded-xl bg-marca text-marca-texto text-sm font-semibold px-5 py-2.5 hover:bg-gray-700"
         >
           Escolher fotos
         </button>
-        <p className="text-xs text-gray-400 mt-3">JPG, PNG ou WebP · até 12 MB cada · várias de uma vez</p>
+        <p className="text-xs text-tinta-suave/80 mt-3">JPG, PNG ou WebP · até 12 MB cada · várias de uma vez</p>
         <input
           ref={inputRef}
           type="file"
@@ -138,16 +138,16 @@ export function UploadMidias({
           {fila.map((e) => (
             <li key={e.nome} className="text-xs">
               <div className="flex items-center justify-between gap-3 mb-1">
-                <span className="truncate text-gray-700">{e.nome}</span>
-                <span className={e.erro ? "text-red-600 shrink-0" : "text-gray-400 shrink-0"}>
+                <span className="truncate text-tinta">{e.nome}</span>
+                <span className={e.erro ? "text-red-600 shrink-0" : "text-tinta-suave/80 shrink-0"}>
                   {e.erro ? "falhou" : `${Math.round(e.progresso)}%`}
                 </span>
               </div>
               {e.erro ? (
                 <p className="text-red-600 leading-snug">{e.erro}</p>
               ) : (
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-teal-600 rounded-full transition-all" style={{ width: `${e.progresso}%` }} />
+                <div className="h-1.5 bg-areia/70 rounded-full overflow-hidden">
+                  <div className="h-full bg-marca rounded-full transition-all" style={{ width: `${e.progresso}%` }} />
                 </div>
               )}
             </li>

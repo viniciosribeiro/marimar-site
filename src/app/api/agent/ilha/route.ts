@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     `BAGAGEM: ${SOBRE_A_ILHA.bagagem}`,
     "",
     "O QUE VER:",
-    ...ATRACOES.map((a) => `• ${a.nome} (${a.distanciaTexto}) — ${a.texto}`),
+    ...ATRACOES.map((a) => `• ${a.nome}${a.distanciaTexto ? ` (${a.distanciaTexto})` : ""} — ${a.texto}`),
     "",
     AVISO_DISTANCIAS,
     "",

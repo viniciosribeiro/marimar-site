@@ -56,10 +56,10 @@ export default async function CartoesPage({
   }
 
   return (
-    <div className="p-5 sm:p-8 max-w-5xl">
+    <div className="px-4 py-6 sm:px-6 lg:px-10 lg:py-8 mx-auto w-full max-w-5xl">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Cartões das seções</h1>
-        <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+        <h1 className="font-titulo text-2xl sm:text-[1.75rem] font-bold tracking-tight text-tinta">Cartões das seções</h1>
+        <p className="text-sm text-tinta-suave mt-1 leading-relaxed">
           Os blocos de cartões da página inicial. Sem nenhum cartão cadastrado,
           a seção continua mostrando o conteúdo padrão do site.
         </p>
@@ -75,7 +75,7 @@ export default async function CartoesPage({
       )}
 
       {secoes.length === 0 && !falha ? (
-        <p className="text-sm text-gray-500 border border-dashed border-gray-300 rounded-xl p-6">
+        <p className="text-sm text-tinta-suave border border-dashed border-linha rounded-xl p-6">
           Nenhuma seção de cartões existe em <strong>Blocos da Home</strong>. Crie
           os blocos &quot;complexo&quot; ou &quot;diferenciais&quot; lá primeiro.
         </p>

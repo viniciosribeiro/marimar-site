@@ -4,7 +4,7 @@ import {
   hashIp, ipDaRequisicao, gatewayConfigurado, urlGateway, cabecalhosGateway,
   INDISPONIVEL, CONTEXTO_CANAL,
 } from "@/lib/chat";
-import { lerConfig, lerEnsinamentos, ensinamentosEmTexto } from "@/lib/marina";
+import { montarTreinamento, pareceSemResposta, registrarLacuna } from "@/lib/marina";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -89,8 +89,7 @@ export async function POST(req: Request) {
        A mesma fonte alimenta o WhatsApp pela rota /api/agent/conhecimento —
        ensinar uma vez tem que valer nos dois lugares, senão o painel vira
        mais um lugar para manter em sincronia à mão. */
-    const config = await lerConfig(sql);
-    const ensinado = ensinamentosEmTexto(config, await lerEnsinamentos(sql));
+    const { texto: ensinado } = await montarTreinamento(sql, "site");
 
     const mensagens = [
       { role: "system", content: CONTEXTO_CANAL + (ensinado ? "\n\n" + ensinado : "") },
@@ -164,9 +163,18 @@ export async function POST(req: Request) {
           // cortado no meio: o pedaço que a pessoa leu faz parte da conversa.
           try {
             if (completa.trim()) {
+              /* "Não sei" vira sugestão de treino no painel, com a
+                 pergunta que o provocou. */
+              const semResposta = pareceSemResposta(completa);
               await conexao`
-                INSERT INTO chat_mensagens (sessao, ip_hash, papel, conteudo)
-                VALUES (${sessao}, ${ip}, 'marina', ${completa.trim()})`;
+                INSERT INTO chat_mensagens (sessao, ip_hash, papel, conteudo, sem_resposta)
+                VALUES (${sessao}, ${ip}, 'marina', ${completa.trim()}, ${semResposta})`
+                .catch(() => conexao`
+                  INSERT INTO chat_mensagens (sessao, ip_hash, papel, conteudo)
+                  VALUES (${sessao}, ${ip}, 'marina', ${completa.trim()})`);
+              if (semResposta) {
+                await registrarLacuna(conexao, { pergunta: mensagem, resposta: completa, canal: "site", sessao });
+              }
             }
           } catch (e) {
             console.error("[chat] nao gravou a resposta:", (e as Error).message);

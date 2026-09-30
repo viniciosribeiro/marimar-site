@@ -8,9 +8,10 @@ import { Manuscrita } from "./ui";
 import { FolhaPalmeira, OndaDivisor } from "./Tropical";
 import { CartaoSuite } from "./CartaoSuite";
 import type { ItemBloco } from "@/lib/blocos";
+import type { Atracao, Travessia } from "@/lib/conteudo-editavel";
 import {
   COMPLEXO, DIFERENCIAIS, DESTAQUES_TOPO, CAFE_DA_MANHA, RESTAURANTE,
-  AVALIACOES, ATRACOES, POLITICAS, ENDERECO, TRAVESSIA,
+  AVALIACOES, POLITICAS, ENDERECO,
 } from "@/lib/conteudo-pousada";
 
 /**
@@ -50,6 +51,9 @@ export type DadosHome = {
   pacotes: { slug: string; nome: string; resumo: string | null }[];
   /** Foto principal de cada seção (Admin → Fotos): pousada, restaurante, café, praia. */
   fotos?: Partial<Record<string, { url: string; alt: string }>>;
+  /** Admin → Atrações da ilha e Ilha, chegada e eventos (`lerConteudo()`). */
+  atracoes: Atracao[];
+  travessia: Travessia;
 };
 
 export function RenderBloco({ bloco, dados }: { bloco: Bloco; dados: DadosHome }) {
@@ -63,7 +67,7 @@ export function RenderBloco({ bloco, dados }: { bloco: Bloco; dados: DadosHome }
     case "quartos":     return <Quartos t={t} s={s} d={dados} />;
     case "restaurante": return <Restaurante t={t} s={s} d={dados} />;
     case "avaliacoes":  return <Avaliacoes t={t} s={s} />;
-    case "mapa":        return <Mapa t={t} s={s} />;
+    case "mapa":        return <Mapa t={t} s={s} d={dados} />;
     case "cta":         return <Cta t={t} s={s} d={dados} />;
     case "faq":         return <Faq t={t} s={s} d={dados} />;
     case "sobre":       return <Sobre t={t} s={s} />;
@@ -441,8 +445,9 @@ function Avaliacoes({ t, s }: { t: string | null; s: string | null }) {
 }
 
 /* ══════════════ MAPA ══════════════ */
-function Mapa({ t, s }: { t: string | null; s: string | null }) {
-  const destaques = ATRACOES.filter((a) => a.destaque);
+function Mapa({ t, s, d }: { t: string | null; s: string | null; d: DadosHome }) {
+  const destaques = d.atracoes.filter((a) => a.destaque);
+  const TRAVESSIA = d.travessia;
   return (
     <section className="relative bg-fundo-suave overflow-hidden">
       <OndaDivisor virada className="text-fundo" />

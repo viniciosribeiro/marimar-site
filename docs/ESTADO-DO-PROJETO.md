@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 28/09/2026.
+> Atualizado em 30/09/2026.
 
 ## Onde estamos
 
@@ -18,7 +18,7 @@
 **O que so existe depois de rodar**
 
 ```
-npm run db:migrate          # migrations 0009 a 0015 (0015: fotos por secao, FAQs e dados falsos do seed — 28/09)
+npm run db:migrate          # migrations 0009 a 0016 (0016: treinamento completo da Marina — 30/09)
 npm run db:migrar-fotos     # tira as imagens do WordPress antigo
 ```
 
@@ -58,7 +58,20 @@ Menu e home redesenhados (tropical, SVG nas cores do tema:
 `src/components/site/Tropical.tsx`). Manual da operacao:
 `docs/manual-admin.md`.
 
+## Treinamento da Marina e painel novo (30/09/2026)
+
+O painel virou a fonte confiavel do treinamento: status por item baseado na
+leitura real de cada canal, area de teste com as fontes usadas, historico com
+restauracao, lacunas. Fluxo e armadilhas: **`docs/fluxo-painel-marina.md`**.
+Todo o admin (e o login) no design system novo: **`docs/design-system-admin.md`**.
+Proxima ferramenta: **`docs/HANDOFF-PROXIMO-AGENTE.md`**.
+
 ## As pendencias que importam
+
+0. **Depois do deploy de 30/09:** rodar a migration 0016 e **reinstalar a
+   skill `marimar-pousada` no OpenClaw** — sem isso o WhatsApp continua com a
+   skill antiga (que nao le o treinamento em pergunta de preco). Conferir em
+   `/admin/marina` que o WhatsApp "leu agora ha pouco" e testar na aba Testar.
 
 1. **DNS.** `www.pousadamarimarilhadomel.com.br` ainda serve o WordPress
    5.8.16 de 2021. O caminho para virar esta livre — e decisao do Vinicios,
@@ -72,9 +85,12 @@ Menu e home redesenhados (tropical, SVG nas cores do tema:
 
 ## Pendencias menores
 
-- **Seguranca (da revisao de 28/09):** `AGENT_API_KEY` exibida inteira em
-  `/admin/integracoes`; login sem limite por IP; contato sem limite de
-  envio. Detalhes e sugestoes em `docs/CHANGELOG-IA.md`, secao 5.
+- **Seguranca (da revisao de 28/09):** login sem limite por IP; contato sem
+  limite de envio. (A `AGENT_API_KEY` inteira em `/admin/integracoes` foi
+  corrigida em 30/09.)
+- **Banco novo do zero:** `db:migrate` falha na 0014 num banco vazio (enum
+  usado na mesma transacao em que ganha valor). Producao nao e afetada.
+  Receita em `docs/HANDOFF-PROXIMO-AGENTE.md`. Detalhes e sugestoes em `docs/CHANGELOG-IA.md`, secao 5.
 
 - As conversas do **WhatsApp** nao aparecem na revisao do painel: ficam no
   OpenClaw. Falta ver o que o gateway expoe.
@@ -83,8 +99,10 @@ Menu e home redesenhados (tropical, SVG nas cores do tema:
 - Visual novo (28/09) na home, menu, galeria, `/quartos`, `/reservar` e no
   cabecalho das paginas internas; o corpo de `a-pousada`, `faq`, `politicas`,
   `contato`, `eventos`, `avaliacoes` ainda usa os cartoes antigos.
-- Atracoes da ilha (Gruta, Farol…) ainda so no codigo — sem tela.
-- Redesenhar o admin no padrao editorial do site.
+- Atracoes da ilha: tela nova em `/admin/atracoes` (29/09), ainda nao usada por uma pessoa.
+- Painel redesenhado em 30/09. Telas com formulario proprio grande (cardapio,
+  banners, cartoes, blocos, fotos, identidade visual) receberam so os tokens
+  de cor e o cabecalho — o miolo delas ainda e o de antes.
 - Fotos importadas do WordPress entraram como "A pousada": reclassificar em
   Admin → Fotos (a migration 0015 so separou o que o texto alternativo dizia).
 
@@ -163,6 +181,8 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | `docs/padrao-crud.md` | convencoes das telas de admin |
 | `docs/openclaw-integracao.md` | como a Marina consome a API |
 | `docs/manual-admin.md` | manual de uso para a operacao da pousada |
+| `docs/fluxo-painel-marina.md` | como o treinamento sai do painel e chega a Marina, e como provar |
+| `docs/design-system-admin.md` | componentes, tokens e regras visuais do painel |
 | `docs/runbook.md` | deploy, env vars, incidentes, rotacao de chave |
 | `docs/samples/` | amostras de payload do Worker |
 | `AGENTS.md` | regras do Next.js 16 (bloco gerado pelo `next dev`) |
@@ -210,9 +230,9 @@ Deploy da terceira sessão validado contra `marimar-site-rnkyimtse.vercel.app`:
 |---|---|
 | 8 | Upload de mídia só aceita URL — sem upload de arquivo (falta Vercel Blob ou S3) |
 | 9 | `audit_log` existe no schema mas nao e populado pelas server actions |
-| 10 | Sem testes automatizados. Primeiros alvos: `validarConsulta()`/`urlTarifas()` em `src/lib/worker.ts` e `src/lib/format.ts` (casos prontos no `CHANGELOG-IA.md`) |
+| 10 | Testes: existem desde 30/09 (`npm test`, `testes/e2e-marina.mjs`). Faltam `validarConsulta()`/`urlTarifas()` em `src/lib/worker.ts` e `src/lib/format.ts` (casos prontos no `CHANGELOG-IA.md`) |
 | 11 | Coluna dedicada `hero_url` em `pousada` (hoje o hero deduz da tabela `midias`) |
-| 12 | Lint tem 182 problemas pré-existentes (162 são `any`; medido em 28/09) — antes dizia ~23 (`any`, `react-hooks/purity` com `Date.now`, aspas não escapadas) — não bloqueiam o build |
+| 12 | Lint: 179 problemas em 30/09 (eram 182; nenhum nos arquivos novos) — pré-existentes (162 são `any`; medido em 28/09) — antes dizia ~23 (`any`, `react-hooks/purity` com `Date.now`, aspas não escapadas) — não bloqueiam o build |
 | 13 | Seletor de crianças não pede idade, mas o motor tem faixas etárias (`politica_crianca`) |
 | 14 | `src/middleware.ts` usa a convenção `middleware`, deprecada no Next 16 — o build avisa e sugere `npx @next/codemod@canary middleware-to-proxy .`. Funciona hoje; não mexido de propósito porque esse arquivo teve um bug de redirect loop corrigido há pouco (`0f8cb73`) e a troca merece teste dedicado |
 

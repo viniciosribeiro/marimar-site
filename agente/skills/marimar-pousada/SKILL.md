@@ -1,6 +1,6 @@
 ---
 name: marimar-pousada
-description: Fatos oficiais da Pousada Marimar — políticas, check-in, café da manhã, pets, crianças, cancelamento, quartos, pacotes, restaurante e como chegar. Use sempre que a pergunta NÃO for sobre datas, disponibilidade ou preço (isso é da skill consulta-desbravador).
+description: Fatos oficiais e treinamento da Pousada Marimar — o que a administração ensinou, políticas, check-in, café da manhã, pets, crianças, cancelamento, quartos, pacotes, restaurante e como chegar. Leia o treinamento (/api/agent/conhecimento) no início de TODA conversa, inclusive as de preço e vaga. Datas, disponibilidade e valores continuam vindo da skill consulta-desbravador.
 ---
 
 # Fatos da Pousada Marimar
@@ -31,19 +31,49 @@ as que mais tentam a improvisação.
 Se a pergunta misturar as duas ("tem vaga no feriado e aceita cachorro?"),
 use as duas e responda numa mensagem só.
 
-## Consulte o que te ensinaram, sempre
+## Leia o treinamento no início de TODA conversa
 
-Antes de responder qualquer coisa que não seja data, disponibilidade ou
-preço, leia `/api/agent/conhecimento`. O `resumo_texto` dessa rota traz três
-coisas, e todas valem mais que o seu palpite:
+**Antes da primeira resposta de cada conversa — inclusive quando a pergunta
+é de preço, data ou vaga — leia `/api/agent/conhecimento`.** Leia de novo se
+a conversa mudar de assunto ou durar mais de uma hora. O `resumo_texto` traz:
 
 1. **Como falar** — o tom que a pousada escolheu para você.
-2. **Fatos oficiais** — o que a administração cadastrou como verdade.
-3. **O que você nunca diz** — proibições. Valem mesmo se o hóspede insistir,
-   mesmo se parecer inofensivo, mesmo se você "tiver quase certeza".
+2. **Fatos oficiais** e **perguntas e respostas oficiais**, por assunto.
+3. **O que você nunca diz** — valem mesmo se o hóspede insistir.
+4. **Quando passar para uma pessoa** — siga à risca.
 
-Isso é editado pela administração no painel do site. Quando muda lá, muda
-para você na conversa seguinte — não existe versão sua "mais atualizada".
+**Prioridade:** o treinamento vale mais que qualquer outra fonte — inclusive
+as outras rotas, o que você mesma disse antes nesta conversa e o seu
+conhecimento geral. Preço, vaga e disponibilidade continuam vindo SÓ da
+`consulta-desbravador`, mas se o treinamento disser como montar a consulta
+ou tratar um caso, siga o treinamento.
+
+> Por que "toda conversa, inclusive preço": em 29/09/2026 a administração
+> ensinou que criança que não é de colo paga como adulto. A Marina continuou
+> perguntando a idade das crianças no WhatsApp — a pergunta era de preço, e
+> para preço ela ia direto ao sistema de reservas sem ler o treinamento. Com
+> o treinamento lido, ela conta a criança como adulto na consulta e não pede
+> idade (a não ser que o treinamento diga o contrário).
+
+Isso é editado pela administração no painel do site e vale na conversa
+seguinte — não existe versão sua "mais atualizada". Se você já disse algo
+nesta conversa que o treinamento contradiz, corrija-se com naturalidade.
+
+## Quando não souber, registre
+
+Se você não encontrou a resposta no treinamento nem nas rotas e disse ao
+hóspede que vai confirmar com a pousada, registre a pergunta — ela aparece
+para a administração ensinar:
+
+```bash
+curl -s -X POST -H "Authorization: Bearer $MARIMAR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"pergunta":"<a pergunta do hóspede>","resposta":"<o que você respondeu>","canal":"whatsapp"}' \
+  https://marimar-site.vercel.app/api/agent/lacuna
+```
+
+Não conte isso ao hóspede. Não registre dados pessoais (nome, telefone) na
+pergunta.
 
 ## Como consultar
 
@@ -85,14 +115,16 @@ pode consultar não fica calado: improvisa. Já aconteceu aqui.
 | `/api/agent/avaliacoes` | Depoimentos e notas — **sempre com a plataforma de origem** |
 | `/api/agent/faq` | Perguntas que a pousada já respondeu |
 | `/api/agent/conhecimento` | **O que a administração te ensinou pelo painel** |
-| `/api/agent/documentos` | **Documentos que a pousada enviou** — PDFs, contratos, cardápios, fotos de avisos. Sem `?id=` vem a lista com um trecho de cada; com `?id=<id>` vem o texto completo daquele |
+| `/api/agent/documentos` | **Documentos que a pousada enviou** — PDFs, contratos, cardápios, fotos de avisos. Sem parâmetro vem a lista com um trecho de cada; `?busca=<palavras>` traz os trechos de todos os documentos que falam do assunto; `?id=<id>` traz o texto completo de um |
+| `/api/agent/lacuna` (POST) | **Registrar uma pergunta que você não soube responder** |
 
 Para datas, vagas e tarifas, a `consulta-desbravador` já tem o caminho certo.
 
 ### Sobre os documentos
 
-O `/api/agent/conhecimento` já te mostra o **começo** de cada documento. Se
-o trecho indicar que a resposta está ali dentro, abra o documento inteiro com
+O `/api/agent/conhecimento` já te mostra o **começo** de cada documento. Para
+achar um assunto dentro deles, use `?busca=<palavras>` (ex.: `?busca=estacionamento`).
+Se o trecho indicar que a resposta está num documento, abra-o inteiro com
 `?id=<id>` antes de responder. Não deduza o resto do conteúdo a partir do
 trecho — foi para isso que a pousada enviou o arquivo.
 

@@ -1,11 +1,28 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import postgres from "postgres";
 import { fetchTarifas } from "@/lib/worker";
 import { PENDENTE_CONFIRMACAO } from "@/lib/conteudo-pousada";
+import { lerLeituras } from "@/lib/marina";
+import { Pagina, Cabecalho, Cartao, Indicador, Aviso, Selo, Vazio, BotaoLink, quandoFoi } from "@/components/admin/ui";
+import { MessageCircleHeart, Inbox, BedDouble, Gift, HelpCircle, Star } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+/** Consulta real ao motor de reservas (daqui a 7 dias, 2 noites, 2 adultos). */
+async function medirMotor(): Promise<{ ok: boolean; detalhe: string; ms: number }> {
+  try {
+    const hoje = new Date();
+    const ci = new Date(hoje.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+    const co = new Date(hoje.getTime() + 9 * 86400000).toISOString().slice(0, 10);
+    const t0 = Date.now();
+    const d = await fetchTarifas(ci, co, 2);
+    return { ok: true, ms: Date.now() - t0, detalhe: `${d.total_disponiveis} tipos disponíveis` };
+  } catch (e) {
+    const m = (e as Error).message;
+    return { ok: false, ms: 0, detalhe: /fetch failed|timeout|aborted/i.test(m) ? "não respondeu a tempo" : m.slice(0, 60) };
+  }
+}
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -17,6 +34,7 @@ export default async function DashboardPage() {
   let leadsRecentes: any[] = [];
   let semFoto = 0;
   let erroBanco = "";
+  let marina = { lacunas: 0, itens: 0, whatsapp: null as string | null, conversasHoje: 0 };
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     const [r] = await sql`
@@ -37,155 +55,111 @@ export default async function DashboardPage() {
       WHERE q.ativo = true AND NOT EXISTS (SELECT 1 FROM midias m WHERE m.quarto_id = q.id)
     `;
     semFoto = (f as any).c;
+    /* A Marina no painel inicial: é o que mais muda no dia a dia. Cada
+       consulta isolada — antes da migration 0016 as tabelas não existem. */
+    const [lac] = await sql`SELECT count(*)::int AS n FROM marina_lacunas WHERE status = 'aberta'`.catch(() => [{ n: 0 }]);
+    const [ens] = await sql`SELECT count(*)::int AS n FROM marina_conhecimento WHERE ativo = true AND excluido_em IS NULL`
+      .catch(() => sql`SELECT count(*)::int AS n FROM marina_conhecimento WHERE ativo = true`).catch(() => [{ n: 0 }]);
+    const [hoje] = await sql`SELECT count(DISTINCT sessao)::int AS n FROM chat_mensagens WHERE criado_em > now() - interval '24 hours'`.catch(() => [{ n: 0 }]);
+    const leituras = await lerLeituras(sql);
+    marina = { lacunas: (lac as any).n, itens: (ens as any).n, whatsapp: leituras.whatsapp?.lido_em ?? null, conversasHoje: (hoje as any).n };
     await sql.end();
   } catch (e) {
     erroBanco = (e as Error).message;
   }
 
   // ─── Motor de reservas, de verdade (antes era "—" hardcoded) ───
-  let motor: { ok: boolean; detalhe: string; ms: number } = { ok: false, detalhe: "", ms: 0 };
-  try {
-    const hoje = new Date();
-    const ci = new Date(hoje.getTime() + 7 * 86400000).toISOString().slice(0, 10);
-    const co = new Date(hoje.getTime() + 9 * 86400000).toISOString().slice(0, 10);
-    const t0 = Date.now();
-    const d = await fetchTarifas(ci, co, 2);
-    motor = { ok: true, ms: Date.now() - t0, detalhe: `${d.total_disponiveis} tipos disponíveis` };
-  } catch (e) {
-    motor = { ok: false, ms: 0, detalhe: (e as Error).message.slice(0, 60) };
-  }
+  const motor = await medirMotor();
 
   const avisos: { txt: string; href: string; acao: string }[] = [];
+  if (marina.lacunas > 0) avisos.push({ txt: marina.lacunas === 1 ? "A Marina não soube responder 1 pergunta de hóspede." : `A Marina não soube responder ${marina.lacunas} perguntas de hóspedes.`, href: "/admin/marina?aba=sem-resposta", acao: "Ensinar" });
   if (stats.hero === 0) avisos.push({ txt: "Nenhuma foto de destaque para o topo do site — a home está usando uma foto de quarto.", href: "/admin/midias", acao: "Cadastrar foto" });
-  if (semFoto > 0) avisos.push({ txt: `${semFoto} quarto(s) ativo(s) sem nenhuma foto cadastrada.`, href: "/admin/quartos", acao: "Ver quartos" });
+  if (semFoto > 0) avisos.push({ txt: semFoto === 1 ? "1 quarto ativo está sem nenhuma foto." : `${semFoto} quartos ativos estão sem nenhuma foto.`, href: "/admin/quartos", acao: "Ver quartos" });
   if (!motor.ok) avisos.push({ txt: "O motor de reservas não respondeu. O site fica no ar sem preços.", href: "/admin/diagnostico", acao: "Diagnosticar" });
-  if (stats.leads_novos > 0) avisos.push({ txt: `${stats.leads_novos} contato(s) ainda não lido(s).`, href: "/admin/leads", acao: "Ler agora" });
+  if (stats.leads_novos > 0) avisos.push({ txt: stats.leads_novos === 1 ? "1 contato ainda não foi lido." : `${stats.leads_novos} contatos ainda não foram lidos.`, href: "/admin/leads", acao: "Ler agora" });
+
+  const nome = (session.user.name || session.user.email || "").split(" ")[0];
+  const hora = new Date().toLocaleString("pt-BR", { hour: "numeric", hour12: false, timeZone: "America/Sao_Paulo" });
+  const saudacao = Number(hora) < 12 ? "Bom dia" : Number(hora) < 18 ? "Boa tarde" : "Boa noite";
 
   return (
-    <div className="p-5 sm:p-8 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Painel</h1>
-        <p className="text-sm text-gray-500 mt-1">Olá, {session.user.name || session.user.email}.</p>
-      </div>
+    <Pagina larga>
+      <Cabecalho sobre="Pousada Marimar" titulo={`${saudacao}${nome ? `, ${nome}` : ""}!`}
+        descricao="O resumo do site, das reservas e do atendimento da Marina."
+        acoes={<BotaoLink href="/admin/marina?aba=testar" variante="secundario"><MessageCircleHeart className="h-4 w-4" /> Conversar com a Marina</BotaoLink>} />
 
       {erroBanco && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-sm text-red-800">
-          Banco de dados indisponível: {erroBanco}
-        </div>
+        <Aviso tom="erro" titulo="O banco de dados não respondeu." className="mb-6">
+          As telas de cadastro podem não abrir agora. Detalhe técnico: {erroBanco}
+        </Aviso>
       )}
 
-      {/* ─── Precisa da sua atenção ─── */}
       {avisos.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Precisa da sua atenção</h2>
-          <div className="space-y-2">
+        <Cartao titulo="Precisa da sua atenção" className="mb-6">
+          <ul className="space-y-2">
             {avisos.map((a) => (
-              <div key={a.txt} className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
-                <p className="text-sm text-amber-900">{a.txt}</p>
-                <Link href={a.href} className="text-xs font-semibold text-amber-900 bg-amber-200/70 hover:bg-amber-200 px-3 py-1.5 rounded-lg whitespace-nowrap">
-                  {a.acao} →
-                </Link>
-              </div>
+              <li key={a.txt}>
+                <Aviso tom="aviso" acao={<BotaoLink href={a.href} variante="secundario" tamanho="sm">{a.acao}</BotaoLink>}>{a.txt}</Aviso>
+              </li>
             ))}
-          </div>
-        </section>
+          </ul>
+        </Cartao>
       )}
 
-      {/* ─── Status ─── */}
-      <section className="mb-8">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Status</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Status label="Motor de reservas" ok={motor.ok}
-            valor={motor.ok ? "Online" : "Offline"}
-            detalhe={motor.ok ? `${motor.ms}ms · ${motor.detalhe}` : motor.detalhe} />
-          <Status label="Banco de dados" ok={!erroBanco}
-            valor={erroBanco ? "Offline" : "Online"}
-            detalhe={erroBanco ? "" : `${stats.quartos} quartos ativos`} />
-          <Status label="Fotos" ok={stats.midias > 0}
-            valor={String(stats.midias ?? 0)}
-            detalhe={stats.hero > 0 ? "topo do site definido" : "sem foto de topo"} />
-          <Status label="Contatos" ok={true}
-            valor={String(stats.leads_total ?? 0)}
-            detalhe={stats.leads_novos > 0 ? `${stats.leads_novos} não lidos` : "todos lidos"} />
-        </div>
-      </section>
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Indicador rotulo="Motor de reservas" valor={motor.ok ? "No ar" : "Fora do ar"} tom={motor.ok ? "sucesso" : "erro"}
+          detalhe={motor.ok ? `${motor.detalhe} · respondeu em ${(motor.ms / 1000).toFixed(1).replace(".", ",")}s` : motor.detalhe || "sem resposta"} href="/admin/diagnostico" />
+        <Indicador rotulo="Marina" valor={`${marina.itens} ${marina.itens === 1 ? "item" : "itens"}`} tom={marina.lacunas ? "aviso" : "sucesso"}
+          detalhe={marina.whatsapp ? `WhatsApp leu o treinamento ${quandoFoi(marina.whatsapp)}` : "WhatsApp ainda não leu o treinamento"} href="/admin/marina" />
+        <Indicador rotulo="Conversas no site (24h)" valor={marina.conversasHoje} detalhe="pelo chat da Marina" href="/admin/marina?aba=conversas" />
+        <Indicador rotulo="Contatos" valor={stats.leads_total ?? 0} tom={stats.leads_novos ? "aviso" : "neutro"}
+          detalhe={stats.leads_novos ? `${stats.leads_novos} ${stats.leads_novos === 1 ? "novo" : "novos"} para ler` : "todos lidos"} href="/admin/leads" />
+      </div>
 
-      {/* ─── Conteúdo ─── */}
-      <section className="mb-8">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Conteúdo publicado</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Mini href="/admin/quartos" label="Quartos" valor={stats.quartos ?? 0} />
-          <Mini href="/admin/pacotes" label="Pacotes" valor={stats.pacotes ?? 0} />
-          <Mini href="/admin/faq" label="Perguntas" valor={stats.faq ?? 0} />
-          <Mini href="/admin/depoimentos" label="Depoimentos" valor={stats.depoimentos ?? 0} />
-        </div>
-      </section>
-
-      <div className="grid lg:grid-cols-2 gap-5">
-        {/* ─── Últimos contatos ─── */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Últimos contatos</h2>
-            <Link href="/admin/leads" className="text-xs text-gray-500 hover:text-gray-900">ver todos →</Link>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            {leadsRecentes.length === 0 ? (
-              <p className="p-6 text-sm text-gray-400 text-center">Nenhum contato recebido ainda.</p>
-            ) : leadsRecentes.map((l: any, i: number) => (
-              <div key={i} className="px-4 py-3 border-b border-gray-50 last:border-0 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{l.nome}</p>
-                  <p className="text-xs text-gray-400 truncate">{l.telefone || "sem telefone"} · {l.origem}</p>
-                </div>
-                <span className={`text-[10px] px-2 py-1 rounded-full shrink-0 ${l.lido ? "bg-gray-100 text-gray-500" : "bg-blue-100 text-blue-700 font-medium"}`}>
-                  {l.lido ? "lido" : "novo"}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── Pendências do briefing ─── */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            A confirmar com a administração
-          </h2>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-              Informações que o site ainda não publica porque dependem de confirmação interna:
-            </p>
-            <ul className="space-y-1.5 max-h-56 overflow-y-auto">
-              {PENDENTE_CONFIRMACAO.map((p) => (
-                <li key={p} className="text-xs text-gray-600 flex gap-2 leading-relaxed">
-                  <span className="text-amber-500 shrink-0">•</span> {p}
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <Cartao titulo="Últimos contatos" acoes={<BotaoLink href="/admin/leads" variante="fantasma" tamanho="sm">Ver todos</BotaoLink>} semPadding>
+          {leadsRecentes.length === 0 ? (
+            <div className="p-5"><Vazio icone={<Inbox className="h-6 w-6 text-tinta-suave" />} titulo="Nenhum contato ainda">Quem deixar contato pelo site ou pela Marina aparece aqui.</Vazio></div>
+          ) : (
+            <ul className="divide-y divide-linha/60 px-5 pb-2 pt-2">
+              {leadsRecentes.map((l: any, i: number) => (
+                <li key={i} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-tinta">{l.nome}</p>
+                    <p className="truncate text-xs text-tinta-suave">{l.telefone || "sem telefone"} · {l.origem} · {quandoFoi(l.criado_em)}</p>
+                  </div>
+                  <Selo tom={l.lido ? "neutro" : "info"} ponto>{l.lido ? "lido" : "novo"}</Selo>
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
+          )}
+        </Cartao>
 
-function Status({ label, ok, valor, detalhe }: { label: string; ok: boolean; valor: string; detalhe: string }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className={`w-2 h-2 rounded-full shrink-0 ${ok ? "bg-green-500" : "bg-red-500"}`} />
-        <p className="text-xs text-gray-500 truncate">{label}</p>
+        <div className="space-y-6">
+          <Cartao titulo="No ar no site">
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { href: "/admin/quartos", rotulo: "Quartos", n: stats.quartos, I: BedDouble },
+                { href: "/admin/pacotes", rotulo: "Pacotes", n: stats.pacotes, I: Gift },
+                { href: "/admin/faq", rotulo: "Perguntas", n: stats.faq, I: HelpCircle },
+                { href: "/admin/depoimentos", rotulo: "Depoimentos", n: stats.depoimentos, I: Star },
+              ].map(({ href, rotulo, n, I }) => (
+                <a key={href} href={href} className="flex items-center gap-3 rounded-xl border border-linha/70 p-3 hover:border-marca min-h-14">
+                  <I className="h-5 w-5 text-marca" />
+                  <span><span className="block text-lg font-bold leading-none tabular-nums text-tinta">{n ?? 0}</span><span className="text-xs text-tinta-suave">{rotulo}</span></span>
+                </a>
+              ))}
+            </div>
+          </Cartao>
+          <Cartao titulo="A confirmar com a pousada" descricao="O site ainda não publica isto porque depende de confirmação.">
+            <ul className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
+              {PENDENTE_CONFIRMACAO.map((p) => (
+                <li key={p} className="flex gap-2 text-xs leading-relaxed text-tinta-suave"><span className="text-amber-500" aria-hidden>•</span>{p}</li>
+              ))}
+            </ul>
+          </Cartao>
+        </div>
       </div>
-      <p className="text-xl font-bold text-gray-900">{valor}</p>
-      {detalhe && <p className="text-xs text-gray-400 mt-0.5 truncate">{detalhe}</p>}
-    </div>
-  );
-}
-
-function Mini({ href, label, valor }: { href: string; label: string; valor: number }) {
-  return (
-    <Link href={href} className="bg-white rounded-xl border border-gray-200 p-4 hover:border-gray-300 hover:shadow-sm transition-all">
-      <p className="text-2xl font-bold text-gray-900">{valor}</p>
-      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
-    </Link>
+    </Pagina>
   );
 }

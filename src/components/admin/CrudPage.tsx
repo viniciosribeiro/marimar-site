@@ -1,116 +1,148 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Plus, Pencil, Search } from "lucide-react";
 import { CrudForm } from "./CrudForm";
 import { DeleteButton } from "./DeleteButton";
 import { Modal } from "./Modal";
+import { Pagina, Cabecalho, Lista, Selo, Vazio, botao, campo, type Coluna } from "./ui";
 
-export function CrudPage({ title, subtitle, lista, columns, fields, criarAction, editarAction, excluirAction, editId, novo, erro, ok, basePath }: any) {
+/**
+ * Tela padrão de cadastro (FAQ, pacotes, depoimentos, categorias…).
+ *
+ * Mesma API de antes — as telas não precisaram mudar — com o visual do
+ * design system: tabela no computador, cartões no celular, busca quando a
+ * lista cresce, janela de edição e exclusão com confirmação.
+ */
+
+/** Nome de coluna do banco → rótulo que quem opera entende. */
+const ROTULOS: Record<string, string> = {
+  nome: "Nome", slug: "Endereço", ordem: "Ordem", ativo: "Situação", ativa: "Situação",
+  pergunta: "Pergunta", resposta: "Resposta", autor: "Autor", nota: "Nota", origem: "Plataforma",
+  texto: "Texto", preco_referencia: "Preço de referência", duracao: "Duração", visivel_agente: "Marina usa",
+  escopo: "Onde vale", icone: "Ícone", descricao: "Descrição", lido: "Lido", destaque: "Destaque",
+  diaria_minima: "Mínimo de diárias", url: "Link", pet: "Aceita pet", email: "E-mail", telefone: "Telefone",
+};
+
+type Registro = Record<string, unknown> & { id: string };
+
+export function CrudPage({
+  title, subtitle, lista, columns, fields, criarAction, editarAction, excluirAction, editId, novo, basePath,
+}: {
+  title: string; subtitle?: string; lista: ReadonlyArray<object>; columns: string[];
+  fields: { name: string; [k: string]: unknown }[];
+  criarAction?: (fd: FormData) => void; editarAction?: (fd: FormData) => void; excluirAction?: (fd: FormData) => void;
+  editId?: string; novo?: string; erro?: string; ok?: string; basePath: string;
+}) {
   const router = useRouter();
   const params = useSearchParams();
+  const registros = lista as Registro[];
+  const [busca, setBusca] = useState("");
   const isEdit = !!editId;
   /* O botão "+ Novo" leva a ?novo=1. Antes a janela só abria se a PÁGINA
-     repassasse `novo` — e 6 das 7 telas não repassavam: FAQ, pacotes,
-     depoimentos, categorias, comodidades e fotos simplesmente não deixavam
-     criar nada. Agora o próprio componente lê a URL. */
+     repassasse `novo` — e 6 das 7 telas não repassavam. Agora o próprio
+     componente lê a URL. */
   const pedido = Boolean(editId || novo || params.get("novo") === "1");
-  // Qual pedido foi fechado: fechar e clicar em "+ Novo" de novo reabre.
   const chave = `${editId ?? ""}|${params.toString()}`;
   const [fechadoEm, setFechadoEm] = useState<string | null>(null);
   const modalOpen = pedido && fechadoEm !== chave;
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setFechadoEm(chave);
     router.push(basePath);
-  };
+  }, [chave, router, basePath]);
+
+  const filtrada = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return registros;
+    return registros.filter((i) => columns.some((c) => String(i[c] ?? "").toLowerCase().includes(q)));
+  }, [busca, registros, columns]);
+
+  const colunas: Coluna<Registro>[] = columns.map((c) => ({
+    titulo: ROTULOS[c] ?? c,
+    celula: (item) => celula(c, item),
+    soDesktop: c === "ordem" || c === "slug",
+    className: c === "ordem" ? "w-20" : undefined,
+  }));
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
-        </div>
-        {criarAction && (
-          <Link href={`${basePath}?novo=1`}
-            className="inline-flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
-            style={{ backgroundColor: "var(--color-primary, #0D9488)" }}>
-            + Novo
+    <Pagina larga>
+      <Cabecalho
+        titulo={title.replace(/^[^\p{L}]+/u, "")}
+        descricao={subtitle}
+        acoes={criarAction && (
+          <Link href={`${basePath}?novo=1`} className={botao("primario")}>
+            <Plus className="h-4 w-4" /> Novo
           </Link>
         )}
-      </div>
+      />
 
-      {erro && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-xl mb-4">{erro}</p>}
-      {ok && <p className="text-sm text-green-600 bg-green-50 p-3 rounded-xl mb-4">{ok}</p>}
-
-      <Modal open={modalOpen} onClose={closeModal} title={isEdit ? "Editar" : "Novo"}>
+      <Modal open={modalOpen} onClose={closeModal} title={isEdit ? "Editar" : "Novo cadastro"}>
         <CrudForm
-          action={isEdit ? editarAction : criarAction}
-          fields={isEdit ? fields : fields.filter((f: any) => f.name !== "id" && f.name !== "ativo")}
-          submitLabel={isEdit ? "Salvar" : "Criar"}
+          action={(isEdit ? editarAction : criarAction) as (fd: FormData) => void}
+          fields={(isEdit ? fields : fields.filter((f) => f.name !== "id" && f.name !== "ativo")) as never}
+          submitLabel={isEdit ? "Salvar alterações" : "Criar"}
         />
-        {isEdit && (
-          <div className="mt-4 pt-4 border-t">
-            <button onClick={closeModal} className="text-sm text-gray-500 hover:underline">Cancelar e voltar</button>
-          </div>
-        )}
       </Modal>
 
-      {/* overflow-x-auto: no celular a tabela rola em vez de espremer as
-          colunas a ponto de virar uma coluna de letras. min-w garante que
-          ela nao encolha a ponto de quebrar cada palavra. */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
-        <table className="w-full text-sm min-w-[36rem]">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
-              {columns.map((c: string) => (
-                <th key={c} className="text-left px-4 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">{c}</th>
-              ))}
-              <th className="text-right px-4 py-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lista.length === 0 ? (
-              <tr><td colSpan={columns.length + 1} className="text-center text-gray-400 py-12">Nenhum registro encontrado</td></tr>
-            ) : (
-              lista.map((item: any) => (
-                <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                  {columns.map((c: string) => (
-                    <td key={c} className="px-4 py-3">{renderCell(c, item)}</td>
-                  ))}
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {editarAction && (
-                        <Link href={`${basePath}?editar=${item.id}`}
-                          className="inline-flex items-center text-xs font-medium px-3.5 min-h-10 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
-                          Editar
-                        </Link>
-                      )}
-                      {excluirAction && <DeleteButton action={excluirAction} id={item.id} />}
-                    </div>
-                  </td>
-                </tr>
-              ))
+      {lista.length > 6 && (
+        <label className="relative mb-4 block max-w-sm">
+          <span className="sr-only">Buscar</span>
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-tinta-suave" />
+          <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar…" className={campo + " pl-10"} />
+        </label>
+      )}
+
+      <Lista
+        itens={filtrada}
+        colunas={colunas}
+        chave={(i) => i.id}
+        vazio={
+          busca
+            ? <Vazio icone="🔎" titulo="Nada encontrado">Tente outra palavra.</Vazio>
+            : <Vazio titulo="Nada cadastrado ainda" acao={criarAction && <Link href={`${basePath}?novo=1`} className={botao()}><Plus className="h-4 w-4" /> Cadastrar o primeiro</Link>} />
+        }
+        acoes={(editarAction || excluirAction) ? (item) => (
+          <>
+            {editarAction && (
+              <Link href={`${basePath}?editar=${item.id}`} className={botao("secundario", "sm")}>
+                <Pencil className="h-3.5 w-3.5" /> Editar
+              </Link>
             )}
-          </tbody>
-        </table>
-      </div>
-      <p className="text-xs text-gray-400 mt-3">{lista.length} registros</p>
-    </div>
+            {excluirAction && <DeleteButton action={excluirAction} id={item.id} />}
+          </>
+        ) : undefined}
+      />
+      {lista.length > 0 && (
+        <p className="mt-3 px-1 text-xs text-tinta-suave">
+          {filtrada.length === lista.length ? `${lista.length} ${lista.length === 1 ? "cadastro" : "cadastros"}` : `${filtrada.length} de ${lista.length}`}
+        </p>
+      )}
+    </Pagina>
   );
 }
 
-function renderCell(col: string, item: any) {
+function celula(col: string, item: Registro): React.ReactNode {
   const v = item[col];
-  if (col === "ativo" || col === "lido" || col === "destaque" || col === "visivel_agente" || col === "pet") {
-    return v ? <span className="text-green-500">✅</span> : <span className="text-gray-300">—</span>;
+  if (["ativo", "ativa", "destaque", "visivel_agente", "pet"].includes(col)) {
+    const rot = col === "visivel_agente" ? ["Usa", "Não usa"] : col === "pet" ? ["Sim", "Não"] : col === "destaque" ? ["Destaque", "—"] : ["Ativo", "Inativo"];
+    return <Selo tom={v ? "sucesso" : "neutro"} ponto>{v ? rot[0] : rot[1]}</Selo>;
   }
-  if (col === "preco_referencia") return v ? <span className="text-teal-600 font-medium">R$ {v}</span> : "—";
-  if (col === "nota") return <span className="text-amber-400">{"★".repeat(v||0)}{"☆".repeat(5-(v||0))}</span>;
-  if (col === "url") return v ? <span className="text-xs text-teal-600">🔗</span> : "—";
-  if (col === "duracao") return <span className="text-gray-500">{v || "—"}</span>;
-  if (typeof v === "string" && v.length > 60) return <span className="text-xs text-gray-500">{v.slice(0, 60)}...</span>;
-  return <span className="text-gray-700">{v ?? "—"}</span>;
+  if (col === "lido") return <Selo tom={v ? "neutro" : "info"} ponto>{v ? "Lido" : "Novo"}</Selo>;
+  if (col === "preco_referencia") {
+    const n = Number(v);
+    return v && Number.isFinite(n) ? <span className="font-medium tabular-nums">{n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span> : <span className="text-tinta-suave">—</span>;
+  }
+  if (col === "nota") {
+    const n = Math.max(0, Math.min(5, Number(v) || 0));
+    return <span className="text-amber-500" aria-label={`${n} de 5`}>{"★".repeat(n)}<span className="text-gray-300">{"★".repeat(5 - n)}</span></span>;
+  }
+  if (col === "escopo") return <Selo>{v === "pousada" ? "Da pousada" : "Das suítes"}</Selo>;
+  if (col === "url") return v ? <a href={String(v)} target="_blank" rel="noreferrer" className="text-marca underline">abrir</a> : "—";
+  if (col === "slug") return <span className="font-mono text-xs text-tinta-suave">/{String(v ?? "")}</span>;
+  if (typeof v === "string" && v.length > 80) return <span className="text-tinta-suave">{v.slice(0, 80)}…</span>;
+  if (v === null || v === undefined || v === "") return <span className="text-tinta-suave">—</span>;
+  return String(v);
 }

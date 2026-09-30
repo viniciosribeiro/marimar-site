@@ -4,6 +4,8 @@ import { CrudForm } from "@/components/admin/CrudForm";
 import { lerPousada } from "@/lib/pousada";
 import { salvarPousada } from "./actions";
 
+import { Pagina, Cabecalho } from "@/components/admin/ui";
+
 export const dynamic = "force-dynamic";
 
 export default async function DadosPousadaPage({
@@ -17,12 +19,9 @@ export default async function DadosPousadaPage({
   const p = await lerPousada();
 
   return (
-    <div className="p-5 sm:p-8 max-w-4xl">
-      <h1 className="text-2xl font-bold text-gray-900">Dados da pousada</h1>
-      <p className="text-sm text-gray-500 mt-1 mb-6 max-w-2xl">
-        Contato e apresentação. O que você salvar aqui aparece no site inteiro (topo, rodapé,
-        botões de WhatsApp) e é o que a Marina informa quando alguém pede o contato.
-      </p>
+    <Pagina>
+      <Cabecalho sobre="Visão geral" titulo="Dados da pousada"
+        descricao="Contato e apresentação. Aparece no site inteiro (topo, rodapé, botões de WhatsApp) e é o que a Marina informa quando alguém pede o contato." />
 
       <CrudForm
         action={salvarPousada}
@@ -44,6 +43,6 @@ export default async function DadosPousadaPage({
           },
         ]}
       />
-    </div>
+    </Pagina>
   );
 }

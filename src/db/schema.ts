@@ -475,6 +475,8 @@ export const chatMensagens = pgTable("chat_mensagens", {
   marcada: boolean("marcada").default(false).notNull(),
   /** O que a Marina deveria ter dito. Vira conhecimento. */
   correcao: text("correcao"),
+  /** A resposta da Marina parece "não sei" — entra em Perguntas sem resposta. */
+  sem_resposta: boolean("sem_resposta").default(false).notNull(),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
 
@@ -502,6 +504,8 @@ export const marinaConfig = pgTable("marina_config", {
   voz_velocidade: integer("voz_velocidade").default(100).notNull(),
   /** Como ela fala. O que antes vivia so na habilidade `estilo-resposta`. */
   tom: text("tom"),
+  /** Quando e como passar a conversa para uma pessoa (migration 0016). */
+  escalonamento: text("escalonamento"),
   atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
 });
 
@@ -534,17 +538,64 @@ export const marinaDocumentos = pgTable("marina_documentos", {
   status: text("status").default("lendo").notNull(),
   erro: text("erro"),
   ativo: boolean("ativo").default(true).notNull(),
+  categoria: text("categoria").default("geral").notNull(),
+  processado_em: timestamp("processado_em"),
+  tentativas: integer("tentativas").default(1).notNull(),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
 
 export const marinaConhecimento = pgTable("marina_conhecimento", {
   id: uuid("id").defaultRandom().primaryKey(),
-  /** "fato" (ela pode dizer) ou "limite" (ela nunca diz). */
+  /** "fato" | "pergunta" (P&R com variações) | "limite" (nunca diz) | "escalar" (passa para uma pessoa). */
   tipo: text("tipo").default("fato").notNull(),
   titulo: text("titulo").notNull(),
   conteudo: text("conteudo").notNull(),
   ativo: boolean("ativo").default(true).notNull(),
   ordem: integer("ordem").default(0).notNull(),
+  /** Ver CATEGORIAS em `src/lib/marina.ts`. */
+  categoria: text("categoria").default("geral").notNull(),
+  /** Outras formas de fazer a mesma pergunta (tipo "pergunta"). */
+  variacoes: jsonb("variacoes").notNull().default([]),
+  /** Último teste automático: "ok" | "falhou" | null. */
+  verificacao: text("verificacao"),
+  verificado_em: timestamp("verificado_em"),
+  verificacao_resposta: text("verificacao_resposta"),
+  /** Na lixeira desde. Nulo = vivo. */
+  excluido_em: timestamp("excluido_em"),
+  atualizado_por: text("atualizado_por"),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
   atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+});
+
+/** Antes e depois de toda mudança no treinamento — é o que permite desfazer. */
+export const marinaHistorico = pgTable("marina_historico", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  conhecimento_id: uuid("conhecimento_id").notNull(),
+  acao: text("acao").notNull(),
+  antes: jsonb("antes"),
+  depois: jsonb("depois"),
+  autor: text("autor"),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+});
+
+/** Quando cada canal (whatsapp, site, teste) leu o treinamento pela última vez. */
+export const marinaLeituras = pgTable("marina_leituras", {
+  canal: text("canal").primaryKey(),
+  lido_em: timestamp("lido_em").defaultNow().notNull(),
+  itens: integer("itens").default(0).notNull(),
+  caracteres: integer("caracteres").default(0).notNull(),
+});
+
+/** Perguntas que a Marina não soube responder — viram sugestão de treino. */
+export const marinaLacunas = pgTable("marina_lacunas", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  pergunta: text("pergunta").notNull(),
+  resposta: text("resposta"),
+  canal: text("canal").default("site").notNull(),
+  sessao: text("sessao"),
+  /** "aberta" | "resolvida" | "ignorada" */
+  status: text("status").default("aberta").notNull(),
+  conhecimento_id: uuid("conhecimento_id"),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+  resolvido_em: timestamp("resolvido_em"),
 });

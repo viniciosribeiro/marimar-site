@@ -26,3 +26,7 @@ notas-*.txt
 
 # Registros de volta da migracao de fotos — contem URLs, nao vao para o git
 backups/
+
+# saidas dos testes visuais (testes/capturas.mjs, testes/e2e-marina.mjs)
+capturas/
+e2e-falha.png

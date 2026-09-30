@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
   linhas.push("", "ATRAÇÕES DA ILHA:");
   for (const a of ATRACOES) {
-    linhas.push(`• ${a.nome} (${a.distanciaTexto}) — ${a.resumo}`);
+    linhas.push(`• ${a.nome}${a.distanciaTexto ? ` (${a.distanciaTexto})` : ""} — ${a.resumo}`);
   }
   linhas.push("", AVISO_DISTANCIAS);
 

@@ -1,6 +1,6 @@
 # Manual do Painel — Pousada Marimar
 
-> Atualizado em 28/09/2026. Para quem opera o site e treina a Marina.
+> Atualizado em 30/09/2026. Para quem opera o site e treina a Marina.
 
 ## Acesso
 1. Acesse o painel em `/admin` (hoje: `marimar-site.vercel.app/admin`).
@@ -104,6 +104,13 @@ data "consultado em" atualiza sozinha — a Marina sempre diz ao hóspede de
 quando é o valor. Capacidade de eventos em branco = a Marina diz "sob
 consulta" e não informa número.
 
+### Atrações da ilha
+Gruta, Farol, Fortaleza, praias e trilhas. Criar, editar, excluir e mudar a
+ordem (setas ↑ ↓). O **texto completo** vai para a página Ilha do Mel e é o
+que a Marina conta ao hóspede; o **resumo** vai para o cartão da home, e só
+as marcadas como **destaque** aparecem lá. Distância em branco = nenhuma
+distância é mostrada nem dita pela Marina.
+
 ## Aparência
 
 ### Identidade visual
@@ -115,10 +122,41 @@ as folhagens e ondas decorativas, que usam a cor principal.
 ### Contatos recebidos
 Mensagens do formulário e da Marina. Marque como lido após responder.
 
-### Treinar a Marina
-Voz, jeito de falar, fatos, limites, documentos e revisão das conversas do
-site. A aba de cobertura mostra, assunto por assunto, o que ela já sabe e o
-que está vazio — com o link para a tela onde se cadastra.
+### Marina (atendimento)
+Tudo o que você ensina aqui vale **no chat do site na hora** e **no WhatsApp a
+partir da próxima conversa**. As abas, na ordem em que se usa:
+
+- **Visão geral** — o que está bom, o que falta e um botão para cada coisa.
+  Mostra quando o WhatsApp e o site leram o treinamento pela última vez.
+- **Conhecimento** — tudo o que ela sabe, com busca e filtros por assunto,
+  tipo e situação. Quatro tipos:
+  - *Informação* — um fato oficial ("criança que não é de colo paga como adulto");
+  - *Pergunta e resposta* — a pergunta, outras formas de fazê-la e a resposta certa;
+  - *Nunca dizer* — o que ela não diz nem se insistirem;
+  - *Passar para uma pessoa* — quando ela chama a recepção.
+  Cada item mostra a situação: **Em uso** (o WhatsApp já leu), **Salvo ·
+  aguardando WhatsApp** (no site já vale), **Revisar** (falhou no teste),
+  **Desligado**. O botão **Testar** pergunta à Marina e confere se ela usou o
+  item. **Desligar** guarda sem usar; **Excluir** manda para a lixeira (dá
+  para restaurar). **Histórico** mostra quem mudou o quê e volta a qualquer versão.
+- **Testar** — converse com a Marina ali mesmo. Embaixo de cada resposta
+  aparece o que ela usou do treinamento. Se errou, "Ensinar a resposta certa".
+  Cada "Nova conversa" começa sem memória.
+- **Sem resposta** — perguntas reais que ela não soube (site e WhatsApp).
+  "Ensinar a resposta" já abre com a pergunta preenchida.
+- **Conversas** — as conversas do chat do site; "Corrigir esta resposta"
+  vira treino na hora.
+- **Documentos** — PDF, Word, texto, CSV ou foto. Ela lê, divide em trechos e
+  procura dentro quando a pergunta pede. Se um arquivo não puder ser lido,
+  aparece o motivo e o botão "Tentar de novo".
+- **Personalidade e regras** — o jeito de falar, quando passar para uma
+  pessoa e as regras do que ela nunca diz.
+- **Voz** — ajustes da ElevenLabs, com prova de voz de qualquer frase antes de salvar.
+- **Histórico** — toda mudança no treinamento, de todos, com "voltar para esta versão".
+
+**Preço e vaga não se ensinam** — vêm ao vivo do sistema de reservas. Mas
+regras de como contar (criança como adulto, por exemplo) se ensinam, e ela
+segue ao consultar.
 
 ## Sistema
 

@@ -1,113 +1,183 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import postgres from "postgres";
-import { lerConfig, lerEnsinamentos, CONFIG_PADRAO } from "@/lib/marina";
+import { comSql } from "@/lib/db-conexao";
+import {
+  lerConfig, lerTreinamento, lerLeituras, situacaoItem, CONFIG_PADRAO, CATEGORIAS,
+  type ItemTreino, type Leitura,
+} from "@/lib/marina";
 import { medirCobertura, type Cobertura } from "@/lib/agent-mapa";
+import { gatewayConfigurado } from "@/lib/chat";
+import { Pagina, Cabecalho, Aviso } from "@/components/admin/ui";
 import { PainelMarina } from "./PainelMarina";
+import type { DadosMarina, DocumentoPainel, Conversa, Lacuna, EntradaHistorico, Saude } from "./tipos";
 
 export const dynamic = "force-dynamic";
 
-type Conversa = {
-  sessao: string;
-  quando: string;
-  trocas: { id: string; papel: string; conteudo: string; marcada: boolean; correcao: string | null }[];
-};
+const diasDesde = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 
+/**
+ * Marina — o módulo de treinamento.
+ *
+ * Tudo é lido aqui, no servidor, numa conexão só; a tela (PainelMarina) só
+ * desenha e chama ações. Cada consulta tem o seu `try`: antes da migration
+ * 0016 as tabelas novas não existem, e a tela precisa abrir dizendo "rode a
+ * migration" em vez de cair.
+ */
 export default async function MarinaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ aba?: string; ok?: string; erro?: string }>;
+  searchParams: Promise<{ aba?: string }>;
 }) {
   const s = await auth();
   if (!s?.user) redirect("/admin/login");
   const sp = await searchParams;
 
-  const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
+  const faltaMigration: string[] = [];
 
-  /* Cada consulta no seu próprio `try`: antes da migration 0011 as tabelas
-     não existem, e uma tela de treinamento que cai em vez de dizer "rode a
-     migration" é a pior hora possível para um erro de banco aparecer. */
-  let pendente = false;
+  const dados = await comSql(async (sql) => {
+    let config = { ...CONFIG_PADRAO, voz_id: process.env.ELEVENLABS_VOICE_ID ?? null };
+    try { config = await lerConfig(sql); } catch { /* padrão */ }
 
-  let config = { ...CONFIG_PADRAO, voz_id: process.env.ELEVENLABS_VOICE_ID ?? null };
-  let ensinamentos: Awaited<ReturnType<typeof lerEnsinamentos>> = { fatos: [], limites: [], documentos: [] };
-  try {
-    config = await lerConfig(sql);
-    ensinamentos = await lerEnsinamentos(sql);
-    await sql`SELECT 1 FROM marina_config LIMIT 1`;
-  } catch {
-    pendente = true;
-  }
+    const itens: ItemTreino[] = await lerTreinamento(sql);
+    try { await sql`SELECT variacoes FROM marina_conhecimento LIMIT 1`; }
+    catch { faltaMigration.push("0016"); }
 
-  /* As últimas conversas, agrupadas. Vem tudo numa consulta só e o
-     agrupamento acontece aqui: uma consulta por sessão seria a coisa que
-     volta como lentidão quando o chat começar a ter movimento. */
-  let conversas: Conversa[] = [];
-  try {
-    const linhas = await sql<
-      { id: string; sessao: string; papel: string; conteudo: string; marcada: boolean; correcao: string | null; criado_em: Date }[]
-    >`
-      SELECT id, sessao, papel, conteudo, marcada, correcao, criado_em
-      FROM chat_mensagens
-      WHERE sessao IN (
-        SELECT sessao FROM chat_mensagens
-        GROUP BY sessao ORDER BY MAX(criado_em) DESC LIMIT 20
-      )
-      ORDER BY criado_em ASC`;
+    const leituras: Record<string, Leitura> = await lerLeituras(sql);
 
-    const mapa = new Map<string, Conversa>();
-    for (const l of linhas) {
-      const atual = mapa.get(l.sessao) ?? {
-        sessao: l.sessao,
-        quando: l.criado_em.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }),
-        trocas: [],
-      };
-      atual.quando = l.criado_em.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-      atual.trocas.push({
-        id: l.id, papel: l.papel, conteudo: l.conteudo,
-        marcada: l.marcada, correcao: l.correcao,
-      });
-      mapa.set(l.sessao, atual);
+    let documentos: DocumentoPainel[] = [];
+    try {
+      documentos = (await sql<DocumentoPainel[]>`
+        SELECT id, nome, assunto, tipo, url, bytes, trecho, caracteres, status, erro, ativo,
+               categoria, criado_em, processado_em, tentativas
+        FROM marina_documentos ORDER BY criado_em DESC`).map((d) => ({
+        ...d,
+        criado_em: new Date(d.criado_em).toISOString(),
+        processado_em: d.processado_em ? new Date(d.processado_em).toISOString() : null,
+      }));
+    } catch {
+      try {
+        documentos = (await sql<DocumentoPainel[]>`
+          SELECT id, nome, assunto, tipo, url, bytes, trecho, caracteres, status, erro, ativo, criado_em
+          FROM marina_documentos ORDER BY criado_em DESC`).map((d) => ({
+          ...d, categoria: "geral", processado_em: null, tentativas: 1,
+          criado_em: new Date(d.criado_em).toISOString(),
+        }));
+      } catch { /* antes da 0012 */ }
     }
-    conversas = [...mapa.values()].reverse();
-  } catch {
-    pendente = true;
+
+    /* As últimas 30 conversas do site, numa consulta só (uma por sessão
+       seria a lentidão que aparece quando o chat ganhar movimento). */
+    let conversas: Conversa[] = [];
+    try {
+      const linhas = await sql<{
+        id: string; sessao: string; papel: string; conteudo: string; marcada: boolean;
+        correcao: string | null; sem_resposta: boolean | null; criado_em: Date;
+      }[]>`
+        SELECT id, sessao, papel, conteudo, marcada, correcao,
+               COALESCE(sem_resposta, false) AS sem_resposta, criado_em
+        FROM chat_mensagens
+        WHERE sessao IN (
+          SELECT sessao FROM chat_mensagens GROUP BY sessao ORDER BY MAX(criado_em) DESC LIMIT 30
+        )
+        ORDER BY criado_em ASC`.catch(() => sql<{
+          id: string; sessao: string; papel: string; conteudo: string; marcada: boolean;
+          correcao: string | null; sem_resposta: boolean | null; criado_em: Date;
+        }[]>`
+        SELECT id, sessao, papel, conteudo, marcada, correcao, false AS sem_resposta, criado_em
+        FROM chat_mensagens
+        WHERE sessao IN (
+          SELECT sessao FROM chat_mensagens GROUP BY sessao ORDER BY MAX(criado_em) DESC LIMIT 30
+        )
+        ORDER BY criado_em ASC`);
+      const mapa = new Map<string, Conversa>();
+      for (const l of linhas) {
+        const c = mapa.get(l.sessao) ?? { sessao: l.sessao, inicio: l.criado_em.toISOString(), fim: "", trocas: [] };
+        c.fim = l.criado_em.toISOString();
+        c.trocas.push({
+          id: l.id, papel: l.papel, conteudo: l.conteudo, marcada: l.marcada,
+          correcao: l.correcao, sem_resposta: !!l.sem_resposta, quando: l.criado_em.toISOString(),
+        });
+        mapa.set(l.sessao, c);
+      }
+      conversas = [...mapa.values()].sort((a, b) => b.fim.localeCompare(a.fim));
+    } catch { /* antes da 0008 */ }
+
+    let lacunas: Lacuna[] = [];
+    try {
+      lacunas = (await sql<Lacuna[]>`
+        SELECT id, pergunta, resposta, canal, status, criado_em FROM marina_lacunas
+        WHERE status = 'aberta' ORDER BY criado_em DESC LIMIT 100`).map((l) => ({
+        ...l, criado_em: new Date(l.criado_em).toISOString(),
+      }));
+    } catch { /* antes da 0016 */ }
+
+    let historico: EntradaHistorico[] = [];
+    try {
+      historico = (await sql<EntradaHistorico[]>`
+        SELECT id, conhecimento_id, acao, antes, depois, autor, criado_em
+        FROM marina_historico ORDER BY criado_em DESC LIMIT 300`).map((h) => ({
+        ...h, criado_em: new Date(h.criado_em).toISOString(),
+      }));
+    } catch { /* antes da 0016 */ }
+
+    let cobertura: Cobertura[] = [];
+    try { cobertura = await medirCobertura(sql); } catch { /* banco fora do ar */ }
+
+    return { config, itens, leituras, documentos, conversas, lacunas, historico, cobertura };
+  }).catch(() => null);
+
+  if (!dados) {
+    return (
+      <Pagina>
+        <Cabecalho sobre="Atendimento" titulo="Marina" />
+        <Aviso tom="erro" titulo="Não consegui abrir o banco de dados agora.">
+          Recarregue a página em alguns segundos. Se continuar, veja Sistema → Diagnóstico.
+        </Aviso>
+      </Pagina>
+    );
   }
 
-  /* A cobertura é medida ao vivo, não escrita à mão: uma lista estática de
-     "o que ela sabe" mente no dia seguinte à primeira mudança. */
-  let cobertura: Cobertura[] = [];
-  try {
-    cobertura = await medirCobertura(sql);
-  } catch { /* banco fora do ar: a tela abre sem o diagnóstico */ }
+  const vivos = dados.itens.filter((i) => !i.excluido_em);
+  const ativos = vivos.filter((i) => i.ativo);
+  const situacoes = vivos.map((i) => situacaoItem(i, dados.leituras).id);
+  const zap = dados.leituras.whatsapp?.lido_em ?? null;
+  const diasSemZap = zap ? diasDesde(zap) : null;
 
-  await sql.end();
+  const saude: Saude = {
+    ativos: ativos.length,
+    desligados: vivos.length - ativos.length,
+    lixeira: dados.itens.length - vivos.length,
+    aguardando: situacoes.filter((x) => x === "aguardando").length,
+    revisar: situacoes.filter((x) => x === "falhou").length,
+    verificados: ativos.filter((i) => i.verificacao === "ok").length,
+    nuncaTestados: ativos.filter((i) => !i.verificacao && (i.tipo === "fato" || i.tipo === "pergunta")).length,
+    lacunas: dados.lacunas.length,
+    docsFalhos: dados.documentos.filter((d) => d.status === "falhou").length,
+    categoriasVazias: CATEGORIAS.filter((c) => c.id !== "geral" && !ativos.some((i) => i.categoria === c.id)).map((c) => c.rotulo),
+    diasSemWhatsapp: diasSemZap,
+    tamanhoTreino: dados.leituras.site?.caracteres ?? dados.leituras.teste?.caracteres ?? 0,
+    semTom: !dados.config.tom?.trim(),
+    semEscalonamento: !dados.config.escalonamento?.trim() && !ativos.some((i) => i.tipo === "escalar"),
+    gateway: gatewayConfigurado(),
+    vozApi: Boolean(process.env.ELEVENLABS_API_KEY),
+  };
+
+  const props: DadosMarina = { ...dados, saude };
 
   return (
-    <div className="p-5 sm:p-8 max-w-5xl">
-      <h1 className="text-2xl font-bold text-gray-900">Treinar a Marina</h1>
-      <p className="text-sm text-gray-500 mt-1 mb-6">
-        Tudo que você ensinar aqui vale nos dois lugares: no chat do site e no WhatsApp.
-      </p>
-
-      {pendente && (
-        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          As tabelas de treinamento ainda não foram criadas no banco. Rode{" "}
-          <code className="font-mono">npm run db:migrate</code> e recarregue esta página.
-        </div>
-      )}
-
-      <PainelMarina
-        aba={sp.aba ?? "cobertura"}
-        cobertura={cobertura}
-        ok={sp.ok}
-        erro={sp.erro}
-        config={config}
-        fatos={ensinamentos.fatos}
-        documentos={ensinamentos.documentos}
-        limites={ensinamentos.limites}
-        conversas={conversas}
+    <Pagina larga>
+      <Cabecalho
+        sobre="Atendimento"
+        titulo="Marina"
+        descricao="Tudo o que você ensina aqui vale nos dois canais: no chat do site na hora, e no WhatsApp a partir da próxima conversa."
       />
-    </div>
+      {faltaMigration.length > 0 && (
+        <Aviso tom="aviso" className="mb-6" titulo="O banco ainda não tem as tabelas novas do treinamento.">
+          Rode <code className="font-mono">npm run db:migrate</code> e recarregue. Até lá, o que já foi ensinado
+          continua valendo, mas categorias, histórico e testes não são guardados.
+        </Aviso>
+      )}
+      <PainelMarina dados={props} abaInicial={sp.aba ?? "visao"} />
+    </Pagina>
   );
 }
