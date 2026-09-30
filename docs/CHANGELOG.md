@@ -6,6 +6,19 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-30 (5) — Tempo real como regra do projeto
+**Autor:** Claude (Claude Code)
+**Depois do merge:** reinstalar a skill `marimar-pousada` no OpenClaw
+
+Pedido do Vinicios: tudo o que muda no painel ou vem das APIs tem de valer na
+hora. Auditoria: nenhuma página do site nem rota do agente usa cache
+(`force-dynamic`, sem `revalidate`/`unstable_cache`/`"use cache"`; o `fetch`
+do motor não guarda cópia no Next 16); o chat do site lê o treinamento a cada
+mensagem; mídias novas têm URL nova. O ponto fraco era a Marina do WhatsApp,
+que relia o treinamento só a cada hora e podia reaproveitar consultas
+antigas na mesma conversa. Skill: reler a cada 15 min e consultar as rotas
+no momento de responder. Regra registrada em `ESTADO-DO-PROJETO.md`, seção 5.
+
 ## 2026-09-30 (4) — Biblioteca de fotos e vídeos, vídeos das suítes e roteiros da Marina
 **Autor:** Claude (Claude Code)
 **Migration:** 0018 (só acrescenta; `npm run db:migrate`)

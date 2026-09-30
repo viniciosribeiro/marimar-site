@@ -166,6 +166,15 @@ unica coisa que de fato melhora as respostas.
   `brl()`, nomes de quarto por `tituloQuarto()`, textos longos por `resumir()`.
 - **Nunca invente dado de contato.** Sem `whatsapp` configurado, não renderize o
   botão — não caia para um número fictício.
+- ⚠️ **Tudo em tempo real.** Painel, treinamento, fotos, vídeos, roteiros e
+  dados do motor valem na hora, no site e na Marina. Por isso: páginas do site
+  e rotas `/api/agent/*` com `dynamic = "force-dynamic"`; nada de
+  `revalidate`, `unstable_cache`, `"use cache"` ou `fetch` com cache para
+  dados do banco ou do motor; toda Server Action do admin chama
+  `revalidatePath` do que mudou. A skill manda a Marina reler o treinamento a
+  cada 15 min e consultar as rotas na hora de responder. Mídia nova sempre
+  ganha URL nova (o Blob põe sufixo aleatório), então o cache de imagem da
+  Vercel nunca serve foto velha. Quebrar isto exige decisão do Vinicios.
 - Resposta padrao das rotas do agente:
   `{ ok, dados, resumo_texto, fonte: "worker"|"local", consultado_em }`
   — `resumo_texto` ja vem formatado para WhatsApp, com emoji.
