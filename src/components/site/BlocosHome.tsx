@@ -5,7 +5,7 @@ import type { Banner } from "@/lib/banners";
 import { IconeCirculo, Icone, OndaTitulo } from "./Icone";
 import { BuscaHome } from "./BuscaHome";
 import { Manuscrita } from "./ui";
-import { FolhaPalmeira, OndaDivisor } from "./Tropical";
+import { FolhaPalmeira, OndaDivisor, Gaivotas, SolRaios } from "./Tropical";
 import { CartaoSuite } from "./CartaoSuite";
 import type { ItemBloco } from "@/lib/blocos";
 import type { Atracao, Travessia } from "@/lib/conteudo-editavel";
@@ -171,6 +171,10 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
         ) : (
           <div className="absolute inset-0 -z-10"><FundoSemFoto /></div>
         )}
+
+        {/* Decoração animada (Identidade visual → Movimento): some quando desligada. */}
+        <SolRaios className="absolute -right-20 -top-10 w-72 sm:w-96 text-amber-200/20 -z-[5]" />
+        <Gaivotas className="-z-[5]" />
 
         <div className="relative w-full max-w-5xl mx-auto px-4 text-center">
           <span className="inline-flex items-center gap-2 text-white/90 text-[0.7rem] sm:text-xs font-semibold uppercase tracking-[0.28em] mb-5">
@@ -365,6 +369,7 @@ function Restaurante({ t, s, d }: { t: string | null; s: string | null; d: Dados
     <section className="relative bg-tinta text-white overflow-hidden">
       <OndaDivisor virada className="text-fundo" />
       <FolhaPalmeira className="absolute -right-24 bottom-0 w-[28rem] text-white/[0.05] rotate-[200deg] pointer-events-none" />
+      <SolRaios className="absolute -left-24 top-24 w-72 text-acento/10" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20 grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         <div className={`relative aspect-[4/3] lg:aspect-[5/6] overflow-hidden ${RAIO_G} shadow-[0_40px_80px_-30px_rgb(0_0_0/0.6)]`}>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 import { MenuPrincipal } from "@/components/site/MenuPrincipal";
 import { MarcaLockup } from "@/components/site/MarcaLockup";
+import { RevelarAoRolar } from "@/components/site/RevelarAoRolar";
 import { ChatMarina } from "@/components/site/ChatMarina";
 import { COLUNAS_RODAPE } from "@/lib/navegacao";
 import { COMPLEXO, CONTATO, IDENTIDADE } from "@/lib/conteudo-pousada";
@@ -67,6 +68,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       />
 
       <main className="flex-1">{children}</main>
+      <RevelarAoRolar />
 
       {/* pb-20 no celular: a ultima linha do rodape nao fica embaixo dos botoes flutuantes. */}
       <footer className="bg-gray-900 text-gray-300 mt-auto pb-20 sm:pb-0">

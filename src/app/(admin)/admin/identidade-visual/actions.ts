@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import postgres from "postgres";
 import { auth } from "@/lib/auth";
-import { TEMA_PADRAO, type Tema } from "@/lib/tema";
+import { TEMA_PADRAO, lerTema, type Tema } from "@/lib/tema";
 
 /**
  * Publica o tema do site.
@@ -36,7 +36,7 @@ export async function salvarTema(formData: FormData) {
     const bruto = JSON.parse((formData.get("tema") as string) || "{}");
     // Mescla com o padrão: um tema importado de outra propriedade pode vir
     // sem um campo que o editor passou a oferecer depois.
-    tema = { ...TEMA_PADRAO, ...bruto, banner: { ...TEMA_PADRAO.banner, ...(bruto.banner ?? {}) } };
+    tema = { ...TEMA_PADRAO, ...bruto, banner: { ...TEMA_PADRAO.banner, ...(bruto.banner ?? {}) }, movimento: lerTema({ tema: bruto }).movimento };
   } catch {
     redirect(`/admin/identidade-visual?erro=${encodeURIComponent("Tema em formato inválido")}`);
   }

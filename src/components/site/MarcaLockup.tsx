@@ -45,12 +45,20 @@ export function MarcaLockup({
         gap: "var(--marca-espaco)",
       }}>
       {logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={logoUrl} alt="" aria-hidden
-          className={`w-auto shrink-0 transition-[filter,height] duration-300 ${sobreFoto ? "brightness-0 invert drop-shadow-[0_1px_6px_rgb(0_0_0/0.35)]" : ""}`}
-          style={{ height: altura }} />
+        /* O invólucro leva a animação (Identidade visual → Forma → Logo):
+           o `transform` fica nele e não briga com o filtro da imagem, e o
+           "brilho" passa por cima como pseudo-elemento. */
+        <span className="marca-logo relative inline-flex shrink-0"
+          style={{ ["--logo-url" as string]: `url("${logoUrl.replace(/["\\\n]/g, "")}")` }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoUrl} alt="" aria-hidden
+            className={`w-auto shrink-0 transition-[filter,height] duration-300 ${sobreFoto ? "brightness-0 invert drop-shadow-[0_1px_6px_rgb(0_0_0/0.35)]" : ""}`}
+            style={{ height: altura }} />
+        </span>
       ) : (
-        <SeloMarimar tamanho={36} claro={sobreFoto || escuro} />
+        <span className="marca-logo marca-logo--selo relative inline-flex shrink-0">
+          <SeloMarimar tamanho={36} claro={sobreFoto || escuro} />
+        </span>
       )}
 
       {/* Sem imagem o nome aparece de qualquer jeito: um cabeçalho sem marca

@@ -86,6 +86,25 @@ export type Tema = {
 
   // Faixa de aviso
   banner: { ativo: boolean; texto: string | null; subtexto: string | null; animado: boolean };
+
+  /**
+   * Movimento do site (30/09/2026). So vale com `animacoes` ligado e quando
+   * o aparelho NAO pede "reduzir movimento" — a decisao final e do CSS
+   * (`html[data-mov]` em globals.css), para funcionar sem JavaScript e na
+   * previa do editor.
+   */
+  movimento: {
+    /** Velocidade e amplitude de tudo que se mexe. */
+    intensidade: "suave" | "media" | "viva";
+    /** As ondas entre as secoes deslizam como mar. */
+    ondas: boolean;
+    /** A logo: parada, flutuando, respirando ou com um brilho que passa. */
+    logo: "nenhuma" | "flutuar" | "respirar" | "brilho";
+    /** Folhas balancando, gaivotas e o sol girando no topo. */
+    decoracao: boolean;
+    /** Secoes aparecem suavemente ao rolar a pagina. */
+    revelar: boolean;
+  };
 };
 
 export const TEMA_PADRAO: Tema = {
@@ -113,6 +132,7 @@ export const TEMA_PADRAO: Tema = {
   },
   alinhamento: { topo: "esquerda", titulos: "esquerda", hero: "esquerda", justificado: false },
   banner: { ativo: false, texto: null, subtexto: null, animado: true },
+  movimento: { intensidade: "media", ondas: true, logo: "flutuar", decoracao: true, revelar: true },
 };
 
 /** Junta o que veio do banco com o padrao, tolerando campo faltando. */
@@ -137,6 +157,37 @@ export function lerTema(pousada: Record<string, any> | null): Tema {
     },
     alinhamento: { ...TEMA_PADRAO.alinhamento, ...(t.alinhamento ?? {}) },
     banner: { ...TEMA_PADRAO.banner, ...(t.banner ?? {}) },
+    movimento: lerMovimento(t.movimento),
+  };
+}
+
+/** Cada opção só aceita os valores que o CSS conhece; o resto cai no padrão. */
+function lerMovimento(m: unknown): Tema["movimento"] {
+  const v = (m && typeof m === "object" ? m : {}) as Record<string, unknown>;
+  const p = TEMA_PADRAO.movimento;
+  const um = <T extends string>(x: unknown, ok: readonly T[], padrao: T): T => (ok.includes(x as T) ? (x as T) : padrao);
+  const sim = (x: unknown, padrao: boolean) => (typeof x === "boolean" ? x : padrao);
+  return {
+    intensidade: um(v.intensidade, ["suave", "media", "viva"] as const, p.intensidade),
+    logo: um(v.logo, ["nenhuma", "flutuar", "respirar", "brilho"] as const, p.logo),
+    ondas: sim(v.ondas, p.ondas),
+    decoracao: sim(v.decoracao, p.decoracao),
+    revelar: sim(v.revelar, p.revelar),
+  };
+}
+
+/**
+ * O movimento vira atributos no <html>: o CSS decide o que anima.
+ * Usada no layout raiz e na previa do editor (a mesma funcao, de proposito).
+ */
+export function temaParaAtributos(t: Tema): Record<string, string> {
+  const m = t.movimento;
+  return {
+    "data-mov": t.animacoes ? m.intensidade : "off",
+    "data-mov-ondas": t.animacoes && m.ondas ? "on" : "off",
+    "data-mov-logo": t.animacoes ? m.logo : "nenhuma",
+    "data-mov-decor": t.animacoes && m.decoracao ? "on" : "off",
+    "data-mov-revelar": t.animacoes && m.revelar ? "on" : "off",
   };
 }
 

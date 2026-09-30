@@ -298,6 +298,39 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
             </Card>
           )}
 
+          {aba === "forma" && (
+            <Card titulo="Movimento do site"
+              ajuda="Ondas, logo, folhas, gaivotas e o jeito como as seções aparecem. Quem pediu “reduzir movimento” no celular ou no computador vê tudo parado, sempre.">
+              {!tema.animacoes && (
+                <Alerta>As animações estão desligadas acima: nada disto aparece até religar.</Alerta>
+              )}
+              <fieldset disabled={!tema.animacoes} className="disabled:opacity-50">
+                <p className="text-xs font-medium text-tinta-suave mb-2">Intensidade</p>
+                <div className="flex gap-2 mb-4">
+                  {([["suave", "Suave", "devagar, discreto"], ["media", "Média", "o equilíbrio"], ["viva", "Viva", "mais rápido e amplo"]] as const).map(([v, nome, desc]) => (
+                    <button key={v} type="button" onClick={() => set("movimento", { ...tema.movimento, intensidade: v })}
+                      className={`flex-1 rounded-lg border-2 px-2 py-2.5 text-left transition-all ${tema.movimento.intensidade === v ? "border-gray-900 bg-fundo-suave" : "border-linha/80 hover:border-linha"}`}>
+                      <span className="block text-xs font-semibold text-tinta">{nome}</span>
+                      <span className="block text-[11px] text-tinta-suave">{desc}</span>
+                    </button>
+                  ))}
+                </div>
+                <Selecao rotulo="Logo" valor={tema.movimento.logo}
+                  aoMudar={(v) => set("movimento", { ...tema.movimento, logo: v as Tema["movimento"]["logo"] })}
+                  opcoes={[["flutuar", "Flutuando de leve"], ["respirar", "Respirando (cresce e volta)"], ["brilho", "Brilho que passa de tempos em tempos"], ["nenhuma", "Parada"]]} />
+                <p className="text-[11px] text-tinta-suave/80 -mt-1 mb-2 leading-relaxed">
+                  Sem logo cadastrada, o selo desenhado ganha vida por dentro: o sol pulsa, a palmeira balança e o mar corre.
+                </p>
+                <Interruptor rotulo="Ondas em movimento" descricao="As ondas entre as seções deslizam como mar."
+                  ligado={tema.movimento.ondas} aoMudar={(v) => set("movimento", { ...tema.movimento, ondas: v })} />
+                <Interruptor rotulo="Elementos decorativos" descricao="Folhas de palmeira balançando, gaivotas cruzando o topo e o sol girando devagar."
+                  ligado={tema.movimento.decoracao} aoMudar={(v) => set("movimento", { ...tema.movimento, decoracao: v })} />
+                <Interruptor rotulo="Revelar ao rolar" descricao="As seções surgem suavemente conforme a pessoa desce a página."
+                  ligado={tema.movimento.revelar} aoMudar={(v) => set("movimento", { ...tema.movimento, revelar: v })} />
+              </fieldset>
+            </Card>
+          )}
+
           {aba === "alinhamento" && (
             <>
               <Card titulo="Barra do topo"
@@ -739,13 +772,13 @@ function Selecao({ rotulo, valor, aoMudar, opcoes }: { rotulo: string; valor: st
   const norm: [string, string][] = opcoes.map((o) =>
     Array.isArray(o) ? ([o[0], o[1]] as [string, string]) : ([o, o] as [string, string]));
   return (
-    <div className="mb-3">
-      <label className="block text-xs font-medium text-tinta-suave mb-1">{rotulo}</label>
+    <label className="block mb-3">
+      <span className="block text-xs font-medium text-tinta-suave mb-1">{rotulo}</span>
       <select value={valor} onChange={(e) => aoMudar(e.target.value)}
         className="w-full border border-linha/80 rounded-lg px-3 py-2 text-sm bg-white">
         {norm.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
-    </div>
+    </label>
   );
 }
 
