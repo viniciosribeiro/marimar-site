@@ -34,3 +34,4 @@ e2e-falha.png
 # rascunhos locais de teste
 testes/.tmp/
 public/_teste/
+public/vendor/maplibre/

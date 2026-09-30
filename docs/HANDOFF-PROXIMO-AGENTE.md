@@ -23,6 +23,7 @@ rascunho antigo sem ligação com o GitHub e foi apagada em 29/09).
 5. `docs/design-system-admin.md` — antes de criar ou mudar tela do painel
 5b. `docs/fluxo-midia.md` — antes de mexer em fotos, vídeos, upload ou roteiros
 5c. `docs/fluxo-escalonamento.md` — antes de mexer em chamados, equipe, aprendizado ou Cérebro
+5d. `docs/fluxo-rota.md` — antes de mexer no mapa/rota de Como chegar (MapLibre 6, worker copiado no prebuild)
 6. `git log --oneline -15` e `git status`
 
 ### 2. O que ficou pendente do dia 30/09 (fazer primeiro)
@@ -54,6 +55,12 @@ acesso à produção e sem credenciais):
    WhatsApp → mensagem chega à equipe → resposta citando → cliente recebe.
    Agendador de 5 min para `/api/cron/chamados`.
 
+6. **Rota com os serviços reais:** abrir `/como-chegar` num celular com 4G
+   (OpenFreeMap, OSRM e Photon só foram testados com `testes/mapa-simulado.mjs`).
+   Conferir no console que `/vendor/maplibre/maplibre-gl-worker.mjs` carrega
+   (sem ele o mapa fica em branco). Em `/admin/rota`, acertar trapiche e
+   terminais e marcar "Conferi os pontos".
+
 ### 3. Como testar localmente (sem tocar produção)
 
 ```bash
@@ -74,6 +81,8 @@ npm test                                  # unitários
 EMAIL=... SENHA=... node testes/e2e-marina.mjs   # 12 verificações pela interface
 DATABASE_URL=<LOCAL> AGENT_API_KEY=... npm run test:e2e:escalonamento   # 38 verificações (apaga equipe/chamados)
 LARGURAS=375,768,1024,1280,1440 SAIDA=capturas node testes/capturas.mjs   # telas + rolagem horizontal
+node testes/mapa-simulado.mjs &           # porta 4020; aponte a rota do banco para ele (docs/fluxo-rota.md)
+SAIDA=capturas node testes/e2e-rota.mjs   # computador, iPhone com GPS, Android, painel Rota e mapa
 ```
 `testes/*.mjs` usam Playwright (não está no package.json; no ambiente em nuvem
 ele vem instalado globalmente — ligue com `ln -s $(npm root -g)/playwright node_modules/`).

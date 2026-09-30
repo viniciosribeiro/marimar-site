@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { BannerCamadas } from "./BannerCamadas";
-import { OndaDivisor } from "./Tropical";
+import { OndaDivisor, Gaivotas } from "./Tropical";
 import type { Banner } from "@/lib/banners";
 
 /**
@@ -107,6 +107,8 @@ export function CarrosselBanners({
           ))}
         </div>
       )}
+
+      <Gaivotas className="z-[1]" />
 
       {/* Onda na base: a foto termina "na areia" da página, em vez de num
           corte reto. */}

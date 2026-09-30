@@ -114,11 +114,40 @@ que a Marina conta ao hóspede; o **resumo** vai para o cartão da home, e só
 as marcadas como **destaque** aparecem lá. Distância em branco = nenhuma
 distância é mostrada nem dita pela Marina.
 
+### Rota e mapa
+É o mapa de **Como chegar**, onde o hóspede traça a rota de onde estiver até
+a porta da pousada.
+
+1. **Pontos:** arraste no mapa 🏡 a pousada, ⚓ o trapiche e ⛴️ cada terminal
+   até o lugar exato. Aproxime bem o mapa antes. Também dá para colar a
+   latitude e a longitude: no Google Maps, clique com o botão direito no
+   lugar e depois no primeiro item da lista.
+2. **Terminais:** o nome, quantos minutos leva o barco e uma observação para o
+   hóspede. O **principal** é o que o site sugere primeiro.
+3. **Textos:** o título, a dica sobre o sinal fraco e a mensagem de chegada.
+4. Marque **Conferi os pontos no mapa** e clique em **Salvar rota**. Vale na
+   hora.
+
+Se algum dia o mapa parar de carregar, veja em **Visual e serviços →
+Endereços** (o técnico sabe o que trocar: `docs/fluxo-rota.md`).
+**Voltar ao padrão** desfaz tudo o que foi ajustado nesta tela.
+
 ## Aparência
 
 ### Identidade visual
 Cores, fontes, logo, arredondamento. O site inteiro acompanha — inclusive
 as folhagens e ondas decorativas, que usam a cor principal.
+
+**Movimento do site** (aba Forma):
+- **Intensidade:** suave, média ou viva.
+- **Logo:** flutuando, respirando, com um brilho que passa, ou parada.
+- **Ondas em movimento:** as ondas entre as seções.
+- **Elementos decorativos:** folhas balançando, gaivotas e o sol no topo.
+- **Revelar ao rolar:** as seções surgem ao descer a página.
+
+A prévia ao lado mostra o resultado antes de publicar. Quem pediu ao celular
+para "reduzir movimento" sempre vê o site parado; isso é de propósito, por
+acessibilidade.
 
 ## Hóspedes e atendimento
 
@@ -218,6 +247,20 @@ O panorama do que ela sabe: quanto de cada assunto (cadastrado, aprendido,
 mídias), o mapa das áreas e de quem da equipe responde cada uma, quanto ela
 resolve sozinha ao longo do tempo, o que aprendeu por último e o que precisa
 de você. Escolha o período (7, 30, 90 dias) e o canal no alto.
+
+**No mapa**, clique numa área para ver no painel ao lado quantos conteúdos
+ela tem, de onde vieram e quem da equipe responde por ela. Os botões do
+painel levam direto para:
+- **Ver conteúdos:** abre a Marina já filtrada naquele assunto.
+- **Adicionar conteúdo:** abre o formulário já no assunto.
+
+Outras ferramentas do mapa:
+- Áreas com contorno tracejado estão **sem conteúdo**: cada uma é uma pergunta
+  que ela vai mandar para a equipe.
+- Use **Buscar assunto**, o filtro de origem e os botões + e − para
+  aproximar ou afastar. Arraste o fundo para mover o mapa.
+- Clique numa equipe em **Equipes de apoio** para destacar os assuntos que
+  ela atende.
 
 ## Sistema
 

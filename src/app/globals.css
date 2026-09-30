@@ -269,6 +269,9 @@ body {
 .anim-banner-subir { animation: banner-subir 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-banner-zoom  { animation: banner-zoom  0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-ken-burns    { animation: ken-burns 28s ease-in-out infinite alternate; }
+/* O zoom lento da foto do topo também respeita o aparelho e o editor. */
+@media (prefers-reduced-motion: reduce) { .anim-ken-burns { animation: none; } }
+html[data-mov="off"] .anim-ken-burns { animation: none; }
 
 /* Texto corrido justificado.
    So a partir de `md` de proposito: numa coluna estreita de celular o
@@ -373,3 +376,112 @@ body {
 /* Altura do cabecalho — medida em runtime pelo MenuPrincipal. Este valor
    so vale ate a primeira medicao (e sem JavaScript). */
 :root { --altura-topo: max(4rem, calc(var(--logo-altura) + 1.25rem)); }
+
+/* ── Rota até a pousada (src/components/site/rota) ─────────────────────── */
+.rota-pino { cursor: default; }
+.rota-pino--arrastavel { cursor: grab; }
+.rota-pino--arrastavel:active { cursor: grabbing; }
+.rota-marcador { position: relative; pointer-events: none; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+  border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); background: #fff; box-shadow: 0 6px 16px -6px rgb(0 0 0 / .45);
+  border: 2px solid var(--marca); }
+.rota-marcador__icone { transform: rotate(45deg); font-size: 18px; line-height: 1; }
+.rota-marcador--pousada { width: 48px; height: 48px; background: var(--marca); border-color: #fff; }
+.rota-marcador--pousada .rota-marcador__icone { font-size: 22px; }
+.rota-marcador--origem { border-color: #2563eb; }
+.rota-marcador__pulso { position: absolute; inset: -8px; border-radius: 50%; }
+.rota-marcador--pousada .rota-marcador__pulso { border: 3px solid var(--marca); animation: rota-pulso 2.2s ease-out infinite; }
+@keyframes rota-pulso { 0% { transform: scale(.7); opacity: .8; } 100% { transform: scale(1.6); opacity: 0; } }
+
+.rota-voce { position: relative; width: 22px; height: 22px; }
+.rota-voce__ponto { position: absolute; inset: 3px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 2px 8px rgb(0 0 0 / .35); }
+.rota-voce__halo { position: absolute; inset: -14px; border-radius: 50%; background: rgb(37 99 235 / .18); animation: rota-halo 2s ease-in-out infinite; }
+.rota-voce__cone { position: absolute; left: 50%; bottom: 50%; width: 0; height: 0; margin-left: -14px; border-left: 14px solid transparent;
+  border-right: 14px solid transparent; border-bottom: 34px solid rgb(37 99 235 / .28); transform-origin: 50% 100%;
+  transform: rotate(var(--direcao, 0deg)); display: none; }
+.rota-voce[data-direcao="sim"] .rota-voce__cone { display: block; }
+@keyframes rota-halo { 0%, 100% { transform: scale(.85); } 50% { transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) {
+  .rota-marcador__pulso, .rota-voce__halo { animation: none !important; }
+}
+
+/* ═══ Movimento do site (Identidade visual → Forma → Movimento) ═══════
+   Tudo aqui depende de atributos no <html> (temaParaAtributos em
+   src/lib/tema.ts) e de o aparelho NÃO pedir "reduzir movimento". Sem
+   JavaScript, sem biblioteca: só CSS, que o navegador compõe no GPU.
+   --mov-vel multiplica as durações; --mov-amp, a amplitude. */
+html { --mov-vel: 1; --mov-amp: 1; }
+html[data-mov="suave"] { --mov-vel: 1.6; --mov-amp: 0.6; }
+html[data-mov="viva"] { --mov-vel: 0.7; --mov-amp: 1.5; }
+
+@keyframes onda-deslizar { from { transform: translateX(0); } to { transform: translateX(-1440px); } }
+@keyframes onda-voltar { from { transform: translateX(-1440px); } to { transform: translateX(0); } }
+@keyframes flutuar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(calc(-3px * var(--mov-amp))); } }
+@keyframes respirar { 0%, 100% { transform: scale(1); } 50% { transform: scale(calc(1 + 0.04 * var(--mov-amp))); } }
+@keyframes brilho-passar { 0%, 70% { transform: translateX(-120%) skewX(-18deg); } 100% { transform: translateX(220%) skewX(-18deg); } }
+@keyframes balancar { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(calc(4deg * var(--mov-amp))); } }
+@keyframes girar { to { transform: rotate(360deg); } }
+@keyframes sol-pulsar { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.12); opacity: 1; } }
+@keyframes selo-onda { from { transform: translateX(0); } to { transform: translateX(12px); } }
+@keyframes gaivota-voar {
+  0% { transform: translate3d(-10vw, 0, 0); opacity: 0; }
+  8% { opacity: .9; }
+  50% { transform: translate3d(50vw, calc(-18px * var(--mov-amp)), 0); }
+  92% { opacity: .9; }
+  100% { transform: translate3d(110vw, 6px, 0); opacity: 0; }
+}
+@keyframes gaivota-bater { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.45); } }
+@keyframes revelar { from { opacity: 0; transform: translateY(calc(22px * var(--mov-amp))); } to { opacity: 1; transform: none; } }
+
+/* Peças decorativas novas ficam escondidas sem "elementos decorativos". */
+.gaivotas, .sol-raios { display: none; }
+html[data-mov-decor="on"] .gaivotas, html[data-mov-decor="on"] .sol-raios { display: block; }
+.gaivotas { position: absolute; inset: 0; overflow: hidden; }
+.gaivota { position: absolute; left: 0; width: 34px; color: rgb(255 255 255 / .85); opacity: 0; }
+.gaivota--0 { top: 16%; }
+.gaivota--1 { top: 24%; width: 24px; }
+.gaivota--2 { top: 12%; width: 18px; }
+.onda-camada, .selo-marimar__sol, .selo-marimar__onda, .selo-marimar__folhas, .sol-raios__giro { transform-box: view-box; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ondas */
+  html[data-mov-ondas="on"] .onda-camada--frente { animation: onda-deslizar calc(22s * var(--mov-vel)) linear infinite; }
+  html[data-mov-ondas="on"] .onda-camada--fundo { animation: onda-voltar calc(34s * var(--mov-vel)) linear infinite; }
+  html[data-mov-ondas="on"] .onda-camada--espuma { animation: onda-deslizar calc(16s * var(--mov-vel)) linear infinite; }
+
+  /* logo */
+  html[data-mov-logo="flutuar"] .marca-logo { animation: flutuar calc(4.5s * var(--mov-vel)) ease-in-out infinite; }
+  html[data-mov-logo="respirar"] .marca-logo { animation: respirar calc(5s * var(--mov-vel)) ease-in-out infinite; }
+  html[data-mov-logo="brilho"] .marca-logo { overflow: hidden; }
+  html[data-mov-logo="brilho"] .marca-logo::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / .75) 50%, transparent 70%);
+    -webkit-mask: var(--logo-url) center / contain no-repeat; mask: var(--logo-url) center / contain no-repeat;
+    animation: brilho-passar calc(6s * var(--mov-vel)) ease-in-out infinite;
+  }
+  html[data-mov-logo="brilho"] .marca-logo--selo { border-radius: 9999px; }
+  html[data-mov-logo="brilho"] .marca-logo--selo::after { -webkit-mask: none; mask: none; }
+  /* o selo desenhado (sem logo cadastrada) ganha vida por dentro */
+  html:not([data-mov-logo="nenhuma"]) .selo-marimar__sol { transform-origin: 30px 22px; animation: sol-pulsar calc(4s * var(--mov-vel)) ease-in-out infinite; }
+  html:not([data-mov-logo="nenhuma"]) .selo-marimar__onda { animation: selo-onda calc(3s * var(--mov-vel)) linear infinite; }
+  html:not([data-mov-logo="nenhuma"]) .selo-marimar__folhas { transform-origin: 23.2px 15.5px; animation: balancar calc(3.5s * var(--mov-vel)) ease-in-out infinite; }
+
+  /* decoração: folhas (o giro de cada uma é `rotate`, independente de `transform`) */
+  html[data-mov-decor="on"] .folha-tropical { transform-origin: 5% 95%; animation: balancar calc(7s * var(--mov-vel)) ease-in-out infinite; }
+  html[data-mov-decor="on"] .folha-tropical:nth-of-type(2n) { animation-duration: calc(9s * var(--mov-vel)); animation-delay: -2s; }
+  html[data-mov-decor="on"] .sol-raios__giro { transform-origin: 100px 100px; animation: girar calc(60s * var(--mov-vel)) linear infinite; }
+  html[data-mov-decor="on"] .sol-raios__nucleo { transform-box: fill-box; transform-origin: center; animation: sol-pulsar calc(6s * var(--mov-vel)) ease-in-out infinite; }
+  html[data-mov-decor="on"] .gaivota { animation: gaivota-voar calc(26s * var(--mov-vel)) linear infinite; }
+  html[data-mov-decor="on"] .gaivota--1 { animation-delay: calc(-9s * var(--mov-vel)); animation-duration: calc(32s * var(--mov-vel)); }
+  html[data-mov-decor="on"] .gaivota--2 { animation-delay: calc(-17s * var(--mov-vel)); animation-duration: calc(38s * var(--mov-vel)); }
+  html[data-mov-decor="on"] .gaivota path { transform-origin: 20px 10px; transform-box: view-box; animation: gaivota-bater .9s ease-in-out infinite; }
+
+  /* revelar ao rolar (RevelarAoRolar.tsx marca só o que está fora da tela) */
+  html[data-mov-revelar="on"] .revelar-pendente { opacity: 0; }
+  html[data-mov-revelar="on"] .revelar-visto { animation: revelar calc(.8s * var(--mov-vel)) cubic-bezier(.22, 1, .36, 1) both; }
+}
+
+/* Cérebro da Marina: o cabo da área selecionada "corre" até ela. */
+@keyframes cerebro-fluxo { to { stroke-dashoffset: -28; } }
+@media (prefers-reduced-motion: no-preference) {
+  .cerebro-fluxo { stroke-dasharray: 10 4; animation: cerebro-fluxo 1.4s linear infinite; }
+}

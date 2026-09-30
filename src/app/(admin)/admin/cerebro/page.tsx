@@ -5,7 +5,8 @@ import { comSql } from "@/lib/db-conexao";
 import { lerCerebro } from "@/lib/cerebro";
 import { rotuloCategoria } from "@/lib/marina-base";
 import { Pagina, Cabecalho, Cartao, Aviso, Indicador, Selo, Vazio, cn, quandoFoi } from "@/components/admin/ui";
-import { BarrasAreas, LinhaTaxa, MapaCerebro, Legenda } from "./Graficos";
+import { BarrasAreas, LinhaTaxa } from "./Graficos";
+import { MapaConhecimento } from "./MapaConhecimento";
 
 export const dynamic = "force-dynamic";
 
@@ -80,12 +81,11 @@ export default async function CerebroPage({ searchParams }: { searchParams: Prom
           detalhe={`${plural(d.chamados.total, "chamado")} · ${plural(d.chamados.expirados, "expirado")}`} />
       </div>
 
+      <div className="mt-6">
+        <MapaConhecimento areas={d.areas} ligacoes={d.ligacoes} setores={d.setores} />
+      </div>
+
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <Cartao className="lg:col-span-2" titulo="Mapa do conhecimento"
-          descricao="Cada círculo é uma área: o tamanho é o volume e o anel mostra de onde veio. Por fora, os setores da equipe que respondem cada área.">
-          <MapaCerebro areas={d.areas} ligacoes={d.ligacoes} setores={d.setores} />
-          <div className="mt-3 flex justify-center"><Legenda /></div>
-        </Cartao>
         <Cartao titulo="Precisa de você" descricao="O que espera uma decisão.">
           <ul className="divide-y divide-linha/60">
             {[
@@ -107,9 +107,6 @@ export default async function CerebroPage({ searchParams }: { searchParams: Prom
           </ul>
           {pendencias === 0 && d.chamados.atrasados === 0 && <p className="mt-3 text-sm text-emerald-700">✓ Tudo em dia.</p>}
         </Cartao>
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Cartao titulo="Áreas de conhecimento" descricao="Quanto ela sabe de cada assunto, e de onde veio.">
           <BarrasAreas areas={d.areas} />
         </Cartao>

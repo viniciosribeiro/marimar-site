@@ -6,6 +6,52 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-30 (9) — Rota no próprio site, site animado e mapa novo do Cérebro
+**Autor:** Claude (Claude Code)
+**Migration:** nenhuma (a rota fica em `conteudo_editavel`, chave `rota`; o movimento, em `pousada.tema`)
+**Pacotes novos:** `maplibre-gl@6.11.2`, `qrcode` (o `prebuild` copia o worker do mapa para `public/vendor/maplibre/`)
+
+### Rota até a pousada, sem sair do site
+`/como-chegar#rota`: a pessoa diz de onde sai (GPS, endereço digitado ou
+atalhos como "Curitiba"), escolhe carro ou ônibus e o terminal, e vê no mapa:
+carro até o terminal → barco até Encantadas → a pé até a porta. No celular
+há navegação ao vivo (próximo passo, recálculo, "Você chegou") e plano B no
+Apple Maps, no Google Maps ou no Waze. No computador, um QR abre a rota no
+celular. A rota fica guardada no aparelho para quando o sinal cair.
+Tudo gratuito e sem chave: MapLibre, OpenFreeMap, OSRM (FOSSGIS) e Photon.
+Painel novo: **Conteúdo do site → Rota e mapa** (`/admin/rota`), com pinos
+arrastáveis, terminais, textos e endereços dos serviços. A Marina recebe o
+link em `/api/agent/chegar`.
+⚠️ O trapiche e os terminais estão em posição **aproximada**: confira no
+painel. Os serviços reais não foram testados daqui (a rede do ambiente
+bloqueia), só o simulador. Detalhes: `docs/fluxo-rota.md`.
+
+### Site animado e configurável
+Em **Identidade visual → Forma → Movimento do site**:
+- intensidade (suave, média ou viva);
+- logo (flutuando, respirando, brilho ou parada); sem logo cadastrada, o selo desenhado ganha vida por dentro;
+- ondas em movimento;
+- elementos decorativos: folhas balançando, gaivotas e um sol girando no topo e no restaurante;
+- revelar ao rolar.
+
+Tudo é feito só com CSS, a partir de atributos no `<html>`
+(`temaParaAtributos`), igual no site e na prévia. "Reduzir movimento" do
+aparelho sempre vence, e agora vale também para o zoom lento da foto do topo.
+
+### Cérebro da Marina: mapa novo
+O mapa segue a referência enviada:
+- a Marina no centro, com as áreas em anel ligadas por cabos curvos;
+- o anel de cada área mostra a origem do conteúdo;
+- ferramentas: Mapa ou Lista, busca de assunto, filtro de origem, zoom, arrastar e tela cheia;
+- a faixa "Equipes de apoio" (clicar destaca as áreas que cada equipe atende);
+- o painel "Assunto selecionado" com os botões **Ver conteúdos** e **Adicionar conteúdo**, que abrem a Marina já filtrada naquele assunto (`?categoria=&novo=1`);
+- o aviso "Sua base pode crescer", com as áreas vazias.
+
+No celular, o mapa vira lista.
+
+### Menores
+- Instruções de rota com o artigo certo ("pelo Caminho", "pela Rua").
+
 ## 2026-09-30 (8) — "Testar envio" mostra o que o OpenClaw respondeu
 **Autor:** Claude (Claude Code)
 

@@ -8,7 +8,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 import {
-  lerTema, temaParaCss, pilhaFonte, pilhaManuscrita, TODAS_AS_FONTES,
+  lerTema, temaParaCss, temaParaAtributos, pilhaFonte, pilhaManuscrita, TODAS_AS_FONTES,
 } from "@/lib/tema";
 
 // Uma consulta por requisicao, compartilhada com o layout do site (lib/pousada.ts).
@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const extras = `--marca-texto:${textoIdeal(tema.marca)};--acento-texto:${textoIdeal(tema.acento)};`;
 
   return (
-    <html lang="pt-BR" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="pt-BR" suppressHydrationWarning {...temaParaAtributos(tema)} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <head>
         {googleHref && (
           <>

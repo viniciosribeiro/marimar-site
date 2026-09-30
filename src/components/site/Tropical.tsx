@@ -51,7 +51,7 @@ const FOLIOLOS = (() => {
 
 export function FolhaPalmeira({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="0 0 250 250" className={className} style={style} aria-hidden focusable="false" fill="currentColor">
+    <svg viewBox="0 0 250 250" className={`folha-tropical ${className}`} style={style} aria-hidden focusable="false" fill="currentColor">
       <path
         d={`M${TALO.a.x} ${TALO.a.y} Q${TALO.c.x} ${TALO.c.y} ${TALO.b.x} ${TALO.b.y}`}
         fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"
@@ -65,28 +65,66 @@ export function FolhaPalmeira({ className = "", style }: { className?: string; s
 
 /* ─────────────── onda divisória ─────────────── */
 
+/* Ondas periódicas (período de 720 no eixo x), desenhadas com o dobro da
+   largura da tela: deslizar 1440 e recomeçar não deixa costura. */
+const ONDA_FRENTE = "M0 52C180 30 540 74 720 52S1260 74 1440 52S1980 74 2160 52S2700 74 2880 52V90H0z";
+const ONDA_FUNDO = "M0 38C200 58 520 18 720 38S1240 18 1440 38S1960 18 2160 38S2680 18 2880 38V90H0z";
+const ONDA_ESPUMA = "M0 46C180 34 540 58 720 46S1260 58 1440 46S1980 58 2160 46S2700 58 2880 46";
+
 /**
  * Borda ondulada entre duas seções. A cor (`className="text-…"`) deve ser a
  * da seção SEGUINTE: a onda é o começo dela invadindo a anterior.
+ *
+ * Com "ondas animadas" ligado no editor visual (Identidade visual → Forma),
+ * as camadas deslizam em velocidades e sentidos diferentes, como mar. A
+ * decisão é do CSS (`html[data-mov-ondas]`), e "reduzir movimento" do
+ * aparelho sempre vence.
  */
 export function OndaDivisor({ className = "", virada = false }: { className?: string; virada?: boolean }) {
   return (
     <svg
       viewBox="0 0 1440 90"
       preserveAspectRatio="none"
-      className={`block w-full h-[38px] sm:h-[56px] lg:h-[72px] ${virada ? "rotate-180" : ""} ${className}`}
+      className={`onda-divisor block w-full h-[38px] sm:h-[56px] lg:h-[72px] ${virada ? "rotate-180" : ""} ${className}`}
       aria-hidden
       focusable="false"
     >
-      <path
-        fill="currentColor"
-        d="M0 58c120-26 240-40 360-34s240 38 360 44 240-22 360-38 240-10 360 10v50H0z"
-      />
-      <path
-        fill="currentColor"
-        opacity="0.45"
-        d="M0 40c160 22 300 34 440 22S700 12 860 16s300 40 420 34 120-18 160-26v66H0z"
-      />
+      <path className="onda-camada onda-camada--fundo" fill="currentColor" opacity="0.45" d={ONDA_FUNDO} />
+      <path className="onda-camada onda-camada--espuma" fill="none" stroke="white" strokeOpacity="0.35" strokeWidth="2" d={ONDA_ESPUMA} />
+      <path className="onda-camada onda-camada--frente" fill="currentColor" d={ONDA_FRENTE} />
+    </svg>
+  );
+}
+
+/* ─────────────── gaivotas e sol ─────────────── */
+
+/**
+ * Gaivotas cruzando o céu do topo. Três traços em "v", cada uma com o seu
+ * atraso e altura. Só aparecem com "elementos decorativos" ligado.
+ */
+export function Gaivotas({ className = "" }: { className?: string }) {
+  return (
+    <div className={`gaivotas pointer-events-none ${className}`} aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <svg key={i} viewBox="0 0 40 16" className={`gaivota gaivota--${i}`} focusable="false">
+          <path d="M2 10C8 3 14 3 20 10C26 3 32 3 38 10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+/** Sol com raios que giram devagar — decoração do topo e da faixa final. */
+export function SolRaios({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 200 200" className={`sol-raios pointer-events-none ${className}`} aria-hidden focusable="false">
+      <g className="sol-raios__giro">
+        {Array.from({ length: 16 }, (_, i) => (
+          <rect key={i} x="97" y="6" width="6" height={i % 2 ? 26 : 38} rx="3" fill="currentColor" opacity={i % 2 ? 0.5 : 0.8}
+            transform={`rotate(${i * 22.5} 100 100)`} />
+        ))}
+      </g>
+      <circle cx="100" cy="100" r="44" fill="currentColor" className="sol-raios__nucleo" />
     </svg>
   );
 }
@@ -100,14 +138,14 @@ export function OndaDivisor({ className = "", virada = false }: { className?: st
  */
 export function SeloMarimar({ tamanho = 40, claro = false }: { tamanho?: number; claro?: boolean }) {
   return (
-    <svg width={tamanho} height={tamanho} viewBox="0 0 48 48" aria-hidden focusable="false" className="shrink-0">
+    <svg width={tamanho} height={tamanho} viewBox="0 0 48 48" aria-hidden focusable="false" className="selo-marimar shrink-0 overflow-hidden">
       <circle cx="24" cy="24" r="23" className={claro ? "fill-white/15" : "fill-marca"} />
-      <circle cx="30" cy="22" r="8" className={claro ? "fill-white/70" : "fill-acento"} opacity="0.9" />
-      <path d="M6 31c4-2 8-2 12 0s8 2 12 0 8-2 12 0v6a23 23 0 0 1-36 0z" fill="white" opacity="0.9" />
-      <path d="M6 35c4-2 8-2 12 0s8 2 12 0 8-2 12 0" fill="none" stroke="currentColor"
-        className={claro ? "text-white/60" : "text-marca"} strokeWidth="1.4" />
+      <circle cx="30" cy="22" r="8" className={`selo-marimar__sol ${claro ? "fill-white/70" : "fill-acento"}`} opacity="0.9" />
+      <path className="selo-marimar__mar" d="M6 31c4-2 8-2 12 0s8 2 12 0 8-2 12 0v6a23 23 0 0 1-36 0z" fill="white" opacity="0.9" />
+      <path d="M-6 35c4-2 8-2 12 0s8 2 12 0 8-2 12 0 8-2 12 0 8-2 12 0" fill="none" stroke="currentColor"
+        className={`selo-marimar__onda ${claro ? "text-white/60" : "text-marca"}`} strokeWidth="1.4" />
       <path d="M20 31c.5-6 1.2-11 3.2-15.5" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M23.2 15.5c-3-2.5-7-2.6-10-.4 3.6-.2 6.6.9 8.7 2.9M23.2 15.5c1-3.5 4-5.6 7.8-5.5-2.9 1.1-5 3-6 5.6M23.2 15.5c3.2-.8 6.6.4 8.6 3.2-3-1.1-6-1.2-8.4-.4M23.2 15.5c-2.8-.3-5.6 1.2-7 3.9 2.2-1.6 4.8-2.2 7.2-1.9"
+      <path className="selo-marimar__folhas" d="M23.2 15.5c-3-2.5-7-2.6-10-.4 3.6-.2 6.6.9 8.7 2.9M23.2 15.5c1-3.5 4-5.6 7.8-5.5-2.9 1.1-5 3-6 5.6M23.2 15.5c3.2-.8 6.6.4 8.6 3.2-3-1.1-6-1.2-8.4-.4M23.2 15.5c-2.8-.3-5.6 1.2-7 3.9 2.2-1.6 4.8-2.2 7.2-1.9"
         fill="white" stroke="white" strokeWidth="1.2" strokeLinejoin="round" />
     </svg>
   );

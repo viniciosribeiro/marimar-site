@@ -81,8 +81,21 @@ ou chat do site). A resposta da equipe vira **aprendizado** (fila de revisão em
 Marina → Aprendizado) e ela passa a responder sozinha. Panorama em
 **`/admin/cerebro`**. Tudo em **`docs/fluxo-escalonamento.md`**.
 
+## Rota no site, movimento e Cérebro novo (30/09/2026, sexta entrega)
+
+`/como-chegar#rota` traça a rota de onde a pessoa estiver até a porta
+(carro/ônibus → barco → a pé), com navegação ao vivo no celular — tudo
+gratuito (MapLibre, OpenFreeMap, OSRM, Photon). Painel: **Rota e mapa**.
+Tudo em **`docs/fluxo-rota.md`**. O site ganhou movimento configurável
+(Identidade visual → Forma → Movimento do site) e o Cérebro ganhou o mapa
+no visual novo (Marina no centro, painel do assunto, equipes de apoio).
+
 ## As pendencias que importam
 
+0000. **Rota (30/09, sexta entrega):** abrir `/como-chegar` num celular com
+   4G e traçar uma rota de verdade — OpenFreeMap, OSRM e Photon **não foram
+   testados daqui** (só o simulador). Depois, em **Rota e mapa**, arrastar o
+   trapiche e os terminais para o lugar exato e marcar "Conferi os pontos".
 000. **Escalonamento (30/09, quinta entrega):** rodar a migration **0019**,
    reinstalar a skill `marimar-pousada`, cadastrar a equipe em
    `/admin/equipe`, usar "Testar envio" (confirma se o método `send` do
@@ -277,7 +290,7 @@ Deploy da terceira sessão validado contra `marimar-site-rnkyimtse.vercel.app`:
 | 9b | Escalonamento: agrupamento por significado é léxico (sinônimos + trigramas); embeddings seriam melhores. Números da equipe reconhecidos pela Marina (LLM), não por regra do OpenClaw. Cliente do site que fecha a aba perde a resposta. Ver `docs/fluxo-escalonamento.md`, "Próximos passos" |
 | 10 | Testes: existem desde 30/09 (`npm test`, `testes/e2e-marina.mjs`). Faltam `validarConsulta()`/`urlTarifas()` em `src/lib/worker.ts` e `src/lib/format.ts` (casos prontos no `CHANGELOG-IA.md`) |
 | 11 | Coluna dedicada `hero_url` em `pousada` (hoje o hero deduz da tabela `midias`) |
-| 12 | Lint: 179 problemas em 30/09 (eram 182; nenhum nos arquivos novos) — pré-existentes (162 são `any`; medido em 28/09) — antes dizia ~23 (`any`, `react-hooks/purity` com `Date.now`, aspas não escapadas) — não bloqueiam o build |
+| 12 | Lint: 177 erros no fim de 30/09 (eram 179; `public/vendor/` agora ignorado — é a cópia do worker do mapa; nenhum nos arquivos novos) — pré-existentes (162 são `any`; medido em 28/09) — antes dizia ~23 (`any`, `react-hooks/purity` com `Date.now`, aspas não escapadas) — não bloqueiam o build |
 | 13 | Resolvido em 30/09 pela regra configurável (crianças 3+ / bebês). Falta: usar `adicionais` em pacotes e na página de cada suíte, e permitir adicional por suíte |
 | 14 | `src/middleware.ts` usa a convenção `middleware`, deprecada no Next 16 — o build avisa e sugere `npx @next/codemod@canary middleware-to-proxy .`. Funciona hoje; não mexido de propósito porque esse arquivo teve um bug de redirect loop corrigido há pouco (`0f8cb73`) e a troca merece teste dedicado |
 

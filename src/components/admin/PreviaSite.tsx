@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { temaParaCss, pilhaFonte, pilhaManuscrita, type Tema } from "@/lib/tema";
+import { temaParaCss, temaParaAtributos, pilhaFonte, pilhaManuscrita, type Tema } from "@/lib/tema";
 import { datasExemplo } from "@/lib/format";
 
 /**
@@ -81,6 +81,8 @@ export function PreviaSite({ tema, fontesUsadas }: { tema: Tema; fontesUsadas: s
       estilo.id = "previa-tema";
       doc.head.appendChild(estilo);
     }
+    for (const [k, v] of Object.entries(temaParaAtributos(tema))) doc.documentElement.setAttribute(k, v);
+
     // !important porque o layout raiz ja escreveu :root com os valores salvos
     estilo.textContent = `:root{${css.split(";").filter(Boolean).map((d) => `${d} !important`).join(";")};}`;
 
