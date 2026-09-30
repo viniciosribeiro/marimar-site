@@ -18,7 +18,7 @@
 **O que so existe depois de rodar**
 
 ```
-npm run db:migrate          # migrations 0009 a 0017 (0017: regra de crianças e adicionais — 30/09)
+npm run db:migrate          # migrations 0009 a 0018 (0018: fotos, vídeos e roteiros da Marina — 30/09)
 npm run db:migrar-fotos     # tira as imagens do WordPress antigo
 ```
 
@@ -73,7 +73,19 @@ Proxima ferramenta: **`docs/HANDOFF-PROXIMO-AGENTE.md`**.
 de até 16 MB para o WhatsApp. Marina → **Mídias de orientação**: roteiros com
 vídeo que ela manda etapa por etapa. Tudo em **`docs/fluxo-midia.md`**.
 
+## Fotos, vídeos e roteiros da Marina (30/09/2026, fim do dia)
+
+`/admin/midias` virou a biblioteca central (álbuns, arrastar, capa, lote,
+"onde é usada"). Vídeos de até 5 min comprimidos no próprio aparelho; versão
+de até 16 MB para o WhatsApp. Marina → **Mídias de orientação**: roteiros com
+vídeo que ela manda etapa por etapa. Tudo em **`docs/fluxo-midia.md`**.
+
 ## As pendencias que importam
+
+00. **Mídia (30/09, quarta entrega):** rodar a migration 0018, reinstalar a
+   skill `marimar-pousada` no OpenClaw e testar num celular de verdade (foto
+   HEIC, vídeo pela câmera, selo "WhatsApp ok"). O caminho MP4/H.264 não pôde
+   ser testado no ambiente em nuvem.
 
 0. **Regra de crianças (30/09, segunda entrega):** rodar a migration 0017 e
    configurar em Marina → Crianças e adicionais (idade de colo, bebê). Sem
@@ -198,6 +210,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | `docs/fluxo-painel-marina.md` | como o treinamento sai do painel e chega a Marina, e como provar |
 | `docs/design-system-admin.md` | componentes, tokens e regras visuais do painel |
 | `docs/fluxo-midia.md` | fotos, vídeos, compressão no navegador, limites do WhatsApp e roteiros da Marina |
+| `docs/fluxo-midia.md` | fotos, vídeos, compressão no navegador, limites do WhatsApp e roteiros da Marina |
 | `docs/runbook.md` | deploy, env vars, incidentes, rotacao de chave |
 | `docs/samples/` | amostras de payload do Worker |
 | `AGENTS.md` | regras do Next.js 16 (bloco gerado pelo `next dev`) |
@@ -243,7 +256,7 @@ Deploy da terceira sessão validado contra `marimar-site-rnkyimtse.vercel.app`:
 
 | # | Item |
 |---|---|
-| 8 | Upload de mídia só aceita URL — sem upload de arquivo (falta Vercel Blob ou S3) |
+| 8 | Resolvido em 30/09: upload de foto e vídeo direto para o Vercel Blob (biblioteca `/admin/midias`) |
 | 9 | `audit_log` existe no schema mas nao e populado pelas server actions |
 | 10 | Testes: existem desde 30/09 (`npm test`, `testes/e2e-marina.mjs`). Faltam `validarConsulta()`/`urlTarifas()` em `src/lib/worker.ts` e `src/lib/format.ts` (casos prontos no `CHANGELOG-IA.md`) |
 | 11 | Coluna dedicada `hero_url` em `pousada` (hoje o hero deduz da tabela `midias`) |
