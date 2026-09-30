@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Home, BedDouble, FolderTree, Sparkles, Images, UtensilsCrossed,
   GalleryHorizontalEnd, Blocks, LayoutGrid, Gift, Compass, Star, HelpCircle, ScrollText,
-  Map, Palmtree, Palette, Inbox, MessageCircleHeart, Plug, Stethoscope, Users,
+  Map, Route, Palmtree, Palette, Inbox, MessageCircleHeart, Plug, Stethoscope, Users,
   ExternalLink, KeyRound, Brain, Headset, LogOut, PanelLeftClose, PanelLeftOpen, Menu, X, type LucideIcon,
 } from "lucide-react";
 import { Toaster } from "./ui-cliente";
@@ -29,7 +29,7 @@ const ICONES: Record<string, LucideIcon> = {
   painel: LayoutDashboard, pousada: Home, quartos: BedDouble, categorias: FolderTree,
   comodidades: Sparkles, fotos: Images, cardapio: UtensilsCrossed, banners: GalleryHorizontalEnd,
   blocos: Blocks, cartoes: LayoutGrid, pacotes: Gift, passeios: Compass, depoimentos: Star,
-  faq: HelpCircle, politicas: ScrollText, conteudo: Map, atracoes: Palmtree, visual: Palette,
+  faq: HelpCircle, politicas: ScrollText, conteudo: Map, rota: Route, atracoes: Palmtree, visual: Palette,
   leads: Inbox, marina: MessageCircleHeart, cerebro: Brain, equipe: Headset, integracoes: Plug, diagnostico: Stethoscope, usuarios: Users,
 };
 

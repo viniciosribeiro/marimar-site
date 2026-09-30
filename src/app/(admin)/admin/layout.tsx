@@ -49,6 +49,7 @@ const GRUPOS: Grupo[] = [
       { href: "/admin/faq", label: "Perguntas frequentes", icone: "faq" },
       { href: "/admin/politicas", label: "Políticas", icone: "politicas" },
       { href: "/admin/conteudo", label: "Ilha, chegada e eventos", icone: "conteudo" },
+      { href: "/admin/rota", label: "Rota e mapa", icone: "rota" },
       { href: "/admin/atracoes", label: "Atrações da ilha", icone: "atracoes" },
     ],
   },

@@ -4,6 +4,7 @@ import { ENDERECO } from "@/lib/conteudo-pousada";
 import { lerConteudo } from "@/lib/conteudo-editavel";
 import { comSql } from "@/lib/db-conexao";
 import { brl } from "@/lib/format";
+import { lerRota } from "@/lib/rota";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   if (!checkAgentAuth(request)) return agentUnauthorized();
   // Travessia e etapas editáveis no painel (Admin → Textos da ilha e chegada).
-  const { TRAVESSIA, CHEGADA_ETAPAS, SOBRE_A_ILHA } = await comSql(lerConteudo);
+  const [{ TRAVESSIA, CHEGADA_ETAPAS, SOBRE_A_ILHA }, rota] = await comSql((sql) => Promise.all([lerConteudo(sql), lerRota(sql)]));
+  /* Link da rota traçada no próprio site (Admin → Rota e mapa). Sem a URL
+     do site configurada, não inventa endereço: fica sem o link. */
+  const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "");
+  const linkRota = rota.ativo && site ? `${site}/como-chegar#rota` : null;
 
   const linhas = [
     `ENDEREÇO: ${ENDERECO.completo ?? [ENDERECO.logradouro, ENDERECO.bairro, ENDERECO.cidade].filter(Boolean).join(", ")}`,
@@ -44,11 +49,12 @@ export async function GET(request: NextRequest) {
     "",
     `NA ILHA: ${SOBRE_A_ILHA.acesso}`,
     `BAGAGEM: ${SOBRE_A_ILHA.bagagem}`,
+    ...(linkRota ? ["", `ROTA NO MAPA (mande este link: a pessoa traça a rota de onde estiver, no celular ou no computador, e acompanha até a porta): ${linkRota}`] : []),
   ];
 
   return Response.json({
     ok: true,
-    dados: { endereco: ENDERECO, travessia: TRAVESSIA, etapas: CHEGADA_ETAPAS, ilha: SOBRE_A_ILHA },
+    dados: { endereco: ENDERECO, travessia: TRAVESSIA, etapas: CHEGADA_ETAPAS, ilha: SOBRE_A_ILHA, link_rota: linkRota },
     resumo_texto: linhas.join("\n"),
     fonte: "local",
     consultado_em: new Date().toISOString(),

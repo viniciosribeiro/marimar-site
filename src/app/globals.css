@@ -373,3 +373,30 @@ body {
 /* Altura do cabecalho — medida em runtime pelo MenuPrincipal. Este valor
    so vale ate a primeira medicao (e sem JavaScript). */
 :root { --altura-topo: max(4rem, calc(var(--logo-altura) + 1.25rem)); }
+
+/* ── Rota até a pousada (src/components/site/rota) ─────────────────────── */
+.rota-pino { cursor: default; }
+.rota-pino--arrastavel { cursor: grab; }
+.rota-pino--arrastavel:active { cursor: grabbing; }
+.rota-marcador { position: relative; pointer-events: none; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+  border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); background: #fff; box-shadow: 0 6px 16px -6px rgb(0 0 0 / .45);
+  border: 2px solid var(--marca); }
+.rota-marcador__icone { transform: rotate(45deg); font-size: 18px; line-height: 1; }
+.rota-marcador--pousada { width: 48px; height: 48px; background: var(--marca); border-color: #fff; }
+.rota-marcador--pousada .rota-marcador__icone { font-size: 22px; }
+.rota-marcador--origem { border-color: #2563eb; }
+.rota-marcador__pulso { position: absolute; inset: -8px; border-radius: 50%; }
+.rota-marcador--pousada .rota-marcador__pulso { border: 3px solid var(--marca); animation: rota-pulso 2.2s ease-out infinite; }
+@keyframes rota-pulso { 0% { transform: scale(.7); opacity: .8; } 100% { transform: scale(1.6); opacity: 0; } }
+
+.rota-voce { position: relative; width: 22px; height: 22px; }
+.rota-voce__ponto { position: absolute; inset: 3px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 2px 8px rgb(0 0 0 / .35); }
+.rota-voce__halo { position: absolute; inset: -14px; border-radius: 50%; background: rgb(37 99 235 / .18); animation: rota-halo 2s ease-in-out infinite; }
+.rota-voce__cone { position: absolute; left: 50%; bottom: 50%; width: 0; height: 0; margin-left: -14px; border-left: 14px solid transparent;
+  border-right: 14px solid transparent; border-bottom: 34px solid rgb(37 99 235 / .28); transform-origin: 50% 100%;
+  transform: rotate(var(--direcao, 0deg)); display: none; }
+.rota-voce[data-direcao="sim"] .rota-voce__cone { display: block; }
+@keyframes rota-halo { 0%, 100% { transform: scale(.85); } 50% { transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) {
+  .rota-marcador__pulso, .rota-voce__halo { animation: none !important; }
+}

@@ -5,7 +5,8 @@ import { ENDERECO, COMPLEXO, ATUALIZADO_EM, RESTAURANTE } from "@/lib/conteudo-p
 import { lerConteudo } from "@/lib/conteudo-editavel";
 import { comSql } from "@/lib/db-conexao";
 import { brl } from "@/lib/format";
-import { RotaInteligente } from "@/components/site/RotaInteligente";
+import { PlanejadorRota } from "@/components/site/rota/PlanejadorRota";
+import { lerRota } from "@/lib/rota";
 import {
   Hero, Secao, Onda, TituloSecao, Subtexto, Manuscrita,
   Aviso, Cartao, Botao, Passo,
@@ -45,6 +46,8 @@ const ICONES = ["🚌", "⛴️", "🚶"];
 export default async function ComoChegarPage() {
   // Editável em Admin → Textos da ilha e chegada; sem nada salvo, vale o padrão do código.
   const { CHEGADA_ETAPAS, TRAVESSIA, SOBRE_A_ILHA } = await comSql(lerConteudo);
+  /* Rota no próprio site: pontos, estilos e serviços em Admin → Rota e mapa. */
+  const rota = await comSql(lerRota);
   const fotos = await buscarFotos();
 
   return (
@@ -174,44 +177,14 @@ export default async function ComoChegarPage() {
         </div>
       </Secao>
 
-      {/* ═══ MAPA E ROTA ═══ */}
+      {/* ═══ ROTA NO PRÓPRIO SITE ═══ */}
       <Secao fundo="suave">
-        <TituloSecao>Ponto de referência no mapa</TituloSecao>
-
-        <div className="grid lg:grid-cols-2 gap-5 mt-6">
-          <Cartao>
-            <h3 className="font-semibold text-tinta mb-4 leading-snug">{ENDERECO.rotuloMapa}</h3>
-
-            <dl className="text-sm space-y-2 mb-6">
-              <div className="flex gap-2.5">
-                <dt className="text-marca shrink-0" aria-hidden>📍</dt>
-                <dd className="text-tinta-suave">{ENDERECO.completo}</dd>
-              </div>
-              <div className="flex gap-2.5">
-                <dt className="text-marca shrink-0" aria-hidden>🔑</dt>
-                <dd className="text-tinta-suave">
-                  Plus Code <span className="font-mono text-tinta">{ENDERECO.plusCode}</span>
-                </dd>
-              </div>
-            </dl>
-
-            <RotaInteligente
-              lat={ENDERECO.lat}
-              lng={ENDERECO.lng}
-              plusCode={ENDERECO.plusCode}
-              rotulo={ENDERECO.rotuloMapa}
-            />
-          </Cartao>
-
-          <div className="rounded-marca overflow-hidden border border-linha/70 min-h-[22rem] bg-areia">
-            {/* OpenStreetMap: sem chave de API e sem cookie de rastreamento */}
-            <iframe
-              title="Mapa da Pousada Marimar em Encantadas"
-              loading="lazy"
-              className="w-full h-full min-h-[22rem]"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${ENDERECO.lng - 0.006}%2C${ENDERECO.lat - 0.004}%2C${ENDERECO.lng + 0.006}%2C${ENDERECO.lat + 0.004}&layer=mapnik&marker=${ENDERECO.lat}%2C${ENDERECO.lng}`}
-            />
-          </div>
+        <TituloSecao>{rota.textos.titulo}</TituloSecao>
+        <p className="mt-2 max-w-3xl text-tinta-suave">{ENDERECO.completo}. A entrada é pelo {RESTAURANTE.nome}, o restaurante da pousada, de frente para o mar.</p>
+        <div className="mt-6">
+          {rota.ativo ? <PlanejadorRota config={rota} /> : (
+            <Cartao><p className="text-tinta-suave">{ENDERECO.rotuloMapa}</p></Cartao>
+          )}
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
