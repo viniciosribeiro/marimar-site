@@ -6,6 +6,55 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-30 (6) — Escalonamento para a equipe, aprendizado contínuo e Cérebro da Marina
+**Autor:** Claude (Claude Code)
+**Migration:** 0019 (só acrescenta: 5 tabelas e `chat_mensagens.chamado_id`)
+**Depois do deploy:** reinstalar a skill `marimar-pousada`; cadastrar a equipe e ligar em `/admin/equipe`; agendador de 5 min para `/api/cron/chamados`
+**Fluxo completo:** `docs/fluxo-escalonamento.md`
+
+### Escalonamento
+Quando a Marina não sabe (site: o servidor percebe o "não sei"; WhatsApp: a
+skill chama `POST /api/agent/chamados`), abre um chamado com código curto,
+escolhe a pessoa da equipe (setor → horário → prioridade) e manda no WhatsApp
+dela a pergunta, o contexto e o canal. A equipe responde citando a mensagem ou
+com o código; a skill repassa para `POST /api/agent/chamados/resposta`, que
+acha o chamado certo, reescreve no tom da Marina e entrega ao cliente — no
+WhatsApp (gateway, janela de 24 h/template no modo API oficial) ou no chat do
+site (o widget consulta `/api/chat/chamados` e mostra um aviso no botão).
+Prazos configuráveis: lembrete, próximo da fila, aviso ao cliente,
+desistência com o contato cadastrado da recepção. Se o site não conseguir
+mandar, a Marina recebe o texto para mandar ela mesma.
+
+### Aprendizado
+A resposta da equipe vira `marina_aprendizado`: agrupada por significado
+(variações), com origem, data, quem respondeu, usos, confiança e validade
+opcional (sugerida para preço/horário/evento). Sem dados pessoais
+(`anonimizar`, destino apagado ao fechar). Nunca sobrescreve o manual:
+tabela separada, entra no treinamento DEPOIS do cadastrado e dizendo que vale
+menos; parecido com um manual nasce parado. Marina → **Aprendizado**: fila
+de revisão (aprovar, editar, rejeitar, tornar oficial, excluir) e modo
+"Só depois de aprovado" (padrão) ou "Na hora".
+
+### Painel
+- **Equipe responsável** (`/admin/equipe`): pessoas, setores, horário,
+  prioridade arrastando, ligar/desligar, testar envio; chamados com linha do
+  tempo, resposta pelo painel, reentrega, cancelamento; prazos e WhatsApp.
+- **Cérebro da Marina** (`/admin/cerebro`): indicadores, mapa do
+  conhecimento (áreas × fontes × setores da equipe; lista no celular), áreas,
+  taxa de resolução sozinha no tempo, aprendidos recentes, frequentes, temas
+  que mais escalam, pendências; filtros de período e canal.
+- Painel inicial: resumo do Cérebro e avisos de clientes esperando e de
+  aprendizados para aprovar.
+
+### Verificado localmente
+`tsc` e build ok; lint 179 erros (os mesmos de antes, nenhum nos arquivos
+novos); `npm test` 32/32; `npm run test:e2e:escalonamento` 38/38 (painel,
+site, WhatsApp com dois clientes simultâneos, modo automático, prazos,
+falha de entrega, Cérebro); `npm run test:e2e` 12/12 (sem regressão); telas
+novas sem rolagem lateral nem erro no console em 375/768/1024/1280/1440.
+**Não verificado:** o método `send` do gateway e a chegada das mensagens da
+equipe (com a citada) no OpenClaw real — use "Testar envio".
+
 ## 2026-09-30 (5) — Tempo real como regra do projeto
 **Autor:** Claude (Claude Code)
 **Depois do merge:** reinstalar a skill `marimar-pousada` no OpenClaw

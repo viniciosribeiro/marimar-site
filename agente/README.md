@@ -34,6 +34,12 @@ openclaw skills install ./agente/skills/marimar-pousada
 
 ### Atualizar depois de mexer na skill
 
+> **30/09/2026 (6):** a skill ganhou "Mensagem de alguém da EQUIPE", "Quando
+> não souber: pergunte à equipe" e "Quando usar algo que você APRENDEU"
+> (escalonamento e aprendizado — `docs/fluxo-escalonamento.md`). Reinstale.
+> O envio para a equipe usa o RPC do gateway (método `send`); confirme com
+> "Testar envio" em `/admin/equipe`.
+
 > **30/09/2026 (4):** a skill ganhou a seção "Fotos e vídeos: como mandar"
 > (vídeos das suítes e roteiros de orientação, limite de 16 MB). Reinstale.
 

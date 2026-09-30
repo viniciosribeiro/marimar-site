@@ -22,6 +22,7 @@ rascunho antigo sem ligação com o GitHub e foi apagada em 29/09).
 4. `docs/fluxo-painel-marina.md` — antes de tocar em Marina, `/api/agent/*` ou `/api/chat`
 5. `docs/design-system-admin.md` — antes de criar ou mudar tela do painel
 5b. `docs/fluxo-midia.md` — antes de mexer em fotos, vídeos, upload ou roteiros
+5c. `docs/fluxo-escalonamento.md` — antes de mexer em chamados, equipe, aprendizado ou Cérebro
 6. `git log --oneline -15` e `git status`
 
 ### 2. O que ficou pendente do dia 30/09 (fazer primeiro)
@@ -29,7 +30,7 @@ rascunho antigo sem ligação com o GitHub e foi apagada em 29/09).
 Nada disso pôde ser feito do ambiente em que o trabalho foi feito (rede sem
 acesso à produção e sem credenciais):
 
-1. **Migrations até a 0018** em produção: `npm run db:migrate` (só acrescentam
+1. **Migrations até a 0019** em produção: `npm run db:migrate` (só acrescentam
    colunas e tabelas; o código antigo continua funcionando sobre elas).
 2. **Reinstalar a skill no OpenClaw** (Hostinger), senão o WhatsApp segue com
    a skill antiga, que não lê o treinamento em pergunta de preço:
@@ -46,6 +47,12 @@ acesso à produção e sem credenciais):
 4. **Mídia em aparelho real** (a nuvem não tem H.264): iPhone e Android —
    foto HEIC, vídeo pela câmera, selo "WhatsApp ok" na biblioteca; um roteiro
    em Marina → Mídias de orientação e "como chego?" no WhatsApp.
+
+5. **Escalonamento no OpenClaw real:** cadastrar a equipe em `/admin/equipe`,
+   "Testar envio" (confirma o método `send` do RPC; se falhar, ajustar
+   `OPENCLAW_ENVIO_METODO`), ligar, e simular: pergunta desconhecida no
+   WhatsApp → mensagem chega à equipe → resposta citando → cliente recebe.
+   Agendador de 5 min para `/api/cron/chamados`.
 
 ### 3. Como testar localmente (sem tocar produção)
 
@@ -65,6 +72,7 @@ OPENCLAW_GATEWAY_URL=http://localhost:4010 OPENCLAW_GATEWAY_TOKEN=token-teste \
 
 npm test                                  # unitários
 EMAIL=... SENHA=... node testes/e2e-marina.mjs   # 12 verificações pela interface
+DATABASE_URL=<LOCAL> AGENT_API_KEY=... npm run test:e2e:escalonamento   # 38 verificações (apaga equipe/chamados)
 LARGURAS=375,768,1024,1280,1440 SAIDA=capturas node testes/capturas.mjs   # telas + rolagem horizontal
 ```
 `testes/*.mjs` usam Playwright (não está no package.json; no ambiente em nuvem
