@@ -121,15 +121,26 @@ nunca na config — o OpenClaw le do ambiente sozinho.
 
 ## O painel de treinamento (`/admin/marina`)
 
-A Cecilia treina a Marina pelo site, sem abrir a Hostinger. Cinco abas:
+A Cecilia treina a Marina pelo site, sem abrir a Hostinger. Principais abas:
 
 | Aba | O que faz | Onde vive |
 |---|---|---|
 | Voz | ID, modelo, estabilidade, semelhanca, velocidade, com botao de prova | `marina_config` |
 | Jeito de falar | O tom, em portugues corrido | `marina_config.tom` |
-| O que ela sabe | Fatos oficiais que ela passa a usar | `marina_conhecimento` (tipo `fato`) |
-| O que ela nunca diz | Proibicoes | `marina_conhecimento` (tipo `limite`) |
+| Conhecimento | Informacoes, perguntas e respostas (com variacoes), por categoria | `marina_conhecimento` (tipos `fato`, `pergunta`) |
+| Personalidade e regras | Tom, escalonamento, o que ela nunca diz, quando chamar uma pessoa | `marina_config`, `marina_conhecimento` (tipos `limite`, `escalar`) |
+| Testar, Sem resposta, Historico | Area de teste com fontes, lacunas, versoes | `marina_leituras`, `marina_lacunas`, `marina_historico` |
 | Conversas | Revisao das conversas do site; corrigir vira ensinamento | `chat_mensagens` |
+
+Desde 30/09/2026 a skill manda ler `/api/agent/conhecimento` no inicio de
+TODA conversa — inclusive as de preco e vaga (o caso da crianca de 29/09) —
+e registrar em `POST /api/agent/lacuna` o que ela nao souber responder.
+**Isso so vale no WhatsApp depois de reinstalar a skill** (comando acima).
+Para conferir: em `/admin/marina`, a Visao geral mostra quando o WhatsApp
+leu o treinamento pela ultima vez. Se diz "nunca", a skill instalada e a
+antiga ou falta a `MARIMAR_API_KEY`.
+
+Fluxo completo e como testar: `docs/fluxo-painel-marina.md`.
 
 Os dois canais leem a MESMA fonte: o chat do site monta a mensagem de
 sistema com `lerEnsinamentos()`, e a Marina do WhatsApp le a rota

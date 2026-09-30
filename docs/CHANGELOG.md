@@ -6,6 +6,57 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-30 — Treinamento da Marina confiável e painel redesenhado
+**Autor:** Claude (Claude Code)
+**Migration:** 0016 (só acrescenta; `npm run db:migrate`)
+**Depois do deploy:** reinstalar a skill `marimar-pousada` no OpenClaw (`agente/README.md`)
+
+### Auditoria painel → Marina (o que estava divergente)
+Verificado com teste ponta a ponta local — Postgres, gateway simulado e
+navegador (`testes/e2e-marina.mjs`, 12/12). Não há cache nem atraso: o site
+monta o treinamento a cada mensagem; o WhatsApp lê a rota a cada conversa.
+O que estava errado:
+- **O caso da criança (29/09):** a skill do WhatsApp só lia o treinamento
+  em pergunta que NÃO fosse de preço. Pergunta de preço ia direto ao motor,
+  que pede idade. Agora lê em toda conversa, e o texto traz uma regra de
+  PRIORIDADE (treinamento vale mais que outras fontes e que o que ela já
+  disse). **Só vale no WhatsApp depois de reinstalar a skill.**
+- Desligar um item o fazia sumir do painel (a tela usava a mesma leitura da
+  Marina, que só traz ativos). Não dava para religar.
+- "Apagar" apagava de vez, sem confirmação, apesar do comentário dizer o contrário.
+- Documento que falhava na leitura era apagado sem rastro.
+- `/admin/integracoes` mostrava a `AGENT_API_KEY` inteira no guia do OpenClaw.
+
+### Módulo Marina novo (`/admin/marina`)
+Visão geral com saúde do treinamento · Conhecimento por categoria (pousada,
+quartos, políticas, check-in/out, pagamentos, Ilha do Mel, passeios, barcos,
+FAQ) · perguntas e respostas com variações · regras de "nunca dizer" e de
+passar para uma pessoa · status por item (em uso / aguardando WhatsApp /
+revisar / desligado) com base na última leitura real de cada canal · teste
+automático por item e em lote · área de teste com as fontes usadas · perguntas
+sem resposta (site automático; WhatsApp por `POST /api/agent/lacuna`) ·
+conversas que viram treino · documentos com busca por trechos
+(`/api/agent/documentos?busca=`), categoria, reprocessar · histórico com
+"voltar para esta versão" e lixeira · prova de voz com frase livre.
+
+### Painel inteiro e login
+Design system (`docs/design-system-admin.md`): menu lateral recolhível, gaveta
+no celular, tabelas que viram cartões, toasts, confirmação em diálogo,
+carregando/vazio/erro, textos em português. Login novo. Zero rolagem
+horizontal em 375/768/1440 (`testes/capturas.mjs`).
+
+### Testes
+`npm test` (10 unitários, `node:test` via `tsx`) · `testes/e2e-marina.mjs` ·
+`testes/gateway-simulado.mjs` · `testes/capturas.mjs`. Lint do projeto: 182 → 179
+problemas (nenhum nos arquivos novos; os restantes são `any` e `Date.now` antigos).
+
+### Não verificado
+Nada foi testado contra produção: a rede deste ambiente bloqueia
+`marimar-site.vercel.app` e não há credenciais. Falta: rodar a 0016,
+reinstalar a skill e repetir o teste na aba **Testar** e num número de
+WhatsApp novo. Disponibilidade e valores reais não puderam ser conferidos
+(o motor também não é alcançável daqui) — a rota e o `worker.ts` não mudaram.
+
 ## 2026-09-29 — Tela de atrações da ilha
 **Autor:** Claude (Claude Code)
 **Migration:** nenhuma (usa a linha `ilha` de `conteudo_editavel`, da 0013)
