@@ -15,6 +15,10 @@ export const dynamic = "force-dynamic";
  * tom da Marina e entrega ao cliente no canal dele. Devolve o que dizer à
  * pessoa da equipe. Se não for ninguém da equipe: `equipe: false` — a
  * conversa segue normal, como com um hóspede.
+ *
+ * Depois de entregar, pergunta à pessoa se pode guardar a resposta como
+ * aprendizado. A próxima mensagem dela (SIM / NÃO / uma versão nova) chega
+ * por esta mesma rota e volta `dados.confirmacao`.
  */
 export async function POST(request: NextRequest) {
   if (!checkAgentAuth(request)) return agentUnauthorized();
@@ -37,6 +41,11 @@ export async function POST(request: NextRequest) {
   if (r.tipo === "nao_equipe") {
     return Response.json({ ok: true, dados: { equipe: false }, resumo_texto: "Este número não é da equipe. Atenda como um hóspede.", fonte: "local", consultado_em: agora });
   }
+  if (r.tipo === "confirmacao") {
+    /* Resposta à pergunta "posso guardar?". O resumo_texto vai LITERAL para
+       a pessoa da equipe (é a próxima pergunta ou o "guardado"). */
+    return Response.json({ ok: true, dados: { equipe: true, confirmacao: r.resultado, codigo: r.codigo }, resumo_texto: r.mensagem, fonte: "local", consultado_em: agora });
+  }
   if (r.tipo !== "respondido") {
     return Response.json({ ok: true, dados: { equipe: true, respondido: false, codigos: r.tipo === "qual" ? r.codigos : [] }, resumo_texto: r.mensagem, fonte: "local", consultado_em: agora });
   }
@@ -45,6 +54,9 @@ export async function POST(request: NextRequest) {
     dados: {
       equipe: true, respondido: true, codigo: r.chamado.codigo, canal: r.chamado.canal, entregue: r.entregue,
       entregar_manual: r.entregarManual, aprendizado: r.aprendizado?.status ?? null,
+      /* true: o resumo_texto termina com a pergunta "posso guardar?" — a
+         próxima mensagem desta pessoa volta para esta rota (sim/não/versão). */
+      confirmando: r.confirmando,
     },
     resumo_texto: r.entregarManual
       ? `${r.mensagem}\nMande você mesma ao cliente +${r.entregarManual.para} esta mensagem:\n${r.entregarManual.texto}`

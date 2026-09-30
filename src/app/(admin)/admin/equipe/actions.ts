@@ -88,9 +88,10 @@ export async function testarEnvio(id: string): Promise<Resultado> {
   if (!uuid(id)) return { ok: false, mensagem: "Contato não encontrado." };
   const r = await comSql((sql) => testarContato(sql, id));
   atualizar();
+  const caminho = r.via === "agente" ? "pela Marina" : r.via === "ferramenta" ? "ferramenta de mensagens do OpenClaw" : r.via ?? "?";
   return r.ok
-    ? { ok: true, mensagem: `O OpenClaw aceitou o envio (caminho: ${r.via === "agente" ? "pela Marina" : r.via === "ferramenta" ? "ferramenta de mensagens" : r.via ?? "?"}). Se não chegar em 1 minuto, veja o manual (“Testar envio não chegou”). Resposta: ${r.detalhe ?? "—"}` }
-    : { ok: false, mensagem: `Não consegui enviar: ${r.erro}` };
+    ? { ok: true, mensagem: `✓ O WhatsApp confirmou a entrega${r.id ? ` (mensagem ${r.id})` : ""}, pelo caminho: ${caminho}. Deve chegar em segundos. Se mesmo assim não aparecer no celular, confira o número (com o 9) — veja o manual, “Testar envio não chegou”.` }
+    : { ok: false, mensagem: `Não chegou: ${r.erro}` };
 }
 
 /* ── configuração ───────────────────────────────────────────────── */

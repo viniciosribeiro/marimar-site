@@ -1,4 +1,5 @@
 import { categoriaValida } from "@/lib/marina-base";
+import { lerConfigEscalonamento } from "@/lib/escalonamento";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { comSql } from "@/lib/db-conexao";
@@ -12,7 +13,6 @@ import { lerRegras, lerAdicionais } from "@/lib/regras-hospedagem";
 import { Pagina, Cabecalho, Aviso } from "@/components/admin/ui";
 import { lerRoteiros } from "@/lib/roteiros";
 import { lerAprendizado } from "@/lib/aprendizado";
-import { lerConfigEscalonamento } from "@/lib/escalonamento";
 import { blobConfigurado } from "@/lib/blob";
 import { nomeSecao } from "@/lib/fotos";
 import { PainelMarina } from "./PainelMarina";
@@ -111,12 +111,35 @@ export default async function MarinaPage({
 
     let lacunas: Lacuna[] = [];
     try {
-      lacunas = (await sql<Lacuna[]>`
-        SELECT id, pergunta, resposta, canal, status, criado_em FROM marina_lacunas
-        WHERE status = 'aberta' ORDER BY criado_em DESC LIMIT 100`).map((l) => ({
-        ...l, criado_em: new Date(l.criado_em).toISOString(),
-      }));
-    } catch { /* antes da 0016 */ }
+      /* Com o chamado da equipe ao lado: quem foi avisado, se chegou, e o erro. */
+      const linhas = await sql<(Lacuna & { codigo: string | null; chamado_status: string | null; tentativas: unknown; sessao: string | null })[]>`
+        SELECT l.id, l.pergunta, l.resposta, l.canal, l.status, l.criado_em, l.aviso_erro, l.sessao,
+          c.codigo, c.status AS chamado_status, c.tentativas
+        FROM marina_lacunas l LEFT JOIN marina_chamados c ON c.id = l.chamado_id
+        WHERE l.status = 'aberta' ORDER BY l.criado_em DESC LIMIT 100`;
+      lacunas = linhas.map((l) => {
+        const t = (Array.isArray(l.tentativas) ? l.tentativas : []) as { nome?: string; ok?: boolean; erro?: string; em?: string }[];
+        const ultima = t.at(-1);
+        return {
+          id: l.id, pergunta: l.pergunta, resposta: l.resposta, canal: l.canal, status: l.status,
+          criado_em: new Date(l.criado_em).toISOString(), aviso_erro: l.aviso_erro ?? null, tem_sessao: !!l.sessao,
+          chamado: l.codigo ? {
+            codigo: l.codigo, status: l.chamado_status ?? "", quem: ultima?.nome ?? null,
+            ok: ultima ? !!ultima.ok : null, erro: ultima?.erro ?? null, em: ultima?.em ?? null,
+          } : null,
+        };
+      });
+    } catch {
+      try {
+        lacunas = (await sql<Lacuna[]>`
+          SELECT id, pergunta, resposta, canal, status, criado_em FROM marina_lacunas
+          WHERE status = 'aberta' ORDER BY criado_em DESC LIMIT 100`).map((l) => ({
+          ...l, criado_em: new Date(l.criado_em).toISOString(),
+        }));
+      } catch { /* antes da 0016 */ }
+    }
+    let escalonamentoAtivo = false;
+    try { escalonamentoAtivo = (await lerConfigEscalonamento(sql)).ativo; } catch { /* antes da 0019 */ }
 
     let historico: EntradaHistorico[] = [];
     try {
@@ -157,7 +180,7 @@ export default async function MarinaPage({
       for (const c of await sql<{ id: string; titulo: string }[]>`SELECT id, titulo FROM marina_conhecimento WHERE id IN ${sql(idsConflito)}`) conflitos[c.id] = c.titulo;
     }
 
-    return { config, itens, leituras, documentos, conversas, lacunas, historico, cobertura, regras, adicionais, roteiros, midiasEscolha, aprendizado, aprendizadoModo, conflitos };
+    return { config, itens, leituras, documentos, conversas, lacunas, escalonamentoAtivo, historico, cobertura, regras, adicionais, roteiros, midiasEscolha, aprendizado, aprendizadoModo, conflitos };
   }).catch(() => null);
 
   if (!dados) {

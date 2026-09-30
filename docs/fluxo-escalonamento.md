@@ -52,15 +52,21 @@ diário, por isso não foi usado — e o deploy não foi tocado.
 
 ## WhatsApp: o que o site precisa e os limites
 
-- O envio (`src/lib/envio-whatsapp.ts`) tenta, em ordem: (1) `POST /tools/invoke`
-  do gateway com a ferramenta `message` (ação `send`); (2) pedir à própria
-  Marina, pelo `/v1/chat/completions` que o chat do site já usa, que mande com
-  a ferramenta de mensagens dela — só conta como enviado se ela responder
-  "ENVIADO". A variável `OPENCLAW_ENVIO` força um caminho: `ferramenta`,
-  `agente` ou `rpc:<método>`. **O RPC de administração NÃO serve**: em
-  30/09/2026 o OpenClaw real respondeu "admin HTTP RPC method is not
-  supported: send" (o plugin só aceita métodos de configuração). Teste com
-  "Testar envio" em Equipe responsável — o erro de cada caminho aparece na tela.
+- O envio (`src/lib/envio-whatsapp.ts`) usa `POST /tools/invoke` do gateway
+  com a ferramenta `message` (ação `send`, `channel: "whatsapp"`,
+  **`bestEffort: false`**). Só conta como enviado quando volta
+  `details.result` com o id da mensagem no canal `whatsapp`. Um resultado
+  "suppressed", "dry_run", de outro canal ou sem `result` é falha. Isso vem da
+  leitura do código do OpenClaw 2026.9: sem `bestEffort: false`, ele responde
+  "ok" mesmo quando o WhatsApp não entrega.
+- A ferramenta `message` **não vem liberada no perfil padrão (`coding`)** do
+  OpenClaw: sem liberar, o gateway responde 404. Ver `docs/runbook.md`,
+  "Liberar a ferramenta de mensagens". Só nesse caso (404) o site pede à
+  Marina pelo `/v1/chat/completions`, e aceita apenas "ENVIADO <id da
+  mensagem>". A variável `OPENCLAW_ENVIO` força um caminho: `ferramenta`,
+  `agente` ou `rpc:<método>`. **O RPC de administração não serve para
+  enviar** (o plugin só aceita configuração), mas o "Testar envio" usa o
+  `channels.status` dele para avisar quando o WhatsApp está desconectado.
 - Plano B sempre existe: quando o site não consegue mandar, as rotas devolvem o
   texto e o destino (`aviso_manual`, `entregar_manual`) e a skill manda a Marina
   enviar ela mesma.
@@ -172,3 +178,36 @@ aprendidos em uso; no WhatsApp, a skill chama `POST /api/agent/aprendizado/uso`.
 5. **Cliente do site que fechou a aba:** hoje a resposta espera na sessão;
    oferecer "quer receber no WhatsApp?" quando o chamado abrir.
 6. Conversas do WhatsApp no painel (depende do que o gateway expõe).
+
+
+## Confirmação do aprendizado pelo WhatsApp (0020)
+
+Quando a equipe responde **pelo WhatsApp**:
+1. `responderChamado` entrega ao cliente, **não** guarda nada e marca o
+   chamado com `confirmacao_etapa = 'pergunta'`.
+2. O `resumo_texto` que a skill repassa termina com "📚 Posso guardar esta
+   resposta…? SIM / NÃO / como prefere".
+3. A próxima mensagem da pessoa, se não tiver o código de um chamado aberto,
+   é a resposta à confirmação (`lerConfirmacao` em `escalonamento-base.ts`):
+   - SIM (resposta curta) → `aprenderDeChamado` com o texto (vale o modo:
+     automático = ativo; aprovação = fila);
+   - NÃO → não guarda;
+   - outro texto → vira a versão nova: `confirmacao_etapa = 'final'`, e a
+     Marina mostra "Ficou assim: … Confirma?".
+4. Se ninguém responder em 24 h (`processarPrazos`), ou se a mesma pessoa
+   receber um chamado novo (`notificar`), a resposta vai para a fila do
+   painel como "para aprovar". Assim a próxima mensagem dela não é lida como
+   alteração da resposta anterior.
+
+Pelo painel ("Responder pelo painel") não há confirmação: quem responde já é
+a administração.
+
+## "Sem resposta" junto com os chamados (0020)
+
+Toda pergunta que a Marina não soube entra em `marina_lacunas`, agora com
+`chamado_id` (o chamado aberto) ou `aviso_erro` (por que a equipe não foi
+avisada: escalonamento desligado, nenhum contato, WhatsApp falhou). A aba
+Marina → Sem resposta mostra essa situação e tem "Avisar a equipe" / "Avisar
+de novo" (`avisarEquipeDaLacuna`). A pergunta sai da lista quando o chamado é
+respondido (`chamado_id`) ou quando alguém ensina a resposta. Pergunta com
+chamado não conta de novo como "lacuna" no Cérebro: já contou como "escalada".

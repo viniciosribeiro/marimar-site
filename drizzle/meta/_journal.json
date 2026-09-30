@@ -141,6 +141,13 @@
       "when": 1790730000000,
       "tag": "0019_escalonamento_aprendizado",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790740000000,
+      "tag": "0020_confirmacao_aprendizado",
+      "breakpoints": true
     }
   ]
 }

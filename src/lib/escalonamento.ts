@@ -1,5 +1,5 @@
 import type { Sql } from "./db-conexao";
-import { enviarWhatsapp, type Envio } from "./envio-whatsapp";
+import { enviarWhatsapp, statusWhatsapp, type Envio } from "./envio-whatsapp";
 import { aprenderDeChamado, registrarEvento } from "./aprendizado";
 import { lerConfig } from "./marina";
 import { sugerirCategoria } from "./marina-base";
@@ -8,6 +8,7 @@ import {
   CONFIG_ESCALONAMENTO_PADRAO, acoesDePrazo, anonimizar, codigosNoTexto, dentroDoHorario, escolherContato,
   gerarCodigo, janelaAberta, mesmoNumero, setorPara, setorValido, similaridade, LIMIAR_MESMA_PERGUNTA,
   textoAoClienteAoEscalar, textoParaEquipe, type ConfigEscalonamento, type ContatoEquipe,
+  lerConfirmacao, textoPedirConfirmacao, textoConfirmarVersao, textoConfirmacaoFeita, TEXTO_NAO_GUARDAR, HORAS_CONFIRMACAO,
 } from "./escalonamento-base";
 
 /**
@@ -31,6 +32,9 @@ export type Chamado = {
   resposta_equipe: string | null; respondido_por: string | null; respondido_em: string | null;
   resposta_final: string | null; entregue_em: string | null; entrega_erro: string | null;
   ultima_msg_cliente_em: string; aprendizado_id: string | null; criado_em: string; atualizado_em: string;
+  /** Migration 0020 — ausentes antes dela. */
+  confirmacao_etapa?: "pergunta" | "final" | null; confirmacao_texto?: string | null;
+  confirmacao_contato_id?: string | null; confirmacao_em?: string | null;
 };
 
 const iso = (d: unknown) => (d ? new Date(d as string).toISOString() : null);
@@ -41,7 +45,7 @@ function chamadoDe(l: Record<string, unknown>): Chamado {
     ...c,
     tentativas: Array.isArray(l.tentativas) ? (l.tentativas as Chamado["tentativas"]) : [],
     notificado_em: iso(l.notificado_em), lembrete_em: iso(l.lembrete_em), cliente_avisado_em: iso(l.cliente_avisado_em),
-    respondido_em: iso(l.respondido_em), entregue_em: iso(l.entregue_em),
+    respondido_em: iso(l.respondido_em), entregue_em: iso(l.entregue_em), confirmacao_em: iso(l.confirmacao_em),
     ultima_msg_cliente_em: iso(l.ultima_msg_cliente_em)!, criado_em: iso(l.criado_em)!, atualizado_em: iso(l.atualizado_em)!,
   };
 }
@@ -89,6 +93,26 @@ export type Aviso = { contato: { id: string; nome: string; numero: string } | nu
 export type Abertura =
   | { ok: false; motivo: "desligado" | "invalido"; erro: string }
   | { ok: true; novo: boolean; chamado: Chamado; aviso: Aviso | null; mensagemCliente: string };
+
+/** Para a lista "Sem resposta": o chamado aberto e, se a equipe não foi avisada, por quê. */
+export function vinculoDaAbertura(a: Abertura): { chamadoId: string | null; avisoErro: string | null } {
+  if (!a.ok) return { chamadoId: null, avisoErro: a.erro };
+  const falhou = a.aviso && !a.aviso.envio.ok ? a.aviso.envio.erro : null;
+  return { chamadoId: a.chamado.id, avisoErro: falhou };
+}
+
+/**
+ * Avisa a equipe de novo sobre um chamado que ainda espera (botão do painel
+ * em "Sem resposta"). Tenta a mesma pessoa se já houver uma; senão, a
+ * próxima da fila.
+ */
+export async function avisarDeNovo(sql: Sql, chamadoId: string): Promise<Aviso | null> {
+  const c = await lerChamado(sql, chamadoId);
+  if (!c || c.status !== "aguardando") return null;
+  const cfg = await lerConfigEscalonamento(sql);
+  const ultima = c.tentativas.at(-1);
+  return notificar(sql, c, c.contato_id && ultima && !ultima.ok ? "lembrete" : "repasse", cfg);
+}
 
 export async function abrirChamado(
   sql: Sql,
@@ -148,8 +172,12 @@ async function notificar(sql: Sql, c: Chamado, tipo: "novo" | "repasse" | "lembr
     return { contato: null, texto, envio: { ok: false, erro } };
   }
   const template = cfg.whatsapp_modo === "oficial" && cfg.template_equipe ? { nome: cfg.template_equipe, idioma: cfg.template_idioma } : null;
+  /* Chamado novo para quem ainda tem um "posso guardar?" sem resposta: a
+     confirmação vai para a fila do painel, senão a resposta a ESTE chamado
+     (sem código) seria lida como alteração daquela. */
+  if (tipo !== "lembrete") await encerrarConfirmacoes(sql, { contatoId: contato.id }, cfg);
   const envio = await enviarWhatsapp(contato.numero, texto, { template, chave: `${c.id}:${tipo}:${contato.id}` });
-  const tentativa = { contato_id: contato.id, nome: contato.nome, em: agora.toISOString(), tipo, ok: envio.ok, ...(envio.ok ? {} : { erro: envio.erro }) };
+  const tentativa = { contato_id: contato.id, nome: contato.nome, em: agora.toISOString(), tipo, ok: envio.ok, ...(envio.ok ? { id: envio.id ?? null } : { erro: envio.erro }) };
   if (tipo === "lembrete") {
     await sql`UPDATE marina_chamados SET lembrete_em = now(), atualizado_em = now(), tentativas = tentativas || ${sql.json([tentativa])} WHERE id = ${c.id}`;
   } else {
@@ -240,7 +268,62 @@ export type Resposta =
       /** Quando o site não conseguiu entregar no WhatsApp: a Marina manda. */
       entregarManual: { para: string; texto: string } | null;
       aprendizado: { id: string; novo: boolean; status: string } | null;
-    };
+      /** A Marina perguntou à equipe se pode guardar a resposta (WhatsApp). */
+      confirmando: boolean;
+    }
+  | { tipo: "confirmacao"; mensagem: string; resultado: "guardado" | "descartado" | "alterado"; codigo: string };
+
+/* ── confirmação do aprendizado pelo WhatsApp ────────────────────── */
+
+/** A confirmação que esta pessoa da equipe ainda não respondeu (a mais recente). */
+async function confirmacaoPendente(sql: Sql, contatoId: string): Promise<Chamado | null> {
+  try {
+    const [l] = await sql`
+      SELECT * FROM marina_chamados WHERE confirmacao_etapa IS NOT NULL AND confirmacao_contato_id = ${contatoId}
+        AND confirmacao_em > now() - make_interval(hours => ${HORAS_CONFIRMACAO})
+      ORDER BY confirmacao_em DESC LIMIT 1`;
+    return l ? chamadoDe(l) : null;
+  } catch { return null; /* antes da migration 0020 */ }
+}
+
+/**
+ * Fecha confirmações sem resposta: a resposta da equipe vai para a fila do
+ * painel (sempre como "para aprovar", mesmo no modo automático — ninguém
+ * confirmou). Roda quando caduca (24 h) e quando a mesma pessoa recebe um
+ * chamado novo, para a próxima mensagem dela não ser lida como alteração.
+ */
+async function encerrarConfirmacoes(sql: Sql, filtro: { contatoId?: string; vencidas?: boolean }, cfg: ConfigEscalonamento): Promise<number> {
+  let lista: Chamado[] = [];
+  try {
+    lista = (filtro.contatoId
+      ? await sql`SELECT * FROM marina_chamados WHERE confirmacao_etapa IS NOT NULL AND confirmacao_contato_id = ${filtro.contatoId}`
+      : await sql`SELECT * FROM marina_chamados WHERE confirmacao_etapa IS NOT NULL AND confirmacao_em < now() - make_interval(hours => ${HORAS_CONFIRMACAO})`
+    ).map(chamadoDe);
+  } catch { return 0; }
+  for (const c of lista) {
+    const texto = c.confirmacao_texto ?? c.resposta_equipe;
+    const a = texto ? await aprenderDeChamado(sql, c, texto, c.respondido_por ?? "equipe", { ...cfg, aprendizado_modo: "aprovacao" }) : null;
+    await sql`UPDATE marina_chamados SET confirmacao_etapa = null, aprendizado_id = coalesce(${a?.id ?? null}, aprendizado_id), atualizado_em = now() WHERE id = ${c.id}`;
+  }
+  return lista.length;
+}
+
+/** A pessoa respondeu à pergunta "posso guardar?": sim, não ou uma versão nova. */
+async function responderConfirmacao(sql: Sql, c: Chamado, texto: string, autor: string, cfg: ConfigEscalonamento): Promise<Resposta> {
+  const r = lerConfirmacao(texto);
+  if (r.tipo === "nao") {
+    await sql`UPDATE marina_chamados SET confirmacao_etapa = null, atualizado_em = now() WHERE id = ${c.id}`;
+    return { tipo: "confirmacao", resultado: "descartado", codigo: c.codigo, mensagem: TEXTO_NAO_GUARDAR };
+  }
+  if (r.tipo === "alterar") {
+    await sql`UPDATE marina_chamados SET confirmacao_etapa = 'final', confirmacao_texto = ${r.texto}, confirmacao_em = now(), atualizado_em = now() WHERE id = ${c.id}`;
+    return { tipo: "confirmacao", resultado: "alterado", codigo: c.codigo, mensagem: textoConfirmarVersao(c.codigo, r.texto) };
+  }
+  const final = c.confirmacao_texto ?? c.resposta_equipe ?? "";
+  const a = final ? await aprenderDeChamado(sql, c, final, autor, cfg) : null;
+  await sql`UPDATE marina_chamados SET confirmacao_etapa = null, aprendizado_id = coalesce(${a?.id ?? null}, aprendizado_id), atualizado_em = now() WHERE id = ${c.id}`;
+  return { tipo: "confirmacao", resultado: "guardado", codigo: c.codigo, mensagem: textoConfirmacaoFeita(a?.status ?? null) };
+}
 
 /**
  * Uma mensagem da equipe chegou. Descobre de qual chamado é — pelo código
@@ -262,6 +345,12 @@ export async function responderChamado(
   const codigos = abertos.map((c) => c.codigo);
   const achados = e.codigo ? codigosNoTexto(e.codigo, codigos) : codigosNoTexto(`${e.texto}\n${e.citado ?? ""}`, codigos);
   let chamado = achados.length ? abertos.find((c) => c.codigo === achados[0]) ?? null : null;
+  /* Sem código de chamado aberto na mensagem e com uma pergunta "posso
+     guardar?" esperando: a mensagem é a resposta a ela. */
+  if (!chamado && contato && e.numero) {
+    const pendente = await confirmacaoPendente(sql, contato.id);
+    if (pendente) return responderConfirmacao(sql, pendente, e.texto, contato.nome, await lerConfigEscalonamento(sql));
+  }
   if (!chamado && contato) {
     const meus = abertos.filter((c) => c.contato_id === contato.id || c.tentativas.some((t) => t.contato_id === contato.id));
     if (meus.length === 1) chamado = meus[0];
@@ -294,7 +383,18 @@ export async function responderChamado(
 
   const texto = await formularResposta(sql, chamado, respostaEquipe);
   const envio = await entregarAoCliente(sql, chamado, texto, cfg);
-  const aprendizado = await aprenderDeChamado(sql, chamado, respostaEquipe, autor, cfg);
+  /* Pelo WhatsApp, a Marina pergunta antes de guardar (sim / não / como
+     prefere). Pelo painel, quem responde já é a administração: guarda na hora. */
+  let confirmando = false;
+  let aprendizado: Awaited<ReturnType<typeof aprenderDeChamado>> = null;
+  if (e.numero && contato) {
+    try {
+      await sql`UPDATE marina_chamados SET confirmacao_etapa = 'pergunta', confirmacao_texto = ${respostaEquipe.slice(0, 3000)},
+        confirmacao_contato_id = ${contato.id}, confirmacao_em = now() WHERE id = ${chamado.id}`;
+      confirmando = true;
+    } catch { /* antes da migration 0020: guarda direto, como antes */ }
+  }
+  if (!confirmando) aprendizado = await aprenderDeChamado(sql, chamado, respostaEquipe, autor, cfg);
   const minutos = (Date.now() - new Date(chamado.notificado_em ?? chamado.criado_em).getTime()) / 60000;
   await registrarEvento(sql, "respondido", { canal: chamado.canal, categoria: chamado.categoria, referencia: chamado.id, valor: Math.round(minutos) });
 
@@ -308,9 +408,11 @@ export async function responderChamado(
       atualizado_em = now() WHERE id = ${chamado.id}`;
   }
   await sql`UPDATE marina_lacunas SET status = 'resolvida', resolvido_em = now() WHERE status = 'aberta' AND lower(pergunta) = lower(${chamado.pergunta})`.catch(() => {});
+  await sql`UPDATE marina_lacunas SET status = 'resolvida', resolvido_em = now() WHERE status = 'aberta' AND chamado_id = ${chamado.id}`.catch(() => {});
 
   const canal = chamado.canal === "site" ? "chat do site" : "WhatsApp";
-  const aprendeu = aprendizado
+  const aprendeu = confirmando ? `\n\n${textoPedirConfirmacao(chamado.codigo, respostaEquipe)}`
+    : aprendizado
     ? aprendizado.status === "ativo" ? " A Marina já aprendeu e vai responder sozinha da próxima vez."
       : aprendizado.status === "pendente" ? " A resposta foi para a fila de revisão do aprendizado." : ""
     : "";
@@ -320,9 +422,10 @@ export async function responderChamado(
     entregue: envio.ok,
     entregarManual: !envio.ok && chamado.canal === "whatsapp" && destino ? { para: destino, texto } : null,
     aprendizado,
+    confirmando,
     mensagem: envio.ok
       ? `✅ Chamado #${chamado.codigo} respondido e entregue ao cliente (${canal}).${aprendeu}`
-      : `⚠️ Chamado #${chamado.codigo} respondido, mas não consegui entregar ao cliente (${canal}): ${envio.erro}`,
+      : `⚠️ Chamado #${chamado.codigo} respondido, mas não consegui entregar ao cliente (${canal}): ${envio.erro}${confirmando ? aprendeu : ""}`,
   };
 }
 
@@ -331,6 +434,7 @@ export async function responderChamado(
 export async function processarPrazos(sql: Sql, agora = new Date()): Promise<{ lembretes: number; repasses: number; avisos: number; expirados: number }> {
   const cfg = await lerConfigEscalonamento(sql);
   const n = { lembretes: 0, repasses: 0, avisos: 0, expirados: 0 };
+  await encerrarConfirmacoes(sql, { vencidas: true }, cfg);
   let abertos: Chamado[] = [];
   try {
     abertos = (await sql`SELECT * FROM marina_chamados WHERE status = 'aguardando' ORDER BY criado_em LIMIT 200`).map(chamadoDe);
@@ -378,10 +482,19 @@ export async function talvezProcessarPrazos(sql: Sql) {
 }
 
 /** Mensagem de teste para um contato da equipe (botão "Testar envio"). */
-export async function testarContato(sql: Sql, id: string): Promise<Envio> {
+export async function testarContato(sql: Sql, id: string): Promise<Envio & { whatsapp?: string }> {
   const [c] = await sql<{ nome: string; numero: string }[]>`SELECT nome, numero FROM equipe_contatos WHERE id = ${id}`;
   if (!c) return { ok: false, erro: "Contato não encontrado." };
-  const envio = await enviarWhatsapp(c.numero, `👋 Oi, ${c.nome}! Teste da Marina: é por este número que vou pedir ajuda quando um cliente perguntar algo que eu não sei. Não precisa responder.`);
+  /* Antes de mandar: o WhatsApp da pousada está conectado no OpenClaw?
+     Desconectado, nenhum envio sai — e é a causa mais comum de "não chegou". */
+  const status = await statusWhatsapp();
+  if (status.sabe && status.conectado === false) {
+    const erro = `O WhatsApp da pousada está DESCONECTADO no OpenClaw (${status.resumo}). No servidor: openclaw channels status e, se preciso, openclaw channels login --channel whatsapp.`;
+    await sql`UPDATE equipe_contatos SET ultimo_teste_em = now(), ultimo_teste_ok = false, ultimo_teste_erro = ${erro.slice(0, 500)} WHERE id = ${id}`;
+    return { ok: false, erro };
+  }
+  const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+  const envio = await enviarWhatsapp(c.numero, `👋 Oi, ${c.nome}! Teste da Marina (${hora}): é por este número que vou pedir ajuda quando um cliente perguntar algo que eu não sei. Não precisa responder.`);
   await sql`UPDATE equipe_contatos SET ultimo_teste_em = now(), ultimo_teste_ok = ${envio.ok}, ultimo_teste_erro = ${envio.ok ? null : envio.erro} WHERE id = ${id}`;
-  return envio;
+  return { ...envio, whatsapp: status.resumo };
 }

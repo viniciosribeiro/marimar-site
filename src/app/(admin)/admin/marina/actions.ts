@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { exigirSessao } from "@/lib/admin-sessao";
 import { comSql, type Sql } from "@/lib/db-conexao";
 import { sincronizarVoz } from "@/lib/openclaw-config";
+import { abrirChamado, avisarDeNovo, vinculoDaAbertura } from "@/lib/escalonamento";
 import {
   categoriaValida, tipoValido, registrarHistorico, sugerirCategoria, type AcaoHistorico,
 } from "@/lib/marina";
@@ -279,6 +280,43 @@ export async function ignorarLacuna(fd: FormData): Promise<Resultado> {
   await comSql((sql) => sql`UPDATE marina_lacunas SET status = 'ignorada', resolvido_em = now() WHERE id = ${id}`);
   atualizar();
   return { ok: true, mensagem: "Tirada da lista." };
+}
+
+/**
+ * "Avisar a equipe" de uma pergunta sem resposta: abre o chamado (ou avisa de
+ * novo, se o aviso anterior falhou) e guarda o vínculo na lista.
+ * Sem a sessão do cliente (ele já saiu), a resposta da equipe serve para a
+ * Marina aprender — o cliente original não recebe.
+ */
+export async function avisarEquipeDaLacuna(fd: FormData): Promise<Resultado> {
+  await exigirSessao();
+  const id = txt(fd, "id");
+  if (!id) return { ok: false, mensagem: "Pergunta não encontrada." };
+  const r = await comSql(async (sql) => {
+    const [l] = await sql<{ pergunta: string; sessao: string | null; chamado_id: string | null }[]>`
+      SELECT pergunta, sessao, chamado_id FROM marina_lacunas WHERE id = ${id}`;
+    if (!l) return { ok: false, mensagem: "Pergunta não encontrada." };
+    if (l.chamado_id) {
+      const aviso = await avisarDeNovo(sql, l.chamado_id);
+      if (aviso) {
+        await sql`UPDATE marina_lacunas SET aviso_erro = ${aviso.envio.ok ? null : aviso.envio.erro} WHERE id = ${id}`;
+        return aviso.envio.ok
+          ? { ok: true, mensagem: `Avisei ${aviso.contato?.nome ?? "a equipe"} pelo WhatsApp (entrega confirmada).` }
+          : { ok: false, mensagem: `Não chegou: ${aviso.envio.erro}` };
+      }
+    }
+    const a = await abrirChamado(sql, { canal: "site", destino: l.sessao ?? `painel-${id}`, pergunta: l.pergunta });
+    const v = vinculoDaAbertura(a);
+    await sql`UPDATE marina_lacunas SET chamado_id = ${v.chamadoId}, aviso_erro = ${v.avisoErro} WHERE id = ${id}`;
+    if (!a.ok) return { ok: false, mensagem: a.erro };
+    if (!a.aviso) return { ok: true, mensagem: `Já havia um chamado aberto para esta pergunta (#${a.chamado.codigo}).` };
+    return a.aviso.envio.ok
+      ? { ok: true, mensagem: `Chamado #${a.chamado.codigo}: avisei ${a.aviso.contato?.nome ?? "a equipe"} pelo WhatsApp (entrega confirmada).` }
+      : { ok: false, mensagem: `Chamado #${a.chamado.codigo} aberto, mas o aviso não chegou: ${a.aviso.envio.erro}` };
+  });
+  atualizar();
+  revalidatePath("/admin/equipe");
+  return r;
 }
 
 /* ── regras de hospedagem e adicionais ───────────────────────────── */

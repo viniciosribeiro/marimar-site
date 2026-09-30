@@ -81,20 +81,34 @@ http.createServer((req, res) => {
   let bruto = "";
   req.on("data", (c) => (bruto += c));
   req.on("end", () => {
-    /* Ferramenta de mensagens (POST /tools/invoke), como o envio do site usa. */
+    /* Ferramenta de mensagens (POST /tools/invoke), no formato real do
+       OpenClaw 2026.9: { ok, result: { content: [{type:"text"}], details } }.
+       - número terminado em 0000: o WhatsApp não entrega. Com bestEffort
+         false vira erro 500 (como o real); sem ele, "ok" sem result — o
+         falso sucesso que o site passou a recusar.
+       - SIM_WHATSAPP_DESCONECTADO=1: channels.status diz desconectado. */
     if (req.url === "/tools/invoke") {
       const pedido = JSON.parse(bruto || "{}");
-      const para = String(pedido.args?.to ?? "");
-      if (para.endsWith("0000")) {
-        res.writeHead(502, { "content-type": "application/json" });
-        return res.end(JSON.stringify({ ok: false, error: { message: "whatsapp: número inacessível" } }));
+      const para = String(pedido.args?.target ?? pedido.args?.to ?? "");
+      const detalhes = (d) => ({ ok: true, result: { content: [{ type: "text", text: JSON.stringify(d) }], details: d } });
+      if (para.endsWith("0000") || process.env.SIM_WHATSAPP_DESCONECTADO) {
+        if (pedido.args?.bestEffort === false) {
+          res.writeHead(500, { "content-type": "application/json" });
+          return res.end(JSON.stringify({ ok: false, error: { type: "tool_error", message: "tool execution failed" } }));
+        }
+        res.writeHead(200, { "content-type": "application/json" });
+        return res.end(JSON.stringify(detalhes({ channel: "whatsapp", to: para, via: "direct" })));
       }
       enviadas.push({ para, texto: pedido.args?.message, em: new Date().toISOString() });
       res.writeHead(200, { "content-type": "application/json" });
-      return res.end(JSON.stringify({ ok: true, result: { messageId: "sim-" + enviadas.length } }));
+      return res.end(JSON.stringify(detalhes({ channel: "whatsapp", to: para, via: "direct", result: { messageId: "3EB0SIM" + enviadas.length } })));
     }
     if (req.url === "/api/v1/admin/rpc") {
       const pedido = JSON.parse(bruto || "{}");
+      if (pedido.method === "channels.status") {
+        res.writeHead(200, { "content-type": "application/json" });
+        return res.end(JSON.stringify({ ok: true, payload: { channels: [{ id: "whatsapp", accounts: [{ accountId: "default", connected: !process.env.SIM_WHATSAPP_DESCONECTADO, linked: true }] }] } }));
+      }
       if (pedido.method === "send") {
         /* Número terminado em 0000 simula aparelho fora do ar. */
         if (String(pedido.params?.to).endsWith("0000")) {

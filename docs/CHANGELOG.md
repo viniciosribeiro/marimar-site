@@ -6,6 +6,48 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-30 (10) — Equipe avisada de verdade pelo WhatsApp, confirmação do aprendizado e "Sem resposta" junto com os chamados
+**Autor:** Claude (Claude Code)
+**Migration:** 0020 (só acrescenta colunas opcionais em `marina_chamados` e `marina_lacunas`)
+**Depois do deploy:**
+- `npm run db:migrate`;
+- no OpenClaw: liberar a ferramenta `message` (`docs/runbook.md`, "Liberar a ferramenta de mensagens") e reinstalar a skill `marimar-pousada`.
+
+### Por que "Testar envio" dizia "enviado" e nada chegava
+Isto vem da leitura do código do pacote `openclaw@2026.9.7`, baixado do npm:
+1. O perfil padrão de ferramentas (`coding`) **não inclui `message`**. O
+   `/tools/invoke` respondia 404, e o site pedia à Marina pelo chat. Ela
+   podia responder "ENVIADO" sem ter mandado nada.
+2. Mesmo com a ferramenta liberada, o envio sai em modo "melhor esforço": se
+   o WhatsApp não entrega, a resposta é "ok" sem `result`.
+
+### O que mudou no envio
+- O envio agora pede `bestEffort: false`.
+- Só conta como enviado com o id da mensagem no canal WhatsApp.
+- A Marina só entra se a ferramenta não existir, e precisa devolver o id.
+- O "Testar envio" consulta `channels.status` antes e avisa se o WhatsApp está desconectado.
+- Cada erro diz o que fazer (tabela no manual).
+
+### Confirmação do aprendizado pelo WhatsApp
+Depois de entregar a resposta ao cliente, a Marina pergunta a quem respondeu:
+"Posso guardar esta resposta? SIM / NÃO / como prefere".
+- Uma versão nova recebe "Ficou assim: … Confirma?" até vir SIM ou NÃO.
+- Depois de 24 h, ou com um chamado novo para a mesma pessoa, a resposta vai para a fila do painel.
+- Pelo painel continua sem confirmação.
+
+### "Sem resposta" junto com os chamados
+Cada pergunta sem resposta mostra se a equipe foi avisada (quem e quando),
+se o aviso falhou (com o motivo) ou se o escalonamento está desligado. Há o
+botão **Avisar a equipe** / **Avisar de novo**, e a pergunta sai da lista
+quando o chamado é respondido.
+
+### Testes
+- Unitários novos: `testes/unit/envio.test.ts`, 7 testes, incluindo o formato real da resposta do OpenClaw e o falso sucesso.
+- O simulador do gateway usa o formato real.
+- E2E do escalonamento: tudo certo, com os novos passos (SIM, alteração com nova confirmação, NÃO, fechamento pela chegada de chamado novo, Sem resposta ligada ao chamado).
+- Continuam verdes: `npm test` (46), o E2E da Marina e o build.
+- Não testado daqui: o OpenClaw e o WhatsApp de verdade.
+
 ## 2026-09-30 (9) — Rota no próprio site, site animado e mapa novo do Cérebro
 **Autor:** Claude (Claude Code)
 **Migration:** nenhuma (a rota fica em `conteudo_editavel`, chave `rota`; o movimento, em `pousada.tema`)
