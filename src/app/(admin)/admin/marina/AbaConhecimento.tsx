@@ -27,13 +27,13 @@ type Filtro = "todos" | "em-uso" | "aguardando" | "falhou" | "desligado" | "nunc
  * em uso (o WhatsApp já leu), aguardando (salvo, o WhatsApp lê na próxima
  * conversa), revisar (falhou no teste), desligado.
  */
-export function AbaConhecimento({ dados, ensinar, verHistorico, tipos, titulo }: {
+export function AbaConhecimento({ dados, ensinar, verHistorico, tipos, titulo, categoriaInicial }: {
   dados: DadosMarina; ensinar: (r?: Rascunho) => void; verHistorico: (id: string) => void;
   /** Restringe a lista (a aba Personalidade reutiliza para limites e escalonamento). */
-  tipos?: Tipo[]; titulo?: string;
+  tipos?: Tipo[]; titulo?: string; categoriaInicial?: string;
 }) {
   const [busca, setBusca] = useState("");
-  const [categoria, setCategoria] = useState<string>("todas");
+  const [categoria, setCategoria] = useState<string>(categoriaInicial ?? "todas");
   const [tipo, setTipo] = useState<string>("todos");
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [lixeira, setLixeira] = useState(false);

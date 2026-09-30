@@ -1,3 +1,4 @@
+import { categoriaValida } from "@/lib/marina-base";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { comSql } from "@/lib/db-conexao";
@@ -32,7 +33,7 @@ const diasDesde = (iso: string) => Math.floor((Date.now() - new Date(iso).getTim
 export default async function MarinaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ aba?: string }>;
+  searchParams: Promise<{ aba?: string; categoria?: string; novo?: string }>;
 }) {
   const s = await auth();
   if (!s?.user) redirect("/admin/login");
@@ -210,7 +211,8 @@ export default async function MarinaPage({
           continua valendo, mas categorias, histórico e testes não são guardados.
         </Aviso>
       )}
-      <PainelMarina dados={props} abaInicial={sp.aba ?? "visao"} />
+      <PainelMarina dados={props} abaInicial={sp.aba ?? "visao"}
+        categoriaInicial={sp.categoria ? categoriaValida(sp.categoria) : undefined} novoInicial={sp.novo === "1"} />
     </Pagina>
   );
 }

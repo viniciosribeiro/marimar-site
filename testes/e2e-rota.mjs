@@ -78,7 +78,8 @@ try {
   await adm.getByLabel("Senha", { exact: true }).fill(process.env.SENHA ?? "teste1234567");
   await adm.getByRole("button", { name: "Entrar no painel" }).click();
   await adm.waitForURL(/\/admin(\?|$)/);
-  await adm.goto(`${BASE}/admin/rota`); await adm.waitForTimeout(5000);
+  await adm.goto(`${BASE}/admin/rota`);
+  await adm.locator(".rota-pino--arrastavel").nth(3).waitFor({ timeout: 20000 }).catch(() => {});
   ok(await adm.locator(".rota-pino--arrastavel").count() >= 4, "painel: pousada, trapiche e terminais arrastáveis no mapa");
   const pino = await adm.locator(".rota-pino:has(.rota-marcador--trapiche)").boundingBox();
   await adm.mouse.move(pino.x + pino.width / 2, pino.y + pino.height / 2); await adm.mouse.down();

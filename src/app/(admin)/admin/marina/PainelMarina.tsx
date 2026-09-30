@@ -29,11 +29,15 @@ export type AbaId =
  * Personalidade) → conferir (Testar) → aprender com o uso (Sem resposta,
  * Conversas) → desfazer (Histórico). A voz fica no fim: mexe-se pouco.
  */
-export function PainelMarina({ dados, abaInicial }: { dados: DadosMarina; abaInicial: string }) {
+export function PainelMarina({ dados, abaInicial, categoriaInicial, novoInicial }: {
+  dados: DadosMarina; abaInicial: string;
+  /** Vindo do Cérebro: abre Conhecimento já filtrado e, com `novo`, o formulário no assunto. */
+  categoriaInicial?: string; novoInicial?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [aba, setAba] = useState<AbaId>(abaInicial as AbaId);
-  const [rascunho, setRascunho] = useState<Rascunho | null>(null);
+  const [rascunho, setRascunho] = useState<Rascunho | null>(novoInicial ? { categoria: categoriaInicial } : null);
   const [historicoDe, setHistoricoDe] = useState<string | null>(null);
 
   const trocar = useCallback((id: AbaId) => {
@@ -67,7 +71,7 @@ export function PainelMarina({ dados, abaInicial }: { dados: DadosMarina; abaIni
 
       {aba === "visao" && <AbaVisao dados={dados} irPara={trocar} ensinar={ensinar} />}
       {aba === "conhecimento" && (
-        <AbaConhecimento dados={dados} ensinar={ensinar} verHistorico={setHistoricoDe} />
+        <AbaConhecimento dados={dados} ensinar={ensinar} verHistorico={setHistoricoDe} categoriaInicial={categoriaInicial} />
       )}
       {aba === "testar" && <AbaTeste dados={dados} ensinar={ensinar} />}
       {aba === "sem-resposta" && <AbaLacunas lacunas={dados.lacunas} ensinar={ensinar} />}

@@ -143,7 +143,7 @@ aprendidos em uso; no WhatsApp, a skill chama `POST /api/agent/aprendizado/uso`.
 | `/admin/equipe` → Chamados | aguardando / com problema / entregues; linha do tempo de quem foi avisado; responder pelo painel; tentar entregar de novo; cancelar |
 | `/admin/equipe` → Prazos e WhatsApp | liga/desliga, os 4 prazos, modo do WhatsApp e templates |
 | `/admin/marina?aba=aprendizado` | modo, fila de revisão, aprovar/editar/rejeitar/tornar oficial/excluir, busca e filtros |
-| `/admin/cerebro` | indicadores, mapa do conhecimento, áreas, taxa de resolução sozinha no tempo, aprendidos recentes, frequentes, temas escalados; filtros de período e canal |
+| `/admin/cerebro` | indicadores, mapa do conhecimento (`MapaConhecimento.tsx`: Marina no centro, áreas em anel, Mapa/Lista, busca, filtro de origem, zoom/arrastar/tela cheia, equipes de apoio, painel "Assunto selecionado" com links para `/admin/marina?aba=conhecimento&categoria=<id>[&novo=1]`), áreas, taxa de resolução sozinha no tempo, aprendidos recentes, frequentes, temas escalados; filtros de período e canal |
 | `/admin` | resumo do Cérebro e avisos de clientes esperando / aprovações |
 
 "Resolveu sozinha" = das perguntas que não estavam no cadastro (eventos

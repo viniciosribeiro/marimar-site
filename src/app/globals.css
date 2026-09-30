@@ -479,3 +479,9 @@ html[data-mov-decor="on"] .gaivotas, html[data-mov-decor="on"] .sol-raios { disp
   html[data-mov-revelar="on"] .revelar-pendente { opacity: 0; }
   html[data-mov-revelar="on"] .revelar-visto { animation: revelar calc(.8s * var(--mov-vel)) cubic-bezier(.22, 1, .36, 1) both; }
 }
+
+/* Cérebro da Marina: o cabo da área selecionada "corre" até ela. */
+@keyframes cerebro-fluxo { to { stroke-dashoffset: -28; } }
+@media (prefers-reduced-motion: no-preference) {
+  .cerebro-fluxo { stroke-dasharray: 10 4; animation: cerebro-fluxo 1.4s linear infinite; }
+}
