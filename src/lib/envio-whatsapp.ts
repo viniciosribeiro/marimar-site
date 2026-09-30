@@ -22,7 +22,8 @@ import { urlGateway, cabecalhosGateway } from "./chat";
  * recebe o texto e manda ela mesma) e o painel mostra o erro.
  */
 
-export type Envio = { ok: true; via?: string } | { ok: false; erro: string };
+/** `detalhe`: o que o gateway respondeu, resumido — o painel mostra no teste. */
+export type Envio = { ok: true; via?: string; detalhe?: string } | { ok: false; erro: string };
 
 export type Template = { nome: string; idioma: string };
 
@@ -48,8 +49,16 @@ async function porFerramenta(para: string, texto: string, o: Opcoes): Promise<En
     try {
       const d = JSON.parse(corpo);
       if (d?.ok === false || d?.error) return { ok: false, erro: `ferramenta: ${String(d.error?.message ?? d.error ?? corpo).slice(0, 200)}` };
-    } catch { /* 2xx sem JSON: aceito */ }
-    return { ok: true, via: "ferramenta" };
+      /* A ferramenta pode "responder ok" com o erro dentro do resultado
+         (isError, status "error", texto com "error"/"failed"). Isso não é envio. */
+      const res = d?.result ?? d;
+      const textoRes = JSON.stringify(res ?? "").slice(0, 600);
+      if (res?.isError || res?.details?.ok === false || res?.details?.status === "error" || /"(status|ok)":\s*"?(error|false)|not (found|allowed|permitted)|failed|denied|unknown tool/i.test(textoRes)) {
+        return { ok: false, erro: `ferramenta respondeu sem enviar: ${textoRes.slice(0, 220)}` };
+      }
+      return { ok: true, via: "ferramenta", detalhe: textoRes.slice(0, 300) };
+    } catch { /* 2xx sem JSON */ }
+    return { ok: true, via: "ferramenta", detalhe: corpo.slice(0, 300) };
   } catch (e) {
     return { ok: false, erro: `ferramenta: ${(e as Error).message}` };
   }
@@ -87,7 +96,7 @@ async function porAgente(para: string, texto: string, o: Opcoes): Promise<Envio>
     const d = await r.json();
     const resposta = String(d?.choices?.[0]?.message?.content ?? "").trim();
     return /ENVIADO\s*\.?$/i.test(resposta)
-      ? { ok: true, via: "agente" }
+      ? { ok: true, via: "agente", detalhe: resposta.slice(0, 300) }
       : { ok: false, erro: `a Marina não confirmou o envio: ${resposta.slice(0, 160) || "(resposta vazia)"}` };
   } catch (e) {
     return { ok: false, erro: `agente: ${(e as Error).message}` };

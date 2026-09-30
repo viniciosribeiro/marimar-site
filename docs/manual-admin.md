@@ -195,6 +195,24 @@ Quem a Marina chama quando não sabe a resposta.
   passar para a próxima, avisar o cliente e desistir (aí o cliente recebe o
   WhatsApp/telefone da recepção cadastrado em Dados da pousada).
 
+#### “Testar envio” diz que foi, mas não chegou
+O site só sabe que o OpenClaw **aceitou** o pedido. Para descobrir onde parou,
+no terminal da Hostinger (onde você instala a skill), mande uma mensagem
+direto pelo OpenClaw, trocando pelo seu número:
+
+```
+openclaw message send --channel whatsapp --target +5566996888843 --message "teste 1"
+openclaw message send --channel whatsapp --target +556696888843 --message "teste 2"
+```
+
+- Chegou o **teste 1**: o WhatsApp funciona; o problema é o caminho do site —
+  mande a mensagem que apareceu na tela ao testar para quem cuida do sistema.
+- Chegou só o **teste 2** (sem o 9 depois do DDD): o WhatsApp deste número está
+  registrado sem o 9. Cadastre o número assim na equipe.
+- Não chegou nenhum: o WhatsApp da pousada no OpenClaw não está conectado ou
+  não pode mandar para números novos — veja a mensagem de erro que o comando
+  mostrou.
+
 ### Cérebro da Marina
 O panorama do que ela sabe: quanto de cada assunto (cadastrado, aprendido,
 mídias), o mapa das áreas e de quem da equipe responde cada uma, quanto ela

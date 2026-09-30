@@ -6,6 +6,15 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-30 (8) — "Testar envio" mostra o que o OpenClaw respondeu
+**Autor:** Claude (Claude Code)
+
+Em produção o teste dizia "enviado" e nada chegava. O site agora trata como
+falha quando a ferramenta de mensagens responde "ok" com erro dentro do
+resultado, e o aviso do teste mostra o caminho usado e a resposta do
+gateway. Manual: seção "Testar envio diz que foi, mas não chegou" (teste
+direto com `openclaw message send` e a questão do 9 no número).
+
 ## 2026-09-30 (7) — Envio para a equipe pelo caminho que o OpenClaw aceita; FAQ sem "Plus Code"
 **Autor:** Claude (Claude Code)
 

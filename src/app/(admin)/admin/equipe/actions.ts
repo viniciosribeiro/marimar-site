@@ -89,7 +89,7 @@ export async function testarEnvio(id: string): Promise<Resultado> {
   const r = await comSql((sql) => testarContato(sql, id));
   atualizar();
   return r.ok
-    ? { ok: true, mensagem: "Mensagem de teste enviada. Confira no WhatsApp da pessoa." }
+    ? { ok: true, mensagem: `O OpenClaw aceitou o envio (caminho: ${r.via === "agente" ? "pela Marina" : r.via === "ferramenta" ? "ferramenta de mensagens" : r.via ?? "?"}). Se não chegar em 1 minuto, veja o manual (“Testar envio não chegou”). Resposta: ${r.detalhe ?? "—"}` }
     : { ok: false, mensagem: `Não consegui enviar: ${r.erro}` };
 }
 
