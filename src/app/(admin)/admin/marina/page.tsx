@@ -9,8 +9,11 @@ import { medirCobertura, type Cobertura } from "@/lib/agent-mapa";
 import { gatewayConfigurado } from "@/lib/chat";
 import { lerRegras, lerAdicionais } from "@/lib/regras-hospedagem";
 import { Pagina, Cabecalho, Aviso } from "@/components/admin/ui";
+import { lerRoteiros } from "@/lib/roteiros";
+import { blobConfigurado } from "@/lib/blob";
+import { nomeSecao } from "@/lib/fotos";
 import { PainelMarina } from "./PainelMarina";
-import type { DadosMarina, DocumentoPainel, Conversa, Lacuna, EntradaHistorico, Saude } from "./tipos";
+import type { DadosMarina, DocumentoPainel, Conversa, Lacuna, EntradaHistorico, Saude, MidiaEscolha } from "./tipos";
 
 export const dynamic = "force-dynamic";
 
@@ -127,7 +130,23 @@ export default async function MarinaPage({
     const regras = await lerRegras(sql);
     const adicionais = await lerAdicionais(sql, false);
 
-    return { config, itens, leituras, documentos, conversas, lacunas, historico, cobertura, regras, adicionais };
+    /* Roteiros de orientação e as mídias que podem entrar numa etapa. */
+    const roteiros = await lerRoteiros(sql);
+    let midiasEscolha: MidiaEscolha[] = [];
+    try {
+      midiasEscolha = (await sql<{ id: string; tipo: string; titulo: string | null; alt: string; url: string; thumb_url: string | null;
+        duracao_seg: number | null; secao: string; quarto: string | null }[]>`
+        SELECT m.id, m.tipo, m.titulo, m.alt, m.url, m.thumb_url, m.duracao_seg, m.secao, q.nome AS quarto
+        FROM midias m LEFT JOIN quartos q ON q.id = m.quarto_id
+        ORDER BY m.criado_em DESC LIMIT 400`).map((m) => ({
+        id: m.id, tipo: m.tipo === "video" ? "video" : "foto", titulo: m.titulo, alt: m.alt,
+        capa: m.tipo === "video" ? m.thumb_url : m.url,
+        duracao_seg: m.duracao_seg === null ? null : Number(m.duracao_seg), secao: m.secao,
+        album: m.quarto ? `Suíte ${m.quarto}` : m.secao === "orientacao" ? "Orientação" : nomeSecao(m.secao),
+      }));
+    } catch { /* antes da 0018 */ }
+
+    return { config, itens, leituras, documentos, conversas, lacunas, historico, cobertura, regras, adicionais, roteiros, midiasEscolha };
   }).catch(() => null);
 
   if (!dados) {
@@ -166,7 +185,7 @@ export default async function MarinaPage({
     vozApi: Boolean(process.env.ELEVENLABS_API_KEY),
   };
 
-  const props: DadosMarina = { ...dados, saude };
+  const props: DadosMarina = { ...dados, saude, blobOk: blobConfigurado() };
 
   return (
     <Pagina larga>

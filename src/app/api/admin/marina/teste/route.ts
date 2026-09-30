@@ -121,8 +121,13 @@ export async function POST(req: Request) {
       const t0 = Date.now();
       const bruto = await perguntarAoGateway(`painel-teste:${sessaoTeste}`, sistema, verificar ? [] : historico, mensagem);
       const { resposta, codigos } = separarFontes(bruto);
-      const fontes = codigos.map((c) => porCodigo.get(c)).filter(Boolean)
-        .map((i) => ({ id: i!.id, titulo: i!.titulo, tipo: i!.tipo, categoria: i!.categoria ?? "geral" }));
+      const roteiroPorCodigo = new Map((ensinamentos.roteiros ?? []).map((r) => [codigoItem(r.id), r]));
+      const fontes = [
+        ...codigos.map((c) => porCodigo.get(c)).filter(Boolean)
+          .map((i) => ({ id: i!.id, titulo: i!.titulo, tipo: i!.tipo, categoria: i!.categoria ?? "geral" })),
+        ...codigos.map((c) => roteiroPorCodigo.get(c)).filter(Boolean)
+          .map((r) => ({ id: r!.id, titulo: r!.titulo, tipo: "roteiro", categoria: "orientacao" })),
+      ];
 
       let verificacao: "ok" | "falhou" | null = null;
       if (alvo) {

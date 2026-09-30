@@ -17,6 +17,7 @@ import postgres from "postgres";
 type Sql = ReturnType<typeof postgres>;
 
 export * from "./marina-base";
+import { lerRoteiros, roteirosEmTexto, type Roteiro } from "./roteiros";
 import { CATEGORIAS, rotuloCategoria, codigoItem } from "./marina-base";
 import { lerRegras, lerAdicionais, textoRegrasMarina } from "./regras-hospedagem";
 
@@ -152,6 +153,8 @@ export type Ensinamentos = {
   documentos: Documento[];
   /** Regras de criança e adicionais, já em texto (Marina → Regras e adicionais). */
   regras?: string;
+  /** Roteiros de orientação ligados, com etapas e mídias (Marina → Roteiros). */
+  roteiros?: Roteiro[];
 };
 
 /** O que está valendo para a Marina: ativo e fora da lixeira. */
@@ -189,8 +192,11 @@ export async function lerEnsinamentos(sql: Sql): Promise<Ensinamentos> {
      que a busca do site usa para montar a consulta ao motor. */
   const regras = textoRegrasMarina(await lerRegras(sql), await lerAdicionais(sql));
 
+  const roteiros = await lerRoteiros(sql, { soAtivos: true });
+
   return {
     regras,
+    roteiros,
     fatos: linhas.filter((l) => l.tipo === "fato"),
     perguntas: linhas.filter((l) => l.tipo === "pergunta"),
     limites: linhas.filter((l) => l.tipo === "limite"),
@@ -200,7 +206,7 @@ export async function lerEnsinamentos(sql: Sql): Promise<Ensinamentos> {
 }
 
 export const totalItens = (e: Ensinamentos) =>
-  e.fatos.length + e.perguntas.length + e.limites.length + e.escalar.length;
+  e.fatos.length + e.perguntas.length + e.limites.length + e.escalar.length + (e.roteiros?.length ?? 0);
 
 /* ── o texto que a Marina lê ─────────────────────────────────────── */
 
@@ -256,7 +262,7 @@ function agrupar(itens: Ensinamento[], linha: (i: Ensinamento) => string): strin
 export function ensinamentosEmTexto(
   c: ConfigMarina,
   e: Partial<Ensinamentos> & { fatos: Ensinamento[]; limites: Ensinamento[] },
-  opcoes: { codigos?: boolean } = {},
+  opcoes: { codigos?: boolean; canal?: "whatsapp" | "site" } = {},
 ): string {
   const cod = (i: Ensinamento) => (opcoes.codigos ? `[${codigoItem(i.id)}] ` : "");
   const partes: string[] = [];
@@ -267,7 +273,7 @@ export function ensinamentosEmTexto(
     partes.push("COMO FALAR:\n" + c.tom.trim());
   }
 
-  const temConteudo = e.fatos.length || perguntas.length || e.limites.length || escalar.length || e.regras;
+  const temConteudo = e.fatos.length || perguntas.length || e.limites.length || escalar.length || e.regras || e.roteiros?.length;
   if (temConteudo) partes.push(PRIORIDADE);
   if (e.regras) partes.push(e.regras);
 
@@ -301,6 +307,8 @@ export function ensinamentosEmTexto(
         ].filter(Boolean).join("\n"),
     );
   }
+  const roteiros = roteirosEmTexto(e.roteiros ?? [], opcoes);
+  if (roteiros) partes.push(roteiros);
   if (e.documentos?.length) {
     partes.push(
       "DOCUMENTOS ENVIADOS PELA POUSADA (abaixo só o começo de cada um; " +
@@ -432,7 +440,7 @@ export async function montarTreinamento(
 ): Promise<{ texto: string; ensinamentos: Ensinamentos; config: ConfigMarina }> {
   const config = await lerConfig(sql);
   const ensinamentos = await lerEnsinamentos(sql);
-  const texto = ensinamentosEmTexto(config, ensinamentos, opcoes);
+  const texto = ensinamentosEmTexto(config, ensinamentos, { ...opcoes, canal: canal === "whatsapp" ? "whatsapp" : "site" });
   await registrarLeitura(sql, canal, totalItens(ensinamentos), texto.length);
   return { texto, ensinamentos, config };
 }

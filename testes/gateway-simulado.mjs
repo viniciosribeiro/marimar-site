@@ -29,8 +29,21 @@ function responder(corpo) {
     return chaves.some((c) => n.includes(c));
   });
   const achou = linhas.filter((l) => /^\s*(•|-|P:|R:|\[)/.test(l)).slice(0, 4);
+  /* Roteiro de orientação: como uma Marina obediente, manda as etapas na
+     ordem, com o vídeo e a foto de cada uma em markdown. */
+  const todas = sistema.split("\n");
+  const etapas = [];
+  for (const l of achou) {
+    const i = todas.indexOf(l);
+    if (i < 0 || !/Quando usar:/.test(todas[i + 1] ?? "")) continue;
+    for (const e of todas.slice(i + 2)) {
+      if (!/^\s{2,}/.test(e)) break;
+      const m = e.match(/^\s*(vídeo|foto)[^:]*:\s*(\S+)/);
+      etapas.push(m ? `![${m[1]}](${m[2]})` : e.trim());
+    }
+  }
   let texto = achou.length
-    ? "Pelo que a pousada me ensinou: " + achou.map((l) => l.trim()).join(" ")
+    ? "Pelo que a pousada me ensinou: " + achou.map((l) => l.trim()).join(" ") + (etapas.length ? "\n" + etapas.join("\n") : "")
     : "Não tenho essa informação ainda. Vou confirmar com a pousada.";
   // Modo teste do painel: devolve as fontes no formato que o painel espera.
   const codigos = [...new Set(achou.join(" ").match(/#[a-z0-9]{4,}/g) ?? [])];

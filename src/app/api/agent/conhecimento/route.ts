@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   const { config, ensinamentos, texto } = await comSql(async (sql) => {
     const config = await lerConfig(sql);
     const ensinamentos = await lerEnsinamentos(sql);
-    const texto = ensinamentosEmTexto(config, ensinamentos);
+    const texto = ensinamentosEmTexto(config, ensinamentos, { canal: "whatsapp" });
     await registrarLeitura(sql, "whatsapp", totalItens(ensinamentos), texto.length);
     return { config, ensinamentos, texto };
   });
