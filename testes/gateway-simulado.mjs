@@ -81,6 +81,18 @@ http.createServer((req, res) => {
   let bruto = "";
   req.on("data", (c) => (bruto += c));
   req.on("end", () => {
+    /* Ferramenta de mensagens (POST /tools/invoke), como o envio do site usa. */
+    if (req.url === "/tools/invoke") {
+      const pedido = JSON.parse(bruto || "{}");
+      const para = String(pedido.args?.to ?? "");
+      if (para.endsWith("0000")) {
+        res.writeHead(502, { "content-type": "application/json" });
+        return res.end(JSON.stringify({ ok: false, error: { message: "whatsapp: número inacessível" } }));
+      }
+      enviadas.push({ para, texto: pedido.args?.message, em: new Date().toISOString() });
+      res.writeHead(200, { "content-type": "application/json" });
+      return res.end(JSON.stringify({ ok: true, result: { messageId: "sim-" + enviadas.length } }));
+    }
     if (req.url === "/api/v1/admin/rpc") {
       const pedido = JSON.parse(bruto || "{}");
       if (pedido.method === "send") {

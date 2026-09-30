@@ -463,12 +463,12 @@ function Mapa({ t, s, d }: { t: string | null; s: string | null; d: DadosHome })
             <span className="shrink-0 w-10 h-10 rounded-full bg-marca-suave text-marca flex items-center justify-center"><Icone nome="mapa" tamanho={18} /></span>
             <div className="text-sm">
               <p className="font-semibold text-tinta">{ENDERECO.completo}</p>
-              <p className="text-tinta-suave text-xs mt-0.5">Plus Code {ENDERECO.plusCode}</p>
+              <p className="text-tinta-suave text-xs mt-0.5">A entrada é pelo nosso restaurante, de frente para o mar</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
             <BotaoPilula href="/como-chegar">Como chegar</BotaoPilula>
-            <BotaoPilula href={`https://www.google.com/maps/search/?api=1&query=${ENDERECO.lat},${ENDERECO.lng}`} variante="contorno" externo>Abrir no mapa</BotaoPilula>
+            <BotaoPilula href="/como-chegar#rota" variante="contorno">Traçar minha rota</BotaoPilula>
           </div>
         </div>
 

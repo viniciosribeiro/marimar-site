@@ -50,7 +50,7 @@ acesso à produção e sem credenciais):
 
 5. **Escalonamento no OpenClaw real:** cadastrar a equipe em `/admin/equipe`,
    "Testar envio" (confirma o método `send` do RPC; se falhar, ajustar
-   `OPENCLAW_ENVIO_METODO`), ligar, e simular: pergunta desconhecida no
+   `OPENCLAW_ENVIO`; o RPC de administração não aceita `send`), ligar, e simular: pergunta desconhecida no
    WhatsApp → mensagem chega à equipe → resposta citando → cliente recebe.
    Agendador de 5 min para `/api/cron/chamados`.
 
