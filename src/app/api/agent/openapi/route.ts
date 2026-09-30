@@ -38,9 +38,28 @@ export async function GET(request: Request) {
     },
   };
 
+  paths["/api/agent/documentos"] = {
+    get: {
+      summary: "Documentos enviados pela pousada",
+      description: "Sem parâmetro: lista com trecho. ?busca=: trechos que falam do assunto. ?id=: texto completo.",
+      parameters: [
+        { name: "busca", in: "query", schema: { type: "string" } },
+        { name: "id", in: "query", schema: { type: "string", format: "uuid" } },
+      ],
+      responses: { "200": { description: "OK" }, "404": { description: "Documento não encontrado" } },
+    },
+  };
+  paths["/api/agent/lacuna"] = {
+    post: {
+      summary: "Registrar pergunta que a Marina não soube responder",
+      requestBody: { content: { "application/json": { schema: { type: "object", required: ["pergunta"], properties: { pergunta: { type: "string" }, resposta: { type: "string" }, canal: { type: "string", enum: ["whatsapp", "site"] } } } } } },
+      responses: { "200": { description: "Registrada" }, "400": { description: "Pergunta ausente" } },
+    },
+  };
+
   const spec = {
     openapi: "3.1.0",
-    info: { title: "Pousada Marimar — Agent API", version: "1.1.0", description: "API para o agente Marina (WhatsApp e site)" },
+    info: { title: "Pousada Marimar — Agent API", version: "1.2.0", description: "API para o agente Marina (WhatsApp e site)" },
     servers: [{ url: base }],
     security: [{ bearerAuth: [] }],
     components: { securitySchemes: { bearerAuth: { type: "http", scheme: "bearer" } } },

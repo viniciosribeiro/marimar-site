@@ -11,8 +11,9 @@ export const dynamic = "force-dynamic";
  * Cecília decide em cinco segundos — e é a diferença entre ela mexer nos
  * ajustes ou ter medo deles.
  *
- * Só quem está logado no admin chega aqui, e o texto é fixo: este endereço
- * não pode virar uma API de voz de uso livre.
+ * Só quem está logado no admin chega aqui. A frase pode ser escolhida (até
+ * 300 caracteres, para ouvir como ela fala uma resposta real), mas o teto
+ * impede que este endereço vire uma API de voz de uso livre.
  */
 const FRASE =
   "Oi! Sou a Marina, da Pousada Marimar. O café da manhã é servido das 8 às 10, " +
@@ -43,7 +44,9 @@ export async function POST(req: Request) {
       "xi-api-key": process.env.ELEVENLABS_API_KEY,
     },
     body: JSON.stringify({
-      text: FRASE,
+      text: typeof corpo?.frase === "string" && corpo.frase.trim()
+        ? corpo.frase.trim().slice(0, 300)
+        : FRASE,
       model_id: typeof corpo?.voz_modelo === "string" ? corpo.voz_modelo : "eleven_multilingual_v2",
       language_code: "pt",
       apply_text_normalization: "on",

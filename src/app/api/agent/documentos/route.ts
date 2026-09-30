@@ -1,6 +1,7 @@
 import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
 import postgres from "postgres";
+import { buscarNosDocumentos } from "@/lib/busca-documentos";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,27 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    /* ?busca=estacionamento → os trechos que falam disso, de todos os
+       documentos. É o jeito barato de achar a resposta sem abrir um por um. */
+    const busca = request.nextUrl.searchParams.get("busca")?.trim();
+    if (busca) {
+      const docs = await sql<{ id: string; nome: string; assunto: string | null; texto: string | null }[]>`
+        SELECT id, nome, assunto, texto FROM marina_documentos
+        WHERE ativo = true AND status = 'pronto'`;
+      await sql.end();
+      const achados = buscarNosDocumentos(docs, busca);
+      return Response.json({
+        ok: true,
+        dados: { busca, achados },
+        resumo_texto: achados.length
+          ? `TRECHOS DOS DOCUMENTOS SOBRE "${busca}":\n\n` +
+            achados.map((a) => `[${a.documento}] ${a.titulo}\n${a.trecho}`).join("\n\n---\n\n")
+          : `Nenhum documento fala de "${busca}". Não deduza: diga que vai confirmar com a pousada.`,
+        fonte: "local",
+        consultado_em: new Date().toISOString(),
+      });
+    }
+
     const lista = await sql<{ id: string; nome: string; assunto: string | null; trecho: string; caracteres: number }[]>`
       SELECT id, nome, assunto, trecho, caracteres FROM marina_documentos
       WHERE ativo = true AND status = 'pronto'
@@ -50,6 +72,7 @@ export async function GET(request: NextRequest) {
           "DOCUMENTOS QUE A POUSADA TE ENVIOU.",
           "Abaixo, o começo de cada um. Para ler inteiro:",
           "GET /api/agent/documentos?id=<id>",
+          "Para procurar um assunto em todos: GET /api/agent/documentos?busca=<palavras>",
           "",
           ...lista.map((d) =>
             `[${d.id}] ${d.assunto ?? d.nome} (${d.caracteres} caracteres)\n  ${d.trecho}`,
