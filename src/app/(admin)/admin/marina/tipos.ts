@@ -1,5 +1,6 @@
 import type { ConfigMarina, ItemTreino, Leitura } from "@/lib/marina";
 import type { Cobertura } from "@/lib/agent-mapa";
+import type { Regras, Adicional } from "@/lib/regras-hospedagem-base";
 
 /** O que a página entrega para a tela do módulo Marina. */
 
@@ -43,6 +44,8 @@ export type DadosMarina = {
   historico: EntradaHistorico[];
   cobertura: Cobertura[];
   saude: Saude;
+  regras: Regras;
+  adicionais: Adicional[];
 };
 
 /** O que abre o formulário de item já preenchido (vindo de conversa ou lacuna). */

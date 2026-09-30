@@ -101,7 +101,8 @@ export async function fetchTarifas(
   return workerResponseSchema.parse(data);
 }
 
-export type Consulta = { checkIn: string; checkOut: string; adultos: number; criancas: number };
+/** `criancas` = crianças que não são de colo; `bebes` = de colo (ver regras-hospedagem). */
+export type Consulta = { checkIn: string; checkOut: string; adultos: number; criancas: number; bebes: number };
 
 const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -127,7 +128,7 @@ function inteiro(valor: string | null | undefined, padrao: number, min: number, 
  */
 export function validarConsulta(p: {
   checkIn?: string | null; checkOut?: string | null;
-  adultos?: string | null; criancas?: string | null;
+  adultos?: string | null; criancas?: string | null; bebes?: string | null;
 }): { ok: true; consulta: Consulta } | { ok: false; motivo: "datas" | "ordem"; erro: string } {
   const checkIn = p.checkIn ?? "";
   const checkOut = p.checkOut ?? "";
@@ -144,6 +145,7 @@ export function validarConsulta(p: {
       checkOut,
       adultos: inteiro(p.adultos, 2, 1, 20),
       criancas: inteiro(p.criancas, 0, 0, 20),
+      bebes: inteiro(p.bebes, 0, 0, 10),
     },
   };
 }

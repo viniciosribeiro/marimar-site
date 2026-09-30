@@ -15,10 +15,11 @@ import { AbaDocumentos } from "./AbaDocumentos";
 import { AbaPersonalidade } from "./AbaPersonalidade";
 import { AbaVoz } from "./AbaVoz";
 import { AbaHistorico } from "./AbaHistorico";
+import { AbaRegras } from "./AbaRegras";
 
 export type AbaId =
   | "visao" | "conhecimento" | "testar" | "sem-resposta" | "conversas"
-  | "documentos" | "personalidade" | "voz" | "historico";
+  | "documentos" | "regras" | "personalidade" | "voz" | "historico";
 
 /**
  * O módulo da Marina, organizado pelo que a Cecília quer FAZER:
@@ -48,6 +49,7 @@ export function PainelMarina({ dados, abaInicial }: { dados: DadosMarina; abaIni
     { id: "sem-resposta", rotulo: "Sem resposta", contador: s.lacunas, alerta: s.lacunas > 0 },
     { id: "conversas", rotulo: "Conversas", contador: dados.conversas.length },
     { id: "documentos", rotulo: "Documentos", contador: dados.documentos.length, alerta: s.docsFalhos > 0 },
+    { id: "regras", rotulo: "Crianças e adicionais" },
     { id: "personalidade", rotulo: "Personalidade e regras" },
     { id: "voz", rotulo: "Voz" },
     { id: "historico", rotulo: "Histórico" },
@@ -67,6 +69,7 @@ export function PainelMarina({ dados, abaInicial }: { dados: DadosMarina; abaIni
       {aba === "sem-resposta" && <AbaLacunas lacunas={dados.lacunas} ensinar={ensinar} />}
       {aba === "conversas" && <AbaConversas conversas={dados.conversas} />}
       {aba === "documentos" && <AbaDocumentos documentos={dados.documentos} />}
+      {aba === "regras" && <AbaRegras regras={dados.regras} adicionais={dados.adicionais} />}
       {aba === "personalidade" && (
         <AbaPersonalidade dados={dados} ensinar={ensinar} verHistorico={setHistoricoDe} />
       )}

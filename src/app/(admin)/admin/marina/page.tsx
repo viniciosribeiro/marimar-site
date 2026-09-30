@@ -7,6 +7,7 @@ import {
 } from "@/lib/marina";
 import { medirCobertura, type Cobertura } from "@/lib/agent-mapa";
 import { gatewayConfigurado } from "@/lib/chat";
+import { lerRegras, lerAdicionais } from "@/lib/regras-hospedagem";
 import { Pagina, Cabecalho, Aviso } from "@/components/admin/ui";
 import { PainelMarina } from "./PainelMarina";
 import type { DadosMarina, DocumentoPainel, Conversa, Lacuna, EntradaHistorico, Saude } from "./tipos";
@@ -123,7 +124,10 @@ export default async function MarinaPage({
     let cobertura: Cobertura[] = [];
     try { cobertura = await medirCobertura(sql); } catch { /* banco fora do ar */ }
 
-    return { config, itens, leituras, documentos, conversas, lacunas, historico, cobertura };
+    const regras = await lerRegras(sql);
+    const adicionais = await lerAdicionais(sql, false);
+
+    return { config, itens, leituras, documentos, conversas, lacunas, historico, cobertura, regras, adicionais };
   }).catch(() => null);
 
   if (!dados) {

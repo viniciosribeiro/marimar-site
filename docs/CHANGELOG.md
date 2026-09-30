@@ -6,6 +6,58 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-30 (3) — A causa real do "pede a idade": a skill consulta-desbravador
+**Autor:** Claude (Claude Code)
+
+Lida no servidor (Hostinger) a pedido: a skill de preço e vaga consultava o
+motor direto e mandava "aviso_crianca preenchido = NÃO informe valor de
+criança; confirme a idade com a recepção". Como o motor manda esse aviso
+sempre que há criança, a Marina pedia a idade em toda cotação com criança —
+independentemente do treinamento.
+
+- Skill trazida para o repositório (`agente/skills/consulta-desbravador/`).
+  O script pergunta a `/api/agent/regras` (nova, mesma `calcularOcupacao` do
+  site) como montar a consulta; aceita `bebes`; soma o bebê pago; zera o
+  aviso quando a regra foi aplicada; link do motor com os números certos.
+  Site fora do ar → comportamento antigo.
+- Testado com o motor simulado: WhatsApp e site dão o mesmo total (R$ 2.200).
+- Instalação e backup da versão antiga: `agente/README.md`.
+
+## 2026-09-30 (2) — Regra de crianças e adicionais: site e Marina com o mesmo preço
+**Autor:** Claude (Claude Code)
+**Migration:** 0017 (só acrescenta; `npm run db:migrate`)
+**Depois do deploy:** reinstalar a skill `marimar-pousada` no OpenClaw
+
+### O problema (print do Vinicios)
+A busca `/reservar` mandava as crianças ao motor Desbravador, que cobra por
+faixa etária que nem está configurada lá — e mostrava o aviso dele. A Marina
+dizia "criança paga como adulto". Dois preços para a mesma pergunta. Além
+disso, o resumo de `/api/agent/disponibilidade` usava `total`, que no motor
+**não inclui as crianças**.
+
+### A solução: a regra virou dado, lido por todos
+Nova aba **Marina → Crianças e adicionais** (`regras_hospedagem`): até que
+idade é de colo, se criança paga como adulto, quanto paga o bebê (grátis,
+por noite ou por estadia). `calcularOcupacao()` (`src/lib/regras-hospedagem-base.ts`)
+é a única conta, usada por `/reservar`, `/api/disponibilidade`,
+`/api/agent/disponibilidade`, a home (busca) e `/politicas`, e o texto vai
+para o treinamento da Marina. Com regra: criança que não é de colo vai ao
+motor como adulto (preço e link "Reservar no site oficial" batem com o
+motor), bebê fica fora do motor, o aviso do motor some e a busca ganha o
+campo "Bebês". Sem regra: comportamento antigo.
+
+### Adicionais
+Cadastro `adicionais` (berço, cama extra, café no quarto…): preço ou "sob
+consulta", forma de cobrança, tipo, visível no site e/ou para a Marina.
+Aparecem em `/reservar` e no treinamento da Marina. Pensado para ser usado
+por outros módulos (pacotes, página da suíte) — ver pendências.
+
+### Verificado localmente
+Motor simulado (`testes/motor-simulado.mjs`) reproduz o print: antes R$ 1.700
+com "Crianças: R$ 600" e o aviso; depois, site e Marina R$ 2.200 (4 × R$ 275
+× 2 noites), link do motor com adultos=4, sem aviso. `npm test` 15/15,
+e2e 12/12, build ok. Não testado contra o motor real.
+
 ## 2026-09-30 — Treinamento da Marina confiável e painel redesenhado
 **Autor:** Claude (Claude Code)
 **Migration:** 0016 (só acrescenta; `npm run db:migrate`)

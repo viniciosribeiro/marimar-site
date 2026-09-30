@@ -18,7 +18,7 @@
 **O que so existe depois de rodar**
 
 ```
-npm run db:migrate          # migrations 0009 a 0016 (0016: treinamento completo da Marina — 30/09)
+npm run db:migrate          # migrations 0009 a 0017 (0017: regra de crianças e adicionais — 30/09)
 npm run db:migrar-fotos     # tira as imagens do WordPress antigo
 ```
 
@@ -68,7 +68,10 @@ Proxima ferramenta: **`docs/HANDOFF-PROXIMO-AGENTE.md`**.
 
 ## As pendencias que importam
 
-0. **Depois do deploy de 30/09:** rodar a migration 0016 e **reinstalar a
+0. **Regra de crianças (30/09, segunda entrega):** rodar a migration 0017 e
+   configurar em Marina → Crianças e adicionais (idade de colo, bebê). Sem
+   isso o site segue com o cálculo do motor e o aviso dele.
+   **Depois do deploy de 30/09:** rodar a migration 0016 e **reinstalar a
    skill `marimar-pousada` no OpenClaw** — sem isso o WhatsApp continua com a
    skill antiga (que nao le o treinamento em pergunta de preco). Conferir em
    `/admin/marina` que o WhatsApp "leu agora ha pouco" e testar na aba Testar.
@@ -233,7 +236,7 @@ Deploy da terceira sessão validado contra `marimar-site-rnkyimtse.vercel.app`:
 | 10 | Testes: existem desde 30/09 (`npm test`, `testes/e2e-marina.mjs`). Faltam `validarConsulta()`/`urlTarifas()` em `src/lib/worker.ts` e `src/lib/format.ts` (casos prontos no `CHANGELOG-IA.md`) |
 | 11 | Coluna dedicada `hero_url` em `pousada` (hoje o hero deduz da tabela `midias`) |
 | 12 | Lint: 179 problemas em 30/09 (eram 182; nenhum nos arquivos novos) — pré-existentes (162 são `any`; medido em 28/09) — antes dizia ~23 (`any`, `react-hooks/purity` com `Date.now`, aspas não escapadas) — não bloqueiam o build |
-| 13 | Seletor de crianças não pede idade, mas o motor tem faixas etárias (`politica_crianca`) |
+| 13 | Resolvido em 30/09 pela regra configurável (crianças 3+ / bebês). Falta: usar `adicionais` em pacotes e na página de cada suíte, e permitir adicional por suíte |
 | 14 | `src/middleware.ts` usa a convenção `middleware`, deprecada no Next 16 — o build avisa e sugere `npx @next/codemod@canary middleware-to-proxy .`. Funciona hoje; não mexido de propósito porque esse arquivo teve um bug de redirect loop corrigido há pouco (`0f8cb73`) e a troca merece teste dedicado |
 
 ### Verificacao pendente apos o deploy desta sessao

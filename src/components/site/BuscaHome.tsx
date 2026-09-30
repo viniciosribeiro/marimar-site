@@ -6,6 +6,8 @@ import { Icone } from "./Icone";
 import { POLITICAS, CAFE_DA_MANHA } from "@/lib/conteudo-pousada";
 
 type Pacote = { slug: string; nome: string; resumo: string | null };
+/** Regra de crianças da pousada (Marina → Regras e adicionais). Nula = não configurada. */
+type RegraCriancas = { idadeColoMax: number; texto: string } | null;
 
 /**
  * A caixa de busca do topo.
@@ -18,7 +20,7 @@ type Pacote = { slug: string; nome: string; resumo: string | null };
  * A aba de datas é a MESMA de antes, com os mesmos campos e a mesma ação:
  * ela manda para /reservar, que consulta o motor. Nada aqui toca nisso.
  */
-export function BuscaHome({ pacotes = [] }: { pacotes?: Pacote[] }) {
+export function BuscaHome({ pacotes = [], criancas = null }: { pacotes?: Pacote[]; criancas?: RegraCriancas }) {
   const [aba, setAba] = useState<"datas" | "pacotes" | "info">("datas");
 
   /* No celular os rotulos longos nao cabem lado a lado, e uma fila que rola
@@ -59,7 +61,7 @@ export function BuscaHome({ pacotes = [] }: { pacotes?: Pacote[] }) {
       <div className="p-3 sm:p-4">
         {aba === "datas" && (
           <>
-            <form action="/reservar" className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <form action="/reservar" className={`grid grid-cols-2 gap-2 ${criancas ? "sm:grid-cols-6" : "sm:grid-cols-5"}`}>
               <label className="col-span-2 sm:col-span-1">
                 <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Check-in</span>
                 <input type="date" name="check_in" required
@@ -78,12 +80,21 @@ export function BuscaHome({ pacotes = [] }: { pacotes?: Pacote[] }) {
                 </select>
               </label>
               <label>
-                <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Crianças</span>
+                <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">{criancas ? `Crianças (${criancas.idadeColoMax + 1}+)` : "Crianças"}</span>
                 <select name="criancas" defaultValue="0"
                   className="w-full px-3 py-2.5 rounded-lg border border-linha text-tinta text-sm focus:ring-2 focus:ring-marca outline-none">
                   <option>0</option><option>1</option><option>2</option><option>3</option>
                 </select>
               </label>
+              {criancas && (
+                <label>
+                  <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Bebês (até {criancas.idadeColoMax})</span>
+                  <select name="bebes" defaultValue="0"
+                    className="w-full px-3 py-2.5 rounded-lg border border-linha text-tinta text-sm focus:ring-2 focus:ring-marca outline-none">
+                    <option>0</option><option>1</option><option>2</option>
+                  </select>
+                </label>
+              )}
               <button type="submit"
                 className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 bg-marca hover:bg-marca-hover text-marca-texto px-4 py-2.5 rounded-lg font-semibold transition-marca text-sm self-end">
                 <Icone nome="check" tamanho={16} />
@@ -146,7 +157,7 @@ export function BuscaHome({ pacotes = [] }: { pacotes?: Pacote[] }) {
               {POLITICAS.petsTexto}
             </Info>
             <Info icone="familia" termo="Crianças">
-              {POLITICAS.criancas}
+              {criancas?.texto ?? POLITICAS.criancas}
             </Info>
             <div className="sm:col-span-2 pt-1">
               <Link href="/politicas"

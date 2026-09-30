@@ -119,6 +119,30 @@ A chave `ELEVENLABS_API_KEY` fica na aba **Ambiente** do painel da Hostinger,
 nunca na config — o OpenClaw le do ambiente sozinho.
 
 
+## A skill `consulta-desbravador` (preço e vaga)
+
+Até 30/09/2026 ela vivia só no servidor, fora deste repositório — e era a
+causa do "Marina pede a idade das crianças": consultava o motor direto e
+tinha a instrução de nunca informar valor de criança quando o motor manda
+o aviso de faixa etária (ele manda sempre). Agora está versionada em
+`agente/skills/consulta-desbravador/` e, antes de consultar o motor,
+pergunta ao site como montar a consulta (`/api/agent/regras`, a mesma conta
+da busca do site). Sem resposta do site, age como antes.
+
+Instalar (terminal da Hostinger, dentro de `marimar-site`, depois do merge):
+
+```
+cp -r /data/.openclaw/workspace/skills/consulta-desbravador ~/backup-consulta-desbravador
+git pull
+openclaw skills install ./agente/skills/consulta-desbravador --force
+openclaw skills install ./agente/skills/marimar-pousada --force
+openclaw skills list
+```
+
+O `cp` guarda a versão antiga (com os scripts de diagnóstico que só existiam
+lá: `probe*.mjs`, `diag*.mjs` etc.). O script usa `MARIMAR_API_KEY`, a mesma
+variável da `marimar-pousada`.
+
 ## O painel de treinamento (`/admin/marina`)
 
 A Cecilia treina a Marina pelo site, sem abrir a Hostinger. Principais abas:

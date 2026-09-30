@@ -149,6 +149,11 @@ partir da próxima conversa**. As abas, na ordem em que se usa:
 - **Documentos** — PDF, Word, texto, CSV ou foto. Ela lê, divide em trechos e
   procura dentro quando a pergunta pede. Se um arquivo não puder ser lido,
   aparece o motivo e o botão "Tentar de novo".
+- **Crianças e adicionais** — até que idade é de colo, se criança paga como
+  adulto e quanto paga o bebê. **Isto muda o preço na busca do site** e o
+  que a Marina responde — os dois sempre iguais. E os adicionais (berço,
+  cama extra, café no quarto…), com preço ou "sob consulta", que aparecem
+  na busca e a Marina oferece.
 - **Personalidade e regras** — o jeito de falar, quando passar para uma
   pessoa e as regras do que ela nunca diz.
 - **Voz** — ajustes da ElevenLabs, com prova de voz de qualquer frase antes de salvar.

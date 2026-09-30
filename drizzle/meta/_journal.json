@@ -120,6 +120,13 @@
       "when": 1790700000000,
       "tag": "0016_marina_treinamento_completo",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790710000000,
+      "tag": "0017_regras_hospedagem_adicionais",
+      "breakpoints": true
     }
   ]
 }
