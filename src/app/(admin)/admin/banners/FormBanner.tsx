@@ -75,11 +75,11 @@ export function FormBanner({ banner, blobOk, aoFechar }: {
 
       {/* ══════════ controles ══════════ */}
       <div className="min-w-0">
-        <div className="flex gap-1 mb-4 overflow-x-auto bg-gray-100 p-1 rounded-lg">
+        <div className="flex gap-1 mb-4 overflow-x-auto bg-areia/70 p-1 rounded-lg">
           {ABAS.map((a) => (
             <button key={a.id} type="button" onClick={() => setAba(a.id)}
               className={`shrink-0 whitespace-nowrap px-3 py-2 rounded-md text-xs font-medium transition-all ${
-                aba === a.id ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+                aba === a.id ? "bg-white shadow text-tinta" : "text-tinta-suave hover:text-tinta"
               }`}>
               <span className="mr-1.5" aria-hidden>{a.icone}</span>{a.nome}
             </button>
@@ -100,7 +100,7 @@ export function FormBanner({ banner, blobOk, aoFechar }: {
             <Foco x={b.foco_x} y={b.foco_y} imagem={b.imagem_url}
               aoMudar={(x, y) => { set("foco_x", x); set("foco_y", y); }} />
 
-            <div className="border-t border-gray-100 pt-4 mt-4">
+            <div className="border-t border-linha/60 pt-4 mt-4">
               <Selecao rotulo="Tipo de mídia" valor={b.tipo_midia}
                 aoMudar={(v) => set("tipo_midia", v as Banner["tipo_midia"])}
                 opcoes={[["imagem", "Só imagem"], ["video", "Vídeo com a imagem de cartaz"]]} />
@@ -112,7 +112,7 @@ export function FormBanner({ banner, blobOk, aoFechar }: {
                   <Interruptor rotulo="Tocar o vídeo no celular"
                     descricao="Desligado, o celular mostra só a imagem — economiza dados de quem está na ilha com sinal fraco."
                     ligado={b.video_no_celular} aoMudar={(v) => set("video_no_celular", v)} />
-                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                  <p className="text-[11px] text-tinta-suave/80 leading-relaxed">
                     O vídeo entra sem som e em laço. Quem tiver pedido menos
                     animação no aparelho vê a imagem no lugar dele.
                   </p>
@@ -134,7 +134,7 @@ export function FormBanner({ banner, blobOk, aoFechar }: {
               textarea placeholder="Parágrafo com os detalhes, se precisar"
               ajuda="Opcional. Aparece menor, abaixo da chamada." />
 
-            <div className="grid sm:grid-cols-2 gap-3 border-t border-gray-100 pt-4">
+            <div className="grid sm:grid-cols-2 gap-3 border-t border-linha/60 pt-4">
               <Campo rotulo="Botão principal" valor={b.cta_texto ?? ""} aoMudar={(v) => set("cta_texto", v || null)}
                 placeholder="Ver disponibilidade" />
               <Campo rotulo="Link" valor={b.cta_href ?? ""} aoMudar={(v) => set("cta_href", v || null)}
@@ -149,7 +149,7 @@ export function FormBanner({ banner, blobOk, aoFechar }: {
 
         {aba === "layout" && (
           <Bloco titulo="Posição e tamanho">
-            <p className="text-xs font-medium text-gray-600 mb-2">Onde o texto fica</p>
+            <p className="text-xs font-medium text-tinta-suave mb-2">Onde o texto fica</p>
             <GradePosicao valor={b.posicao} aoMudar={(v) => set("posicao", v)} />
 
             <Interruptor rotulo="Centralizar no celular"
@@ -180,12 +180,12 @@ export function FormBanner({ banner, blobOk, aoFechar }: {
               <Faixa rotulo="Intensidade" valor={b.veu_forca} min={10} max={100} passo={5}
                 formato={(v) => `${v}%`} aoMudar={(v) => set("veu_forca", v)} />
             )}
-            <p className="text-[11px] text-gray-400 -mt-1 mb-4 leading-relaxed">
+            <p className="text-[11px] text-tinta-suave/80 -mt-1 mb-4 leading-relaxed">
               O erro mais comum em banner é matar a foto para salvar o texto.
               Se precisar passar de 80%, provavelmente a foto é que não serve.
             </p>
 
-            <div className="border-t border-gray-100 pt-4">
+            <div className="border-t border-linha/60 pt-4">
               <Selecao rotulo="Textura" valor={b.textura}
                 aoMudar={(v) => set("textura", v as Banner["textura"])}
                 opcoes={[["nenhuma", "Nenhuma"], ["grao", "Grão (filme)"], ["pontos", "Pontos"], ["linhas", "Linhas diagonais"]]} />
@@ -193,12 +193,12 @@ export function FormBanner({ banner, blobOk, aoFechar }: {
                 <Faixa rotulo="Intensidade" valor={b.textura_forca} min={5} max={60} passo={5}
                   formato={(v) => `${v}%`} aoMudar={(v) => set("textura_forca", v)} />
               )}
-              <p className="text-[11px] text-gray-400 leading-relaxed">
+              <p className="text-[11px] text-tinta-suave/80 leading-relaxed">
                 Desenhada em CSS — não baixa nenhum arquivo.
               </p>
             </div>
 
-            <div className="border-t border-gray-100 pt-4 mt-4">
+            <div className="border-t border-linha/60 pt-4 mt-4">
               <Selecao rotulo="Cor do texto" valor={b.cor_texto}
                 aoMudar={(v) => set("cor_texto", v as Banner["cor_texto"])}
                 opcoes={[["claro", "Claro (foto escura)"], ["escuro", "Escuro (foto clara)"]]} />
@@ -235,11 +235,11 @@ export function FormBanner({ banner, blobOk, aoFechar }: {
 
         <div className="flex gap-2 mt-5">
           <button type="submit" disabled={!b.imagem_url}
-            className="bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-40">
+            className="bg-marca text-marca-texto px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-40">
             {banner ? "Salvar alterações" : "Criar banner"}
           </button>
           <button type="button" onClick={aoFechar}
-            className="px-5 py-2.5 rounded-lg text-sm text-gray-600 border border-gray-200">
+            className="px-5 py-2.5 rounded-lg text-sm text-tinta-suave border border-linha/80">
             Cancelar
           </button>
         </div>
@@ -248,12 +248,12 @@ export function FormBanner({ banner, blobOk, aoFechar }: {
       {/* ══════════ prévia ══════════ */}
       <div className="min-w-0">
         <div className="flex items-center justify-between gap-3 mb-2">
-          <p className="text-xs font-medium text-gray-600">Prévia</p>
-          <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
+          <p className="text-xs font-medium text-tinta-suave">Prévia</p>
+          <div className="flex gap-1 bg-areia/70 p-0.5 rounded-lg">
             {TELAS.map((t) => (
               <button key={t.id} type="button" onClick={() => setTela(t.id)}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-medium ${
-                  tela === t.id ? "bg-white shadow text-gray-900" : "text-gray-500"
+                  tela === t.id ? "bg-white shadow text-tinta" : "text-tinta-suave"
                 }`}>
                 {t.nome}
               </button>
@@ -267,7 +267,7 @@ export function FormBanner({ banner, blobOk, aoFechar }: {
           <BannerCamadas b={b} ativo previa />
         </PreviaEscalada>
 
-        <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+        <p className="text-[11px] text-tinta-suave/80 mt-2 leading-relaxed">
           A busca de disponibilidade aparece por cima deste banner na home —
           por isso vale deixar espaço embaixo.
         </p>
@@ -301,7 +301,7 @@ function PreviaEscalada({ largura, children }: { largura: number; children: Reac
         const obs = new ResizeObserver(medir);
         obs.observe(el);
       }}
-      className="relative w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
+      className="relative w-full min-w-0 overflow-hidden rounded-xl border border-linha/80 bg-areia/70"
       style={{ height: Math.round(altura * escala) }}
     >
       <div
@@ -324,7 +324,7 @@ function Foco({ x, y, imagem, aoMudar }: {
   if (!imagem) return null;
   return (
     <div className="mb-4">
-      <p className="text-xs font-medium text-gray-600 mb-1.5">Ponto focal</p>
+      <p className="text-xs font-medium text-tinta-suave mb-1.5">Ponto focal</p>
       <button type="button"
         onClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
@@ -333,13 +333,13 @@ function Foco({ x, y, imagem, aoMudar }: {
             Math.round(((e.clientY - r.top) / r.height) * 100),
           );
         }}
-        className="relative block w-full h-28 rounded-lg overflow-hidden border border-gray-200 cursor-crosshair">
+        className="relative block w-full h-28 rounded-lg overflow-hidden border border-linha/80 cursor-crosshair">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imagem} alt="" className="w-full h-full object-cover" />
         <span className="absolute w-6 h-6 -ml-3 -mt-3 rounded-full border-2 border-white shadow-lg bg-black/30"
           style={{ left: `${x}%`, top: `${y}%` }} />
       </button>
-      <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+      <p className="text-[11px] text-tinta-suave/80 mt-1 leading-relaxed">
         Clique no que não pode sumir. No celular a foto é cortada nas laterais,
         e é este ponto que fica garantido no enquadramento.
       </p>
@@ -354,7 +354,7 @@ function GradePosicao({ valor, aoMudar }: { valor: Posicao; aoMudar: (v: Posicao
         <button key={p} type="button" onClick={() => aoMudar(p)} title={p.replace("-", " · ")}
           aria-label={p.replace("-", " ")}
           className={`h-9 rounded border-2 transition-all ${
-            valor === p ? "border-gray-900 bg-gray-900" : "border-gray-200 hover:border-gray-400 bg-white"
+            valor === p ? "border-marca bg-marca" : "border-linha/80 hover:border-gray-400 bg-white"
           }`} />
       ))}
     </div>
@@ -393,7 +393,7 @@ function UploadVideo({ valor, aoEnviar, configurado }: {
 
   return (
     <div className="mb-4">
-      <label className="block text-xs font-medium text-gray-600 mb-1.5">Vídeo</label>
+      <label className="block text-xs font-medium text-tinta-suave mb-1.5">Vídeo</label>
       {!configurado ? (
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           Armazenamento não configurado (falta BLOB_READ_WRITE_TOKEN).
@@ -402,18 +402,18 @@ function UploadVideo({ valor, aoEnviar, configurado }: {
         <>
           {valor && (
             <video src={valor} muted loop playsInline autoPlay
-              className="w-full h-28 object-cover rounded-lg border border-gray-200 mb-2" />
+              className="w-full h-28 object-cover rounded-lg border border-linha/80 mb-2" />
           )}
           <input type="file" accept="video/mp4,video/webm" disabled={enviando}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) enviar(f); }}
-            className="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-900 file:text-white" />
+            className="block w-full text-xs text-tinta-suave file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-marca file:text-marca-texto" />
           {enviando && (
-            <div className="h-1 bg-gray-100 rounded mt-2 overflow-hidden">
-              <div className="h-full bg-gray-900 transition-all" style={{ width: `${progresso}%` }} />
+            <div className="h-1 bg-areia/70 rounded mt-2 overflow-hidden">
+              <div className="h-full bg-marca transition-all" style={{ width: `${progresso}%` }} />
             </div>
           )}
           {erro && <p className="text-xs text-red-600 mt-1">{erro}</p>}
-          <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+          <p className="text-[11px] text-tinta-suave/80 mt-1 leading-relaxed">
             MP4 ou WebM, até 50 MB. Sem som — vídeo de fundo com áudio é
             bloqueado pelos navegadores e incomoda quem está no escritório.
           </p>
@@ -431,9 +431,9 @@ function paraInput(v: string | null) {
 
 function Bloco({ titulo, ajuda, children }: { titulo: string; ajuda?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5">
-      <h3 className="font-semibold text-gray-900 text-sm">{titulo}</h3>
-      {ajuda && <p className="text-[11px] text-gray-400 mt-1 mb-4 leading-relaxed">{ajuda}</p>}
+    <div className="bg-white border border-linha/80 rounded-xl p-4 sm:p-5">
+      <h3 className="font-semibold text-tinta text-sm">{titulo}</h3>
+      {ajuda && <p className="text-[11px] text-tinta-suave/80 mt-1 mb-4 leading-relaxed">{ajuda}</p>}
       <div className={ajuda ? "" : "mt-4"}>{children}</div>
     </div>
   );
@@ -446,11 +446,11 @@ function Campo({ rotulo, valor, aoMudar, placeholder, ajuda, textarea, tipo = "t
   const Tag: any = textarea ? "textarea" : "input";
   return (
     <div className="mb-4">
-      <label className="block text-xs font-medium text-gray-600 mb-1.5">{rotulo}</label>
+      <label className="block text-xs font-medium text-tinta-suave mb-1.5">{rotulo}</label>
       <Tag value={valor} onChange={(e: any) => aoMudar(e.target.value)}
         type={textarea ? undefined : tipo} placeholder={placeholder} rows={textarea ? 2 : undefined}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
-      {ajuda && <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">{ajuda}</p>}
+        className="w-full border border-linha/80 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400" />
+      {ajuda && <p className="text-[11px] text-tinta-suave/80 mt-1 leading-relaxed">{ajuda}</p>}
     </div>
   );
 }
@@ -460,9 +460,9 @@ function Selecao({ rotulo, valor, aoMudar, opcoes }: {
 }) {
   return (
     <div className="mb-4">
-      <label className="block text-xs font-medium text-gray-600 mb-1.5">{rotulo}</label>
+      <label className="block text-xs font-medium text-tinta-suave mb-1.5">{rotulo}</label>
       <select value={valor} onChange={(e) => aoMudar(e.target.value)}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900/10">
+        className="w-full border border-linha/80 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900/10">
         {opcoes.map(([v, n]) => <option key={v} value={v}>{n}</option>)}
       </select>
     </div>
@@ -476,11 +476,11 @@ function Faixa({ rotulo, valor, min, max, passo, formato, aoMudar }: {
   return (
     <div className="mb-4">
       <div className="flex justify-between items-baseline mb-1.5">
-        <label className="text-xs font-medium text-gray-600">{rotulo}</label>
-        <span className="text-xs text-gray-500 font-medium">{formato(valor)}</span>
+        <label className="text-xs font-medium text-tinta-suave">{rotulo}</label>
+        <span className="text-xs text-tinta-suave font-medium">{formato(valor)}</span>
       </div>
       <input type="range" min={min} max={max} step={passo} value={valor}
-        onChange={(e) => aoMudar(Number(e.target.value))} className="w-full accent-gray-900" />
+        onChange={(e) => aoMudar(Number(e.target.value))} className="w-full accent-[var(--marca)]" />
     </div>
   );
 }
@@ -492,15 +492,15 @@ function Interruptor({ rotulo, descricao, ligado, aoMudar }: {
     <button type="button" onClick={() => aoMudar(!ligado)}
       className="w-full flex items-start gap-3 text-left mb-4">
       <span className={`mt-0.5 w-9 h-5 rounded-full shrink-0 transition-colors relative ${
-        ligado ? "bg-gray-900" : "bg-gray-300"
+        ligado ? "bg-marca" : "bg-gray-300"
       }`}>
         <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${
           ligado ? "left-[1.15rem]" : "left-0.5"
         }`} />
       </span>
       <span className="min-w-0">
-        <span className="block text-xs font-medium text-gray-700">{rotulo}</span>
-        {descricao && <span className="block text-[11px] text-gray-400 leading-relaxed mt-0.5">{descricao}</span>}
+        <span className="block text-xs font-medium text-tinta">{rotulo}</span>
+        {descricao && <span className="block text-[11px] text-tinta-suave/80 leading-relaxed mt-0.5">{descricao}</span>}
       </span>
     </button>
   );

@@ -1,11 +1,11 @@
-import { auth } from "@/lib/auth"; import { redirect } from "next/navigation"; import postgres from "postgres"; import { salvarPoliticas } from "@/lib/admin-actions"; import { CrudForm } from "@/components/admin/CrudForm";
+import { auth } from "@/lib/auth"; import { redirect } from "next/navigation"; import postgres from "postgres"; import { salvarPoliticas } from "@/lib/admin-actions"; import { CrudForm } from "@/components/admin/CrudForm"; import { Pagina, Cabecalho } from "@/components/admin/ui";
 
 export const dynamic = "force-dynamic";
 export default async function PoliticasPage({ searchParams }: { searchParams: Promise<{ erro?: string; ok?: string }> }) {
   const s=await auth(); if(!s?.user) redirect("/admin/login"); const sp=await searchParams;
   const sql=postgres(process.env.DATABASE_URL!, {max:1, prepare: false }); const lista=await sql`SELECT * FROM politicas LIMIT 1`;
   const p=lista[0]; await sql.end();
-  return(<div className="p-5 sm:p-8"><h1 className="text-2xl font-bold mb-1">Políticas</h1><p className="text-sm text-gray-500 mb-4">O que a Marina responde sobre check-in, cancelamento, animais, crianças e pagamento — exatamente como está escrito aqui.</p>
+  return(<Pagina><Cabecalho sobre="Conteúdo do site" titulo="Políticas" descricao="O que o site mostra e a Marina responde sobre check-in, cancelamento, animais, crianças e pagamento — exatamente como está escrito aqui." />
     <CrudForm action={salvarPoliticas} fields={[{name:"id",type:"hidden",defaultValue:p?.id},{name:"diaria_minima",label:"Mínimo de noites (padrão)",type:"number",defaultValue:p?.diaria_minima_padrao??1},{name:"check_in",label:"Check-in",defaultValue:p?.check_in??"14:00"},{name:"check_out",label:"Check-out",defaultValue:p?.check_out??"12:00"},{name:"cancelamento",label:"Cancelamento",type:"textarea",rows:3,defaultValue:p?.cancelamento??""},{name:"pet",label:"Aceita animais de estimação",type:"checkbox",defaultValue:p?.pet?1:0},{name:"pet_texto",label:"Regras para animais",type:"textarea",rows:2,defaultValue:p?.pet_texto??""},{name:"criancas_texto",label:"Crianças",type:"textarea",rows:3,ajuda:"Idades, cama extra, cobrança. A Marina responde exatamente com este texto.",defaultValue:p?.criancas_texto??""},{name:"formas_pagamento",label:"Formas de pagamento",type:"textarea",rows:3,ajuda:"Uma por linha (ex.: Pix, cartão de crédito em até 3x).",defaultValue:Array.isArray(p?.formas_pagamento)?p.formas_pagamento.join("\n"):""},{name:"regras_gerais",label:"Regras gerais",type:"textarea",rows:3,defaultValue:p?.regras_gerais??""}]} submitLabel="Salvar" error={sp.erro} ok={sp.ok} />
-  </div>);
+  </Pagina>);
 }

@@ -30,11 +30,11 @@ export default async function AtracoesPage({
   const abrirForm = !!editando || !!sp.novo;
 
   return (
-    <div className="p-5 sm:p-8 max-w-5xl space-y-6">
+    <div className="px-4 py-6 sm:px-6 lg:px-10 lg:py-8 mx-auto w-full max-w-5xl space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Atrações da ilha</h1>
-          <p className="text-sm text-gray-500 mt-1 max-w-2xl">
+          <h1 className="font-titulo text-2xl sm:text-[1.75rem] font-bold tracking-tight text-tinta">Atrações da ilha</h1>
+          <p className="text-sm text-tinta-suave mt-1 max-w-2xl">
             O que aparece em Ilha do Mel, no bloco de localização da home e o que a Marina responde
             quando perguntam o que tem para ver. As marcadas como destaque vão para a home.
           </p>
@@ -48,18 +48,15 @@ export default async function AtracoesPage({
         )}
       </header>
 
-      {sp.ok && <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg p-3">{sp.ok}</p>}
-      {sp.erro && <p className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg p-3">{sp.erro}</p>}
-
       {abrirForm && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">{editando ? `Editar: ${editando.nome}` : "Nova atração"}</h2>
+          <h2 className="text-lg font-semibold text-tinta mb-3">{editando ? `Editar: ${editando.nome}` : "Nova atração"}</h2>
           <CrudForm
             action={salvarAtracao}
             submitLabel={editando ? "Salvar atração" : "Criar atração"}
             fields={formulario(editando)}
           />
-          <Link href="/admin/atracoes" className="inline-flex items-center mt-2 px-3 min-h-10 text-sm text-gray-500 hover:underline">
+          <Link href="/admin/atracoes" className="inline-flex items-center mt-2 px-3 min-h-10 text-sm text-tinta-suave hover:underline">
             Cancelar e voltar
           </Link>
         </section>
@@ -67,25 +64,25 @@ export default async function AtracoesPage({
 
       <ul className="space-y-3">
         {lista.length === 0 && (
-          <li className="text-center text-gray-400 py-12 bg-white rounded-xl border border-gray-100">
+          <li className="text-center text-tinta-suave/80 py-12 bg-white rounded-xl border border-linha/60">
             Nenhuma atração cadastrada. A página Ilha do Mel fica sem a seção &quot;O que ver&quot;.
           </li>
         )}
         {lista.map((a, i) => (
-          <li key={a.slug} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col sm:flex-row sm:items-start gap-3">
+          <li key={a.slug} className="bg-white rounded-2xl border border-linha/80 shadow-sm p-4 flex flex-col sm:flex-row sm:items-start gap-3">
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900">
+              <p className="font-semibold text-tinta">
                 {a.nome}
                 {a.destaque && <span className="ml-2 text-[11px] font-medium bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">destaque na home</span>}
               </p>
-              <p className="text-sm text-gray-600 mt-1">{a.resumo}</p>
-              <p className="text-xs text-gray-400 mt-1">{a.distanciaTexto || "Sem distância informada"}</p>
+              <p className="text-sm text-tinta-suave mt-1">{a.resumo}</p>
+              <p className="text-xs text-tinta-suave/80 mt-1">{a.distanciaTexto || "Sem distância informada"}</p>
             </div>
             <div className="flex flex-wrap items-center gap-1 shrink-0">
               <Mover slug={a.slug} direcao="subir" desativado={i === 0} />
               <Mover slug={a.slug} direcao="descer" desativado={i === lista.length - 1} />
               <Link href={`/admin/atracoes?editar=${encodeURIComponent(a.slug)}`}
-                className="inline-flex items-center text-xs font-medium px-3.5 min-h-10 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">
+                className="inline-flex items-center text-xs font-medium px-3.5 min-h-10 rounded-lg bg-areia/70 text-tinta hover:bg-areia">
                 Editar
               </Link>
               <DeleteButton action={excluirAtracao} id={a.slug} />
@@ -93,7 +90,7 @@ export default async function AtracoesPage({
           </li>
         ))}
       </ul>
-      <p className="text-xs text-gray-400">{lista.length} atrações</p>
+      <p className="text-xs text-tinta-suave/80">{lista.length} atrações</p>
     </div>
   );
 }
@@ -115,7 +112,7 @@ function Mover({ slug, direcao, desativado }: { slug: string; direcao: "subir" |
     <form action={moverAtracao}>
       <input type="hidden" name="id" value={slug} />
       <input type="hidden" name="direcao" value={direcao} />
-      <SubmitButton className="inline-flex items-center justify-center min-w-10 px-2 min-h-10 rounded-lg text-gray-600 hover:bg-gray-100">
+      <SubmitButton className="inline-flex items-center justify-center min-w-10 px-2 min-h-10 rounded-lg text-tinta-suave hover:bg-areia/70">
         <span aria-label={direcao === "subir" ? "Subir" : "Descer"}>{direcao === "subir" ? "↑" : "↓"}</span>
       </SubmitButton>
     </form>

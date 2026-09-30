@@ -17,32 +17,25 @@ const reais = (n: number) => n.toFixed(2).replace(".", ",");
  * programador. São também as respostas da Marina para "como chego?", "o que
  * tem na ilha?" e "fazem casamento?" — o que é salvo aqui vale nos dois.
  */
-export default async function ConteudoPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ ok?: string; erro?: string }>;
-}) {
+export default async function ConteudoPage() {
   const s = await auth();
   if (!s?.user) redirect("/admin/login");
-  const sp = await searchParams;
   const c = await comSql(lerConteudo);
   const t = c.TRAVESSIA;
 
   return (
-    <div className="p-5 sm:p-8 max-w-5xl space-y-10">
+    <div className="px-4 py-6 sm:px-6 lg:px-10 lg:py-8 mx-auto w-full max-w-5xl space-y-10">
       <header>
-        <h1 className="text-2xl font-bold text-gray-900">Textos da ilha e chegada</h1>
-        <p className="text-sm text-gray-500 mt-1 max-w-2xl">
+        <h1 className="font-titulo text-2xl sm:text-[1.75rem] font-bold tracking-tight text-tinta">Textos da ilha e chegada</h1>
+        <p className="text-sm text-tinta-suave mt-1 max-w-2xl">
           O que aparece em Como chegar, Ilha do Mel e Eventos — e o que a Marina responde sobre
           esses assuntos. Campo em branco mantém o texto atual.
         </p>
-        {sp.ok && <p className="mt-4 text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg p-3">{sp.ok}</p>}
-        {sp.erro && <p className="mt-4 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg p-3">{sp.erro}</p>}
       </header>
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-900">Travessia e chegada</h2>
-        <p className="text-xs text-gray-500 mt-1 mb-3">
+        <h2 className="text-lg font-semibold text-tinta">Travessia e chegada</h2>
+        <p className="text-xs text-tinta-suave mt-1 mb-3">
           Preços consultados em <strong>{t.precos.consultadoEm}</strong>. Ao mudar um preço, a data
           é atualizada sozinha — a Marina sempre diz ao hóspede de quando é o valor.
         </p>
@@ -68,7 +61,7 @@ export default async function ConteudoPage({
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">A ilha</h2>
+        <h2 className="text-lg font-semibold text-tinta mb-3">A ilha</h2>
         <CrudForm
           action={salvarIlha}
           submitLabel="Salvar ilha"
@@ -79,14 +72,14 @@ export default async function ConteudoPage({
             { name: "avisoDistancias", label: "Aviso sobre distâncias", type: "textarea", rows: 2, defaultValue: c.AVISO_DISTANCIAS },
           ]}
         />
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-tinta-suave/80 mt-2">
           As atrações (Gruta, Farol, Fortaleza…) ficam em{" "}
           <Link href="/admin/atracoes" className="underline">Atrações da ilha</Link>.
         </p>
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Eventos</h2>
+        <h2 className="text-lg font-semibold text-tinta mb-3">Eventos</h2>
         <CrudForm
           action={salvarEventos}
           submitLabel="Salvar eventos"

@@ -267,3 +267,26 @@ export function Abas<T extends string>({ abas, atual, aoTrocar, className }: {
     </div>
   );
 }
+
+/* ═══ janela ligada à URL ══════════════════════════════════════════
+   Para telas de servidor: a janela abre por ?novo=1 / ?editar=<id> e
+   fechar volta para `voltar`. O conteúdo pode ser um formulário de
+   servidor (Server Action) — ele vem como `children`. */
+export function JanelaRota({ titulo, voltar, children }: { titulo: string; voltar: string; children: React.ReactNode }) {
+  const router = useRouter();
+  const fechar = useCallback(() => router.push(voltar, { scroll: false }), [router, voltar]);
+  useEsc(fechar);
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={titulo}>
+      <div className="absolute inset-0 bg-tinta/40 backdrop-blur-[2px]" onClick={fechar} />
+      <div className="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl bg-fundo-suave shadow-2xl sm:max-w-2xl sm:rounded-2xl animate-[subir_.2s_ease-out]">
+        <div className="flex items-center justify-between border-b border-linha/70 bg-white px-5 py-4">
+          <h2 className="text-lg font-semibold text-tinta">{titulo}</h2>
+          <button onClick={fechar} aria-label="Fechar" className={botao("fantasma", "sm", "h-10 w-10 px-0")}>✕</button>
+        </div>
+        <div className="overflow-y-auto p-4 sm:p-5">{children}</div>
+      </div>
+    </div>,
+    document.body,
+  );
+}

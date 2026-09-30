@@ -128,7 +128,7 @@ export function Cartao({
   descricao?: React.ReactNode; acoes?: React.ReactNode; semPadding?: boolean;
 }) {
   return (
-    <section className={cn("rounded-2xl border border-linha/80 bg-white shadow-sm", className)}>
+    <section className={cn("min-w-0 rounded-2xl border border-linha/80 bg-white shadow-sm", className)}>
       {(titulo || acoes) && (
         <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5">
           <div className="min-w-0">

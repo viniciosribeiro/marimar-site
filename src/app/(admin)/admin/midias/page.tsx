@@ -16,9 +16,9 @@ export const dynamic = "force-dynamic";
 
 // Alvos de toque de 40px: a tela é usada no celular, na recepção.
 const BTN = "rounded-lg px-3 min-h-10 text-xs font-semibold transition-colors disabled:opacity-40";
-const BTN_ESCURO = `${BTN} bg-gray-900 text-white hover:bg-gray-700`;
-const BTN_CLARO = `${BTN} bg-gray-100 text-gray-800 hover:bg-gray-200`;
-const BTN_BORDA = `${BTN} border border-gray-200 text-gray-700 hover:bg-gray-100`;
+const BTN_ESCURO = `${BTN} bg-marca text-marca-texto hover:bg-gray-700`;
+const BTN_CLARO = `${BTN} bg-areia/70 text-tinta hover:bg-areia`;
+const BTN_BORDA = `${BTN} border border-linha/80 text-tinta hover:bg-areia/70`;
 
 type Foto = {
   id: string; url: string; alt: string; secao: string; quarto_id: string | null;
@@ -82,18 +82,15 @@ export default async function FotosPage({
   ];
 
   return (
-    <div className="p-5 sm:p-8 max-w-6xl">
-      <h1 className="text-2xl font-bold text-gray-900">Fotos do site</h1>
-      <p className="text-sm text-gray-500 mt-1 max-w-2xl">
+    <div className="px-4 py-6 sm:px-6 lg:px-10 lg:py-8 mx-auto w-full max-w-7xl">
+      <h1 className="font-titulo text-2xl sm:text-[1.75rem] font-bold tracking-tight text-tinta">Fotos do site</h1>
+      <p className="text-sm text-tinta-suave mt-1 max-w-2xl">
         Cada foto pertence a uma parte do site. As das suítes ficam separadas por suíte — são
         também as que a Marina manda quando alguém pede para ver um quarto.
       </p>
 
-      {sp.ok && <p className="mt-4 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl p-3">{sp.ok}</p>}
-      {sp.erro && <p className="mt-4 text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl p-3">{sp.erro}</p>}
-
       {/* ── abas das seções ── */}
-      <nav className="mt-6 -mx-5 px-5 sm:mx-0 sm:px-0 overflow-x-auto" aria-label="Seções">
+      <nav className="mt-6 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto" aria-label="Seções">
         <ul className="flex gap-2 min-w-max">
           {SECOES_FOTO.map((x) => {
             const ativa = x.chave === secao;
@@ -103,11 +100,11 @@ export default async function FotosPage({
                   href={`/admin/midias?secao=${x.chave}`}
                   aria-current={ativa ? "page" : undefined}
                   className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border transition-colors ${
-                    ativa ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                    ativa ? "bg-marca text-marca-texto border-gray-900" : "bg-white text-tinta border-linha/80 hover:border-gray-400"
                   }`}
                 >
                   {x.nome}
-                  <span className={`text-xs rounded-full px-1.5 ${ativa ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
+                  <span className={`text-xs rounded-full px-1.5 ${ativa ? "bg-white/20" : "bg-areia/70 text-tinta-suave"}`}>
                     {total.get(x.chave) ?? 0}
                   </span>
                 </Link>
@@ -133,10 +130,10 @@ export default async function FotosPage({
                   href={`/admin/midias?secao=quarto&quarto=${q.id}`}
                   aria-current={quarto?.id === q.id ? "page" : undefined}
                   className={`block rounded-xl overflow-hidden border bg-white transition-shadow hover:shadow-md ${
-                    quarto?.id === q.id ? "ring-2 ring-gray-900 border-gray-900" : "border-gray-200"
+                    quarto?.id === q.id ? "ring-2 ring-gray-900 border-gray-900" : "border-linha/80"
                   } ${q.ativo ? "" : "opacity-60"}`}
                 >
-                  <div className="relative aspect-[4/3] bg-gray-100">
+                  <div className="relative aspect-[4/3] bg-areia/70">
                     {q.capa ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={q.capa} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
@@ -145,8 +142,8 @@ export default async function FotosPage({
                     )}
                   </div>
                   <div className="px-3 py-2">
-                    <p className="text-sm font-medium text-gray-900 truncate">{tituloQuarto(q.nome)}</p>
-                    <p className={`text-xs ${q.fotos ? "text-gray-500" : "text-amber-700"}`}>
+                    <p className="text-sm font-medium text-tinta truncate">{tituloQuarto(q.nome)}</p>
+                    <p className={`text-xs ${q.fotos ? "text-tinta-suave" : "text-amber-700"}`}>
                       {q.fotos === 1 ? "1 foto" : `${q.fotos} fotos`}{q.ativo ? "" : " · inativa"}
                     </p>
                   </div>
@@ -154,14 +151,14 @@ export default async function FotosPage({
               </li>
             ))}
           </ul>
-          {!quarto && <p className="text-sm text-gray-500 mt-4">Escolha uma suíte para ver e enviar as fotos dela.</p>}
+          {!quarto && <p className="text-sm text-tinta-suave mt-4">Escolha uma suíte para ver e enviar as fotos dela.</p>}
         </section>
       )}
 
       {(secao !== "quarto" || quarto) && (
         <section className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">{rotulo}</h2>
-          <p className="text-xs text-gray-500 mb-4">
+          <h2 className="text-lg font-semibold text-tinta mb-1">{rotulo}</h2>
+          <p className="text-xs text-tinta-suave mb-4">
             {quarto
               ? "A foto marcada como capa abre a galeria da suíte e aparece na lista de acomodações."
               : secao === "pousada"
@@ -172,7 +169,7 @@ export default async function FotosPage({
           <UploadMidias secao={secao} quartoId={quarto?.id ?? null} rotulo={rotulo} configurado={blobConfigurado()} />
 
           <details className="mt-3 text-sm">
-            <summary className="cursor-pointer text-gray-500 hover:text-gray-800">Adicionar por endereço (link de uma imagem)</summary>
+            <summary className="cursor-pointer text-tinta-suave hover:text-tinta">Adicionar por endereço (link de uma imagem)</summary>
             <form action={adicionarPorUrl} className="mt-3 grid gap-2 sm:grid-cols-[2fr_2fr_auto]">
               <input type="hidden" name="secao" value={secao} />
               <input type="hidden" name="quarto_id" value={quarto?.id ?? ""} />
@@ -184,17 +181,17 @@ export default async function FotosPage({
           </details>
 
           {fotos.length === 0 ? (
-            <p className="mt-6 text-sm text-gray-400">Nenhuma foto aqui ainda.</p>
+            <p className="mt-6 text-sm text-tinta-suave/80">Nenhuma foto aqui ainda.</p>
           ) : (
             <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {fotos.map((f, i) => (
-                <li key={f.id} className={`rounded-2xl overflow-hidden border bg-white ${f.destaque ? "border-gray-900 ring-1 ring-gray-900" : "border-gray-200"}`}>
-                  <div className="relative aspect-[4/3] bg-gray-100">
+                <li key={f.id} className={`rounded-2xl overflow-hidden border bg-white ${f.destaque ? "border-gray-900 ring-1 ring-gray-900" : "border-linha/80"}`}>
+                  <div className="relative aspect-[4/3] bg-areia/70">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={f.url} alt={f.alt} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
                     <div className="absolute top-2 left-2 flex flex-wrap gap-1">
                       {f.destaque && (
-                        <span className="text-[11px] font-semibold bg-gray-900 text-white px-2 py-0.5 rounded-full">
+                        <span className="text-[11px] font-semibold bg-marca text-marca-texto px-2 py-0.5 rounded-full">
                           {quarto ? "Capa" : secao === "pousada" ? "Topo do site" : "Destaque"}
                         </span>
                       )}
@@ -211,7 +208,7 @@ export default async function FotosPage({
                       <input type="hidden" name="id" value={f.id} />
                       {Object.entries(voltarCampos).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
                       <input name="alt" defaultValue={f.alt} aria-label="Descrição da foto"
-                        className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2.5 py-2 text-sm" />
+                        className="flex-1 min-w-0 border border-linha/80 rounded-lg px-2.5 py-2 text-sm" />
                       <SubmitButton className={BTN_ESCURO}>Salvar</SubmitButton>
                     </form>
 
@@ -219,7 +216,7 @@ export default async function FotosPage({
                       <input type="hidden" name="id" value={f.id} />
                       {Object.entries(voltarCampos).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
                       <select name="destino" defaultValue={f.quarto_id ? `quarto:${f.quarto_id}` : `secao:${f.secao}`}
-                        aria-label="Mover para" className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2 py-2 text-sm bg-white">
+                        aria-label="Mover para" className="flex-1 min-w-0 border border-linha/80 rounded-lg px-2 py-2 text-sm bg-white">
                         {destinos.map((d) => <option key={d.valor} value={d.valor}>{d.nome}</option>)}
                       </select>
                       <SubmitButton className={BTN_CLARO}>Mover</SubmitButton>
@@ -234,7 +231,7 @@ export default async function FotosPage({
                             {Object.entries(voltarCampos).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
                             <SubmitButton
                               disabled={dir === "antes" ? i === 0 : i === fotos.length - 1}
-                              className="w-10 h-10 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-30"
+                              className="w-10 h-10 rounded-lg text-sm bg-areia/70 text-tinta hover:bg-areia disabled:opacity-30"
                             >
                               {dir === "antes" ? "←" : "→"}
                             </SubmitButton>

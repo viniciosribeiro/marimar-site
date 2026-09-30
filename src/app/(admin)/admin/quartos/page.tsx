@@ -7,7 +7,10 @@ import { DeleteButton } from "@/components/admin/DeleteButton";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import Link from "next/link";
 import { urlTarifas } from "@/lib/worker";
-import { datasExemplo } from "@/lib/format";
+import { datasExemplo, tituloQuarto } from "@/lib/format";
+import { Pagina, Cabecalho, Cartao, Aviso, Lista, Selo, Vazio, BotaoLink, botao } from "@/components/admin/ui";
+import { JanelaRota } from "@/components/admin/ui-cliente";
+import { Plus, Pencil } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +27,7 @@ async function buscarQuartosMotor(): Promise<any[]> {
 export default async function QuartosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string; ok?: string; editar?: string; motor?: string }>;
+  searchParams: Promise<{ erro?: string; ok?: string; editar?: string; motor?: string; novo?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/admin/login");
@@ -52,123 +55,111 @@ export default async function QuartosPage({
         { name: "id", type: "hidden" as const, defaultValue: editando.id },
         { name: "nome", label: "Nome", required: true, defaultValue: editando.nome },
         { name: "slug", label: "Slug", required: true, defaultValue: editando.slug },
-        { name: "categoria_id", label: "Categoria", type: "select" as const, defaultValue: editando.categoria_id ?? "", options: [{ value: "", label: "—" }, ...categorias.map((c: any) => ({ value: c.id, label: c.nome }))], className: "w-40" },
-        { name: "desbravador_room_id", label: "Motor ID", defaultValue: editando.desbravador_room_id ?? "", className: "w-32" },
-        { name: "ocupacao_max", label: "Ocup. Max", type: "number" as const, defaultValue: editando.ocupacao_max, className: "w-20" },
-        { name: "ordem", label: "Ordem", type: "number" as const, defaultValue: editando.ordem, className: "w-20" },
-        { name: "cama", label: "Cama(s)", defaultValue: editando.cama ?? "", className: "w-48" },
-        { name: "metragem", label: "Metragem (m²)", type: "number" as const, defaultValue: editando.metragem ?? "", className: "w-28" },
-        { name: "vista", label: "Vista", defaultValue: editando.vista ?? "", className: "w-48" },
+        { name: "categoria_id", label: "Categoria", type: "select" as const, defaultValue: editando.categoria_id ?? "", options: [{ value: "", label: "—" }, ...categorias.map((c: any) => ({ value: c.id, label: c.nome }))] },
+        { name: "desbravador_room_id", label: "Motor ID", defaultValue: editando.desbravador_room_id ?? "" },
+        { name: "ocupacao_max", label: "Ocup. Max", type: "number" as const, defaultValue: editando.ocupacao_max },
+        { name: "ordem", label: "Ordem", type: "number" as const, defaultValue: editando.ordem },
+        { name: "cama", label: "Cama(s)", defaultValue: editando.cama ?? "" },
+        { name: "metragem", label: "Metragem (m²)", type: "number" as const, defaultValue: editando.metragem ?? "" },
+        { name: "vista", label: "Vista", defaultValue: editando.vista ?? "" },
         { name: "descricao", label: "Descrição", type: "textarea" as const, defaultValue: editando.descricao ?? "" },
         { name: "ativo", label: "Ativo", type: "checkbox" as const, defaultValue: editando.ativo ? 1 : 0 },
       ]
     : [
         { name: "nome", label: "Nome", required: true },
         { name: "slug", label: "Slug", required: true },
-        { name: "categoria_id", label: "Categoria", type: "select" as const, options: [{ value: "", label: "—" }, ...categorias.map((c: any) => ({ value: c.id, label: c.nome }))], className: "w-40" },
-        { name: "desbravador_room_id", label: "Motor ID", className: "w-32" },
-        { name: "ocupacao_max", label: "Ocup. Max", type: "number" as const, defaultValue: 2, className: "w-20" },
-        { name: "ordem", label: "Ordem", type: "number" as const, defaultValue: 0, className: "w-20" },
-        { name: "cama", label: "Cama(s)", className: "w-48" },
-        { name: "metragem", label: "Metragem (m²)", type: "number" as const, className: "w-28" },
-        { name: "vista", label: "Vista", className: "w-48" },
+        { name: "categoria_id", label: "Categoria", type: "select" as const, options: [{ value: "", label: "—" }, ...categorias.map((c: any) => ({ value: c.id, label: c.nome }))] },
+        { name: "desbravador_room_id", label: "Motor ID" },
+        { name: "ocupacao_max", label: "Ocup. Max", type: "number" as const, defaultValue: 2 },
+        { name: "ordem", label: "Ordem", type: "number" as const, defaultValue: 0 },
+        { name: "cama", label: "Cama(s)" },
+        { name: "metragem", label: "Metragem (m²)", type: "number" as const },
+        { name: "vista", label: "Vista" },
         { name: "descricao", label: "Descrição", type: "textarea" as const },
         // Sem este campo a action lia "desligado" e toda suíte nascia inativa.
         { name: "ativo", label: "Ativo", type: "checkbox" as const, defaultValue: 1 },
       ];
 
   const listaComodidades = comodidades.length > 0 && (
-    <fieldset className="sm:col-span-2 lg:basis-full border border-gray-100 rounded-lg p-3">
-      <legend className="text-xs font-medium px-1">Comodidades desta suíte</legend>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2 mt-1">
+    <fieldset className="mt-4 rounded-xl border border-linha/80 p-4">
+      <legend className="px-1 text-sm font-medium text-tinta">Comodidades desta suíte</legend>
+      <p className="text-xs text-tinta-suave">A Marina responde “o quarto tem ar?” com esta lista.</p>
+      <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
         {comodidades.map((c: any) => (
-          <label key={c.id} className="flex items-center gap-2 text-xs">
-            <input type="checkbox" name="comodidades" value={c.id} defaultChecked={marcadas.has(c.id)} className="w-4 h-4" />
+          <label key={c.id} className="flex min-h-10 items-center gap-3 text-sm text-tinta">
+            <input type="checkbox" name="comodidades" value={c.id} defaultChecked={marcadas.has(c.id)} className="h-5 w-5 accent-[var(--marca)]" />
             {c.nome}
           </label>
         ))}
       </div>
     </fieldset>
   );
+  const janela = Boolean(editando || sp.novo === "1");
 
   return (
-    <div className="p-5 sm:p-8">
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold">Quartos</h1>
-        <a href={`/admin/quartos?motor=${showMotor ? "0" : "1"}`} className="text-sm text-teal-600 hover:underline">
-          {showMotor ? "Ocultar motor" : "Carregar quartos do motor"}
-        </a>
-      </div>
-      <p className="text-sm text-gray-500 mb-4">Vincule cada quarto ao ID do motor Desbravador</p>
+    <Pagina larga>
+      <Cabecalho sobre="Acomodações" titulo="Quartos"
+        descricao="As suítes que aparecem no site. Cada uma se liga a um tipo de quarto do motor Desbravador — é de lá que vêm preço e vaga."
+        acoes={<>
+          <BotaoLink href={`/admin/quartos?motor=${showMotor ? "0" : "1"}`} variante="secundario">{showMotor ? "Esconder o motor" : "Ver quartos do motor"}</BotaoLink>
+          <BotaoLink href="/admin/quartos?novo=1"><Plus className="h-4 w-4" /> Novo quarto</BotaoLink>
+        </>} />
 
-      <CrudForm
-        action={editando ? editarQuarto : criarQuarto}
-        fields={fields}
-        submitLabel={editando ? "Salvar" : "Criar"}
-        error={sp.erro}
-        ok={sp.ok}
-        extra={
-          <>
-            {listaComodidades}
-            {editando && (
-              <Link href={`/admin/midias?secao=quarto&quarto=${editando.id}`} className="text-sm text-teal-700 py-2 hover:underline">
-                Fotos desta suíte →
-              </Link>
-            )}
-            {editando && <Link href="/admin/quartos" className="text-sm text-gray-500 py-2">Cancelar</Link>}
-          </>
-        }
-      />
-
-      {showMotor && (
-        <div className="bg-white rounded-lg shadow p-4 mt-6">
-          <h2 className="font-semibold text-sm mb-3">Quartos do motor (consulta de exemplo, daqui a uma semana)</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {motorRooms.map((r: any) => (
-              <div key={r.id} className={`border rounded p-2 text-xs ${vinculados.has(r.id) ? "bg-green-50 border-green-300" : "bg-gray-50"}`}>
-                <span className="font-mono font-bold">{r.id}</span> — {r.nome}
-                <br />R$ {r.diaria} | Ocup: {r.ocupacao_max} | {r.disponivel ? "✅" : "❌"}
-                {vinculados.has(r.id) && <span className="text-green-600 ml-1">(vinculado)</span>}
-              </div>
-            ))}
-          </div>
-        </div>
+      {janela && (
+        <JanelaRota titulo={editando ? `Editar ${editando.nome}` : "Novo quarto"} voltar="/admin/quartos">
+          <CrudForm
+            action={editando ? editarQuarto : criarQuarto}
+            fields={fields}
+            submitLabel={editando ? "Salvar alterações" : "Criar quarto"}
+            extra={<>
+              {listaComodidades}
+              {editando && (
+                <Link href={`/admin/midias?secao=quarto&quarto=${editando.id}`} className="mt-4 inline-flex min-h-10 items-center text-sm font-medium text-marca hover:underline">
+                  Fotos desta suíte →
+                </Link>
+              )}
+            </>}
+          />
+        </JanelaRota>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto mt-6">
-        <table className="w-full text-sm min-w-[40rem]">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left p-3">Nome</th>
-              <th className="text-left p-3">Categoria</th>
-              <th className="text-left p-3">Ocup.</th>
-              <th className="text-left p-3">Motor ID</th>
-              <th className="text-left p-3">Ativo</th>
-              <th className="text-right p-3">Acoes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lista.map((q: any) => (
-              <tr key={q.id} className="border-b hover:bg-gray-50">
-                <td className="p-3 font-medium">{q.nome}</td>
-                <td className="p-3 text-gray-500">{q.categoria_nome || "—"}</td>
-                <td className="p-3">{q.ocupacao_max}</td>
-                <td className="p-3 font-mono text-xs">{q.desbravador_room_id || "—"}</td>
-                <td className="p-3">{q.ativo ? "✅" : "—"}</td>
-                <td className="p-3 text-right space-x-2">
-                  <Link href={`/admin/quartos?editar=${q.id}`} className="inline-flex items-center text-xs font-medium px-3.5 min-h-10 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">Editar</Link>
-                  <form action={alternarAtivoQuarto} className="inline">
-                    <input type="hidden" name="id" value={q.id} />
-                    <SubmitButton className="inline-flex items-center text-xs font-medium px-3 min-h-10 rounded-lg text-amber-700 hover:bg-amber-50">{q.ativo ? "Desativar" : "Ativar"}</SubmitButton>
-                  </form>
-                  <DeleteButton action={excluirQuarto} id={q.id} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="text-xs text-gray-400 mt-2">{lista.length} quartos</p>
-    </div>
+      {showMotor && (
+        <Cartao className="mb-6" titulo="Quartos do motor" descricao="Consulta de exemplo, daqui a uma semana. Em verde, os já ligados a um quarto do site.">
+          {motorRooms.length === 0 ? <Aviso tom="aviso">O motor não respondeu agora.</Aviso> : (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {motorRooms.map((r: any) => (
+                <div key={r.id} className={`rounded-xl border p-3 text-xs ${vinculados.has(r.id) ? "border-emerald-200 bg-emerald-50" : "border-linha/80 bg-fundo-suave"}`}>
+                  <p><span className="font-mono font-bold">{r.id}</span> — {r.nome}</p>
+                  <p className="mt-1 text-tinta-suave">Diária {Number(r.diaria).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} · até {r.ocupacao_max} pessoas · {r.disponivel ? "com vaga" : "sem vaga"}</p>
+                  {vinculados.has(r.id) && <p className="mt-1 font-semibold text-emerald-700">ligado a um quarto do site</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </Cartao>
+      )}
+
+      <Lista
+        itens={[...lista] as any[]}
+        chave={(q: any) => q.id}
+        vazio={<Vazio icone="🛏️" titulo="Nenhum quarto cadastrado" acao={<BotaoLink href="/admin/quartos?novo=1"><Plus className="h-4 w-4" /> Cadastrar o primeiro</BotaoLink>} />}
+        colunas={[
+          { titulo: "Quarto", celula: (q: any) => <span className="font-medium">{tituloQuarto(q.nome)}</span> },
+          { titulo: "Categoria", celula: (q: any) => q.categoria_nome || "—" },
+          { titulo: "Até", celula: (q: any) => `${q.ocupacao_max} ${q.ocupacao_max === 1 ? "pessoa" : "pessoas"}` },
+          { titulo: "Motor", celula: (q: any) => q.desbravador_room_id ? <span className="font-mono text-xs">{q.desbravador_room_id}</span> : <Selo tom="aviso">sem vínculo</Selo> },
+          { titulo: "Situação", celula: (q: any) => <Selo tom={q.ativo ? "sucesso" : "neutro"} ponto>{q.ativo ? "No site" : "Escondido"}</Selo> },
+        ]}
+        acoes={(q: any) => <>
+          <BotaoLink href={`/admin/quartos?editar=${q.id}`} variante="secundario" tamanho="sm"><Pencil className="h-3.5 w-3.5" /> Editar</BotaoLink>
+          <form action={alternarAtivoQuarto}>
+            <input type="hidden" name="id" value={q.id} />
+            <SubmitButton className={botao("fantasma", "sm")}>{q.ativo ? "Esconder" : "Mostrar no site"}</SubmitButton>
+          </form>
+          <DeleteButton action={excluirQuarto} id={q.id} texto="O quarto sai do site e as fotos dele ficam sem suíte. Não dá para desfazer." />
+        </>}
+      />
+      <p className="mt-3 px-1 text-xs text-tinta-suave">{lista.length} {lista.length === 1 ? "quarto" : "quartos"}</p>
+    </Pagina>
   );
 }

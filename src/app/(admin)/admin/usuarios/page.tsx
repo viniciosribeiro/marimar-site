@@ -1,9 +1,36 @@
-import { auth } from "@/lib/auth"; import { redirect } from "next/navigation"; import postgres from "postgres";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { comSql } from "@/lib/db-conexao";
+import { Pagina, Cabecalho, Lista, Selo, Aviso, quandoFoi } from "@/components/admin/ui";
+
 export const dynamic = "force-dynamic";
+
+type Usuario = { id: string; email: string; nome: string; papel: string; must_reset: boolean; ultimo_login: Date | null };
+
+/** Quem tem acesso ao painel. Só leitura: contas novas são criadas pelo script de administração. */
 export default async function UsuariosPage() {
-  const s=await auth(); if(!s?.user) redirect("/admin/login");
-  const sql=postgres(process.env.DATABASE_URL!, {max:1, prepare: false }); const lista=await sql`SELECT id, email, nome, papel, must_reset, ultimo_login, criado_em FROM usuarios ORDER BY criado_em DESC`; await sql.end();
-  return(<div className="p-5 sm:p-8"><h1 className="text-2xl font-bold mb-2">Usuarios</h1><p className="text-sm text-gray-500 mb-4">{lista.length} usuarios cadastrados</p>
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto"><table className="w-full text-sm min-w-[40rem]"><thead className="bg-gray-50 border-b"><tr><th className="text-left p-3">Nome</th><th className="text-left p-3">Email</th><th className="text-left p-3">Papel</th><th className="text-left p-3">Reset</th><th className="text-left p-3">Ultimo Login</th></tr></thead><tbody>{lista.map((u:any)=>(<tr key={u.id} className="border-b hover:bg-gray-50"><td className="p-3 font-medium">{u.nome}</td><td className="p-3 text-gray-500">{u.email}</td><td className="p-3">{u.papel}</td><td className="p-3">{u.must_reset?"⚠️ Sim":"✅"}</td><td className="p-3 text-xs text-gray-400">{u.ultimo_login?new Date(u.ultimo_login).toLocaleString("pt-BR"):"—"}</td></tr>))}</tbody></table></div>
-  </div>);
+  const s = await auth();
+  if (!s?.user) redirect("/admin/login");
+  const lista = await comSql((sql) => sql<Usuario[]>`
+    SELECT id, email, nome, papel, must_reset, ultimo_login FROM usuarios ORDER BY criado_em DESC`);
+
+  return (
+    <Pagina>
+      <Cabecalho sobre="Sistema" titulo="Usuários" descricao="Quem tem acesso a este painel." />
+      <Lista
+        itens={[...lista]}
+        chave={(u) => u.id}
+        colunas={[
+          { titulo: "Nome", celula: (u) => u.nome },
+          { titulo: "E-mail", celula: (u) => <span className="text-tinta-suave">{u.email}</span> },
+          { titulo: "Papel", celula: (u) => <Selo tom={u.papel === "master" ? "marca" : "neutro"}>{u.papel === "master" ? "Administração" : "Edição"}</Selo> },
+          { titulo: "Senha", celula: (u) => u.must_reset ? <Selo tom="aviso" ponto>Precisa trocar</Selo> : <Selo tom="sucesso" ponto>Definida</Selo> },
+          { titulo: "Último acesso", celula: (u) => <span className="text-xs text-tinta-suave">{quandoFoi(u.ultimo_login)}</span> },
+        ]}
+      />
+      <Aviso tom="info" className="mt-6">
+        Para criar uma conta ou redefinir uma senha, quem administra o sistema roda <code className="font-mono">npm run db:seed:admin</code> (veja <code className="font-mono">docs/runbook.md</code>).
+      </Aviso>
+    </Pagina>
+  );
 }
