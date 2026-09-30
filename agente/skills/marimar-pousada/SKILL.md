@@ -25,7 +25,7 @@ as que mais tentam a improvisação.
 
 | Pergunta | Onde buscar |
 |---|---|
-| "Tem vaga dia X?" · "Quanto custa?" | **`/api/agent/disponibilidade`** (desta skill) — já aplica a regra de crianças e bebês da pousada. Use a `consulta-desbravador` só se esta rota falhar |
+| "Tem vaga dia X?" · "Quanto custa?" | `consulta-desbravador` — já aplica a regra de crianças e bebês da pousada. Se ela falhar, `/api/agent/disponibilidade` (abaixo) faz o mesmo |
 | Todo o resto | **esta skill** |
 
 Se a pergunta misturar as duas ("tem vaga no feriado e aceita cachorro?"),

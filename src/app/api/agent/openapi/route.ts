@@ -50,6 +50,13 @@ export async function GET(request: Request) {
       responses: { "200": { description: "OK" }, "404": { description: "Documento não encontrado" } },
     },
   };
+  paths["/api/agent/regras"] = {
+    get: {
+      summary: "Regra de crianças e adicionais, com a consulta ao motor já calculada",
+      parameters: ["adultos", "criancas", "bebes", "noites"].map((name) => ({ name, in: "query", schema: { type: "integer", minimum: 0 } })),
+      responses: { "200": { description: "OK" } },
+    },
+  };
   paths["/api/agent/lacuna"] = {
     post: {
       summary: "Registrar pergunta que a Marina não soube responder",

@@ -6,6 +6,23 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-30 (3) — A causa real do "pede a idade": a skill consulta-desbravador
+**Autor:** Claude (Claude Code)
+
+Lida no servidor (Hostinger) a pedido: a skill de preço e vaga consultava o
+motor direto e mandava "aviso_crianca preenchido = NÃO informe valor de
+criança; confirme a idade com a recepção". Como o motor manda esse aviso
+sempre que há criança, a Marina pedia a idade em toda cotação com criança —
+independentemente do treinamento.
+
+- Skill trazida para o repositório (`agente/skills/consulta-desbravador/`).
+  O script pergunta a `/api/agent/regras` (nova, mesma `calcularOcupacao` do
+  site) como montar a consulta; aceita `bebes`; soma o bebê pago; zera o
+  aviso quando a regra foi aplicada; link do motor com os números certos.
+  Site fora do ar → comportamento antigo.
+- Testado com o motor simulado: WhatsApp e site dão o mesmo total (R$ 2.200).
+- Instalação e backup da versão antiga: `agente/README.md`.
+
 ## 2026-09-30 (2) — Regra de crianças e adicionais: site e Marina com o mesmo preço
 **Autor:** Claude (Claude Code)
 **Migration:** 0017 (só acrescenta; `npm run db:migrate`)
