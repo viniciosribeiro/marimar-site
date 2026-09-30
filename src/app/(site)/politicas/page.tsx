@@ -1,13 +1,20 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { POLITICAS, TRAVESSIA, NAO_DISPONIVEL } from "@/lib/conteudo-pousada";
+import { comSql } from "@/lib/db-conexao";
+import { lerRegras, textoCriancas, REGRAS_PADRAO } from "@/lib/regras-hospedagem";
 
 export const metadata: Metadata = {
   title: "Políticas — Pousada Marimar, Ilha do Mel",
   description: "Check-in, check-out, café da manhã, cancelamento, pets, silêncio e demais regras da Pousada Marimar.",
 };
 
-export default function PoliticasPage() {
+export const dynamic = "force-dynamic";
+
+export default async function PoliticasPage() {
+  /* A regra de crianças configurada no painel vence o texto padrão: é a
+     mesma que calcula o preço na busca e que a Marina usa. */
+  const regraCriancas = textoCriancas(await comSql(lerRegras).catch(() => REGRAS_PADRAO));
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
       <h1 className="font-titulo text-3xl lg:text-4xl font-bold text-gray-900 mb-3">Políticas</h1>
@@ -36,7 +43,7 @@ export default function PoliticasPage() {
         </Bloco>
 
         <Bloco titulo="Crianças e camas extras">
-          <p>{POLITICAS.criancas}</p>
+          <p>{regraCriancas ?? POLITICAS.criancas}</p>
           <p className="text-gray-500">{POLITICAS.observacao}</p>
         </Bloco>
 

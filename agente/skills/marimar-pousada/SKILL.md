@@ -25,7 +25,7 @@ as que mais tentam a improvisação.
 
 | Pergunta | Onde buscar |
 |---|---|
-| "Tem vaga dia X?" · "Quanto custa?" | `consulta-desbravador` |
+| "Tem vaga dia X?" · "Quanto custa?" | **`/api/agent/disponibilidade`** (desta skill) — já aplica a regra de crianças e bebês da pousada. Use a `consulta-desbravador` só se esta rota falhar |
 | Todo o resto | **esta skill** |
 
 Se a pergunta misturar as duas ("tem vaga no feriado e aceita cachorro?"),
@@ -115,6 +115,7 @@ pode consultar não fica calado: improvisa. Já aconteceu aqui.
 | `/api/agent/avaliacoes` | Depoimentos e notas — **sempre com a plataforma de origem** |
 | `/api/agent/faq` | Perguntas que a pousada já respondeu |
 | `/api/agent/conhecimento` | **O que a administração te ensinou pelo painel** |
+| `/api/agent/disponibilidade?check_in=AAAA-MM-DD&check_out=AAAA-MM-DD&adultos=N&criancas=N&bebes=N` | **Vaga e preço ao vivo do motor, com a regra de crianças da pousada aplicada.** `criancas` = as que não são de colo; `bebes` = de colo. O total devolvido já é o final |
 | `/api/agent/documentos` | **Documentos que a pousada enviou** — PDFs, contratos, cardápios, fotos de avisos. Sem parâmetro vem a lista com um trecho de cada; `?busca=<palavras>` traz os trechos de todos os documentos que falam do assunto; `?id=<id>` traz o texto completo de um |
 | `/api/agent/lacuna` (POST) | **Registrar uma pergunta que você não soube responder** |
 

@@ -5,23 +5,43 @@ import Link from "next/link";
 import Image from "next/image";
 import postgres from "postgres";
 import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
+import { comSql } from "@/lib/db-conexao";
+import {
+  lerRegras, lerAdicionais, calcularOcupacao, regraAtiva, precoAdicional,
+  REGRAS_PADRAO, type Adicional,
+} from "@/lib/regras-hospedagem";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReservarPage({ searchParams }: { searchParams: Promise<{ check_in?: string; check_out?: string; adultos?: string; criancas?: string }> }) {
+export default async function ReservarPage({ searchParams }: { searchParams: Promise<{ check_in?: string; check_out?: string; adultos?: string; criancas?: string; bebes?: string }> }) {
   const sp = await searchParams;
   const ci = sp.check_in; const co = sp.check_out;
   // Datas e hospedes passam pela mesma validacao das rotas de API: antes,
   // "adultos=abc" virava NaN e check-out antes do check-in ia ao motor.
-  const v = ci && co ? validarConsulta({ checkIn: ci, checkOut: co, adultos: sp.adultos, criancas: sp.criancas }) : null;
+  const v = ci && co ? validarConsulta({ checkIn: ci, checkOut: co, adultos: sp.adultos, criancas: sp.criancas, bebes: sp.bebes }) : null;
   const adultos = v?.ok ? v.consulta.adultos : 2;
   const criancas = v?.ok ? v.consulta.criancas : 0;
+  const bebesInformados = v?.ok ? v.consulta.bebes : 0;
+
+  /* A regra de crianças da pousada (configurada em Marina → Regras e
+     adicionais) decide como a consulta vai ao motor: criança que não é de
+     colo vai como adulto. É a MESMA conta que a Marina usa — antes o site
+     mandava as crianças ao motor, que cobra por uma faixa etária que nem
+     está configurada lá, e site e Marina davam preços diferentes. */
+  const { regras, adicionais } = await comSql(async (sql) => ({
+    regras: await lerRegras(sql),
+    adicionais: (await lerAdicionais(sql)).filter((a) => a.visivelSite),
+  })).catch(() => ({ regras: REGRAS_PADRAO, adicionais: [] as Adicional[] }));
+  const temRegra = regraAtiva(regras);
+  const noitesConsulta = v?.ok ? Math.round((Date.parse(v.consulta.checkOut) - Date.parse(v.consulta.checkIn)) / 86_400_000) : 0;
+  const oc = calcularOcupacao({ adultos, criancas, bebes: bebesInformados, noites: noitesConsulta }, regras);
+  const bebes = oc.bebes;
   let resultados: any[] = []; let erro = ""; let noites = 0; let whatsapp = "";
   let avisoCrianca = "";
 
   // O motor e a parte lenta: a consulta comeca antes do banco, em paralelo.
   const tarifas = v?.ok
-    ? fetchTarifas(v.consulta.checkIn, v.consulta.checkOut, adultos, criancas)
+    ? fetchTarifas(v.consulta.checkIn, v.consulta.checkOut, oc.adultosMotor, oc.criancasMotor)
     : null;
   tarifas?.catch(() => {}); // o erro e tratado no await abaixo
 
@@ -41,7 +61,8 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
     try {
       noites = Math.round((new Date(co + "T12:00").getTime() - new Date(ci + "T12:00").getTime()) / 86400000);
       const data = await tarifas;
-      avisoCrianca = data.aviso_crianca || "";
+      // O aviso de faixa etária é do motor; com a regra da pousada aplicada ele não vale.
+      avisoCrianca = oc.regraAplicada ? "" : data.aviso_crianca || "";
       const ids = [...data.quartos, ...data.indisponiveis].map(r => r.id);
       const locais = ids.length > 0 ? await sql`SELECT q.*, c.nome as cat_nome FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id WHERE q.desbravador_room_id = ANY(${ids})` : [];
       const map = new Map(locais.map((l: any) => [l.desbravador_room_id, l]));
@@ -62,9 +83,11 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           cama: l?.cama, metragem: l?.metragem, fotoCapa,
           avisoEstadia: r.estadia_minima > noites ? r.estadia_minima : null,
           alertaEstoque: r.disponivel ? escassez(r.unidades_disponiveis) : null,
-          deepLink: buildDeepLink({ checkIn: ci, checkOut: co, adultos, criancas }),
+          totalFinal: (r.total_geral ?? r.total) + (oc.valorBebes ?? 0),
+          valorBebes: oc.valorBebes ?? 0,
+          deepLink: buildDeepLink({ checkIn: ci, checkOut: co, adultos: oc.adultosMotor, criancas: oc.criancasMotor }),
           whatsappUrl: whatsapp
-            ? `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Olá! Gostaria de reservar:\n\n*Quarto:* ${nomeExibido}\n*Check-in:* ${dataBR(ci)}\n*Check-out:* ${dataBR(co)}\n*Noites:* ${noites}\n*Adultos:* ${adultos}${criancas > 0 ? `\n*Crianças:* ${criancas}` : ""}\n*Valor total:* ${brl(r.total_geral ?? r.total)}\n\nPodem verificar a disponibilidade?`)}`
+            ? `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Olá! Gostaria de reservar:\n\n*Quarto:* ${nomeExibido}\n*Check-in:* ${dataBR(ci)}\n*Check-out:* ${dataBR(co)}\n*Noites:* ${noites}\n*Adultos:* ${adultos}${criancas > 0 ? `\n*Crianças:* ${criancas}` : ""}${bebes > 0 ? `\n*Bebês de colo:* ${bebes}` : ""}\n*Valor total:* ${brl((r.total_geral ?? r.total) + (oc.valorBebes ?? 0))}\n\nPodem verificar a disponibilidade?`)}`
             : null,
         };
       });
@@ -88,7 +111,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
 
       {/* Mesmo padrão da busca da home: campos largos e altos no celular (os
           seletores tinham a largura do número e eram difíceis de tocar). */}
-      <form className="bg-white rounded-[calc(var(--raio)*1.5)] shadow-marca-forte border border-linha/60 p-4 sm:p-5 mb-10 grid grid-cols-2 sm:grid-cols-5 gap-3 max-w-4xl">
+      <form className={`bg-white rounded-[calc(var(--raio)*1.5)] shadow-marca-forte border border-linha/60 p-4 sm:p-5 mb-10 grid grid-cols-2 ${temRegra ? "sm:grid-cols-6 max-w-5xl" : "sm:grid-cols-5 max-w-4xl"} gap-3`}>
         <label className="col-span-2 sm:col-span-1 min-w-0">
           <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Check-in</span>
           <input type="date" name="check_in" defaultValue={ci} required className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none" />
@@ -102,9 +125,15 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           <select name="adultos" defaultValue={adultos} className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none"><option>1</option><option>2</option><option>3</option><option>4</option></select>
         </label>
         <label className="min-w-0">
-          <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Crianças</span>
+          <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">{temRegra ? `Crianças (${regras.idadeColoMax! + 1}+ anos)` : "Crianças"}</span>
           <select name="criancas" defaultValue={criancas} className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none"><option>0</option><option>1</option><option>2</option><option>3</option></select>
         </label>
+        {temRegra && (
+          <label className="min-w-0">
+            <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Bebês (até {regras.idadeColoMax} {regras.idadeColoMax === 1 ? "ano" : "anos"})</span>
+            <select name="bebes" defaultValue={bebes} className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none"><option>0</option><option>1</option><option>2</option></select>
+          </label>
+        )}
         <button type="submit" className="col-span-2 sm:col-span-1 self-end h-12 rounded-full bg-marca text-marca-texto hover:bg-marca-hover font-semibold shadow-marca transition-marca">Buscar</button>
       </form>
 
@@ -120,7 +149,13 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           <p className="text-sm text-gray-500 mb-2">
             {pluralizar(noites, "noite")}: {dataBR(ci)} → {dataBR(co)} • {pluralizar(adultos, "adulto")}
             {criancas > 0 ? ` • ${pluralizar(criancas, "criança")}` : ""}
+            {bebes > 0 ? ` • ${pluralizar(bebes, "bebê")} de colo` : ""}
           </p>
+          {oc.explicacao && (
+            <p className="text-sm text-marca-escura bg-marca-sutil border border-marca-borda rounded-lg px-4 py-3 mb-6">
+              {oc.explicacao} Regra da pousada.
+            </p>
+          )}
 
           {avisoCrianca && (
             <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-4 py-3 mb-6">
@@ -155,7 +190,35 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           )}
         </div>
       )}
+
+      {adicionais.length > 0 && <Adicionais itens={adicionais} destacarBebe={bebes > 0} />}
     </div>
+  );
+}
+
+/**
+ * Adicionais cadastrados em Marina → Regras e adicionais. Preço vem de lá;
+ * sem preço, "sob consulta" — nunca um valor inventado.
+ */
+function Adicionais({ itens, destacarBebe }: { itens: Adicional[]; destacarBebe: boolean }) {
+  const ordenados = destacarBebe ? [...itens].sort((a, b) => Number(b.categoria === "bebe") - Number(a.categoria === "bebe")) : itens;
+  return (
+    <section className="mt-4 border-t border-linha/60 pt-8">
+      <h2 className="font-titulo text-2xl font-bold text-tinta">Adicionais para a sua estadia</h2>
+      <p className="text-sm text-tinta-suave mt-1 mb-5">Peça na reserva ou pelo WhatsApp. Valores cobrados à parte.</p>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {ordenados.map((a) => (
+          <li key={a.id} className="rounded-marca border border-linha/70 bg-white p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="font-semibold text-tinta">{a.nome}</p>
+              <p className="shrink-0 text-sm font-semibold text-marca">{precoAdicional(a)}</p>
+            </div>
+            {a.descricao && <p className="mt-1 text-sm text-tinta-suave leading-relaxed">{a.descricao}</p>}
+            {a.precisaPedir && <p className="mt-2 text-xs text-tinta-suave">Pedir com antecedência</p>}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -202,9 +265,10 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-sm text-gray-500">Total {pluralizar(noites, "noite")}:</span>
-            <span className="text-xl font-bold text-marca">{brl(r.total_geral ?? r.total)}</span>
+            <span className="text-xl font-bold text-marca">{brl(r.totalFinal)}</span>
           </div>
           {r.valor_adulto > 0 && <p className="text-xs text-gray-400 mt-1">Por adulto: {brl(r.valor_adulto)}/noite</p>}
+          {r.valorBebes > 0 && <p className="text-xs text-gray-400">Bebê de colo: {brl(r.valorBebes)} (pago à parte na pousada)</p>}
           {r.total_criancas > 0 && (
             <p className="text-xs text-gray-400">
               Crianças: {brl(r.total_criancas)}

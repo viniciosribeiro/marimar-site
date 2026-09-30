@@ -280,3 +280,95 @@ export async function ignorarLacuna(fd: FormData): Promise<Resultado> {
   atualizar();
   return { ok: true, mensagem: "Tirada da lista." };
 }
+
+/* ── regras de hospedagem e adicionais ───────────────────────────── */
+
+const inteiroOuNulo = (fd: FormData, k: string, min: number, max: number) => {
+  const v = txt(fd, k);
+  if (v === null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : null;
+};
+/** "35", "35,50", "R$ 35,50" → 35.5. Vazio → null (sob consulta / sem valor). */
+const dinheiro = (fd: FormData, k: string) => {
+  const v = txt(fd, k);
+  if (v === null) return null;
+  const n = Number(v.replace(/[^\d,.]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
+};
+
+const atualizarSite = () => {
+  atualizar();
+  for (const p of ["/reservar", "/politicas", "/"]) revalidatePath(p);
+};
+
+/**
+ * Regra de crianças e bebês.
+ *
+ * É um dado, não um texto: a busca do site usa para montar a consulta ao
+ * motor, e a Marina recebe a mesma regra — os dois dão o mesmo preço.
+ * Idade de colo em branco desliga a regra (volta ao comportamento do motor).
+ */
+export async function salvarRegras(fd: FormData): Promise<Resultado> {
+  const s = await exigirSessao();
+  const idade = inteiroOuNulo(fd, "idade_colo_max", 0, 12);
+  const cobranca = ["gratis", "por_noite", "por_estadia"].includes(txt(fd, "bebe_cobranca") ?? "") ? txt(fd, "bebe_cobranca")! : "gratis";
+  const valor = cobranca === "gratis" ? null : dinheiro(fd, "bebe_valor");
+  if (cobranca !== "gratis" && valor === null) {
+    return { ok: false, mensagem: "Informe o valor cobrado pelo bebê, ou escolha “não paga”." };
+  }
+  const dados = {
+    idade_colo_max: idade,
+    crianca_paga_como_adulto: fd.get("crianca_paga_como_adulto") === "on",
+    bebe_cobranca: cobranca,
+    bebe_valor: valor,
+    observacao: txt(fd, "observacao")?.slice(0, 600) ?? null,
+    atualizado_por: autorDe(s),
+  };
+  await comSql((sql) => sql`
+    INSERT INTO regras_hospedagem ${sql({ id: 1, ...dados })}
+    ON CONFLICT (id) DO UPDATE SET ${sql(dados)}, atualizado_em = now()`);
+  atualizarSite();
+  return {
+    ok: true,
+    mensagem: idade === null
+      ? "Regra desligada. O site volta a usar o cálculo do motor para crianças."
+      : "Regra salva. Já vale na busca do site e para a Marina.",
+  };
+}
+
+export async function salvarAdicional(fd: FormData): Promise<Resultado> {
+  const s = await exigirSessao();
+  const id = txt(fd, "id");
+  const nome = txt(fd, "nome")?.slice(0, 120);
+  if (!nome) return { ok: false, mensagem: "Dê um nome ao adicional." };
+  const cobranca = ["por_estadia", "por_noite", "por_pessoa_noite", "por_unidade"].includes(txt(fd, "cobranca") ?? "")
+    ? txt(fd, "cobranca")! : "por_estadia";
+  const dados = {
+    nome,
+    descricao: txt(fd, "descricao")?.slice(0, 600) ?? null,
+    preco: dinheiro(fd, "preco"),
+    cobranca,
+    categoria: ["quarto", "bebe", "alimentacao", "experiencia", "transporte", "outros"].includes(txt(fd, "categoria") ?? "")
+      ? txt(fd, "categoria")! : "outros",
+    precisa_pedir: fd.get("precisa_pedir") === "on",
+    visivel_site: fd.get("visivel_site") === "on",
+    visivel_marina: fd.get("visivel_marina") === "on",
+    ativo: fd.get("ativo") === "on",
+    atualizado_por: autorDe(s),
+  };
+  await comSql((sql) => id
+    ? sql`UPDATE adicionais SET ${sql(dados)}, atualizado_em = now() WHERE id = ${id}`
+    : sql`INSERT INTO adicionais ${sql(dados)}`);
+  atualizarSite();
+  return { ok: true, mensagem: id ? "Adicional atualizado." : "Adicional criado. Já aparece no site e para a Marina." };
+}
+
+export async function excluirAdicional(fd: FormData): Promise<Resultado> {
+  await exigirSessao();
+  const id = txt(fd, "id");
+  if (!id) return { ok: false, mensagem: "Adicional não encontrado." };
+  await comSql((sql) => sql`DELETE FROM adicionais WHERE id = ${id}`);
+  atualizarSite();
+  return { ok: true, mensagem: "Adicional apagado." };
+}

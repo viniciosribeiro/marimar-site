@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { comSql } from "@/lib/db-conexao";
 import { receberLead } from "@/lib/leads";
 import { lerContato } from "@/lib/pousada";
+import { lerRegras, textoCriancas } from "@/lib/regras-hospedagem";
 import {
   ENDERECO, CAFE_DA_MANHA, COMODIDADES_CONFIRMADAS, NAO_DISPONIVEL,
 } from "@/lib/conteudo-pousada";
@@ -23,7 +24,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: NextRequest) {
   if (!checkAgentAuth(request)) return agentUnauthorized();
-  const { p, politicas, comodidades } = await comSql(async (sql) => {
+  const { p, politicas, comodidades, regras } = await comSql(async (sql) => {
     const [p] = await sql`SELECT * FROM pousada LIMIT 1`;
     const politicas = await sql`SELECT * FROM politicas LIMIT 1`;
 
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
         JOIN comodidades c ON c.id = pc.comodidade_id
         WHERE c.ativo = true ORDER BY c.ordem`;
     } catch { /* tabela ausente neste banco */ }
-    return { p, politicas, comodidades };
+    return { p, politicas, comodidades, regras: await lerRegras(sql) };
   });
 
   const pol = politicas?.[0] as Record<string, unknown> | undefined;
@@ -55,7 +56,9 @@ export async function GET(request: NextRequest) {
     `• Cancelamento: ${pol?.cancelamento || "confirmar com a pousada"}`,
     `• Diaria minima padrao: ${pol?.diaria_minima_padrao ?? 1}`,
   ];
-  linhas.push(`• Crianças: ${pol?.criancas_texto || "regras de idade e cobrança dependem da tarifa — consulte a disponibilidade ou confirme com a pousada"}`);
+  /* A regra configurada (Marina → Regras e adicionais) vence o texto livre:
+     é a mesma que o site usa para calcular o preço. */
+  linhas.push(`• Crianças: ${textoCriancas(regras) || pol?.criancas_texto || "regras de idade e cobrança dependem da tarifa — consulte a disponibilidade ou confirme com a pousada"}`);
   linhas.push(`• Pagamento: ${pagamento.length ? pagamento.join(", ") : "confirmar com a pousada"}`);
   if (pol?.regras_gerais) linhas.push(`• Regras gerais: ${pol.regras_gerais}`);
 

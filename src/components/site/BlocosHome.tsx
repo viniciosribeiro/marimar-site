@@ -54,6 +54,8 @@ export type DadosHome = {
   /** Admin → Atrações da ilha e Ilha, chegada e eventos (`lerConteudo()`). */
   atracoes: Atracao[];
   travessia: Travessia;
+  /** Regra de crianças configurada (Marina → Regras e adicionais). Nula = sem regra. */
+  criancas?: { idadeColoMax: number; texto: string } | null;
 };
 
 export function RenderBloco({ bloco, dados }: { bloco: Bloco; dados: DadosHome }) {
@@ -146,7 +148,7 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
      acabaria com dois formulários de disponibilidade divergentes. */
   const busca = (
     <div className="mt-8">
-      <BuscaHome pacotes={d.pacotes} />
+      <BuscaHome pacotes={d.pacotes} criancas={d.criancas ?? null} />
     </div>
   );
 

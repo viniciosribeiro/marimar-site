@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { fetchTarifas, validarConsulta } from "@/lib/worker";
 import { buildDeepLink } from "@/lib/deeplink";
 import postgres from "postgres";
+import { comSql } from "@/lib/db-conexao";
+import { lerRegras, calcularOcupacao, REGRAS_PADRAO } from "@/lib/regras-hospedagem";
 
 export const dynamic = "force-dynamic";
 
@@ -14,12 +16,18 @@ export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams;
   const v = validarConsulta({
     checkIn: q.get("check_in"), checkOut: q.get("check_out"),
-    adultos: q.get("adultos"), criancas: q.get("criancas"),
+    adultos: q.get("adultos"), criancas: q.get("criancas"), bebes: q.get("bebes"),
   });
   if (!v.ok) {
     return Response.json({ ok: false, erro: v.erro }, { status: 400 });
   }
-  const { checkIn, checkOut, adultos, criancas } = v.consulta;
+  const { checkIn, checkOut } = v.consulta;
+  /* A regra de crianças da pousada (Marina → Regras e adicionais) decide
+     como a consulta vai ao motor. Mesma conta do /reservar e da Marina. */
+  const noites = Math.round((Date.parse(checkOut) - Date.parse(checkIn)) / 86_400_000);
+  const oc = calcularOcupacao({ ...v.consulta, noites }, await comSql(lerRegras).catch(() => REGRAS_PADRAO));
+  const adultos = oc.adultosMotor;
+  const criancas = oc.criancasMotor;
 
   try {
     const workerData = await fetchTarifas(checkIn, checkOut, adultos, criancas);
@@ -53,7 +61,8 @@ export async function GET(request: NextRequest) {
         status: r.disponivel ? "disponivel" : "indisponivel",
         noites: workerData.noites,
         diaria: r.diaria,
-        total: r.total,
+        total: r.total_geral ?? r.total,
+        valor_bebes: oc.valorBebes,
         valor_adulto: r.valor_adulto,
         valor_crianca: r.valor_crianca,
         moeda: "BRL",
@@ -77,6 +86,8 @@ export async function GET(request: NextRequest) {
       noites: workerData.noites,
       quartos: merged,
       total_disponiveis: workerData.total_disponiveis,
+      ocupacao: oc,
+      aviso_crianca: oc.regraAplicada ? null : workerData.aviso_crianca ?? null,
     });
   } catch (err) {
     console.error("[disponibilidade] Erro:", err);

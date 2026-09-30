@@ -18,6 +18,7 @@ type Sql = ReturnType<typeof postgres>;
 
 export * from "./marina-base";
 import { CATEGORIAS, rotuloCategoria, codigoItem } from "./marina-base";
+import { lerRegras, lerAdicionais, textoRegrasMarina } from "./regras-hospedagem";
 
 /* ── configuração (voz, tom, escalonamento) ──────────────────────── */
 
@@ -149,6 +150,8 @@ export type Ensinamentos = {
   limites: Ensinamento[];
   escalar: Ensinamento[];
   documentos: Documento[];
+  /** Regras de criança e adicionais, já em texto (Marina → Regras e adicionais). */
+  regras?: string;
 };
 
 /** O que está valendo para a Marina: ativo e fora da lixeira. */
@@ -182,7 +185,12 @@ export async function lerEnsinamentos(sql: Sql): Promise<Ensinamentos> {
       ORDER BY criado_em DESC LIMIT 30`;
   } catch { /* antes da migration 0012 */ }
 
+  /* Regras de criança e adicionais são DADOS (não texto livre): as mesmas
+     que a busca do site usa para montar a consulta ao motor. */
+  const regras = textoRegrasMarina(await lerRegras(sql), await lerAdicionais(sql));
+
   return {
+    regras,
     fatos: linhas.filter((l) => l.tipo === "fato"),
     perguntas: linhas.filter((l) => l.tipo === "pergunta"),
     limites: linhas.filter((l) => l.tipo === "limite"),
@@ -259,8 +267,9 @@ export function ensinamentosEmTexto(
     partes.push("COMO FALAR:\n" + c.tom.trim());
   }
 
-  const temConteudo = e.fatos.length || perguntas.length || e.limites.length || escalar.length;
+  const temConteudo = e.fatos.length || perguntas.length || e.limites.length || escalar.length || e.regras;
   if (temConteudo) partes.push(PRIORIDADE);
+  if (e.regras) partes.push(e.regras);
 
   if (e.fatos.length) {
     partes.push(

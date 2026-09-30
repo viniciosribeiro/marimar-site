@@ -599,3 +599,41 @@ export const marinaLacunas = pgTable("marina_lacunas", {
   criado_em: timestamp("criado_em").defaultNow().notNull(),
   resolvido_em: timestamp("resolvido_em"),
 });
+
+/**
+ * Regras de hospedagem (linha única, id = 1). Lida pelo site (busca e preço)
+ * e pela Marina — ver `src/lib/regras-hospedagem.ts`. Migration 0017.
+ */
+export const regrasHospedagem = pgTable("regras_hospedagem", {
+  id: integer("id").primaryKey().default(1),
+  /** Até que idade (inclusive) a criança é de colo. Nulo = regra desligada. */
+  idade_colo_max: integer("idade_colo_max"),
+  crianca_paga_como_adulto: boolean("crianca_paga_como_adulto").default(true).notNull(),
+  /** "gratis" | "por_noite" | "por_estadia" */
+  bebe_cobranca: text("bebe_cobranca").default("gratis").notNull(),
+  bebe_valor: numeric("bebe_valor", { precision: 10, scale: 2 }),
+  observacao: text("observacao"),
+  atualizado_por: text("atualizado_por"),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+});
+
+/** Adicionais que o hóspede pode pedir (berço, cama extra, café no quarto…). */
+export const adicionais = pgTable("adicionais", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  nome: text("nome").notNull(),
+  descricao: text("descricao"),
+  /** Nulo = sob consulta. */
+  preco: numeric("preco", { precision: 10, scale: 2 }),
+  /** "por_estadia" | "por_noite" | "por_pessoa_noite" | "por_unidade" */
+  cobranca: text("cobranca").default("por_estadia").notNull(),
+  /** "quarto" | "bebe" | "alimentacao" | "experiencia" | "transporte" | "outros" */
+  categoria: text("categoria").default("quarto").notNull(),
+  precisa_pedir: boolean("precisa_pedir").default(true).notNull(),
+  visivel_site: boolean("visivel_site").default(true).notNull(),
+  visivel_marina: boolean("visivel_marina").default(true).notNull(),
+  ativo: boolean("ativo").default(true).notNull(),
+  ordem: integer("ordem").default(0).notNull(),
+  atualizado_por: text("atualizado_por"),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+});

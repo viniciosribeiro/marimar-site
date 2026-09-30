@@ -54,6 +54,19 @@ lê por outra função (`lerTreinamento`), que traz tudo — inclusive desligado
 e lixeira. Até 29/09 as duas eram a mesma, e desligar um item o fazia sumir
 do painel sem jeito de religar.
 
+## Regra de crianças e adicionais (dados, não texto)
+
+`regras_hospedagem` e `adicionais` (migration 0017), editados em
+Marina → Crianças e adicionais. `calcularOcupacao()` em
+`src/lib/regras-hospedagem-base.ts` é a conta única:
+
+| Onde | O que faz com a regra |
+|---|---|
+| `/reservar` e busca da home | campos Crianças (N+ anos) e Bebês; consulta ao motor com crianças como adultos; esconde o aviso de faixa etária do motor; mostra adicionais |
+| `/api/disponibilidade` e `/api/agent/disponibilidade` | mesma conversão; aceitam `bebes`; total = `total_geral` + bebê |
+| Treinamento da Marina | bloco REGRA DE CRIANÇAS + ADICIONAIS no texto (`textoRegrasMarina`) |
+| `/politicas`, `/api/agent/pousada` | frase gerada pela regra vence o texto livre |
+
 ## Status por item (o que o painel mostra)
 
 `situacaoItem()` em `src/lib/marina-base.ts`:

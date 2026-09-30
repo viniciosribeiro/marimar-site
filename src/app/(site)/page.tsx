@@ -3,6 +3,7 @@ import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 import { lerBanner } from "@/lib/banners";
 import { agruparItens } from "@/lib/blocos";
 import { lerConteudo, padroes, type Conteudo } from "@/lib/conteudo-editavel";
+import { lerRegras, textoCriancas, REGRAS_PADRAO, type Regras } from "@/lib/regras-hospedagem";
 import { RenderBloco, type Bloco, type DadosHome } from "@/components/site/BlocosHome";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,7 @@ export default async function HomePage() {
   let fotosSecao: { secao: string; url: string; alt: string }[] = [];
   // Atrações e travessia editadas no painel; sem banco, valem as do código.
   let conteudo: Conteudo = padroes();
+  let regras: Regras = REGRAS_PADRAO;
 
   pousada = await lerPousada(); // ja lida pelo layout nesta requisicao
 
@@ -121,6 +123,7 @@ export default async function HomePage() {
     }
 
     conteudo = await lerConteudo(sql); // não lança: sem a tabela, volta o padrão
+    regras = await lerRegras(sql);     // idem
 
     // Traz ativos e inativos: precisamos saber quais tipos JA existem,
     // para nao reinserir um que foi escondido de proposito.
@@ -148,6 +151,7 @@ export default async function HomePage() {
     fotos: Object.fromEntries(fotosSecao.map((f) => [f.secao, { url: f.url, alt: f.alt }])),
     atracoes: conteudo.ATRACOES,
     travessia: conteudo.TRAVESSIA,
+    criancas: regras.idadeColoMax !== null ? { idadeColoMax: regras.idadeColoMax, texto: textoCriancas(regras)! } : null,
   };
 
   const todos = blocos as (Bloco & { ativo?: boolean })[];
