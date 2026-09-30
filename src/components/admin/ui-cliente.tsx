@@ -245,14 +245,21 @@ export function Abas<T extends string>({ abas, atual, aoTrocar, className }: {
   abas: { id: T; rotulo: string; contador?: number; alerta?: boolean }[];
   atual: T; aoTrocar: (id: T) => void; className?: string;
 }) {
+  /* Fichas independentes, sem caixa em volta: no celular rolam de lado
+     (com respiro nas bordas para mostrar que há mais); do tablet para cima
+     quebram em linhas alinhadas. A versão anterior punha tudo numa caixa
+     que não acompanhava a quebra — em telas médias a caixa cortava as
+     últimas abas (30/09/2026). */
   return (
-    <div className={cn("-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 [scrollbar-width:none]", className)}>
-      <div role="tablist" className="inline-flex min-w-full gap-1 rounded-2xl border border-linha/70 bg-white p-1 shadow-sm sm:min-w-0 xl:flex xl:flex-wrap">
+    <div className={cn("-mx-4 overflow-x-auto px-4 pb-1 md:mx-0 md:overflow-visible md:px-0 md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", className)}>
+      <div role="tablist" className="flex w-max gap-2 md:w-auto md:flex-wrap">
         {abas.map((a) => (
           <button key={a.id} role="tab" aria-selected={atual === a.id} onClick={() => aoTrocar(a.id)}
             className={cn(
-              "relative inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-medium transition-colors",
-              atual === a.id ? "bg-marca text-marca-texto shadow-sm" : "text-tinta-suave hover:bg-areia/60 hover:text-tinta",
+              "inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors",
+              atual === a.id
+                ? "border-marca bg-marca text-marca-texto shadow-sm"
+                : "border-linha bg-white text-tinta-suave hover:border-marca/50 hover:text-tinta",
             )}>
             {a.rotulo}
             {a.contador !== undefined && (

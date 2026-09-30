@@ -34,6 +34,9 @@ openclaw skills install ./agente/skills/marimar-pousada
 
 ### Atualizar depois de mexer na skill
 
+> **30/09/2026 (4):** a skill ganhou a seção "Fotos e vídeos: como mandar"
+> (vídeos das suítes e roteiros de orientação, limite de 16 MB). Reinstale.
+
 Editar o `SKILL.md` aqui e dar push **nao** muda nada na Hostinger — a caixa
 roda uma copia instalada. Toda vez que a skill mudar, repita:
 

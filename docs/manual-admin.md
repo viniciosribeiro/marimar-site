@@ -49,26 +49,29 @@ A lista de comodidades. Marque **"A pousada oferece"** nas que valem para a
 pousada toda (Wi-Fi, restaurante, jardim…): elas aparecem no site e a Marina
 as cita como fato. Não marque o que não existe — a Marina repete.
 
-### Fotos
-As fotos ficam separadas por **onde aparecem**:
+### Fotos e vídeos
+Tudo o que aparece no site e o que a Marina envia fica aqui, em **álbuns**:
+cada seção do site (A pousada, Restaurante, Café da manhã, Praia e ilha,
+Eventos), cada suíte e "Orientação (Marina)" (vídeos dos roteiros — não
+aparecem no site). No celular o álbum se escolhe na lista do alto; no
+computador, na coluna da esquerda.
 
-| Aba | Onde aparece |
-|---|---|
-| A pousada | Galeria; a marcada "Usar no topo" vira a foto do alto do site quando não há banner |
-| Suítes | Uma suíte por vez. A "capa" abre a galeria da suíte e aparece na lista. A Marina manda essas fotos quando pedem para ver o quarto |
-| Restaurante | Página do restaurante, bloco do restaurante na home, galeria |
-| Café da manhã | Página do restaurante, home, galeria |
-| Praia e ilha | Faixa final da home, Como chegar, galeria |
-| Eventos | Galeria |
-
-- **Enviar**: arraste as fotos ou toque em "Escolher fotos" (no celular abre
-  a galeria do aparelho). Várias de uma vez, até 12 MB cada.
-- **Descrição**: escreva o que a foto mostra ("Suíte Família — cama de
-  casal"). Ajuda o Google e quem usa leitor de tela.
-- **Mover**: leva a foto para outra aba ou outra suíte.
-- **Etiqueta "Repetida"**: a mesma imagem está em mais de um lugar. Era o
-  motivo de suítes diferentes aparecerem com as mesmas fotos: mova ou exclua
-  a cópia que não pertence àquele lugar.
+- **Enviar**: abra o álbum e toque em "Enviar fotos e vídeos". No celular:
+  **Tirar foto**, **Gravar vídeo** ou **Escolher arquivos**; no computador,
+  arraste. Fotos do iPhone (HEIC) são convertidas sozinhas. Vídeos: até
+  **5 minutos**; o sistema comprime no próprio aparelho (a barra mostra cada
+  fase) e prepara uma versão que cabe no WhatsApp. Não feche a tela durante o envio.
+- **Ordenar**: arraste pela alça (⋮⋮). Fotos e vídeos têm ordens separadas —
+  a dos vídeos da suíte é a que o site mostra e a Marina envia.
+- **Capa**: toque na estrela. Uma por álbum.
+- **Editar**: toque na foto ou vídeo. Título (nos vídeos: "Entrada",
+  "Banheiro"…), legenda, texto alternativo (o que se vê na imagem) e "A Marina
+  pode enviar". Embaixo aparece **onde ela é usada**.
+- **Várias de uma vez**: toque no círculo de cada uma; a barra que aparece
+  move ou exclui todas. Excluir pede confirmação e não dá para desfazer.
+- **Filtros**: "Sem legenda" e "Sem uso" mostram o que falta arrumar.
+- Selo **"WhatsApp: vai como link"** num vídeo: ele ficou grande demais para
+  o WhatsApp; a Marina manda o link da página da suíte no lugar.
 
 ## Restaurante
 
@@ -149,6 +152,12 @@ partir da próxima conversa**. As abas, na ordem em que se usa:
 - **Documentos** — PDF, Word, texto, CSV ou foto. Ela lê, divide em trechos e
   procura dentro quando a pergunta pede. Se um arquivo não puder ser lido,
   aparece o motivo e o botão "Tentar de novo".
+- **Mídias de orientação** — roteiros com vídeo para quem pergunta como
+  chegar, onde pegar o barco, onde fica o restaurante. Cada roteiro tem
+  **palavras-chave** (o que as pessoas escrevem) e **etapas** na ordem: um
+  vídeo (grave na hora ou escolha da biblioteca), uma foto opcional e uma
+  frase. A Marina manda etapa por etapa. **Testar** mostra a resposta com os
+  vídeos e diz se ela usou o roteiro; se não usou, acrescente palavras-chave.
 - **Crianças e adicionais** — até que idade é de colo, se criança paga como
   adulto e quanto paga o bebê. **Isto muda o preço na busca do site** e o
   que a Marina responde — os dois sempre iguais. E os adicionais (berço,

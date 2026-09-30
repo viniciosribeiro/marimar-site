@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, boolean, timestamp, integer, doublePrecision, jsonb, uuid, primaryKey, index, pgEnum, numeric } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, boolean, timestamp, integer, doublePrecision, jsonb, uuid, primaryKey, index, pgEnum, numeric, real, bigint } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 // ─── Enums ───────────────────────────────────────────────────────
@@ -120,6 +120,21 @@ export const midias = pgTable("midias", {
   secao: text("secao").default("pousada").notNull(),
   /** Caminho no Vercel Blob, para apagar o arquivo junto com a linha. */
   pathname: text("pathname"),
+  // ── migration 0018: biblioteca de mídia ──
+  titulo: text("titulo"),
+  /** Legenda visível. O `alt` continua sendo o texto para leitor de tela. */
+  descricao: text("descricao"),
+  thumb_url: text("thumb_url"),
+  thumb_pathname: text("thumb_pathname"),
+  duracao_seg: real("duracao_seg"),
+  bytes: bigint("bytes", { mode: "number" }),
+  formato: text("formato"),
+  /** MP4 H.264/AAC ≤ 16 MB para o WhatsApp (nula se o principal já cabe). */
+  url_whatsapp: text("url_whatsapp"),
+  pathname_whatsapp: text("pathname_whatsapp"),
+  bytes_whatsapp: bigint("bytes_whatsapp", { mode: "number" }),
+  visivel_marina: boolean("visivel_marina").default(true).notNull(),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });
 
@@ -636,4 +651,30 @@ export const adicionais = pgTable("adicionais", {
   atualizado_por: text("atualizado_por"),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
   atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+});
+
+/** Roteiros de orientação da Marina (migration 0018). */
+export const marinaRoteiros = pgTable("marina_roteiros", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  titulo: text("titulo").notNull(),
+  descricao: text("descricao"),
+  /** Palavras e frases que disparam o roteiro. */
+  gatilhos: jsonb("gatilhos").notNull().default([]),
+  ativo: boolean("ativo").default(true).notNull(),
+  ordem: integer("ordem").default(0).notNull(),
+  atualizado_por: text("atualizado_por"),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
+  atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
+});
+
+export const marinaRoteiroEtapas = pgTable("marina_roteiro_etapas", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  roteiro_id: uuid("roteiro_id").notNull().references(() => marinaRoteiros.id, { onDelete: "cascade" }),
+  ordem: integer("ordem").default(0).notNull(),
+  titulo: text("titulo").notNull(),
+  texto: text("texto"),
+  video_id: uuid("video_id").references(() => midias.id, { onDelete: "set null" }),
+  foto_id: uuid("foto_id").references(() => midias.id, { onDelete: "set null" }),
+  ativo: boolean("ativo").default(true).notNull(),
+  criado_em: timestamp("criado_em").defaultNow().notNull(),
 });

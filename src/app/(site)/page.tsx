@@ -49,12 +49,12 @@ export default async function HomePage() {
     quartos = await sql`
       SELECT q.*, c.nome AS cat_nome,
         COALESCE(
-          (SELECT m.url FROM midias m WHERE m.quarto_id = q.id AND m.destaque = true ORDER BY m.ordem LIMIT 1),
-          (SELECT m.url FROM midias m WHERE m.quarto_id = q.id ORDER BY m.ordem LIMIT 1)
+          (SELECT m.url FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto' AND m.destaque = true ORDER BY m.ordem LIMIT 1),
+          (SELECT m.url FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto' ORDER BY m.ordem LIMIT 1)
         ) AS foto,
         COALESCE(
-          (SELECT m.alt FROM midias m WHERE m.quarto_id = q.id AND m.destaque = true ORDER BY m.ordem LIMIT 1),
-          (SELECT m.alt FROM midias m WHERE m.quarto_id = q.id ORDER BY m.ordem LIMIT 1)
+          (SELECT m.alt FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto' AND m.destaque = true ORDER BY m.ordem LIMIT 1),
+          (SELECT m.alt FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto' ORDER BY m.ordem LIMIT 1)
         ) AS foto_alt
       FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id
       WHERE q.ativo = true ORDER BY q.ordem LIMIT 6
@@ -76,14 +76,14 @@ export default async function HomePage() {
     try {
       fotosSecao = await sql`
         SELECT DISTINCT ON (secao) secao, url, alt FROM midias
-        WHERE quarto_id IS NULL
+        WHERE quarto_id IS NULL AND tipo = 'foto'
         ORDER BY secao, destaque DESC, ordem, criado_em`;
     } catch (e) {
       console.warn("[HomePage] fotos por secao indisponiveis (migration 0015?):", (e as Error).message);
     }
 
     [heroMidia] = await sql`
-      SELECT url, alt FROM midias WHERE destaque = true
+      SELECT url, alt FROM midias WHERE destaque = true AND tipo = 'foto' AND secao <> 'orientacao'
       ORDER BY (quarto_id IS NULL) DESC, ordem LIMIT 1
     `;
 

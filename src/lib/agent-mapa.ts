@@ -135,6 +135,15 @@ export const AREAS: AreaDeConhecimento[] = [
     editarEm: "/admin/conteudo",
   },
   {
+    chave: "roteiros",
+    titulo: "Mídias de orientação (roteiros com vídeo)",
+    rota: "/api/agent/roteiros",
+    responde: ["Como chego à pousada?", "Onde pego o barco?", "Onde fica o restaurante?"],
+    origem: "banco",
+    editarEm: "/admin/marina?aba=roteiros",
+    contar: conta((sql) => sql`SELECT COUNT(*)::int AS n FROM marina_roteiros WHERE ativo = true`),
+  },
+  {
     chave: "documentos",
     titulo: "Documentos que você enviou",
     rota: "/api/agent/documentos",

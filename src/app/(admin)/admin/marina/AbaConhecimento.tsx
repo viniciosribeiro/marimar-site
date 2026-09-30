@@ -107,14 +107,14 @@ export function AbaConhecimento({ dados, ensinar, verHistorico, tipos, titulo }:
       {titulo && <h2 className="text-base font-semibold text-tinta">{titulo}</h2>}
 
       {/* Barra de ferramentas */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-linha/80 bg-white p-3 shadow-sm lg:flex-row lg:items-center">
-        <label className="relative flex-1">
+      <div className="flex flex-col gap-3 rounded-2xl border border-linha/80 bg-white p-3 shadow-sm 2xl:flex-row 2xl:items-center">
+        <label className="relative min-w-0 flex-1">
           <span className="sr-only">Buscar</span>
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-tinta-suave" />
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar no que ela sabe…"
             className={campo + " pl-10"} type="search" />
         </label>
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap 2xl:shrink-0">
           <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className={campo + " sm:w-auto"} aria-label="Assunto">
             <option value="todas">Todos os assuntos</option>
             {CATEGORIAS.map((c) => <option key={c.id} value={c.id}>{c.rotulo}</option>)}
@@ -136,14 +136,14 @@ export function AbaConhecimento({ dados, ensinar, verHistorico, tipos, titulo }:
             </select>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 sm:justify-end 2xl:shrink-0">
           {!lixeira && (
-            <button onClick={testarTodos} disabled={!!lote || !dados.saude.gateway} className={botao("secundario", "md", "flex-1 lg:flex-none")}
+            <button onClick={testarTodos} disabled={!!lote || !dados.saude.gateway} className={botao("secundario", "md", "flex-1 sm:flex-none")}
               title={dados.saude.gateway ? "Testa cada item desta lista com a Marina" : "A Marina não está ligada a este site"}>
               {lote ? <><Girando /> {lote.feitos}/{lote.total}</> : <><FlaskConical className="h-4 w-4" /> Testar lista</>}
             </button>
           )}
-          <button onClick={() => ensinar(tipos?.length === 1 ? { tipo: tipos[0] } : {})} className={botao("primario", "md", "flex-1 lg:flex-none")}>
+          <button onClick={() => ensinar(tipos?.length === 1 ? { tipo: tipos[0] } : {})} className={botao("primario", "md", "flex-1 sm:flex-none")}>
             <Plus className="h-4 w-4" /> Ensinar
           </button>
         </div>

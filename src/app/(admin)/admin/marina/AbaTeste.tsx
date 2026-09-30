@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, RotateCcw, Sparkles, GraduationCap } from "lucide-react";
 import { TIPOS, rotuloCategoria, type Tipo } from "@/lib/marina-base";
+import { Marcacao } from "@/components/site/Marcacao";
 import { Aviso, botao, campo, cn, Selo } from "@/components/admin/ui";
 import { Girando } from "@/components/admin/ui-cliente";
 import type { DadosMarina, Rascunho } from "./tipos";
@@ -123,7 +124,7 @@ export function AbaTeste({ dados, ensinar }: { dados: DadosMarina; ensinar: (r?:
                     : m.erro ? "rounded-bl-md border border-red-200 bg-red-50 text-red-900"
                     : "rounded-bl-md border border-linha/70 bg-white text-tinta",
                 )}>
-                  {m.conteudo}
+                  {m.papel === "marina" && !m.erro ? <Marcacao texto={m.conteudo} /> : m.conteudo}
                 </div>
                 {m.papel === "marina" && !m.erro && (
                   <div className="mt-2 space-y-2 px-1">
@@ -131,7 +132,7 @@ export function AbaTeste({ dados, ensinar }: { dados: DadosMarina; ensinar: (r?:
                       <span className="text-[11px] font-medium text-tinta-suave">Usou:</span>
                       {m.fontes?.length ? m.fontes.map((f) => (
                         <Selo key={f.id} tom="marca" title={rotuloCategoria(f.categoria)}>
-                          {TIPOS[f.tipo as Tipo]?.rotulo ?? f.tipo}: {f.titulo.slice(0, 40)}
+                          {TIPOS[f.tipo as Tipo]?.rotulo ?? (f.tipo === "roteiro" ? "Roteiro" : f.tipo)}: {f.titulo.slice(0, 40)}
                         </Selo>
                       )) : <span className="text-[11px] text-tinta-suave">nenhum item do treinamento (usou outras fontes ou conhecimento geral)</span>}
                       {m.ms && <span className="text-[11px] text-tinta-suave/70">· {(m.ms / 1000).toFixed(1)}s</span>}

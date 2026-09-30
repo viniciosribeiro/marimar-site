@@ -50,6 +50,17 @@ export async function GET(request: Request) {
       responses: { "200": { description: "OK" }, "404": { description: "Documento não encontrado" } },
     },
   };
+  paths["/api/agent/roteiros"] = {
+    get: {
+      summary: "Roteiros de orientação com vídeo e foto, etapa por etapa",
+      description: "Sem parâmetro: todos os ligados. ?busca=: o roteiro cujas palavras-chave aparecem na frase (ou nenhum). ?id=: um. Cada mídia traz url_whatsapp (MP4 até 16 MB) ou null — então vai como link.",
+      parameters: [
+        { name: "busca", in: "query", schema: { type: "string" } },
+        { name: "id", in: "query", schema: { type: "string", format: "uuid" } },
+      ],
+      responses: { "200": { description: "OK" } },
+    },
+  };
   paths["/api/agent/regras"] = {
     get: {
       summary: "Regra de crianças e adicionais, com a consulta ao motor já calculada",
@@ -67,7 +78,7 @@ export async function GET(request: Request) {
 
   const spec = {
     openapi: "3.1.0",
-    info: { title: "Pousada Marimar — Agent API", version: "1.2.0", description: "API para o agente Marina (WhatsApp e site)" },
+    info: { title: "Pousada Marimar — Agent API", version: "1.3.0", description: "API para o agente Marina (WhatsApp e site)" },
     servers: [{ url: base }],
     security: [{ bearerAuth: [] }],
     components: { securitySchemes: { bearerAuth: { type: "http", scheme: "bearer" } } },

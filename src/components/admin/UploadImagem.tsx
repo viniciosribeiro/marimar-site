@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { prepararFoto, ErroMidia, ehHeic } from "@/lib/midia-cliente";
 
 /**
  * Envio de UMA imagem (logo, favicon, imagem de compartilhamento).
@@ -33,17 +34,25 @@ export function UploadImagem({
   const [progresso, setProgresso] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const base64 = valor.startsWith("data:");
 
-  async function enviar(arquivo: File) {
+  async function enviar(original: File) {
     setErro(null);
-    if (arquivo.size > 12 * 1024 * 1024) {
-      setErro(`Muito grande (${(arquivo.size / 1024 / 1024).toFixed(1)} MB). O limite é 12 MB.`);
+    if (original.size > 40 * 1024 * 1024) {
+      setErro(`Muito grande (${(original.size / 1024 / 1024).toFixed(1)} MB). O limite é 40 MB.`);
       return;
     }
     setEnviando(true);
     setProgresso(0);
     try {
+      /* Foto (JPG, WebP, HEIC do iPhone) é reduzida e convertida no próprio
+         navegador. SVG, ícone e PNG pequeno (logo) seguem intactos. */
+      let arquivo: File = original;
+      if (ehHeic(original) || /^image\/(jpeg|webp|png)$/.test(original.type)) {
+        const f = await prepararFoto(original);
+        arquivo = new File([f.blob], f.nome, { type: f.tipo });
+      }
       const { upload } = await import("@vercel/blob/client");
       const limpo = arquivo.name
         .toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
@@ -56,7 +65,7 @@ export function UploadImagem({
       });
       aoEnviar(blob.url, blob.pathname);
     } catch (e) {
-      setErro((e as Error).message);
+      setErro(e instanceof ErroMidia ? e.message : `Não consegui enviar (${(e as Error).message}). Confira a internet e tente de novo.`);
     } finally {
       setEnviando(false);
     }
@@ -145,6 +154,12 @@ export function UploadImagem({
             className="flex-1 border border-dashed border-linha rounded-lg px-3 py-2.5 text-xs text-tinta-suave hover:border-gray-400 hover:bg-fundo-suave disabled:opacity-50">
             {enviando ? `Enviando… ${Math.round(progresso)}%` : valor ? "Trocar imagem" : "Escolher arquivo"}
           </button>
+          {!aoExtrairCores && (
+            <button type="button" onClick={() => cameraRef.current?.click()} disabled={enviando}
+              className="border border-linha rounded-lg px-3 py-2.5 text-xs text-tinta hover:bg-fundo-suave whitespace-nowrap disabled:opacity-50">
+              📷 Câmera
+            </button>
+          )}
           {valor && aoExtrairCores && (
             <button type="button" onClick={extrair}
               className="border border-linha rounded-lg px-3 py-2.5 text-xs text-tinta hover:bg-fundo-suave whitespace-nowrap">
@@ -163,7 +178,9 @@ export function UploadImagem({
       {ajuda && !erro && <p className="text-[11px] text-tinta-suave/80 mt-1.5 leading-relaxed">{ajuda}</p>}
 
       <input ref={inputRef} type="file" className="sr-only"
-        accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon"
+        accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,image/heic,image/heif,.heic,.heif"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) enviar(f); e.target.value = ""; }} />
+      <input ref={cameraRef} type="file" className="sr-only" accept="image/*" capture="environment"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) enviar(f); e.target.value = ""; }} />
     </div>
   );

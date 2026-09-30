@@ -21,6 +21,7 @@ rascunho antigo sem ligação com o GitHub e foi apagada em 29/09).
 3. `docs/CHANGELOG.md` — a entrada de 30/09 explica o que mudou e por quê
 4. `docs/fluxo-painel-marina.md` — antes de tocar em Marina, `/api/agent/*` ou `/api/chat`
 5. `docs/design-system-admin.md` — antes de criar ou mudar tela do painel
+5b. `docs/fluxo-midia.md` — antes de mexer em fotos, vídeos, upload ou roteiros
 6. `git log --oneline -15` e `git status`
 
 ### 2. O que ficou pendente do dia 30/09 (fazer primeiro)
@@ -28,8 +29,8 @@ rascunho antigo sem ligação com o GitHub e foi apagada em 29/09).
 Nada disso pôde ser feito do ambiente em que o trabalho foi feito (rede sem
 acesso à produção e sem credenciais):
 
-1. **Migration 0016** em produção: `npm run db:migrate` (só acrescenta
-   colunas e tabelas; o código antigo continua funcionando sobre ela).
+1. **Migrations até a 0018** em produção: `npm run db:migrate` (só acrescentam
+   colunas e tabelas; o código antigo continua funcionando sobre elas).
 2. **Reinstalar a skill no OpenClaw** (Hostinger), senão o WhatsApp segue com
    a skill antiga, que não lê o treinamento em pergunta de preço:
    ```
@@ -41,6 +42,10 @@ acesso à produção e sem credenciais):
    e por um número de WhatsApp que nunca falou com a Marina; conferir que a
    resposta usa o item e que preço e vaga continuam vindo do motor. Apagar o
    item de teste depois (Excluir → Lixeira → Apagar de vez).
+
+4. **Mídia em aparelho real** (a nuvem não tem H.264): iPhone e Android —
+   foto HEIC, vídeo pela câmera, selo "WhatsApp ok" na biblioteca; um roteiro
+   em Marina → Mídias de orientação e "como chego?" no WhatsApp.
 
 ### 3. Como testar localmente (sem tocar produção)
 
@@ -60,7 +65,7 @@ OPENCLAW_GATEWAY_URL=http://localhost:4010 OPENCLAW_GATEWAY_TOKEN=token-teste \
 
 npm test                                  # unitários
 EMAIL=... SENHA=... node testes/e2e-marina.mjs   # 12 verificações pela interface
-SAIDA=capturas node testes/capturas.mjs   # telas em 375/768/1440 + rolagem horizontal
+LARGURAS=375,768,1024,1280,1440 SAIDA=capturas node testes/capturas.mjs   # telas + rolagem horizontal
 ```
 `testes/*.mjs` usam Playwright (não está no package.json; no ambiente em nuvem
 ele vem instalado globalmente — ligue com `ln -s $(npm root -g)/playwright node_modules/`).
@@ -68,7 +73,8 @@ ele vem instalado globalmente — ligue com `ln -s $(npm root -g)/playwright nod
 ### 4. Próximos passos sugeridos (em ordem)
 
 1. **Redesenhar o miolo das telas grandes** que só receberam cores e cabeçalho:
-   cardápio, banners, cartões, blocos da home, fotos, identidade visual.
+   cardápio, banners, cartões, blocos da home, identidade visual (a de
+   fotos já foi refeita como biblioteca de mídia).
    Usar `Cartao`, `Lista`, `JanelaRota`, `useAcao` (ver design system).
 2. **Conversas do WhatsApp no painel** — hoje só as do site aparecem. Ver o que
    o gateway do OpenClaw expõe.

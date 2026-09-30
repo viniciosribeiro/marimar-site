@@ -1,6 +1,7 @@
 import type { ConfigMarina, ItemTreino, Leitura } from "@/lib/marina";
 import type { Cobertura } from "@/lib/agent-mapa";
 import type { Regras, Adicional } from "@/lib/regras-hospedagem-base";
+import type { Roteiro } from "@/lib/roteiros";
 
 /** O que a página entrega para a tela do módulo Marina. */
 
@@ -46,6 +47,15 @@ export type DadosMarina = {
   saude: Saude;
   regras: Regras;
   adicionais: Adicional[];
+  roteiros: Roteiro[];
+  midiasEscolha: MidiaEscolha[];
+  blobOk: boolean;
+};
+
+/** Uma mídia da biblioteca para escolher numa etapa de roteiro. */
+export type MidiaEscolha = {
+  id: string; tipo: "foto" | "video"; titulo: string | null; alt: string; capa: string | null;
+  duracao_seg: number | null; secao: string; album: string;
 };
 
 /** O que abre o formulário de item já preenchido (vindo de conversa ou lacuna). */

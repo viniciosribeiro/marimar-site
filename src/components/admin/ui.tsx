@@ -259,8 +259,15 @@ export type Coluna<T> = {
   className?: string;
 };
 
+/* Classes literais: o Tailwind só gera o que aparece escrito no código. */
+const CARTOES_ATE = {
+  md: ["md:hidden", "hidden md:block"],
+  lg: ["lg:hidden", "hidden lg:block"],
+  xl: ["xl:hidden", "hidden xl:block"],
+} as const;
+
 export function Lista<T>({
-  itens, colunas, chave, acoes, vazio, principal,
+  itens, colunas, chave, acoes, vazio, principal, cartoesAte = "md",
 }: {
   itens: T[];
   colunas: Coluna<T>[];
@@ -269,13 +276,16 @@ export function Lista<T>({
   vazio?: React.ReactNode;
   /** Qual coluna vira o título do cartão no celular (índice). */
   principal?: number;
+  /** Até onde mostrar cartões em vez de tabela. Tabela larga (muitas colunas
+      ou muitas ações) pede "lg" ou "xl" — senão espreme em tablet. */
+  cartoesAte?: keyof typeof CARTOES_ATE;
 }) {
   if (!itens.length) return <>{vazio ?? <Vazio titulo="Nada cadastrado ainda" />}</>;
   const p = principal ?? 0;
   return (
     <>
       {/* Celular: cartões */}
-      <ul className="space-y-3 md:hidden">
+      <ul className={cn("space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0", CARTOES_ATE[cartoesAte][0])}>
         {itens.map((item) => (
           <li key={chave(item)} className="rounded-2xl border border-linha/80 bg-white p-4 shadow-sm">
             <div className="font-semibold text-tinta">{colunas[p].celula(item)}</div>
@@ -292,7 +302,7 @@ export function Lista<T>({
         ))}
       </ul>
       {/* Tablet e desktop: tabela */}
-      <div className="hidden md:block overflow-hidden rounded-2xl border border-linha/80 bg-white shadow-sm">
+      <div className={cn("overflow-x-auto rounded-2xl border border-linha/80 bg-white shadow-sm", CARTOES_ATE[cartoesAte][1])}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-linha/80 bg-areia/40">

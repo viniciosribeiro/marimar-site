@@ -6,6 +6,63 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-30 (4) — Biblioteca de fotos e vídeos, vídeos das suítes e roteiros da Marina
+**Autor:** Claude (Claude Code)
+**Migration:** 0018 (só acrescenta; `npm run db:migrate`)
+**Depois do deploy:** reinstalar a skill `marimar-pousada` no OpenClaw
+**Fluxo completo:** `docs/fluxo-midia.md`
+
+### Biblioteca de mídia (`/admin/midias`, menu "Fotos e vídeos")
+A tela de fotos foi refeita para quem não é técnico: álbuns (seções do site,
+cada suíte, "Orientação (Marina)"), busca, filtros (fotos, vídeos, sem
+legenda, sem uso), **arrastar para ordenar**, **capa com um toque** (estrela),
+**seleção em lote** para mover ou excluir (com confirmação) e uma gaveta de
+detalhes com legenda, texto alternativo, "a Marina pode enviar" e **onde a
+mídia é usada** (galeria, capa, suíte, roteiro, banner, cartão, logo).
+
+### Envio: câmera, HEIC e compressão no navegador
+`EnviarMidia` (biblioteca, suítes, roteiros) tem "Tirar foto", "Gravar vídeo"
+e "Escolher arquivos", mais arrastar e soltar. Foto: HEIC→JPEG e maior lado
+2400 px. Vídeo: até 5 min, comprimido no próprio aparelho (WebCodecs via
+`mediabunny`) para MP4 720p, e uma segunda versão ≤ 15,5 MB para o WhatsApp;
+miniatura automática; barra de progresso por fase. Sem codificador, ou num
+formato que o navegador não lê, sobe o original (até 200 MB). Cardápio,
+banners, cartões e logo ganharam câmera, HEIC e otimização também.
+Por que no navegador e não no servidor: `docs/fluxo-midia.md`.
+
+### Suítes
+Janela de edição do quarto: vídeos com título e descrição, ordenados por
+setas (entrada, interior, banheiro, vista), envio direto. A lista mostra
+quantas fotos e vídeos cada suíte tem. A página pública da suíte ganhou
+"Vídeos da suíte".
+
+### Marina
+- Aba nova **Mídias de orientação**: roteiros com palavras-chave e etapas
+  (vídeo, foto opcional, texto), ligar/desligar, arrastar, **Testar** (mostra
+  a resposta com os vídeos tocando e se ela usou o roteiro).
+- `/api/agent/roteiros` (`?busca=`, `?id=`); roteiros no texto do treinamento
+  com a URL certa por canal; `/api/agent/quartos` com `videos[]` e
+  `url_whatsapp` (null = vai como link).
+- Skill `marimar-pousada`: seção "Fotos e vídeos: como mandar" (até 3 fotos e
+  oferecer o vídeo; vídeos na ordem; só `url_whatsapp` como mídia; roteiro
+  etapa por etapa).
+- Chat do site e área de teste tocam vídeo (só do nosso Blob).
+
+### Responsividade
+Abas do painel viram chips (quebravam em telas médias — print do Vinicios).
+Barra de filtros do Conhecimento e tabela de Quartos quebravam em 1024 px:
+corrigidas. `Lista` ganhou `cartoesAte` para tabelas largas. Varredura de
+todas as telas do painel em 375/768/1024/1280/1440: sem rolagem lateral.
+
+### Verificado localmente
+`tsc`, build ok; lint 179 (os mesmos de antes, nenhum nos arquivos novos);
+`npm test` 21/21; e2e 12/12. Pela interface: enviar/ordenar/capa/lote/editar
+na biblioteca, criar roteiro com etapa da biblioteca e testar; rotas do
+agente conferidas (401 sem chave; roteiro por palavra-chave; vídeo de 30 MB
+marcado como link). Compressão testada no Chromium do ambiente (caminho
+WebM). **Não testado: caminho MP4/H.264 e câmera em aparelho real; envio
+real ao Blob (sem token no ambiente); WhatsApp real.**
+
 ## 2026-09-30 (3) — A causa real do "pede a idade": a skill consulta-desbravador
 **Autor:** Claude (Claude Code)
 

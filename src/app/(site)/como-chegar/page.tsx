@@ -24,12 +24,12 @@ async function buscarFotos() {
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     const [capa] = await sql`
-      SELECT url, alt FROM midias WHERE quarto_id IS NULL AND secao IN ('praia', 'pousada')
+      SELECT url, alt FROM midias WHERE quarto_id IS NULL AND tipo = 'foto' AND secao IN ('praia', 'pousada')
       ORDER BY (alt ILIKE '%aérea%' OR url ILIKE '%dji%') DESC, (secao = 'praia') DESC, largura DESC NULLS LAST LIMIT 1
     `;
     const [fachada] = await sql`
       SELECT url FROM midias
-      WHERE quarto_id IS NULL AND (secao = 'restaurante' OR (secao = 'pousada' AND alt ILIKE '%Pousada Marimar%'))
+      WHERE quarto_id IS NULL AND tipo = 'foto' AND (secao = 'restaurante' OR (secao = 'pousada' AND alt ILIKE '%Pousada Marimar%'))
       ORDER BY (secao = 'restaurante') DESC, destaque DESC, ordem, largura DESC NULLS LAST LIMIT 1
     `;
     await sql.end();
