@@ -10,6 +10,8 @@ import { gatewayConfigurado } from "@/lib/chat";
 import { lerRegras, lerAdicionais } from "@/lib/regras-hospedagem";
 import { Pagina, Cabecalho, Aviso } from "@/components/admin/ui";
 import { lerRoteiros } from "@/lib/roteiros";
+import { lerAprendizado } from "@/lib/aprendizado";
+import { lerConfigEscalonamento } from "@/lib/escalonamento";
 import { blobConfigurado } from "@/lib/blob";
 import { nomeSecao } from "@/lib/fotos";
 import { PainelMarina } from "./PainelMarina";
@@ -146,7 +148,15 @@ export default async function MarinaPage({
       }));
     } catch { /* antes da 0018 */ }
 
-    return { config, itens, leituras, documentos, conversas, lacunas, historico, cobertura, regras, adicionais, roteiros, midiasEscolha };
+    const aprendizado = await lerAprendizado(sql);
+    const aprendizadoModo = (await lerConfigEscalonamento(sql)).aprendizado_modo;
+    const idsConflito = [...new Set(aprendizado.map((a) => a.conflito_id).filter((x): x is string => !!x))];
+    const conflitos: Record<string, string> = {};
+    if (idsConflito.length) {
+      for (const c of await sql<{ id: string; titulo: string }[]>`SELECT id, titulo FROM marina_conhecimento WHERE id IN ${sql(idsConflito)}`) conflitos[c.id] = c.titulo;
+    }
+
+    return { config, itens, leituras, documentos, conversas, lacunas, historico, cobertura, regras, adicionais, roteiros, midiasEscolha, aprendizado, aprendizadoModo, conflitos };
   }).catch(() => null);
 
   if (!dados) {

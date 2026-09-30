@@ -19,6 +19,8 @@ const GRUPOS: Grupo[] = [
     grupo: "Atendimento",
     itens: [
       { href: "/admin/marina", label: "Marina (atendimento)", icone: "marina" },
+      { href: "/admin/cerebro", label: "Cérebro da Marina", icone: "cerebro" },
+      { href: "/admin/equipe", label: "Equipe responsável", icone: "equipe" },
       { href: "/admin/leads", label: "Contatos recebidos", icone: "leads" },
     ],
   },

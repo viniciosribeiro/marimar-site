@@ -35,6 +35,7 @@ export default async function DashboardPage() {
   let semFoto = 0;
   let erroBanco = "";
   let marina = { lacunas: 0, itens: 0, whatsapp: null as string | null, conversasHoje: 0 };
+  let cerebro = { aguardando: 0, pendentes: 0, aprendidos: 0, sozinha: 0, escaladas: 0 };
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
     const [r] = await sql`
@@ -63,6 +64,15 @@ export default async function DashboardPage() {
     const [hoje] = await sql`SELECT count(DISTINCT sessao)::int AS n FROM chat_mensagens WHERE criado_em > now() - interval '24 hours'`.catch(() => [{ n: 0 }]);
     const leituras = await lerLeituras(sql);
     marina = { lacunas: (lac as any).n, itens: (ens as any).n, whatsapp: leituras.whatsapp?.lido_em ?? null, conversasHoje: (hoje as any).n };
+    /* Escalonamento e aprendizado (migration 0019). */
+    const [cb] = await sql`
+      SELECT (SELECT count(*) FROM marina_chamados WHERE status = 'aguardando')::int AS aguardando,
+             (SELECT count(*) FROM marina_aprendizado WHERE status = 'pendente')::int AS pendentes,
+             (SELECT count(*) FROM marina_aprendizado WHERE status = 'ativo')::int AS aprendidos,
+             (SELECT count(*) FROM marina_eventos WHERE tipo = 'aprendido_usado' AND criado_em > now() - interval '30 days')::int AS sozinha,
+             (SELECT count(*) FROM marina_eventos WHERE tipo IN ('escalada', 'lacuna') AND criado_em > now() - interval '30 days')::int AS escaladas`
+      .catch(() => [cerebro]);
+    cerebro = cb as typeof cerebro;
     await sql.end();
   } catch (e) {
     erroBanco = (e as Error).message;
@@ -73,6 +83,8 @@ export default async function DashboardPage() {
 
   const avisos: { txt: string; href: string; acao: string }[] = [];
   if (marina.lacunas > 0) avisos.push({ txt: marina.lacunas === 1 ? "A Marina não soube responder 1 pergunta de hóspede." : `A Marina não soube responder ${marina.lacunas} perguntas de hóspedes.`, href: "/admin/marina?aba=sem-resposta", acao: "Ensinar" });
+  if (cerebro.aguardando > 0) avisos.push({ txt: cerebro.aguardando === 1 ? "1 cliente está esperando resposta da equipe." : `${cerebro.aguardando} clientes estão esperando resposta da equipe.`, href: "/admin/equipe?aba=chamados", acao: "Ver chamados" });
+  if (cerebro.pendentes > 0) avisos.push({ txt: cerebro.pendentes === 1 ? "A Marina aprendeu 1 resposta nova que espera aprovação." : `A Marina aprendeu ${cerebro.pendentes} respostas novas que esperam aprovação.`, href: "/admin/marina?aba=aprendizado", acao: "Revisar" });
   if (stats.hero === 0) avisos.push({ txt: "Nenhuma foto de destaque para o topo do site — a home está usando uma foto de quarto.", href: "/admin/midias", acao: "Cadastrar foto" });
   if (semFoto > 0) avisos.push({ txt: semFoto === 1 ? "1 quarto ativo está sem nenhuma foto." : `${semFoto} quartos ativos estão sem nenhuma foto.`, href: "/admin/quartos", acao: "Ver quartos" });
   if (!motor.ok) avisos.push({ txt: "O motor de reservas não respondeu. O site fica no ar sem preços.", href: "/admin/diagnostico", acao: "Diagnosticar" });
@@ -115,6 +127,23 @@ export default async function DashboardPage() {
         <Indicador rotulo="Contatos" valor={stats.leads_total ?? 0} tom={stats.leads_novos ? "aviso" : "neutro"}
           detalhe={stats.leads_novos ? `${stats.leads_novos} ${stats.leads_novos === 1 ? "novo" : "novos"} para ler` : "todos lidos"} href="/admin/leads" />
       </div>
+
+      <Cartao className="mb-6" titulo="Cérebro da Marina" descricao="O que ela aprende com a equipe e quanto já resolve sozinha (últimos 30 dias)."
+        acoes={<BotaoLink href="/admin/cerebro" variante="secundario" tamanho="sm">Abrir o Cérebro</BotaoLink>}>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            ["Resolveu sozinha", cerebro.sozinha + cerebro.escaladas ? `${Math.round((cerebro.sozinha / (cerebro.sozinha + cerebro.escaladas)) * 100)}%` : "—"],
+            ["Aprendidos em uso", cerebro.aprendidos],
+            ["Esperando aprovação", cerebro.pendentes],
+            ["Clientes esperando a equipe", cerebro.aguardando],
+          ].map(([r, v]) => (
+            <div key={r as string} className="rounded-xl bg-fundo-suave p-3">
+              <p className="text-2xl font-bold tabular-nums text-tinta">{v}</p>
+              <p className="text-xs text-tinta-suave">{r}</p>
+            </div>
+          ))}
+        </div>
+      </Cartao>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Cartao titulo="Últimos contatos" acoes={<BotaoLink href="/admin/leads" variante="fantasma" tamanho="sm">Ver todos</BotaoLink>} semPadding>

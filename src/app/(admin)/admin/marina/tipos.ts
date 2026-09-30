@@ -2,6 +2,7 @@ import type { ConfigMarina, ItemTreino, Leitura } from "@/lib/marina";
 import type { Cobertura } from "@/lib/agent-mapa";
 import type { Regras, Adicional } from "@/lib/regras-hospedagem-base";
 import type { Roteiro } from "@/lib/roteiros";
+import type { Aprendido } from "@/lib/aprendizado";
 
 /** O que a página entrega para a tela do módulo Marina. */
 
@@ -50,6 +51,10 @@ export type DadosMarina = {
   roteiros: Roteiro[];
   midiasEscolha: MidiaEscolha[];
   blobOk: boolean;
+  aprendizado: Aprendido[];
+  aprendizadoModo: string;
+  /** Itens manuais parecidos com algum aprendido: id → título. */
+  conflitos: Record<string, string>;
 };
 
 /** Uma mídia da biblioteca para escolher numa etapa de roteiro. */

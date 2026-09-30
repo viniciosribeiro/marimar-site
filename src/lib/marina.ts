@@ -18,6 +18,7 @@ type Sql = ReturnType<typeof postgres>;
 
 export * from "./marina-base";
 import { lerRoteiros, roteirosEmTexto, type Roteiro } from "./roteiros";
+import { lerAprendidosEmUso, aprendidosEmTexto, registrarEvento, type Aprendido } from "./aprendizado";
 import { CATEGORIAS, rotuloCategoria, codigoItem } from "./marina-base";
 import { lerRegras, lerAdicionais, textoRegrasMarina } from "./regras-hospedagem";
 
@@ -155,6 +156,8 @@ export type Ensinamentos = {
   regras?: string;
   /** Roteiros de orientação ligados, com etapas e mídias (Marina → Roteiros). */
   roteiros?: Roteiro[];
+  /** O que ela aprendeu com as respostas da equipe (em uso, dentro da validade). */
+  aprendidos?: Aprendido[];
 };
 
 /** O que está valendo para a Marina: ativo e fora da lixeira. */
@@ -193,10 +196,12 @@ export async function lerEnsinamentos(sql: Sql): Promise<Ensinamentos> {
   const regras = textoRegrasMarina(await lerRegras(sql), await lerAdicionais(sql));
 
   const roteiros = await lerRoteiros(sql, { soAtivos: true });
+  const aprendidos = await lerAprendidosEmUso(sql);
 
   return {
     regras,
     roteiros,
+    aprendidos,
     fatos: linhas.filter((l) => l.tipo === "fato"),
     perguntas: linhas.filter((l) => l.tipo === "pergunta"),
     limites: linhas.filter((l) => l.tipo === "limite"),
@@ -206,7 +211,7 @@ export async function lerEnsinamentos(sql: Sql): Promise<Ensinamentos> {
 }
 
 export const totalItens = (e: Ensinamentos) =>
-  e.fatos.length + e.perguntas.length + e.limites.length + e.escalar.length + (e.roteiros?.length ?? 0);
+  e.fatos.length + e.perguntas.length + e.limites.length + e.escalar.length + (e.roteiros?.length ?? 0) + (e.aprendidos?.length ?? 0);
 
 /* ── o texto que a Marina lê ─────────────────────────────────────── */
 
@@ -307,6 +312,9 @@ export function ensinamentosEmTexto(
         ].filter(Boolean).join("\n"),
     );
   }
+  /* Depois de tudo o que foi cadastrado à mão, e dizendo que vale menos. */
+  const aprendido = aprendidosEmTexto(e.aprendidos ?? [], opcoes);
+  if (aprendido) partes.push(aprendido);
   const roteiros = roteirosEmTexto(e.roteiros ?? [], opcoes);
   if (roteiros) partes.push(roteiros);
   if (e.documentos?.length) {
@@ -405,6 +413,7 @@ export async function registrarLacuna(
       WHERE status = 'aberta' AND lower(pergunta) = lower(${pergunta})
         AND criado_em > now() - interval '7 days' LIMIT 1`;
     if (igual) return;
+    await registrarEvento(sql, "lacuna", { canal: l.canal.slice(0, 20) });
     await sql`
       INSERT INTO marina_lacunas (pergunta, resposta, canal, sessao)
       VALUES (${pergunta}, ${l.resposta?.slice(0, 2000) ?? null}, ${l.canal.slice(0, 20)}, ${l.sessao ?? null})`;

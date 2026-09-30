@@ -61,6 +61,35 @@ export async function GET(request: Request) {
       responses: { "200": { description: "OK" } },
     },
   };
+  paths["/api/agent/equipe"] = {
+    get: { summary: "Números da equipe responsável (mensagem de um deles vai para /chamados/resposta)", responses: { "200": { description: "OK" } } },
+  };
+  paths["/api/agent/chamados"] = {
+    post: {
+      summary: "Perguntar à equipe o que a Marina não sabe (abre chamado com código curto)",
+      requestBody: { content: { "application/json": { schema: { type: "object", required: ["pergunta", "cliente"], properties: {
+        pergunta: { type: "string" }, cliente: { type: "string", description: "número do cliente com DDD" }, contexto: { type: "string" },
+        assunto: { type: "string", enum: ["reservas", "financeiro", "recepcao", "manutencao", "passeios", "restaurante", "eventos", "geral"] },
+      } } } } },
+      responses: { "200": { description: "Chamado aberto (dados.codigo, dados.mensagem_cliente, dados.aviso_manual)" }, "400": { description: "Faltou pergunta ou número" } },
+    },
+  };
+  paths["/api/agent/chamados/resposta"] = {
+    post: {
+      summary: "Resposta da equipe: o site acha o chamado, reescreve no tom da Marina e entrega ao cliente",
+      requestBody: { content: { "application/json": { schema: { type: "object", required: ["numero", "texto"], properties: {
+        numero: { type: "string" }, texto: { type: "string" }, citado: { type: "string", description: "texto da mensagem respondida" }, codigo: { type: "string" },
+      } } } } },
+      responses: { "200": { description: "dados.equipe=false se não for da equipe; dados.entregar_manual se a Marina precisar mandar" } },
+    },
+  };
+  paths["/api/agent/aprendizado/uso"] = {
+    post: {
+      summary: "Registrar que a Marina respondeu com algo aprendido",
+      requestBody: { content: { "application/json": { schema: { type: "object", required: ["pergunta"], properties: { pergunta: { type: "string" }, canal: { type: "string", enum: ["whatsapp", "site"] } } } } } },
+      responses: { "200": { description: "OK" } },
+    },
+  };
   paths["/api/agent/regras"] = {
     get: {
       summary: "Regra de crianças e adicionais, com a consulta ao motor já calculada",
@@ -78,7 +107,7 @@ export async function GET(request: Request) {
 
   const spec = {
     openapi: "3.1.0",
-    info: { title: "Pousada Marimar — Agent API", version: "1.3.0", description: "API para o agente Marina (WhatsApp e site)" },
+    info: { title: "Pousada Marimar — Agent API", version: "1.4.0", description: "API para o agente Marina (WhatsApp e site)" },
     servers: [{ url: base }],
     security: [{ bearerAuth: [] }],
     components: { securitySchemes: { bearerAuth: { type: "http", scheme: "bearer" } } },

@@ -135,6 +135,15 @@ export const AREAS: AreaDeConhecimento[] = [
     editarEm: "/admin/conteudo",
   },
   {
+    chave: "chamados",
+    titulo: "Perguntar à equipe (escalonamento)",
+    rota: "/api/agent/chamados",
+    responde: ["Tudo o que ela não sabe: a equipe responde pelo WhatsApp e ela devolve ao cliente"],
+    origem: "banco",
+    editarEm: "/admin/equipe",
+    contar: conta((sql) => sql`SELECT COUNT(*)::int AS n FROM equipe_contatos WHERE ativo = true`),
+  },
+  {
     chave: "roteiros",
     titulo: "Mídias de orientação (roteiros com vídeo)",
     rota: "/api/agent/roteiros",

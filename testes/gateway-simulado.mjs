@@ -16,11 +16,17 @@ import http from "node:http";
 
 const PORTA = Number(process.env.PORTA ?? 4010);
 let ultima = null;
+/* Mensagens de WhatsApp que o site mandou pelo RPC (método "send"). */
+const enviadas = [];
 
 const normal = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const palavras = (s) => normal(s).split(/[^a-z0-9]+/).filter((p) => p.length > 3);
 
 function responder(corpo) {
+  const pedido = [...corpo.messages].reverse().find((m) => m.role === "user")?.content ?? "";
+  /* A resposta da equipe reescrita no tom da Marina (formularResposta). */
+  const daEquipe = pedido.match(/Resposta da equipe: ([\s\S]*)$/);
+  if (daEquipe) return `Oi! Voltei com a confirmação da pousada: ${daEquipe[1].trim()} 😊`;
   const sistema = corpo.messages.filter((m) => m.role === "system").map((m) => m.content).join("\n");
   const pergunta = [...corpo.messages].reverse().find((m) => m.role === "user")?.content ?? "";
   const chaves = palavras(pergunta);
@@ -28,7 +34,15 @@ function responder(corpo) {
     const n = normal(l);
     return chaves.some((c) => n.includes(c));
   });
-  const achou = linhas.filter((l) => /^\s*(•|-|P:|R:|\[)/.test(l)).slice(0, 4);
+  let achou = linhas.filter((l) => /^\s*(•|-|P:|R:|\[)/.test(l)).slice(0, 4);
+  /* Pergunta e resposta: a linha "R:" logo abaixo vem junto. */
+  const todasLinhas = sistema.split("\n");
+  achou = achou.flatMap((l) => {
+    const i = todasLinhas.indexOf(l);
+    const extra = [];
+    for (let j = i + 1; j < i + 4 && j < todasLinhas.length; j++) if (/^\s+R:/.test(todasLinhas[j])) extra.push(todasLinhas[j]);
+    return [l, ...extra.filter((x) => !linhas.includes(x))];
+  });
   /* Roteiro de orientação: como uma Marina obediente, manda as etapas na
      ordem, com o vídeo e a foto de cada uma em markdown. */
   const todas = sistema.split("\n");
@@ -52,6 +66,14 @@ function responder(corpo) {
 }
 
 http.createServer((req, res) => {
+  if (req.method === "GET" && req.url === "/__enviadas") {
+    res.writeHead(200, { "content-type": "application/json" });
+    return res.end(JSON.stringify(enviadas));
+  }
+  if (req.method === "DELETE" && req.url === "/__enviadas") {
+    enviadas.length = 0;
+    res.writeHead(204); return res.end();
+  }
   if (req.method === "GET" && req.url === "/__ultima") {
     res.writeHead(200, { "content-type": "application/json" });
     return res.end(JSON.stringify(ultima));
@@ -60,6 +82,15 @@ http.createServer((req, res) => {
   req.on("data", (c) => (bruto += c));
   req.on("end", () => {
     if (req.url === "/api/v1/admin/rpc") {
+      const pedido = JSON.parse(bruto || "{}");
+      if (pedido.method === "send") {
+        /* Número terminado em 0000 simula aparelho fora do ar. */
+        if (String(pedido.params?.to).endsWith("0000")) {
+          res.writeHead(502, { "content-type": "application/json" });
+          return res.end(JSON.stringify({ error: { message: "whatsapp: número inacessível" } }));
+        }
+        enviadas.push({ para: pedido.params?.to, texto: pedido.params?.message, em: new Date().toISOString() });
+      }
       res.writeHead(200, { "content-type": "application/json" });
       return res.end(JSON.stringify({ ok: true }));
     }

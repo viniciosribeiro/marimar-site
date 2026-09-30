@@ -18,7 +18,8 @@
     "db:baseline": "tsx src/db/baseline.ts",
     "db:migrar-fotos": "tsx src/db/migrar-fotos-wp.ts",
     "test": "tsx --test testes/unit/*.test.ts",
-    "test:e2e": "node testes/e2e-marina.mjs"
+    "test:e2e": "node testes/e2e-marina.mjs",
+    "test:e2e:escalonamento": "node testes/e2e-escalonamento.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

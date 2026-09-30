@@ -1,6 +1,6 @@
 ---
 name: marimar-pousada
-description: Fatos oficiais e treinamento da Pousada Marimar — o que a administração ensinou, políticas, check-in, café da manhã, pets, crianças, cancelamento, quartos, pacotes, restaurante e como chegar. Leia o treinamento (/api/agent/conhecimento) no início de TODA conversa, inclusive as de preço e vaga. Datas, disponibilidade e valores continuam vindo da skill consulta-desbravador.
+description: Fatos oficiais e treinamento da Pousada Marimar — o que a administração ensinou, políticas, check-in, café da manhã, pets, crianças, cancelamento, quartos, pacotes, restaurante e como chegar. Leia o treinamento (/api/agent/conhecimento) no início de TODA conversa, inclusive as de preço e vaga. Datas, disponibilidade e valores continuam vindo da skill consulta-desbravador. O que ela não souber vira chamado para a equipe (/api/agent/chamados), e mensagem de alguém da equipe (/api/agent/equipe) é repassada a /api/agent/chamados/resposta.
 ---
 
 # Fatos da Pousada Marimar
@@ -73,21 +73,70 @@ conversa) para fotos, vídeos, roteiros, preço, vaga ou política. Se a pessoa
 pedir de novo, chame de novo. Uma URL de foto ou vídeo que você mandou ontem
 pode ter sido trocada ou apagada hoje.
 
-## Quando não souber, registre
+## Mensagem de alguém da EQUIPE (antes de tudo)
 
-Se você não encontrou a resposta no treinamento nem nas rotas e disse ao
-hóspede que vai confirmar com a pousada, registre a pergunta — ela aparece
-para a administração ensinar:
+Algumas pessoas da pousada escrevem para este número para responder
+perguntas que você repassou. A lista está em `/api/agent/equipe` (leia no
+começo da conversa, junto com o treinamento). **Se quem escreve é da equipe,
+não atenda como hóspede:** mande a mensagem inteira para a rota abaixo — com
+o texto da mensagem que ela citou/respondeu, se houver — e responda à pessoa
+só com o `resumo_texto` que voltar.
 
 ```bash
 curl -s -X POST -H "Authorization: Bearer $MARIMAR_API_KEY" \
   -H "content-type: application/json" \
-  -d '{"pergunta":"<a pergunta do hóspede>","resposta":"<o que você respondeu>","canal":"whatsapp"}' \
-  https://marimar-site.vercel.app/api/agent/lacuna
+  -d '{"numero":"<número de quem escreveu>","texto":"<a mensagem>","citado":"<texto da mensagem citada, se houver>"}' \
+  https://marimar-site.vercel.app/api/agent/chamados/resposta
 ```
 
-Não conte isso ao hóspede. Não registre dados pessoais (nome, telefone) na
-pergunta.
+O site acha o chamado pelo código (#K7Q2) ou pela mensagem citada, escreve a
+resposta no seu tom e já entrega ao cliente certo — no WhatsApp dele ou no
+chat do site. Vários clientes esperando ao mesmo tempo não se misturam: cada
+resposta vai só para o chamado do código. Se voltar `entregar_manual`
+(o site não conseguiu mandar), **você** manda aquele texto, exatamente, para
+o número indicado. Se voltar `equipe: false`, é um hóspede: atenda normal.
+
+## Quando não souber: pergunte à equipe
+
+Se a resposta não está no treinamento, nas rotas nem nos documentos, **não
+invente e não empurre o hóspede para "ligar na recepção"**. Abra um chamado:
+
+```bash
+curl -s -X POST -H "Authorization: Bearer $MARIMAR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"pergunta":"<a pergunta, sem nome nem telefone>","cliente":"<número do hóspede>","contexto":"<1 frase do que ele está planejando>","assunto":"<reservas|financeiro|recepcao|manutencao|passeios|restaurante|eventos>"}' \
+  https://marimar-site.vercel.app/api/agent/chamados
+```
+
+- A rota avisa a pessoa certa da equipe (pelo assunto e pelo horário) e
+  devolve `mensagem_cliente`: diga isso ao hóspede **com as suas palavras**
+  ("vou confirmar com a equipe e te respondo por aqui").
+- Se voltar `aviso_manual`, o site não conseguiu mandar: **você** manda aquele
+  texto, exatamente, para o número indicado.
+- Não prometa prazo. Se o hóspede perguntar de novo, diga que ainda está
+  confirmando — o site avisa ele sozinho se demorar e passa o contato da
+  recepção se ninguém responder.
+- Nada de dado pessoal em `pergunta` e `contexto` (o site apaga o que
+  escapar, mas não conte com isso). O número do hóspede vai só em `cliente`,
+  e é apagado quando o chamado fecha.
+- Se voltar `escalado: false` (escalonamento desligado), a pergunta já ficou
+  anotada para a administração: diga que vai confirmar com a pousada.
+
+## Quando usar algo que você APRENDEU
+
+O treinamento tem a seção **APRENDIDO COM A EQUIPE**: respostas que a equipe
+deu a outros hóspedes. Use com as suas palavras, obedecendo tudo o que vem
+antes (o cadastrado vale mais; o que você nunca diz continua valendo; preço
+e vaga só do sistema de reservas). Respeite a data de "vale até". Ao
+responder com um item dessa seção, registre o uso — em silêncio, sem contar
+ao hóspede:
+
+```bash
+curl -s -X POST -H "Authorization: Bearer $MARIMAR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"pergunta":"<a pergunta do hóspede>","canal":"whatsapp"}' \
+  https://marimar-site.vercel.app/api/agent/aprendizado/uso
+```
 
 ## Como consultar
 
@@ -132,7 +181,11 @@ pode consultar não fica calado: improvisa. Já aconteceu aqui.
 | `/api/agent/conhecimento` | **O que a administração te ensinou pelo painel** |
 | `/api/agent/disponibilidade?check_in=AAAA-MM-DD&check_out=AAAA-MM-DD&adultos=N&criancas=N&bebes=N` | **Vaga e preço ao vivo do motor, com a regra de crianças da pousada aplicada.** `criancas` = as que não são de colo; `bebes` = de colo. O total devolvido já é o final |
 | `/api/agent/documentos` | **Documentos que a pousada enviou** — PDFs, contratos, cardápios, fotos de avisos. Sem parâmetro vem a lista com um trecho de cada; `?busca=<palavras>` traz os trechos de todos os documentos que falam do assunto; `?id=<id>` traz o texto completo de um |
-| `/api/agent/lacuna` (POST) | **Registrar uma pergunta que você não soube responder** |
+| `/api/agent/lacuna` (POST) | Registrar uma pergunta que você não soube responder (só quando o escalonamento está desligado; com ele ligado, use `/chamados`) |
+| `/api/agent/equipe` | **Quem é da equipe** (números) — mensagem de um desses vai para `/chamados/resposta` |
+| `/api/agent/chamados` (POST) | **Perguntar à equipe** o que você não sabe |
+| `/api/agent/chamados/resposta` (POST) | **Repassar a resposta da equipe** — o site entrega ao cliente |
+| `/api/agent/aprendizado/uso` (POST) | Registrar que você usou algo aprendido |
 
 Para datas, vagas e tarifas, a `consulta-desbravador` já tem o caminho certo.
 

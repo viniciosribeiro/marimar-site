@@ -42,6 +42,41 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
   );
   const [sessao] = useState(() => novaSessao());
 
+  /* Resposta da equipe. Quando a Marina não sabe e pergunta à equipe (ver
+     docs/fluxo-escalonamento.md), a resposta chega depois, pela rota
+     /api/chat/chamados. O chat consulta enquanto houver pergunta pendente —
+     e uma vez ao abrir a página, para quem navegou e voltou. */
+  const [pendente, setPendente] = useState(false);
+  const [novidade, setNovidade] = useState(false);
+  const vistasRef = useRef<Set<string>>(new Set());
+  const abertoRef = useRef(false);
+  const consultarEquipe = useCallback(async () => {
+    try {
+      const desde = desdeDaSessao();
+      const r = await fetch(`/api/chat/chamados?sessao=${encodeURIComponent(sessao)}&depois=${encodeURIComponent(desde)}`, { cache: "no-store" });
+      if (!r.ok) return;
+      const d: { pendentes: number; mensagens: { id: string; texto: string }[] } = await r.json();
+      const novas = d.mensagens.filter((m) => !vistasRef.current.has(m.id));
+      novas.forEach((m) => vistasRef.current.add(m.id));
+      if (novas.length) {
+        setFalas((f) => [...f, ...novas.map((m) => ({ de: "marina" as const, texto: m.texto }))]);
+        if (!abertoRef.current) setNovidade(true);
+      }
+      setPendente(d.pendentes > 0);
+    } catch { /* sem rede: tenta na próxima */ }
+  }, [sessao]);
+
+  useEffect(() => { abertoRef.current = aberto; }, [aberto]);
+  useEffect(() => {
+    const primeira = setTimeout(consultarEquipe, 1500);
+    return () => clearTimeout(primeira);
+  }, [consultarEquipe]);
+  useEffect(() => {
+    if (!pendente) return;
+    const t = setInterval(consultarEquipe, 8000);
+    return () => clearInterval(t);
+  }, [pendente, consultarEquipe]);
+
   /* Voz sob demanda. `vozDisponivel` comeca otimista e so vira falso se o
      servidor disser que nao ha chave — assim o botao some sozinho em vez de
      ficar ali falhando a cada clique. */
@@ -168,6 +203,8 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
     } finally {
       setEsperando(false);
       campoRef.current?.focus();
+      /* Pode ter virado pergunta para a equipe: começa a acompanhar. */
+      setTimeout(consultarEquipe, 1200);
     }
   }
 
@@ -318,8 +355,8 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
     <>
       {!aberto && (
         <button
-          onClick={() => setAberto(true)}
-          aria-label="Abrir atendimento"
+          onClick={() => { setAberto(true); setNovidade(false); }}
+          aria-label={novidade ? "Abrir atendimento — chegou resposta" : "Abrir atendimento"}
           /* No celular fica na MESMA linha do botao do WhatsApp, a esquerda
              dele, e com rotulo curto: empilhados, os dois cobriam uma coluna
              inteira de texto e cartoes em toda pagina. */
@@ -329,7 +366,8 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
             <Icone nome="coracao" tamanho={14} />
           </span>
           <span className="text-sm font-semibold sm:hidden">Marina</span>
-          <span className="text-sm font-semibold hidden sm:inline">Falar com a Marina</span>
+          <span className="text-sm font-semibold hidden sm:inline">{novidade ? "A Marina respondeu" : "Falar com a Marina"}</span>
+          {novidade && <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-amber-400 ring-2 ring-white animate-pulse" aria-hidden />}
         </button>
       )}
 
@@ -553,6 +591,19 @@ function Pontinhos() {
  * segue a pessoa por aí. É o suficiente para o fio da conversa, e é o
  * mínimo para quem só quer perguntar o horário do café.
  */
+/** Quando esta sessão do chat começou: só respostas da equipe daqui para frente. */
+function desdeDaSessao(): string {
+  try {
+    const g = sessionStorage.getItem("marimar:chat:desde");
+    if (g) return g;
+    const agora = new Date(Date.now() - 60_000).toISOString();
+    sessionStorage.setItem("marimar:chat:desde", agora);
+    return agora;
+  } catch {
+    return new Date(Date.now() - 3600_000).toISOString();
+  }
+}
+
 function novaSessao(): string {
   try {
     const guardada = sessionStorage.getItem("marimar:chat");

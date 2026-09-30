@@ -132,7 +132,7 @@ export function AbaTeste({ dados, ensinar }: { dados: DadosMarina; ensinar: (r?:
                       <span className="text-[11px] font-medium text-tinta-suave">Usou:</span>
                       {m.fontes?.length ? m.fontes.map((f) => (
                         <Selo key={f.id} tom="marca" title={rotuloCategoria(f.categoria)}>
-                          {TIPOS[f.tipo as Tipo]?.rotulo ?? (f.tipo === "roteiro" ? "Roteiro" : f.tipo)}: {f.titulo.slice(0, 40)}
+                          {TIPOS[f.tipo as Tipo]?.rotulo ?? (f.tipo === "roteiro" ? "Roteiro" : f.tipo === "aprendido" ? "Aprendido" : f.tipo)}: {f.titulo.slice(0, 40)}
                         </Selo>
                       )) : <span className="text-[11px] text-tinta-suave">nenhum item do treinamento (usou outras fontes ou conhecimento geral)</span>}
                       {m.ms && <span className="text-[11px] text-tinta-suave/70">· {(m.ms / 1000).toFixed(1)}s</span>}

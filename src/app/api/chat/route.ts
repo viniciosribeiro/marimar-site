@@ -5,6 +5,8 @@ import {
   INDISPONIVEL, CONTEXTO_CANAL,
 } from "@/lib/chat";
 import { montarTreinamento, pareceSemResposta, registrarLacuna } from "@/lib/marina";
+import { abrirChamado, lerConfigEscalonamento, talvezProcessarPrazos } from "@/lib/escalonamento";
+import { registrarUso } from "@/lib/aprendizado";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -90,9 +92,16 @@ export async function POST(req: Request) {
        ensinar uma vez tem que valer nos dois lugares, senão o painel vira
        mais um lugar para manter em sincronia à mão. */
     const { texto: ensinado } = await montarTreinamento(sql, "site");
+    /* Com o escalonamento ligado, "não sei" vira pergunta para a equipe — e
+       a resposta volta aqui mesmo, no chat. A Marina precisa saber disso
+       para prometer a coisa certa. */
+    const escalonamento = await lerConfigEscalonamento(sql);
+    const sobreEquipe = escalonamento.ativo
+      ? "\n\nQUANDO VOCÊ NÃO SOUBER: diga com naturalidade que vai confirmar com a equipe da pousada e que a resposta vai aparecer aqui mesmo no chat assim que eles responderem (a pessoa pode continuar navegando no site com o chat aberto). Não invente a resposta enquanto isso."
+      : "";
 
     const mensagens = [
-      { role: "system", content: CONTEXTO_CANAL + (ensinado ? "\n\n" + ensinado : "") },
+      { role: "system", content: CONTEXTO_CANAL + sobreEquipe + (ensinado ? "\n\n" + ensinado : "") },
       ...anteriores.reverse().map((m) => ({
         role: m.papel === "visitante" ? "user" : "assistant",
         content: m.conteudo,
@@ -172,9 +181,21 @@ export async function POST(req: Request) {
                 .catch(() => conexao`
                   INSERT INTO chat_mensagens (sessao, ip_hash, papel, conteudo)
                   VALUES (${sessao}, ${ip}, 'marina', ${completa.trim()})`);
-              if (semResposta) {
+              if (semResposta && escalonamento.ativo) {
+                /* O contexto são as perguntas anteriores do visitante (sem
+                   dado pessoal — abrirChamado anonimiza), para a equipe
+                   entender do que se trata. */
+                const contexto = anteriores.filter((m) => m.papel === "visitante" && m.conteudo !== mensagem)
+                  .slice(-3).map((m) => m.conteudo.slice(0, 160)).join(" / ");
+                const a = await abrirChamado(conexao, { canal: "site", destino: sessao, pergunta: mensagem, contexto: contexto || null });
+                if (!a.ok) await registrarLacuna(conexao, { pergunta: mensagem, resposta: completa, canal: "site", sessao });
+              } else if (semResposta) {
                 await registrarLacuna(conexao, { pergunta: mensagem, resposta: completa, canal: "site", sessao });
+              } else {
+                /* Respondeu. Se foi com algo aprendido, conta o uso. */
+                await registrarUso(conexao, mensagem, "site");
               }
+              await talvezProcessarPrazos(conexao);
             }
           } catch (e) {
             console.error("[chat] nao gravou a resposta:", (e as Error).message);
