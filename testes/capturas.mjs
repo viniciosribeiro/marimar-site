@@ -15,7 +15,7 @@ const LARGURAS = (process.env.LARGURAS ?? "375,768,1440").split(",").map(Number)
 const ROTAS = process.argv.slice(2).length ? process.argv.slice(2) : [
   "/admin/login", "/admin", "/admin/marina?aba=visao", "/admin/marina?aba=conhecimento", "/admin/marina?aba=testar",
   "/admin/marina?aba=sem-resposta", "/admin/marina?aba=conversas", "/admin/marina?aba=documentos",
-  "/admin/marina?aba=personalidade", "/admin/marina?aba=voz", "/admin/marina?aba=historico",
+  "/admin/marina?aba=roteiros", "/admin/marina?aba=regras", "/admin/marina?aba=personalidade", "/admin/marina?aba=voz", "/admin/marina?aba=historico",
   "/admin/pousada", "/admin/quartos", "/admin/categorias", "/admin/comodidades", "/admin/midias", "/admin/cardapio",
   "/admin/banners", "/admin/blocos-home", "/admin/cartoes", "/admin/pacotes", "/admin/passeios", "/admin/depoimentos",
   "/admin/faq", "/admin/politicas", "/admin/conteudo", "/admin/atracoes", "/admin/identidade-visual", "/admin/leads",

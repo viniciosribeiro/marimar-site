@@ -229,24 +229,32 @@ export async function prepararVideo(arquivo: File, aoAvancar: (fase: Fase, progr
   const saida = mb ? dimensoes(meta.largura || 1280, meta.altura || 720, LIMITES.videoMaxLado) : null;
   const codec = mb && saida ? await escolherCodec(mb, saida.largura, saida.altura).catch(() => null) : null;
 
-  /* Sem codificador (aparelho antigo): sobe o original, se couber. */
-  if (!mb || !codec) {
+  /* Sem codificador (aparelho antigo), ou um formato que este navegador não
+     decodifica (HEVC do iPhone no Chrome do Windows): sobe o original, se couber. */
+  const semCompressao = async (motivo: string): Promise<VideoPronto> => {
     if (arquivo.size > LIMITES.originalMaxBytes) {
-      throw new ErroMidia("Este aparelho não consegue comprimir vídeo e o arquivo passa de 200 MB. Envie de um celular mais novo ou do computador com o Chrome.");
+      throw new ErroMidia(`${motivo} E o arquivo passa de 200 MB. Envie de um celular mais novo ou do computador com o Chrome.`);
     }
     aoAvancar("miniatura", 0);
     const miniatura = await gerarMiniatura(arquivo);
     return {
       blob: arquivo, tipo: arquivo.type || "video/mp4", nome: arquivo.name, whatsapp: null, miniatura,
       duracao: meta.duracao, largura: meta.largura, altura: meta.altura, comprimido: false,
-      observacao: "Enviado sem compressão: este aparelho não tem codificador de vídeo. A Marina manda o link da página no lugar do vídeo.",
+      observacao: `Enviado sem compressão: ${motivo.charAt(0).toLowerCase()}${motivo.slice(1)} A Marina manda o link da página no lugar do vídeo.`,
     };
-  }
+  };
+  if (!mb || !codec) return semCompressao("Este aparelho não tem codificador de vídeo.");
 
   aoAvancar("comprimindo", 0);
-  const site = await transcodificar(mb, arquivo, {
-    maxLado: LIMITES.videoMaxLado, bitrateVideo: 1_800_000, bitrateAudio: 128_000, codec,
-  }, (p) => aoAvancar("comprimindo", p));
+  let site: Blob;
+  try {
+    site = await transcodificar(mb, arquivo, {
+      maxLado: LIMITES.videoMaxLado, bitrateVideo: 1_800_000, bitrateAudio: 128_000, codec,
+    }, (p) => aoAvancar("comprimindo", p));
+  } catch (e) {
+    console.warn("[midia] compressão falhou, enviando o original:", (e as Error).message);
+    return semCompressao("Este navegador não conseguiu ler o formato deste vídeo para comprimir.");
+  }
 
   let whatsapp: Blob | null = null;
   let observacao: string | null = null;

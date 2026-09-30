@@ -153,6 +153,7 @@ export default async function QuartosPage({
       )}
 
       <Lista
+        cartoesAte="xl"
         itens={[...lista] as any[]}
         chave={(q: any) => q.id}
         vazio={<Vazio icone="🛏️" titulo="Nenhum quarto cadastrado" acao={<BotaoLink href="/admin/quartos?novo=1"><Plus className="h-4 w-4" /> Cadastrar o primeiro</BotaoLink>} />}
