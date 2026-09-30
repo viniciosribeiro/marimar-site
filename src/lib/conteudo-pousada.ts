@@ -388,7 +388,7 @@ export function faqCanonico(
     grupo: "Localização e chegada",
     itens: [
       { p: "O restaurante e a pousada são a mesma casa?", r: COMPLEXO.respostaFaq },
-      { p: "Qual o ponto correto no mapa?", r: `O ponto de referência é o ${RESTAURANTE.nome} (Plus Code ${ENDERECO.plusCode}). O restaurante é da pousada, e a entrada da pousada é por ali.` },
+      { p: "Qual o ponto correto no mapa?", r: `É o ${RESTAURANTE.nome}, o restaurante da pousada, de frente para a Praia de Encantadas, a poucos minutos a pé do trapiche. A entrada da pousada é por ali. Na página Como chegar, o botão "Traçar minha rota" mostra o caminho de onde você estiver até a porta.` },
       { p: "De onde saem os barcos?", r: `Os principais embarques são Pontal do Sul (${T.terminais[0].endereco}) e Paranaguá (${T.terminais[1].endereco}).` },
       { p: "Qual destino devo escolher na travessia?", r: T.avisoDestino },
       { p: "Quanto custa e quanto demora a travessia?", r: `O trecho Pontal do Sul–Encantadas leva ${T.duracao}. Em ${T.precos.consultadoEm}, a venda oficial indicava cerca de R$ ${T.precos.ida.toFixed(2).replace(".", ",")} a ida e R$ ${T.precos.idaEVolta.toFixed(2).replace(".", ",")} ida e volta, com gratuidade para ${T.precos.gratuidade.toLowerCase()}. Valores e horários mudam sem aviso — confirme no site da ${T.operadora}.` },

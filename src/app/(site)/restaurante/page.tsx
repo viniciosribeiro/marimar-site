@@ -124,7 +124,7 @@ export default async function RestaurantePage() {
           <div className="lg:pr-44">
             <p className="text-tinta leading-relaxed mb-3">{COMPLEXO.fraseLonga}</p>
             <p className="text-sm text-tinta-suave leading-relaxed">
-              {ENDERECO.completo} · Plus Code {ENDERECO.plusCode}
+              {ENDERECO.completo}
             </p>
             <div className="flex flex-wrap gap-3 mt-5">
               <Botao href="/como-chegar" icone="📍" variante="contorno">Como chegar</Botao>

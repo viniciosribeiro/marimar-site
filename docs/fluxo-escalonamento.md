@@ -52,12 +52,15 @@ diário, por isso não foi usado — e o deploy não foi tocado.
 
 ## WhatsApp: o que o site precisa e os limites
 
-- O envio usa o RPC de administração do gateway (`src/lib/envio-whatsapp.ts`),
-  o mesmo plugin da voz (`admin-http-rpc`), método `send` com
-  `{ channel: "whatsapp", to: "+55...", message, idempotencyKey }`. Se a versão
-  do OpenClaw usar outro nome, defina `OPENCLAW_ENVIO_METODO`. **Não verificado
-  contra o OpenClaw real**: teste com o botão "Testar envio" em Equipe
-  responsável — o erro do gateway aparece na tela como veio.
+- O envio (`src/lib/envio-whatsapp.ts`) tenta, em ordem: (1) `POST /tools/invoke`
+  do gateway com a ferramenta `message` (ação `send`); (2) pedir à própria
+  Marina, pelo `/v1/chat/completions` que o chat do site já usa, que mande com
+  a ferramenta de mensagens dela — só conta como enviado se ela responder
+  "ENVIADO". A variável `OPENCLAW_ENVIO` força um caminho: `ferramenta`,
+  `agente` ou `rpc:<método>`. **O RPC de administração NÃO serve**: em
+  30/09/2026 o OpenClaw real respondeu "admin HTTP RPC method is not
+  supported: send" (o plugin só aceita métodos de configuração). Teste com
+  "Testar envio" em Equipe responsável — o erro de cada caminho aparece na tela.
 - Plano B sempre existe: quando o site não consegue mandar, as rotas devolvem o
   texto e o destino (`aviso_manual`, `entregar_manual`) e a skill manda a Marina
   enviar ela mesma.

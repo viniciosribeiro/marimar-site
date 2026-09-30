@@ -6,6 +6,19 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-09-30 (7) — Envio para a equipe pelo caminho que o OpenClaw aceita; FAQ sem "Plus Code"
+**Autor:** Claude (Claude Code)
+
+- O "Testar envio" em produção deu `admin HTTP RPC method is not supported:
+  send`: o RPC de administração do OpenClaw só aceita configuração. O envio
+  (`src/lib/envio-whatsapp.ts`) agora tenta a ferramenta `message` do gateway
+  (`POST /tools/invoke`) e, se ela não estiver disponível, pede à própria
+  Marina pelo `/v1/chat/completions` (o mesmo do chat do site) — só conta
+  como enviado se ela responder "ENVIADO". `OPENCLAW_ENVIO` força um caminho.
+  E2E do escalonamento 38/38 com o novo caminho (simulador).
+- FAQ, home e restaurante: saiu o "Plus Code" (ninguém entende); a resposta
+  sobre o ponto no mapa explica em português e aponta para a rota do site.
+
 ## 2026-09-30 (6) — Escalonamento para a equipe, aprendizado contínuo e Cérebro da Marina
 **Autor:** Claude (Claude Code)
 **Migration:** 0019 (só acrescenta: 5 tabelas e `chat_mensagens.chamado_id`)
