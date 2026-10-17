@@ -167,3 +167,58 @@ OpenClaw responde "ok" mesmo quando o WhatsApp não entrega.
 O `/tools/invoke` é uma superfície de operador (o token do gateway dá
 acesso total): mantenha o gateway atrás de HTTPS e com token forte, como já
 está para o chat do site.
+
+## Domínios (registro.br → Vercel)
+
+Situação em 17/10/2026: os dois domínios usam o **DNS do registro.br, modo
+avançado** (antes era uma Cloudflare antiga). Cada domínio está numa conta
+diferente do registro.br.
+
+Não use `ns1/ns2.vercel-dns.com` no registro.br: ele responde "Pesquisa
+recusada". Crie as linhas em **DNS → Configurar zona DNS → Nova entrada**
+(só libera quando a mensagem "Domínio em transição" some):
+
+| Domínio | Tipo | Nome | Dados |
+|---|---|---|---|
+| pousadamarimarilhadomel.com.br | A | *(vazio)* | `76.76.21.21` |
+| pousadamarimarilhadomel.com.br | CNAME | www | `cname.vercel-dns.com` |
+| pousadamarimarilhadomel.com.br | CNAME | admin | `cname.vercel-dns.com` |
+| pousadamarimar.com.br | A | *(vazio)* | `76.76.21.21` |
+| pousadamarimar.com.br | CNAME | www | `cname.vercel-dns.com` |
+
+A Vercel sugere CNAME na raiz (`…vercel-dns-017.com`), mas o registro.br não
+aceita CNAME na raiz; ela mesma diz que `76.76.21.21` continua valendo.
+
+Na Vercel (projeto → Domains) o `www.pousadamarimarilhadomel.com.br` é o
+principal, o `admin.` serve o painel (o `src/middleware.ts` manda `/admin` do
+domínio público para lá) e os outros três redirecionam (308) para o www.
+
+**Só depois que todas as linhas ficarem azuis na Vercel**, troque em
+Environment Variables e faça Redeploy:
+
+- `NEXT_PUBLIC_SITE_URL` = `https://www.pousadamarimarilhadomel.com.br`
+- `AUTH_URL` = `https://admin.pousadamarimarilhadomel.com.br`
+
+Trocar antes quebra o login do painel. A skill da Marina pode continuar em
+`marimar-site.vercel.app`, que segue funcionando.
+
+## Trocar o número do WhatsApp da Marina
+
+O OpenClaw usa o WhatsApp como aparelho conectado (WhatsApp Web). Desde
+17/10/2026 é o número de atendimento da Cecília. No terminal da Hostinger:
+
+```bash
+openclaw channels logout --channel whatsapp   # solta o número atual
+openclaw channels login --channel whatsapp    # mostra o QR (expira em ~1 min)
+# no celular novo: WhatsApp → Aparelhos conectados → Conectar um aparelho
+openclaw channels status                      # "linked, running, connected"
+```
+
+O aviso "code 515" logo depois de ler o QR é normal. Depois:
+
+- **Dados da pousada → WhatsApp**: o número do botão do site;
+- **Equipe responsável**: nenhum contato com o número da Marina (ela mandaria
+  o aviso para si mesma). Use "Testar envio" para conferir.
+
+A Marina responde a todas as conversas do número conectado: ele deve ser só
+de atendimento.

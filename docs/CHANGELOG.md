@@ -6,6 +6,63 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-17 (2) — Aviso à equipe chegando de verdade: o 9 do celular
+**Autor:** Claude (Claude Code)
+**Migration:** nenhuma
+
+### O que acontecia
+"Testar envio" dizia "✓ confirmou a entrega" e nada chegava no celular
+pessoal da Cecília, (41) 99149-4742. O log do OpenClaw mostrou o número da
+própria pousada como `+554195012920`: **sem o 9**. Celular brasileiro de DDD
+31 em diante existe no WhatsApp sem o 9. O OpenClaw (`@openclaw/whatsapp`
+2026.9.4, `toWhatsappJid`) monta o destino direto dos dígitos: mandar para
+`5541991494742` devolve id, mas a mensagem não chega. Cadastrando
+"(41) 9149-4742", chegou na hora.
+
+### O que mudou
+- `numeroWhatsapp()` em `src/lib/escalonamento-base.ts`: tira o 9 dos
+  celulares de DDD ≥ 31; SP, RJ e ES mantêm. Usado em todo envio
+  (`enviarWhatsapp`).
+- `/api/agent/equipe` lista os números nesse formato (e o cadastrado em
+  `cadastrado`), que é como o remetente chega à Marina.
+- Teste unitário novo. `npm test`: 47/47.
+
+### Ainda aberto
+- A resposta da Cecília não chegou ao cliente no primeiro teste: não se sabe
+  ainda se havia chamado aberto (ela pode ter respondido o "Testar envio") ou
+  se a Marina não a reconheceu como equipe. Ver o chamado em Equipe
+  responsável → Chamados.
+
+## 2026-10-17 — Domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília
+**Autor:** Claude (Claude Code), guiando o Vinicios pelos painéis (nenhum código mudou)
+**Migration:** nenhuma
+
+### Domínios
+- Os dois domínios (`pousadamarimarilhadomel.com.br` e `pousadamarimar.com.br`,
+  cada um numa conta do registro.br) usavam DNS de uma Cloudflare antiga
+  (`cory`/`violet.ns.cloudflare.com`). Os dois passaram para o **DNS do
+  registro.br, modo avançado**, em 17/10 por volta das 10h20.
+- Tentar `ns1/ns2.vercel-dns.com` no registro.br dá "Pesquisa recusada": o
+  registro.br testa os servidores antes de aceitar, e os da Vercel não
+  respondiam pela zona. Por isso o caminho é DNS do registro.br + linhas
+  apontando para a Vercel.
+- Na Vercel (projeto marimar-site → Domains) ficaram: `www.pousadamarimarilhadomel.com.br`
+  (principal), `admin.` (painel), e `pousadamarimarilhadomel.com.br`,
+  `pousadamarimar.com.br` e `www.pousadamarimar.com.br` com redirect 308 para o www.
+- **Falta** criar as linhas quando a zona sair de "transição" e depois trocar
+  `NEXT_PUBLIC_SITE_URL` e `AUTH_URL` (passo a passo em `docs/runbook.md`,
+  "Domínios"). Enquanto isso os domínios ficam fora do ar; `marimar-site.vercel.app` segue normal.
+- Decisão do Vinicios: e-mail nesses domínios não foi tratado agora. Se alguém
+  usava, as linhas MX da Cloudflare antiga se perderam e precisam ser recriadas.
+
+### WhatsApp da Marina
+- O OpenClaw foi desconectado do celular de testes e conectado ao número de
+  atendimento da Cecília (`openclaw channels login --channel whatsapp`,
+  status "linked, running, connected, health:healthy"). Receita em
+  `docs/runbook.md`, "Trocar o número do WhatsApp da Marina".
+- Atenção: esse número não pode estar em Equipe responsável (a Marina mandaria
+  aviso para si mesma).
+
 ## 2026-09-30 (10) — Equipe avisada de verdade pelo WhatsApp, confirmação do aprendizado e "Sem resposta" junto com os chamados
 **Autor:** Claude (Claude Code)
 **Migration:** 0020 (só acrescenta colunas opcionais em `marina_chamados` e `marina_lacunas`)

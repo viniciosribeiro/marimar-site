@@ -2,7 +2,7 @@ import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
 import { comSql } from "@/lib/db-conexao";
 import { lerContatos, lerConfigEscalonamento } from "@/lib/escalonamento";
-import { rotuloSetor } from "@/lib/escalonamento-base";
+import { numeroWhatsapp, rotuloSetor } from "@/lib/escalonamento-base";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,12 @@ export async function GET(request: NextRequest) {
     contatos: (await lerContatos(sql)).filter((c) => c.ativo),
     ativo: (await lerConfigEscalonamento(sql)).ativo,
   }));
-  const dados = contatos.map((c) => ({ nome: c.nome, numero: c.numero, setores: c.setores, horario: `${c.hora_inicio}–${c.hora_fim}` }));
+  /* O número como chega no WhatsApp (sem o 9 fora de SP/RJ/ES): é com ele
+     que a Marina compara quem escreve. */
+  const dados = contatos.map((c) => ({
+    nome: c.nome, numero: numeroWhatsapp(c.numero) ?? c.numero, cadastrado: c.numero,
+    setores: c.setores, horario: `${c.hora_inicio}–${c.hora_fim}`,
+  }));
   return Response.json({
     ok: true,
     dados: { escalonamento_ativo: ativo, equipe: dados },
