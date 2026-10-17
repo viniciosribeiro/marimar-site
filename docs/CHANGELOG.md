@@ -6,6 +6,33 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-17 (2) — Aviso à equipe chegando de verdade: o 9 do celular
+**Autor:** Claude (Claude Code)
+**Migration:** nenhuma
+
+### O que acontecia
+"Testar envio" dizia "✓ confirmou a entrega" e nada chegava no celular
+pessoal da Cecília, (41) 99149-4742. O log do OpenClaw mostrou o número da
+própria pousada como `+554195012920`: **sem o 9**. Celular brasileiro de DDD
+31 em diante existe no WhatsApp sem o 9. O OpenClaw (`@openclaw/whatsapp`
+2026.9.4, `toWhatsappJid`) monta o destino direto dos dígitos: mandar para
+`5541991494742` devolve id, mas a mensagem não chega. Cadastrando
+"(41) 9149-4742", chegou na hora.
+
+### O que mudou
+- `numeroWhatsapp()` em `src/lib/escalonamento-base.ts`: tira o 9 dos
+  celulares de DDD ≥ 31; SP, RJ e ES mantêm. Usado em todo envio
+  (`enviarWhatsapp`).
+- `/api/agent/equipe` lista os números nesse formato (e o cadastrado em
+  `cadastrado`), que é como o remetente chega à Marina.
+- Teste unitário novo. `npm test`: 47/47.
+
+### Ainda aberto
+- A resposta da Cecília não chegou ao cliente no primeiro teste: não se sabe
+  ainda se havia chamado aberto (ela pode ter respondido o "Testar envio") ou
+  se a Marina não a reconheceu como equipe. Ver o chamado em Equipe
+  responsável → Chamados.
+
 ## 2026-10-17 — Domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília
 **Autor:** Claude (Claude Code), guiando o Vinicios pelos painéis (nenhum código mudou)
 **Migration:** nenhuma

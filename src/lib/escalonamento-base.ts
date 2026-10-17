@@ -68,7 +68,23 @@ export const mesmoNumero = (a: string | null | undefined, b: string | null | und
   return x === y || sem9(x) === sem9(y);
 };
 
-export const mascararNumero = (n: string) => (n.length > 6 ? `${n.slice(0, 4)}•••${n.slice(-4)}` : "•••");
+/**
+ * O número como o WhatsApp o conhece. Celular brasileiro fora de SP, RJ e ES
+ * (DDD 31 em diante) existe no WhatsApp SEM o 9 depois do DDD: (41) 99149-4742
+ * é 554191494742. Mandar com o 9 "funciona" (o OpenClaw devolve id), mas a
+ * mensagem nunca chega — foi o "Testar envio diz que foi e nada chega" de
+ * 17/10/2026. O OpenClaw monta o destino direto dos dígitos, sem consultar.
+ */
+export function numeroWhatsapp(bruto: string): string | null {
+  const n = normalizarNumero(bruto);
+  if (!n) return null;
+  if (n.length === 13 && n.startsWith("55") && n[4] === "9" && Number(n.slice(2, 4)) >= 31) {
+    return n.slice(0, 4) + n.slice(5);
+  }
+  return n;
+}
+
+export const mascararNumero =(n: string) => (n.length > 6 ? `${n.slice(0, 4)}•••${n.slice(-4)}` : "•••");
 
 /* ── privacidade ─────────────────────────────────────────────────── */
 

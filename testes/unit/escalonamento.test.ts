@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  similaridade, LIMIAR_MESMA_PERGUNTA, anonimizar, perguntaParaBase, codigosNoTexto, gerarCodigo, normalizarNumero, mesmoNumero,
+  similaridade, LIMIAR_MESMA_PERGUNTA, anonimizar, perguntaParaBase, codigosNoTexto, gerarCodigo, normalizarNumero, mesmoNumero, numeroWhatsapp,
   dentroDoHorario, escolherContato, janelaAberta, acoesDePrazo, setorPara, pedeValidade, CONFIG_ESCALONAMENTO_PADRAO,
   type ContatoEquipe,
 } from "../../src/lib/escalonamento-base";
@@ -50,6 +50,17 @@ test("números: DDI 55 e o 9 que o WhatsApp às vezes some", () => {
   assert.ok(mesmoNumero("+55 41 99999-1234", "554199991234"));
   assert.ok(!mesmoNumero("5541999991234", "5541999995678"));
   assert.equal(normalizarNumero("123"), null);
+});
+
+test("número no formato do WhatsApp: sem o 9 fora de SP, RJ e ES", () => {
+  assert.equal(numeroWhatsapp("(41) 99149-4742"), "554191494742");
+  assert.equal(numeroWhatsapp("(41) 9149-4742"), "554191494742");
+  assert.equal(numeroWhatsapp("+55 66 99688-8843"), "556696888843");
+  assert.equal(numeroWhatsapp("(11) 98765-4321"), "5511987654321");
+  assert.equal(numeroWhatsapp("(21) 99876-5432"), "5521998765432");
+  assert.equal(numeroWhatsapp("(41) 3426-9052"), "554134269052");
+  assert.equal(numeroWhatsapp("+351 912 345 678"), "351912345678");
+  assert.equal(numeroWhatsapp("x"), null);
 });
 
 const c = (p: Partial<ContatoEquipe>): ContatoEquipe => ({

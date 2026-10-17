@@ -1,5 +1,6 @@
 import { chamarRpc } from "./openclaw-config";
 import { urlGateway, cabecalhosGateway } from "./chat";
+import { numeroWhatsapp } from "./escalonamento-base";
 
 /**
  * Manda uma mensagem de WhatsApp pelo número da pousada (o que a Marina usa),
@@ -174,7 +175,7 @@ export async function enviarWhatsapp(numero: string, texto: string, opcoes: Opco
   if (!process.env.OPENCLAW_GATEWAY_URL || !process.env.OPENCLAW_GATEWAY_TOKEN) {
     return { ok: false, erro: "O gateway do OpenClaw não está configurado neste site (OPENCLAW_GATEWAY_URL e OPENCLAW_GATEWAY_TOKEN na Vercel)." };
   }
-  const para = `+${numero.replace(/\D/g, "")}`;
+  const para = `+${numeroWhatsapp(numero) ?? numero.replace(/\D/g, "")}`;
   const modo = (process.env.OPENCLAW_ENVIO || "auto").trim();
   const chave = opcoes.chave ?? crypto.randomUUID();
 

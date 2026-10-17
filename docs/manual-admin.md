@@ -232,7 +232,7 @@ entregava, e por isso aparecia “enviado” sem nada chegar.
 
 | O que aparece | O que fazer |
 |---|---|
-| ✓ O WhatsApp confirmou a entrega | Chegou. Se não aparecer no celular, o número cadastrado está errado (veja o teste do 9 abaixo). |
+| ✓ O WhatsApp confirmou a entrega | Chegou. Desde 17/10 o site tira sozinho o 9 dos celulares fora de SP, RJ e ES (é assim que o WhatsApp conhece esses números). Se ainda não aparecer no celular, o número cadastrado está errado (veja o teste do 9 abaixo). |
 | O WhatsApp da pousada está DESCONECTADO | No terminal da Hostinger: `openclaw channels status`. Se estiver desconectado: `openclaw channels login --channel whatsapp` e leia o QR com o celular da pousada. |
 | o OpenClaw tentou e o WhatsApp não entregou | No terminal: `openclaw logs --follow` e aperte “Testar envio” de novo; o motivo aparece ali. |
 | a ferramenta de mensagens não está liberada no gateway (404) | A política de ferramentas do OpenClaw bloqueia a ferramenta `message`. Veja `docs/runbook.md`, “Liberar a ferramenta de mensagens”. |

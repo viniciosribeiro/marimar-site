@@ -59,6 +59,14 @@ diário, por isso não foi usado — e o deploy não foi tocado.
   "suppressed", "dry_run", de outro canal ou sem `result` é falha. Isso vem da
   leitura do código do OpenClaw 2026.9: sem `bestEffort: false`, ele responde
   "ok" mesmo quando o WhatsApp não entrega.
+- **O 9 do celular (17/10/2026).** Celular brasileiro de DDD 31 em diante
+  existe no WhatsApp **sem o 9** depois do DDD ((41) 99149-4742 é
+  `554191494742`). O OpenClaw monta o destino direto dos dígitos, sem
+  consultar o WhatsApp: com o 9, ele devolve id e a mensagem nunca chega.
+  `numeroWhatsapp()` (`src/lib/escalonamento-base.ts`) tira o 9 antes de todo
+  envio; SP, RJ e ES (DDD 11 a 28) mantêm. `/api/agent/equipe` lista os
+  números nesse formato, que é como o remetente chega à Marina. A comparação
+  (`mesmoNumero`) aceita os dois.
 - A ferramenta `message` **não vem liberada no perfil padrão (`coding`)** do
   OpenClaw: sem liberar, o gateway responde 404. Ver `docs/runbook.md`,
   "Liberar a ferramenta de mensagens". Só nesse caso (404) o site pede à
