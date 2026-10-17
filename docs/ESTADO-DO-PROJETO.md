@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 30/09/2026 (sétima entrega: aviso à equipe confirmado e aprendizado com confirmação).
+> Atualizado em 17/10/2026 (domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
 
 ## Onde estamos
 
@@ -92,6 +92,13 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+000000. **Domínios (17/10, em andamento):** os dois domínios já usam o DNS do
+   registro.br (modo avançado) e estão na Vercel. Falta criar as linhas A/CNAME
+   quando a zona sair de "transição" e, com tudo azul na Vercel, trocar
+   `NEXT_PUBLIC_SITE_URL` e `AUTH_URL` e fazer Redeploy. Até lá os domínios
+   ficam fora do ar. Passo a passo: `docs/runbook.md`, "Domínios". A Marina
+   agora atende no número da Cecília: atualizar **Dados da pousada → WhatsApp**
+   e conferir que esse número não está em Equipe responsável.
 00000. **Aviso à equipe (30/09, sétima entrega):** rodar a migration **0020**.
    No OpenClaw:
    - liberar a ferramenta `message`: `openclaw config set tools.alsoAllow '["message"]' --strict-json` e `openclaw gateway restart` (ver `docs/runbook.md`);
@@ -127,7 +134,7 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
    vídeo gravado pela câmera, barra de progresso, selo "WhatsApp ok". O
    caminho MP4/H.264 não pôde ser testado no ambiente em nuvem. E pedir à
    Marina, no WhatsApp, "como chego?" com um roteiro cadastrado.
-1. **DNS.** `www.pousadamarimarilhadomel.com.br` ainda serve o WordPress
+1. **DNS (em migração desde 17/10, ver acima).** `www.pousadamarimarilhadomel.com.br` servia o WordPress
    5.8.16 de 2021. O caminho para virar esta livre — e decisao do Vinicios,
    que ate 20/09 optou por seguir testando na URL da Vercel.
 2. **Nada do que entrou em 19-20/09 foi exercitado por um usuario real.**
@@ -261,7 +268,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 
 | # | Item | Quem resolve |
 |---|---|---|
-| 1 | **DNS ainda aponta para o WordPress 5.8.16.** O Next.js só existe em `marimar-site.vercel.app`. O WP roda tema Consulting, WooCommerce 4.7.4, RevSlider 5.4.8.3 — stack de 2021 sem atualização | Vinicios (registrador + Vercel) |
+| 1 | **DNS em migração desde 17/10** (registro.br → Vercel; ver pendência 000000). Antes apontava para o WordPress 5.8.16. O Next.js só existe em `marimar-site.vercel.app`. O WP roda tema Consulting, WooCommerce 4.7.4, RevSlider 5.4.8.3 — stack de 2021 sem atualização | Vinicios (registrador + Vercel) |
 | 2 | **Dados de produção com placeholder.** Rodar `npm run db:corrigir` (telefone real, acentos, desativar passeio de teste "Vinicios/VR/R$350" que está público) | Vinicios (precisa de rede até o Neon) |
 | 3 | **Hero sem foto.** Cadastrar em Admin → Mídias uma imagem com `destaque = true` e **sem quarto vinculado** | Vinicios |
 | 4 | Pendente da 1ª sessão: `AGENT_API_KEY` nova na Vercel + OpenClaw | Vinicios |

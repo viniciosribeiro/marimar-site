@@ -6,6 +6,36 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-17 — Domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília
+**Autor:** Claude (Claude Code), guiando o Vinicios pelos painéis (nenhum código mudou)
+**Migration:** nenhuma
+
+### Domínios
+- Os dois domínios (`pousadamarimarilhadomel.com.br` e `pousadamarimar.com.br`,
+  cada um numa conta do registro.br) usavam DNS de uma Cloudflare antiga
+  (`cory`/`violet.ns.cloudflare.com`). Os dois passaram para o **DNS do
+  registro.br, modo avançado**, em 17/10 por volta das 10h20.
+- Tentar `ns1/ns2.vercel-dns.com` no registro.br dá "Pesquisa recusada": o
+  registro.br testa os servidores antes de aceitar, e os da Vercel não
+  respondiam pela zona. Por isso o caminho é DNS do registro.br + linhas
+  apontando para a Vercel.
+- Na Vercel (projeto marimar-site → Domains) ficaram: `www.pousadamarimarilhadomel.com.br`
+  (principal), `admin.` (painel), e `pousadamarimarilhadomel.com.br`,
+  `pousadamarimar.com.br` e `www.pousadamarimar.com.br` com redirect 308 para o www.
+- **Falta** criar as linhas quando a zona sair de "transição" e depois trocar
+  `NEXT_PUBLIC_SITE_URL` e `AUTH_URL` (passo a passo em `docs/runbook.md`,
+  "Domínios"). Enquanto isso os domínios ficam fora do ar; `marimar-site.vercel.app` segue normal.
+- Decisão do Vinicios: e-mail nesses domínios não foi tratado agora. Se alguém
+  usava, as linhas MX da Cloudflare antiga se perderam e precisam ser recriadas.
+
+### WhatsApp da Marina
+- O OpenClaw foi desconectado do celular de testes e conectado ao número de
+  atendimento da Cecília (`openclaw channels login --channel whatsapp`,
+  status "linked, running, connected, health:healthy"). Receita em
+  `docs/runbook.md`, "Trocar o número do WhatsApp da Marina".
+- Atenção: esse número não pode estar em Equipe responsável (a Marina mandaria
+  aviso para si mesma).
+
 ## 2026-09-30 (10) — Equipe avisada de verdade pelo WhatsApp, confirmação do aprendizado e "Sem resposta" junto com os chamados
 **Autor:** Claude (Claude Code)
 **Migration:** 0020 (só acrescenta colunas opcionais em `marina_chamados` e `marina_lacunas`)
