@@ -6,6 +6,19 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-18 — Título da home: "Hospedagem com restaurante à beira-mar"
+**Autor:** Claude (Claude Code), a pedido do Vinicios
+**Migration:** nenhuma
+
+- O título da seção "A pousada" da home passou de "Hospedagem com
+  restaurante pé na areia" para **"Hospedagem com restaurante à beira-mar"**
+  (padrão em `BlocosHome.tsx`, prévia do `ThemeEditor` e `db:corrigir`).
+- Esse título também pode vir do banco (Admin → Seções da página inicial →
+  "Restaurante e pousada" → Título). Se lá estiver preenchido, ele vale mais
+  que o padrão do código: troque o texto ali ou deixe vazio.
+- Os outros "pé na areia" do site (restaurante, galeria, eventos) ficaram
+  como estavam: o pedido foi só este título.
+
 ## 2026-10-17 (2) — Aviso à equipe chegando de verdade: o 9 do celular
 **Autor:** Claude (Claude Code)
 **Migration:** nenhuma

@@ -155,7 +155,7 @@ async function main() {
   await passo("Seções da home", async () => {
     const ORDEM: { tipo: string; titulo: string | null }[] = [
       { tipo: "hero", titulo: null },
-      { tipo: "complexo", titulo: "Hospedagem com restaurante pé na areia" },
+      { tipo: "complexo", titulo: "Hospedagem com restaurante à beira-mar" },
       { tipo: "diferenciais", titulo: "O que está incluso na sua estadia" },
       { tipo: "quartos", titulo: "Nossas suítes" },
       { tipo: "restaurante", titulo: "Marimar Café Bistrô Bar" },

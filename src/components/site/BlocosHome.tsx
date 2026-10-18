@@ -236,7 +236,7 @@ function Complexo({ t, s, itens, d }: { t: string | null; s: string | null; iten
     <section className="relative secao-py overflow-hidden">
       <FolhaPalmeira className="hidden lg:block absolute -left-24 top-10 w-80 text-marca/[0.06] -rotate-[30deg] pointer-events-none" />
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Cabecalho sobre={s || "A pousada"} titulo={t || "Hospedagem com restaurante pé na areia"} />
+        <Cabecalho sobre={s || "A pousada"} titulo={t || "Hospedagem com restaurante à beira-mar"} />
 
         <div className="grid gap-5 lg:grid-cols-12 lg:gap-6">
           {principal && <CartaoFoto item={principal} rotulo="Hospedagem" className="lg:col-span-7 min-h-[26rem] lg:min-h-[34rem]" />}

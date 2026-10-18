@@ -629,7 +629,7 @@ function PreviaTitulo({ centro, fonte }: { centro: boolean; fonte: string }) {
       <div className="flex items-baseline gap-3">
         {centro && traco}
         <span className="font-bold text-[#12324f] whitespace-nowrap" style={{ fontFamily: fonte }}>
-          Hospedagem com restaurante pé na areia
+          Hospedagem com restaurante à beira-mar
         </span>
         {traco}
       </div>
