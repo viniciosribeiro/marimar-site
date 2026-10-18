@@ -148,6 +148,13 @@
       "when": 1790740000000,
       "tag": "0020_confirmacao_aprendizado",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790830000000,
+      "tag": "0021_a_beira_mar",
+      "breakpoints": true
     }
   ]
 }

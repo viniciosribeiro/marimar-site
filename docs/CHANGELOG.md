@@ -6,6 +6,21 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-18 (3) — Migration 0021: "à beira-mar" também no que está gravado no banco
+**Autor:** Claude (Claude Code), com a confirmação do Vinicios
+**Migration:** 0021 (só troca texto; não muda tabela nem coluna)
+**Depois do deploy:** `npm run db:migrate`
+
+- Passa por todas as colunas de texto (text, varchar, json, jsonb, listas de
+  texto) das tabelas de conteúdo e troca "pé na areia" (e "Pé na areia",
+  "PÉ NA AREIA", "pe na areia", "pé-na-areia") por "à beira-mar".
+- Ficam de fora só os registros, que não aparecem no site: usuários,
+  contatos recebidos, conversas, histórico, lacunas, chamados, eventos,
+  cache, integrações e equipe.
+- Onde a tabela tem `atualizado_em`, ele vai para agora (a Marina relê).
+- Testada no Postgres local: título da home, item do treinamento (texto e
+  variações em jsonb) trocados; conversa do chat intacta.
+
 ## 2026-10-18 (2) — "À beira-mar" no site inteiro, no lugar de "pé na areia"
 **Autor:** Claude (Claude Code), a pedido do Vinicios
 **Migration:** nenhuma
