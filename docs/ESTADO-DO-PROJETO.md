@@ -18,7 +18,7 @@
 **O que so existe depois de rodar**
 
 ```
-npm run db:migrate          # migrations 0009 a 0020 (0020: confirmação do aprendizado e Sem resposta ligada aos chamados — 30/09)
+npm run db:migrate          # migrations 0009 a 0021 (0021: "pé na areia" → "à beira-mar" no conteúdo gravado — 18/10)
 npm run db:migrar-fotos     # tira as imagens do WordPress antigo
 ```
 
@@ -92,6 +92,10 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+0000000. **"À beira-mar" (18/10):** rodar `npm run db:migrate` (migration
+   **0021**). Ela troca "pé na areia" por "à beira-mar" em todo texto gravado
+   no banco (seções da home, cartões, banners, SEO, FAQ, treinamento da
+   Marina…). Sem ela, o título da home continua "…pé na areia".
 000000. **Domínios (17/10, em andamento):** os dois domínios já usam o DNS do
    registro.br (modo avançado) e estão na Vercel. Falta criar as linhas A/CNAME
    quando a zona sair de "transição" e, com tudo azul na Vercel, trocar
