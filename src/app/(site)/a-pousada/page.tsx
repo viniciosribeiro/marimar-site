@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "A Pousada — Pousada Marimar, Encantadas, Ilha do Mel",
-  description: "Administração familiar em Encantadas, a poucos passos do trapiche, com restaurante próprio pé na areia: o Marimar Café Bistrô Bar.",
+  description: "Administração familiar em Encantadas, a poucos passos do trapiche, com restaurante próprio à beira-mar: o Marimar Café Bistrô Bar.",
 };
 
 export default async function APousadaPage() {
@@ -63,7 +63,7 @@ export default async function APousadaPage() {
               </p>
               <p>
                 O que não mudou foi a posição: de frente para o mar, a poucos passos do trapiche por onde chega
-                quem visita Encantadas, com o restaurante da casa pé na areia.
+                quem visita Encantadas, com o restaurante da casa à beira-mar.
               </p>
               <p className="text-gray-400 text-xs">
                 Este texto pode ser editado no painel administrativo, em Identidade Visual e dados da pousada.

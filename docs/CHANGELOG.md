@@ -6,6 +6,25 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-18 (2) — "À beira-mar" no site inteiro, no lugar de "pé na areia"
+**Autor:** Claude (Claude Code), a pedido do Vinicios
+**Migration:** nenhuma
+
+- Todo texto do código que dizia "pé na areia" agora diz **"à beira-mar"**:
+  home (cartão do restaurante e letreiro da foto), restaurante (título da
+  página, descrição e letreiro), a pousada, galeria, eventos, os fatos que a
+  Marina lê (`src/lib/conteudo-pousada.ts`: frase, FAQ, diferenciais, como
+  chegar), prévia do editor de tema e `seed`/`db:corrigir`.
+- Onde virou repetição ("à beira-mar, de frente para o mar"), o fim da frase
+  passou a "na Praia de Encantadas".
+- **O que fica no banco não muda sozinho:** títulos preenchidos em Seções da
+  página inicial, o SEO em Identidade visual e itens do treinamento da
+  Marina. O título "Hospedagem com restaurante pé na areia" da home vem do
+  banco (o deploy de 18/10 terminou e ele continuou): trocar em Seções da
+  página inicial → "Restaurante e pousada" → Título.
+- A migration antiga 0014 (texto em `descricao_curta`) não foi alterada; essa
+  coluna não aparece no site.
+
 ## 2026-10-18 — Título da home: "Hospedagem com restaurante à beira-mar"
 **Autor:** Claude (Claude Code), a pedido do Vinicios
 **Migration:** nenhuma

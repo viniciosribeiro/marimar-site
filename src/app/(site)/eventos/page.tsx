@@ -6,7 +6,7 @@ import { comSql } from "@/lib/db-conexao";
 
 export const metadata: Metadata = {
   title: "Eventos e Casamentos — Pousada Marimar, Ilha do Mel",
-  description: "Casamentos, festas e confraternizações em Encantadas, usando o jardim, o restaurante pé na areia e a proximidade do mar.",
+  description: "Casamentos, festas e confraternizações em Encantadas, usando o jardim e o restaurante à beira-mar.",
 };
 
 export default async function EventosPage() {

@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 17/10/2026 (domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
+> Atualizado em 18/10/2026 ("à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
 
 ## Onde estamos
 
@@ -193,8 +193,9 @@ unica coisa que de fato melhora as respostas.
 - ⚠️ **A Pousada Marimar é a protagonista; o restaurante é DELA.** Decisão do
   Vinicios em 28/09/2026, que **substitui** o briefing de 18/09
   (`docs/briefing/`): não repetir "pousada anexada aos fundos" nas páginas.
-  O que continua valendo: as suítes NÃO ficam na areia — "pé na areia" é
-  sempre o restaurante. Textos centralizados em `COMPLEXO`
+  O que continua valendo: as suítes NÃO ficam na areia. Desde 18/10/2026
+  (decisão do Vinicios) o site **não usa mais "pé na areia"**: o restaurante
+  é **"à beira-mar"**, e só ele (nunca "suítes à beira-mar"). Textos centralizados em `COMPLEXO`
   (`src/lib/conteudo-pousada.ts`).
 - ⚠️ **Mas todo texto que o HÓSPEDE lê vai acentuado e por extenso.** "Diária",
   "Até 4 pessoas", "2 noites" (nunca "noite(s)"). Valores em BRL passam por

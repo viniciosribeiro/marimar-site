@@ -14,9 +14,9 @@ import type { CategoriaCardapio } from "@/lib/cardapio";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Marimar Café Bistrô Bar — restaurante pé na areia em Encantadas",
+  title: "Marimar Café Bistrô Bar — restaurante à beira-mar em Encantadas",
   description:
-    "Restaurante da Pousada Marimar, pé na areia de frente para a Praia de Encantadas. Cardápio, café da manhã incluso e reserva de mesa.",
+    "Restaurante da Pousada Marimar, à beira-mar de frente para a Praia de Encantadas. Cardápio, café da manhã incluso e reserva de mesa.",
 };
 
 /**
@@ -100,7 +100,7 @@ export default async function RestaurantePage() {
         rotulo="Gastronomia"
         titulo={RESTAURANTE.nome}
         texto={RESTAURANTE.posicao}
-        manuscrita={"Pé na areia,\nde frente pro mar"}
+        manuscrita={"À beira-mar,\nna Praia de Encantadas"}
         atributos={[
           { icone: "🐟", texto: "Peixes e frutos do mar" },
           { icone: "🍹", texto: "Drinks e bebidas" },
