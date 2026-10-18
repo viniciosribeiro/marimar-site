@@ -217,7 +217,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                 </p>
                 <Selecao rotulo="Corpo do texto" valor={tema.fonteCorpo} aoMudar={(v) => set("fonteCorpo", v)} opcoes={FONTES_CORPO} />
                 <p style={{ fontFamily: tema.fonteCorpo, lineHeight: tema.alturaLinha }} className="text-sm text-tinta-suave mt-2 mb-5">
-                  A Pousada Marimar tem restaurante próprio pé na areia, de frente para o mar.
+                  A Pousada Marimar tem restaurante próprio à beira-mar, na Praia de Encantadas.
                 </p>
                 <div className="border-t border-linha/60 pt-4">
                   <Selecao rotulo="Anotações à mão" valor={tema.fonteManuscrita} aoMudar={(v) => set("fonteManuscrita", v)} opcoes={FONTES_MANUSCRITA} />
@@ -371,7 +371,7 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                     lang="pt-BR"
                     style={{ textAlign: tema.alinhamento.justificado ? "justify" : "left", hyphens: "auto" }}>
                     A Pousada Marimar fica em Encantadas, a poucos passos do trapiche,
-                    e tem restaurante próprio pé na areia: o Marimar Café Bistrô Bar,
+                    e tem restaurante próprio à beira-mar: o Marimar Café Bistrô Bar,
                     de frente para a Praia de Encantadas.
                   </p>
                 </div>

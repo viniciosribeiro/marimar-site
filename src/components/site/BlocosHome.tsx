@@ -225,7 +225,7 @@ function Complexo({ t, s, itens, d }: { t: string | null; s: string | null; iten
         {
           id: "restaurante", icone: "talheres", cor: "coral",
           titulo: RESTAURANTE.nome,
-          texto: "O restaurante da pousada, pé na areia, de frente para a Praia de Encantadas. Peixes, camarões, drinks e o melhor visual da ilha.",
+          texto: "O restaurante da pousada, à beira-mar, de frente para a Praia de Encantadas. Peixes, camarões, drinks e o melhor visual da ilha.",
           imagem_url: d.fotos?.restaurante?.url ?? null, href: "/restaurante", cta_texto: "Conheça o restaurante",
         },
       ];
@@ -378,7 +378,7 @@ function Restaurante({ t, s, d }: { t: string | null; s: string | null; d: Dados
           ) : (
             <FundoSemFoto tom="acento" />
           )}
-          <Manuscrita tamanho="lg" className="absolute left-5 bottom-4 text-white drop-shadow-[0_2px_10px_rgb(0_0_0/0.5)]">pé na areia</Manuscrita>
+          <Manuscrita tamanho="lg" className="absolute left-5 bottom-4 text-white drop-shadow-[0_2px_10px_rgb(0_0_0/0.5)]">à beira-mar</Manuscrita>
         </div>
 
         <div>

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Galeria — Pousada Marimar, Ilha do Mel",
-  description: "Fotos da pousada, das suítes, do restaurante pé na areia, do café da manhã e da praia de Encantadas.",
+  description: "Fotos da pousada, das suítes, do restaurante à beira-mar, do café da manhã e da praia de Encantadas.",
 };
 
 type Linha = { url: string; alt: string; secao: string; quarto_id: string | null; quarto_nome: string | null; quarto_slug: string | null };
@@ -52,7 +52,7 @@ export default async function GaleriaPage() {
       <span className="text-marca font-semibold text-[0.7rem] uppercase tracking-[0.22em]">Fotos</span>
       <h1 className="font-titulo text-3xl lg:text-5xl font-bold text-tinta mt-2 mb-3">Galeria</h1>
       <p className="text-tinta-suave leading-relaxed mb-8 max-w-2xl">
-        A pousada, cada suíte, o restaurante pé na areia e a Ilha do Mel. Toque numa foto para ver em tela cheia.
+        A pousada, cada suíte, o restaurante à beira-mar e a Ilha do Mel. Toque numa foto para ver em tela cheia.
       </p>
 
       {grupos.length === 0 ? (

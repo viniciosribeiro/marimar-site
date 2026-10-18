@@ -23,7 +23,7 @@ const TELEFONE_REAL = "(41) 99501-2920";
 
 // Mesma frase de COMPLEXO.fraseLonga (src/lib/conteudo-pousada.ts), 28/09/2026.
 const DESCRICAO_CORRETA =
-  "A Pousada Marimar fica em Encantadas, a poucos passos do trapiche, e tem restaurante próprio pé na areia: o Marimar Café Bistrô Bar, de frente para o mar.";
+  "A Pousada Marimar fica em Encantadas, a poucos passos do trapiche, e tem restaurante próprio à beira-mar: o Marimar Café Bistrô Bar, na Praia de Encantadas.";
 
 let clienteAberto: { end: () => Promise<void> } | null = null;
 
