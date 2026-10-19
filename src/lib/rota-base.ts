@@ -4,15 +4,26 @@
  * testes/unit/rota.test.ts. Fluxo e serviços: docs/fluxo-rota.md.
  *
  * Tudo gratuito e sem chave: mapa MapLibre (código aberto) com estilos do
- * OpenFreeMap, rotas do OSRM da FOSSGIS (dados OpenStreetMap), busca de
- * endereço do Photon (Komoot). Os endereços dos serviços ficam na
- * configuração (painel → Rota e mapa), para trocar sem mexer em código.
+ * OpenFreeMap e relevo dos Terrain Tiles da AWS, rotas do OSRM da FOSSGIS
+ * (dados OpenStreetMap), busca de endereço do Photon (Komoot). Os endereços
+ * dos serviços ficam na configuração (painel → Rota e mapa), para trocar sem
+ * mexer em código. O Mapbox é opcional: com um token público (pk.) no
+ * painel, o mapa passa a ser o dele (satélite, prédios e luz da hora).
  */
 
 export type Ponto = { nome: string; lat: number; lng: number };
 export type LngLat = [number, number];
 export type Terminal = Ponto & { id: string; barcoMin: number; principal?: boolean; observacao?: string };
 export type EstiloMapa = { id: string; nome: string; url: string };
+
+/** Como o mapa aparece no site (painel → Rota e mapa → Visual do mapa). */
+export type MapaConfig = {
+  /** "livre": OpenFreeMap, grátis e sem chave. "mapbox": precisa de token público (pk.). */
+  provedor: "livre" | "mapbox";
+  mapboxToken: string;
+  /** Como o mapa abre: inclinado, com relevo e prédios (3d), ou visto de cima (2d). */
+  vista: "3d" | "2d";
+};
 
 export type RotaConfig = {
   ativo: boolean;
@@ -23,7 +34,8 @@ export type RotaConfig = {
   ilha: LngLat[];
   estilos: EstiloMapa[];
   estiloPadrao: string;
-  servicos: { rotaCarro: string; rotaPe: string; busca: string };
+  servicos: { rotaCarro: string; rotaPe: string; busca: string; relevo: string };
+  mapa: MapaConfig;
   textos: { titulo: string; subtitulo: string; dicaSinal: string; chegada: string };
   /** Pontos marcados como "confira": o painel avisa até alguém confirmar. */
   conferido: boolean;
@@ -58,7 +70,10 @@ export const ROTA_PADRAO: RotaConfig = {
     rotaCarro: "https://routing.openstreetmap.de/routed-car/route/v1/driving",
     rotaPe: "https://routing.openstreetmap.de/routed-foot/route/v1/driving",
     busca: "https://photon.komoot.io/api/",
+    /* Terrain Tiles (AWS Open Data, formato Terrarium): relevo do 3D gratuito. */
+    relevo: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
   },
+  mapa: { provedor: "livre", mapboxToken: "", vista: "3d" },
   textos: {
     titulo: "Trace sua rota até a pousada",
     subtitulo: "De onde você estiver: de carro ou ônibus até o terminal, de barco até Encantadas e a pé até a nossa porta.",
@@ -86,9 +101,37 @@ export function mesclarRota(salvo: unknown): RotaConfig {
     estilos,
     estiloPadrao: estilos.some((e) => e.id === s.estiloPadrao) ? s.estiloPadrao! : estilos[0].id,
     servicos: { ...ROTA_PADRAO.servicos, ...(s.servicos ?? {}) },
+    mapa: {
+      provedor: s.mapa?.provedor === "mapbox" ? "mapbox" : "livre",
+      mapboxToken: typeof s.mapa?.mapboxToken === "string" ? s.mapa.mapboxToken.trim() : "",
+      vista: s.mapa?.vista === "2d" ? "2d" : "3d",
+    },
     textos: { ...ROTA_PADRAO.textos, ...(s.textos ?? {}) },
     conferido: s.conferido ?? false,
   };
+}
+
+/* ── Mapbox (opcional) ───────────────────────────────────────────── */
+
+/** Token público do Mapbox: começa com "pk.". O secreto ("sk.") nunca vai para o site. */
+export const tokenMapboxValido = (t: string) => /^pk\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/.test(t.trim());
+
+/** O token do Mapbox, se ele estiver ligado e o token for público; senão null (mapa gratuito). */
+export const mapboxDoSite = (c: Pick<RotaConfig, "mapa">) =>
+  c.mapa.provedor === "mapbox" && tokenMapboxValido(c.mapa.mapboxToken) ? c.mapa.mapboxToken.trim() : null;
+
+/** Estilos do Mapbox (Standard: prédios, árvores e luz conforme a hora). */
+export const ESTILOS_MAPBOX: EstiloMapa[] = [
+  { id: "mapbox-mapa", nome: "Mapa", url: "mapbox://styles/mapbox/standard" },
+  { id: "mapbox-satelite", nome: "Satélite", url: "mapbox://styles/mapbox/standard-satellite" },
+];
+
+/** Luz do Mapbox Standard pela hora na ilha: amanhecer, dia, entardecer ou noite. */
+export function luzDaHora(hora: number): "dawn" | "day" | "dusk" | "night" {
+  if (hora >= 5 && hora < 7) return "dawn";
+  if (hora >= 7 && hora < 17) return "day";
+  if (hora >= 17 && hora < 19) return "dusk";
+  return "night";
 }
 
 /* ── geometria ───────────────────────────────────────────────────── */
@@ -137,7 +180,10 @@ export const terminalPadrao = (c: RotaConfig, id?: string | null) =>
 export const urlOsrm = (base: string, de: { lat: number; lng: number }, para: { lat: number; lng: number }) =>
   `${base.replace(/\/+$/, "")}/${de.lng.toFixed(6)},${de.lat.toFixed(6)};${para.lng.toFixed(6)},${para.lat.toFixed(6)}?overview=full&geometries=geojson&steps=true`;
 
-export type Passo = { texto: string; distancia: number; local: LngLat };
+/** O desenho da seta da instrução (navegação em tela inteira). */
+export type Seta = "frente" | "esquerda" | "direita" | "leve-esquerda" | "leve-direita" | "retorno" | "rotatoria" | "barco" | "chegada";
+
+export type Passo = { texto: string; distancia: number; local: LngLat; seta?: Seta };
 
 type ManobraOsrm = { type: string; modifier?: string; location: LngLat; exit?: number };
 type PassoOsrm = { maneuver: ManobraOsrm; name?: string; ref?: string; distance: number; mode?: string };
@@ -174,6 +220,20 @@ export function textoPasso(p: PassoOsrm): string {
   }
 }
 
+/** A seta de uma manobra do OSRM. */
+export function setaDoPasso(m: Pick<ManobraOsrm, "type" | "modifier">): Seta {
+  if (m.type === "arrive") return "chegada";
+  if (/roundabout|rotary/.test(m.type)) return "rotatoria";
+  switch (m.modifier) {
+    case "left": case "sharp left": return "esquerda";
+    case "right": case "sharp right": return "direita";
+    case "slight left": return "leve-esquerda";
+    case "slight right": return "leve-direita";
+    case "uturn": return "retorno";
+    default: return "frente";
+  }
+}
+
 export type Trecho = {
   tipo: "carro" | "barco" | "pe";
   titulo: string;
@@ -191,7 +251,7 @@ export function trechoDoOsrm(tipo: "carro" | "pe", titulo: string, de: Ponto, pa
   if (!r) return trechoReto(tipo, titulo, de, para);
   const passos = (r.legs?.[0]?.steps ?? [])
     .filter((s) => s.maneuver && (s.distance > 0 || s.maneuver.type === "arrive"))
-    .map((s) => ({ texto: textoPasso(s), distancia: s.distance, local: s.maneuver.location }));
+    .map((s) => ({ texto: textoPasso(s), distancia: s.distance, local: s.maneuver.location, seta: setaDoPasso(s.maneuver) }));
   return { tipo, titulo, de, para, distancia: r.distance, duracao: r.duration, linha: r.geometry.coordinates, passos };
 }
 
@@ -204,10 +264,180 @@ export function trechoReto(tipo: Trecho["tipo"], titulo: string, de: Ponto, para
     tipo, titulo, de, para, distancia: d,
     duracao: duracaoMin ? duracaoMin * 60 : (d * (tipo === "carro" ? 1.3 : 1.15)) / VELOCIDADE[tipo],
     linha: [[de.lng, de.lat], [para.lng, para.lat]],
-    passos: [{ texto: tipo === "barco" ? `Embarque para ${para.nome}` : `Siga até ${para.nome}`, distancia: d, local: [de.lng, de.lat] }],
+    passos: [{ texto: tipo === "barco" ? `Embarque para ${para.nome}` : `Siga até ${para.nome}`, distancia: d, local: [de.lng, de.lat], seta: tipo === "barco" ? "barco" : "frente" }],
     aproximado: tipo !== "barco",
   };
 }
+
+/* ── percurso: a rota inteira numa linha só ─────────────────────── */
+
+/**
+ * Para a navegação em tela inteira: os trechos (carro, barco, a pé) viram uma
+ * linha só, com os metros acumulados em cada ponto. "ao" é quanto do caminho
+ * já ficou para trás — daí saem a próxima instrução, o que falta, a direção
+ * do caminho e a parte já andada (cinza no mapa).
+ */
+export type PassoPercurso = { texto: string; seta: Seta; tipo: Trecho["tipo"]; ao: number };
+export type Percurso = {
+  linha: LngLat[];
+  /** Metros do início até cada ponto de `linha`. */
+  acum: number[];
+  total: number;
+  trechos: { tipo: Trecho["tipo"]; ini: number; fim: number; duracao: number; para: string }[];
+  passos: PassoPercurso[];
+};
+
+const metros = (a: LngLat, b: LngLat) => distancia({ lng: a[0], lat: a[1] }, { lng: b[0], lat: b[1] });
+const iguais = (a: LngLat | undefined, b: LngLat) => !!a && a[0] === b[0] && a[1] === b[1];
+
+/** Rumo de a para b, em graus (0 = norte, sentido horário). */
+export function rumo(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const r = Math.PI / 180, f1 = a.lat * r, f2 = b.lat * r, dl = (b.lng - a.lng) * r;
+  const y = Math.sin(dl) * Math.cos(f2), x = Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl);
+  return (Math.atan2(y, x) / r + 360) % 360;
+}
+
+/** Seta de uma instrução sem seta (rota salva antes de 19/10/2026): lida do texto. */
+export function setaDoTexto(t: string): Seta {
+  if (/retorno/i.test(t)) return "retorno";
+  if (/rotatória/i.test(t)) return "rotatoria";
+  if (/embarque/i.test(t)) return "barco";
+  if (/chegou|chegada/i.test(t)) return "chegada";
+  if (/levemente à esquerda/i.test(t)) return "leve-esquerda";
+  if (/levemente à direita/i.test(t)) return "leve-direita";
+  if (/esquerda/i.test(t)) return "esquerda";
+  if (/direita/i.test(t)) return "direita";
+  return "frente";
+}
+
+/** Ponto da linha mais perto de p, entre os índices de e ate (aproximação plana). */
+function maisPerto(p: { lat: number; lng: number }, linha: LngLat[], acum: number[], de: number, ate: number) {
+  const k = 111320, cos = Math.cos((p.lat * Math.PI) / 180);
+  const px = p.lng * k * cos, py = p.lat * k;
+  if (ate <= de) return { ao: acum[de] ?? 0, distancia: Math.hypot(px - linha[de][0] * k * cos, py - linha[de][1] * k) };
+  let melhor = { ao: acum[de], distancia: Infinity };
+  for (let i = de; i < ate; i++) {
+    const ax = linha[i][0] * k * cos, ay = linha[i][1] * k, bx = linha[i + 1][0] * k * cos, by = linha[i + 1][1] * k;
+    const dx = bx - ax, dy = by - ay;
+    const t = dx || dy ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy))) : 0;
+    const d = Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+    if (d < melhor.distancia) melhor = { ao: acum[i] + t * (acum[i + 1] - acum[i]), distancia: d };
+  }
+  return melhor;
+}
+
+export function montarPercurso(trechos: Trecho[]): Percurso {
+  const linha: LngLat[] = [], acum: number[] = [];
+  const faixas: Percurso["trechos"] = [];
+  const passos: PassoPercurso[] = [];
+  for (const t of trechos) {
+    if (!t.linha.length) continue;
+    const i0 = iguais(linha[linha.length - 1], t.linha[0]) ? linha.length - 1 : linha.length;
+    for (const pt of t.linha) {
+      const ultimo = linha[linha.length - 1];
+      if (iguais(ultimo, pt)) continue;
+      acum.push(ultimo ? acum[acum.length - 1] + metros(ultimo, pt) : 0);
+      linha.push(pt);
+    }
+    const i1 = linha.length - 1;
+    faixas.push({ tipo: t.tipo, ini: acum[i0], fim: acum[i1], duracao: t.duracao, para: t.para.nome });
+    for (const p of t.passos) {
+      const chegada = /^Você chegou ao destino/.test(p.texto);
+      passos.push({
+        texto: chegada ? `Chegada: ${t.para.nome}` : p.texto,
+        seta: chegada ? "chegada" : p.seta ?? setaDoTexto(p.texto),
+        tipo: t.tipo,
+        ao: maisPerto({ lng: p.local[0], lat: p.local[1] }, linha, acum, i0, i1).ao,
+      });
+    }
+  }
+  const total = acum[acum.length - 1] ?? 0;
+  const ultimo = trechos[trechos.length - 1];
+  if (ultimo && !passos.some((p) => p.seta === "chegada" && total - p.ao < 30)) {
+    passos.push({ texto: `Chegada: ${ultimo.para.nome}`, seta: "chegada", tipo: ultimo.tipo, ao: total });
+  }
+  passos.sort((a, b) => a.ao - b.ao);
+  return { linha, acum, total, trechos: faixas, passos };
+}
+
+/**
+ * Onde, no percurso, fica a posição p. Com `perto` (o "ao" anterior), procura
+ * primeiro ali em volta — a rota pode passar duas vezes pela mesma rua.
+ */
+export function projetar(p: { lat: number; lng: number }, perc: Percurso, perto?: number): { ao: number; distancia: number } {
+  const n = perc.linha.length;
+  if (!n) return { ao: 0, distancia: Infinity };
+  if (perto !== undefined) {
+    let de = 0;
+    while (de < n - 1 && perc.acum[de + 1] < perto - 200) de++;
+    let ate = de;
+    while (ate < n - 1 && perc.acum[ate] < perto + 3000) ate++;
+    const r = maisPerto(p, perc.linha, perc.acum, de, ate);
+    if (r.distancia < 60) return r;
+  }
+  return maisPerto(p, perc.linha, perc.acum, 0, n - 1);
+}
+
+/** O ponto que fica `ao` metros depois do início. */
+export function pontoEm(perc: Percurso, ao: number): { lat: number; lng: number } {
+  const { linha, acum } = perc;
+  if (!linha.length) return { lat: 0, lng: 0 };
+  if (ao <= 0 || linha.length === 1) return { lng: linha[0][0], lat: linha[0][1] };
+  if (ao >= perc.total) return { lng: linha[linha.length - 1][0], lat: linha[linha.length - 1][1] };
+  let lo = 0, hi = acum.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (acum[m] <= ao) lo = m; else hi = m; }
+  const t = acum[hi] > acum[lo] ? (ao - acum[lo]) / (acum[hi] - acum[lo]) : 0;
+  return { lng: linha[lo][0] + (linha[hi][0] - linha[lo][0]) * t, lat: linha[lo][1] + (linha[hi][1] - linha[lo][1]) * t };
+}
+
+/** Para onde o caminho segue a partir de `ao` (olhando `adiante` metros à frente). */
+export function rumoEm(perc: Percurso, ao: number, adiante = 25): number {
+  const fim = Math.min(perc.total, ao + adiante);
+  if (fim - ao < 1) return rumo(pontoEm(perc, Math.max(0, ao - adiante)), pontoEm(perc, ao));
+  return rumo(pontoEm(perc, ao), pontoEm(perc, fim));
+}
+
+/** A próxima instrução (a primeira manobra à frente) e a seguinte. */
+export function proximoPasso(perc: Percurso, ao: number): { atual: number; depois: number | null } {
+  const i = perc.passos.findIndex((p) => p.ao > ao + 8);
+  const atual = i < 0 ? perc.passos.length - 1 : i;
+  return { atual, depois: atual + 1 < perc.passos.length ? atual + 1 : null };
+}
+
+/** O trecho em que a pessoa está (ou o próximo, no intervalo entre dois). */
+export function trechoEm(perc: Percurso, ao: number) {
+  return perc.trechos.find((t) => ao <= t.fim) ?? perc.trechos[perc.trechos.length - 1];
+}
+
+/** Metros e segundos que faltam: o tempo de cada trecho, proporcional ao que falta dele. */
+export function restante(perc: Percurso, ao: number): { distancia: number; duracao: number } {
+  const duracao = perc.trechos.reduce((s, t) => {
+    if (ao <= t.ini) return s + t.duracao;
+    if (ao >= t.fim || t.fim <= t.ini) return s;
+    return s + (t.duracao * (t.fim - ao)) / (t.fim - t.ini);
+  }, 0);
+  return { distancia: Math.max(0, perc.total - ao), duracao };
+}
+
+/** A parte já andada (fica cinza no mapa). */
+export function linhaAte(perc: Percurso, ao: number): LngLat[] {
+  if (ao <= 0 || !perc.linha.length) return [];
+  const pts: LngLat[] = [];
+  for (let i = 0; i < perc.linha.length && perc.acum[i] < ao; i++) pts.push(perc.linha[i]);
+  const p = pontoEm(perc, ao);
+  pts.push([p.lng, p.lat]);
+  return pts.length >= 2 ? pts : [];
+}
+
+/** Prévia do caminho: velocidade (m/s) do sobrevoo em cada trecho — uns 20 a 30 s por trecho. */
+export function velocidadePrevia(tipo: Trecho["tipo"], comprimento: number): number {
+  if (tipo === "pe") return Math.max(14, comprimento / 30);
+  if (tipo === "barco") return Math.max(60, comprimento / 12);
+  return Math.max(150, comprimento / 22);
+}
+
+/** Zoom da câmera pela velocidade: devagar, perto do chão; rápido, mais alto. */
+export const zoomPorVelocidade = (v: number) => Math.min(17.6, Math.max(11.5, 18.6 - Math.log2(Math.max(1, v) / 5)));
 
 /* ── texto ───────────────────────────────────────────────────────── */
 

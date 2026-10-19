@@ -4,9 +4,16 @@
 
 O hóspede traça a rota **de onde estiver até a porta da pousada** sem sair do
 site: carro (ou ônibus) até o terminal, barco até o Trapiche de Encantadas e,
-por fim, a pé até a pousada. No celular, dá para acompanhar ao vivo.
+por fim, a pé até a pousada. No celular, dá para acompanhar ao vivo, em
+tela inteira. O mapa abre em 3D (inclinado, com relevo e prédios); quem
+quiser troca para 2D no próprio mapa.
 
-## Serviços (todos gratuitos e sem chave)
+**Desde 19/10/2026 (aprovado pelo Vinicios):** navegação em **tela inteira**,
+**prévia do caminho** ("Ver o caminho em 3D", a mesma tela andando sozinha,
+para ver em casa) e **Mapbox opcional** (painel → Rota e mapa → Visual e
+serviços).
+
+## Serviços (gratuitos e sem chave; o Mapbox é opcional)
 
 | Para quê | Serviço | Onde se troca |
 |---|---|---|
@@ -14,6 +21,8 @@ por fim, a pé até a pousada. No celular, dá para acompanhar ao vivo.
 | Calcular a rota de carro e a pé | **OSRM da FOSSGIS** (`routing.openstreetmap.de/routed-car` e `/routed-foot`), com dados do OpenStreetMap | idem |
 | Buscar o endereço digitado | **Photon** (Komoot) | idem |
 | QR "abrir no celular" | pacote `qrcode`, gerado no navegador | — |
+| Relevo do 3D gratuito | **Terrain Tiles da AWS** (Open Data, formato Terrarium: `s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png`), com CORS aberto | Painel → Visual e serviços → Endereços |
+| Mapa mais bonito (opcional) | **Mapbox GL JS 3.32** (pacote `mapbox-gl`, só baixado quando o Mapbox está ligado) com o estilo **Standard** (prédios, árvores, luz da hora na ilha) e **Standard Satellite**; relevo `mapbox-terrain-dem-v1` | Painel → Visual e serviços → Mapbox (token **público**, `pk.`) |
 
 Esses serviços são comunitários e têm uso justo, sem cota paga. O consumo é
 baixo: uma rota por visitante, calculada no navegador dele. Se um deles
@@ -37,10 +46,33 @@ aproximada.
 - **Computador:** a pessoa digita de onde vai sair ou usa os atalhos
   (Curitiba, Aeroporto). O botão **Abrir no celular** mostra um QR com a rota
   pronta.
-- **Navegação ao vivo (celular):** tela cheia, a tela não apaga (Wake Lock),
-  próximo passo a menos de 25 m, recálculo quando a pessoa se afasta mais de
-  90 m da rota (no máximo a cada 45 s, e nunca no trecho de barco), "Você
-  chegou" a menos de 35 m da pousada.
+- **Navegação ao vivo (celular), em tela inteira** (`NavegacaoTelaCheia.tsx`):
+  só o mapa na tela — o menu do site e os botões da Marina e do WhatsApp
+  somem. Em cima, a próxima manobra (seta, distância, texto e "Depois");
+  embaixo, em vidro, a hora de chegada, o que falta, a barra de progresso por
+  trecho, as **Etapas** e **Sair**. Ao lado: ver o caminho inteiro, 3D/2D e
+  visual do mapa; se a pessoa arrasta o mapa aparece **Recentralizar**.
+  A câmera segue a pessoa virada para onde o caminho vai, com o ponto
+  "grudado" na rota quando está a menos de 25 m dela; o ponto desliza entre
+  as leituras do GPS. A parte andada fica cinza. A tela não apaga (Wake Lock,
+  pedido de novo ao voltar para o app). Recalcula quando a pessoa se afasta
+  mais de 90 m (no máximo a cada 45 s, nunca no barco). "Você chegou" a menos
+  de 35 m da pousada.
+  - **Android e computador:** tela cheia de verdade (Fullscreen API; a barra
+    do navegador some). Sair da tela cheia (Esc, gesto de voltar) fecha a
+    navegação.
+  - **iPhone:** o Safari não deixa um site esconder a própria barra; o mapa
+    cobre a página inteira e a barrinha do endereço fica embaixo.
+  - **Voltar do celular** fecha só a navegação, e a página volta para onde
+    estava (há uma entrada no histórico com `history.pushState`, que o Next
+    16 aceita).
+  - Desenhada no `<body>` (`createPortal`): dentro da página, o movimento do
+    site (transform em ancestrais) prendia o `position: fixed`, e o menu
+    ficava por cima.
+- **Prévia do caminho** ("Ver o caminho em 3D", em todo aparelho): a mesma
+  tela, com o ponto andando sozinho em voo baixo (uns 20 a 30 s por trecho;
+  câmera mais alta no carro e no barco). Pausar, ver de novo, Sair. Serve
+  para conhecer o caminho em casa e para testar a navegação sem estar na ilha.
 - **Sinal fraco:** a última rota fica guardada no aparelho por 7 dias
   (`localStorage`, chave `marimar:rota-salva`).
 - **Link compartilhável:** `/como-chegar?de=LAT,LNG&terminal=pontal&modo=carro#rota`
@@ -60,8 +92,15 @@ não estiver salvo vem de `ROTA_PADRAO` (`src/lib/rota-base.ts`).
 - **Terminais:** nome, minutos de barco, observação e qual é o principal
   (até 6).
 - **Textos:** título, subtítulo, dica do sinal e mensagem de chegada.
-- **Visual e serviços:** o estilo que abre primeiro e, em "avançado", os
-  endereços dos serviços.
+- **Visual e serviços:**
+  - **Como o mapa abre:** 3D (padrão) ou 2D;
+  - **Mapbox (opcional):** ligar e colar o token **público** (`pk.`). O
+    secreto (`sk.`) é recusado na tela e na action. Sem Mapbox ligado, ou se
+    ele falhar no aparelho do hóspede (token recusado, cota, sem rede), o
+    site volta sozinho para o mapa gratuito (`aoFalharMapbox`). O mapa do
+    painel já mostra o Mapbox antes de salvar e avisa se ele recusou o token;
+  - o estilo gratuito que abre primeiro e, em "avançado", os endereços dos
+    serviços (inclusive o do relevo).
 - **Mostrar a rota em Como chegar:** o interruptor geral.
 
 Tudo vale na hora (a página é `force-dynamic`, e a action chama
@@ -75,10 +114,11 @@ esteja ligada e `NEXT_PUBLIC_SITE_URL` exista.
 
 | Arquivo | O quê |
 |---|---|
-| `src/lib/rota-base.ts` | tipos, padrão, geometria (haversine, ponto na ilha, distância até a linha), OSRM → trechos, instruções em português, links externos. Sem banco e sem rede. |
+| `src/lib/rota-base.ts` | tipos, padrão, geometria (haversine, ponto na ilha, distância até a linha), OSRM → trechos (com a seta de cada manobra), instruções em português, links externos, Mapbox (`mapboxDoSite`, `tokenMapboxValido`, `luzDaHora`) e o **percurso** da navegação (`montarPercurso`, `projetar`, `pontoEm`, `rumoEm`, `proximoPasso`, `restante`, `linhaAte`, velocidade e zoom da prévia). Sem banco e sem rede. |
 | `src/lib/rota.ts` | ler e salvar no banco |
-| `src/components/site/rota/MapaRota.tsx` | o mapa (MapLibre): linhas, pinos, "você", estilos, 3D |
-| `src/components/site/rota/PlanejadorRota.tsx` | a tela do hóspede: origem, modo, terminal, linha do tempo, navegação |
+| `src/components/site/rota/MapaRota.tsx` | o mapa, com dois motores (MapLibre gratuito ou Mapbox): linhas com brilho, parte andada, pinos, "você" (ponto ou seta deitada no chão), estilos, 3D (relevo, céu, prédios), voo de abertura, câmera da navegação |
+| `src/components/site/rota/NavegacaoTelaCheia.tsx` | navegação e prévia em tela inteira (GPS, câmera, instruções, etapas, tela cheia, voltar) |
+| `src/components/site/rota/PlanejadorRota.tsx` | a tela do hóspede: origem, modo, terminal, linha do tempo, botões de navegação e prévia, 3D/2D |
 | `src/app/(admin)/admin/rota/` | o painel |
 | `scripts/copiar-maplibre.mjs` | copia o worker do MapLibre 6 para `public/vendor/maplibre/` (roda no `predev` e no `prebuild`; a pasta é ignorada pelo git) |
 
@@ -123,6 +163,13 @@ O Chromium sem tela precisa de `--use-gl=swiftshader --enable-unsafe-swiftshader
 para o WebGL (o e2e já passa esses flags).
 
 ## Limites conhecidos
+
+- **O Mapbox não foi aberto daqui** (o ambiente em nuvem não alcança
+  `api.mapbox.com`). Foi testado que o pacote carrega, tenta o Mapbox e, sem
+  ele, volta para o gratuito. Conferir no aparelho de verdade com o token.
+- O 3D pesa mais que o 2D em celular antigo; o hóspede troca no mapa, e o
+  painel define como abre.
+- No iPhone a barra do Safari não some (limite do próprio iPhone para sites).
 
 - **Nada disto foi testado contra os serviços reais**: o ambiente em nuvem
   bloqueia hosts externos, e todo teste foi feito com o simulador. Primeiro

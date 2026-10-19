@@ -3,14 +3,15 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
-  Navigation, LocateFixed, Car, Bus, Ship, Footprints, Search, Share2, Smartphone, Compass, Box, X, ChevronDown,
-  MapPin, Loader2, RotateCcw, PartyPopper, QrCode,
+  Navigation, LocateFixed, Car, Bus, Ship, Footprints, Search, Share2, Smartphone, ChevronDown,
+  MapPin, Loader2, QrCode, Clapperboard,
 } from "lucide-react";
 import {
-  distancia, naIlha, terminalPadrao, urlOsrm, trechoDoOsrm, trechoReto, formatarDistancia, formatarDuracao,
-  detectarAparelho, linksExternos, distanciaAteLinha, type RotaConfig, type Trecho, type Ponto, type Aparelho,
+  naIlha, terminalPadrao, urlOsrm, trechoDoOsrm, trechoReto, formatarDistancia, formatarDuracao,
+  detectarAparelho, linksExternos, mapboxDoSite, ESTILOS_MAPBOX, type RotaConfig, type Trecho, type Ponto, type Aparelho,
 } from "@/lib/rota-base";
 import type { Marcador, Voce } from "./MapaRota";
+import { NavegacaoTelaCheia } from "./NavegacaoTelaCheia";
 
 /* O mapa pesa: só baixa no navegador, quando esta seção existe. */
 const MapaRota = dynamic(() => import("./MapaRota"), {
@@ -32,8 +33,11 @@ const COR_TRECHO = { carro: "bg-blue-600", barco: "bg-cyan-600", pe: "bg-orange-
  *  - quem está no continente (celular ou computador): carro/ônibus até o
  *    terminal, barco até Encantadas, a pé até a porta;
  *  - quem já está na ilha: rota a pé;
- *  - quem está andando com o celular: navegação ao vivo (posição, próxima
- *    instrução, "você chegou").
+ *  - quem está andando com o celular: navegação ao vivo em tela inteira
+ *    (posição, próxima instrução, "você chegou") — NavegacaoTelaCheia;
+ *  - quem quer ver antes: a prévia do caminho, a mesma tela andando sozinha.
+ * O mapa abre em 3D (painel → Rota e mapa → Visual do mapa) e usa o Mapbox
+ * quando ele está ligado lá; se o Mapbox falhar, volta para o gratuito.
  * Os apps do aparelho (Apple Maps, Google Maps, Waze) ficam como plano B.
  * Fluxo, serviços e limites: docs/fluxo-rota.md.
  */
@@ -48,27 +52,31 @@ export function PlanejadorRota({ config }: { config: RotaConfig }) {
   const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [sugestoes, setSugestoes] = useState<Sugestao[]>([]);
-  const [estilo, setEstilo] = useState(config.estiloPadrao);
-  const [tresD, setTresD] = useState(false);
-  const [navegando, setNavegando] = useState(false);
+  /* Mapbox se estiver ligado no painel e não tiver falhado neste aparelho. */
+  const [mapboxFalhou, setMapboxFalhou] = useState(false);
+  const mapbox = mapboxFalhou ? null : mapboxDoSite(config);
+  const estilos = mapbox ? ESTILOS_MAPBOX : config.estilos;
+  const [estiloEscolhido, setEstilo] = useState<string | null>(null);
+  const estilo = estilos.some((e) => e.id === estiloEscolhido) ? estiloEscolhido! : mapbox ? estilos[0].id : config.estiloPadrao;
+  const [tresD, setTresD] = useState(config.mapa.vista === "3d");
+  const [nav, setNav] = useState<"gps" | "previa" | null>(null);
   const [voce, setVoce] = useState<Voce | null>(null);
-  const [passo, setPasso] = useState(0);
-  const [chegou, setChegou] = useState(false);
   const [aberto, setAberto] = useState<number | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
-  const vigia = useRef<number | null>(null);
-  const trava = useRef<WakeLockSentinel | null>(null);
-  const ultimoRecalculo = useRef(0);
+  const botaoNav = useRef<HTMLButtonElement>(null);
+  const botaoPrevia = useRef<HTMLButtonElement>(null);
+  const falharMapbox = useCallback((motivo: string) => {
+    console.warn("[rota] Mapbox não abriu, usando o mapa gratuito:", motivo);
+    setMapboxFalhou(true);
+  }, []);
 
   const terminal = terminalPadrao(config, terminalId);
-  const todosPassos = useMemo(() => (trechos ?? []).flatMap((t) => t.passos.map((p) => ({ ...p, tipo: t.tipo }))), [trechos]);
-  const linhaToda = useMemo(() => (trechos ?? []).flatMap((t) => t.linha), [trechos]);
   const total = useMemo(() => (trechos ?? []).reduce((s, t) => ({ d: s.d + t.distancia, t: s.t + t.duracao }), { d: 0, t: 0 }), [trechos]);
 
   /* ── calcular a rota ─────────────────────────────────────────── */
   const calcular = useCallback(async (o: Origem, m: Modo, tId: string) => {
-    setCarregando("rota"); setErro(null); setChegou(false); setPasso(0);
+    setCarregando("rota"); setErro(null);
     const t = terminalPadrao(config, tId);
     const buscar = async (base: string, de: Ponto, para: Ponto) => {
       try {
@@ -177,66 +185,19 @@ export function PlanejadorRota({ config }: { config: RotaConfig }) {
     void calcular(o, modo, terminalId);
   }
 
-  /* ── navegação ao vivo ───────────────────────────────────────── */
-  const parar = useCallback(() => {
-    if (vigia.current !== null) navigator.geolocation.clearWatch(vigia.current);
-    vigia.current = null;
-    trava.current?.release().catch(() => {});
-    trava.current = null;
-    setNavegando(false);
-  }, []);
-
-  /* A cada nova posição: chegou? próxima instrução? saiu da rota? Usa o
-     estado mais recente por uma ref — este callback nasce uma vez só. */
-  const atual = useRef({ trechos, todosPassos, linhaToda, modo, terminalId });
-  useEffect(() => { atual.current = { trechos, todosPassos, linhaToda, modo, terminalId }; });
-  function aoAndar(p: { lat: number; lng: number }) {
-    const a = atual.current;
-    if (!a.trechos) return;
-    if (distancia(p, config.pousada) < 35) { setChegou(true); parar(); return; }
-    setPasso((i) => {
-      let j = i;
-      while (j < a.todosPassos.length - 1 && distancia(p, { lng: a.todosPassos[j].local[0], lat: a.todosPassos[j].local[1] }) < 25) j++;
-      return j;
-    });
-    const noBarco = a.trechos.some((t) => t.tipo === "barco" && distanciaAteLinha(p, t.linha) < 1500);
-    if (!noBarco && distanciaAteLinha(p, a.linhaToda) > 90 && Date.now() - ultimoRecalculo.current > 45000) {
-      ultimoRecalculo.current = Date.now();
-      void calcular({ nome: "Sua localização", lat: p.lat, lng: p.lng, fonte: "gps" }, a.modo, a.terminalId);
-    }
-  }
-
-  async function navegar() {
-    if (!trechos) return;
-    /* iPhone: a bússola precisa de permissão, pedida no toque. */
-    const DOE = window.DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
-    if (typeof DOE?.requestPermission === "function") { try { await DOE.requestPermission(); } catch { /* segue sem bússola */ } }
-    try { trava.current = await (navigator as Navigator & { wakeLock?: { request: (t: string) => Promise<WakeLockSentinel> } }).wakeLock?.request("screen") ?? null; } catch { /* sem trava de tela */ }
-    setNavegando(true);
-    vigia.current = navigator.geolocation.watchPosition(
-      (p) => {
-        const agora = { lat: p.coords.latitude, lng: p.coords.longitude };
-        setVoce((v) => ({ ...agora, precisao: p.coords.accuracy, direcao: p.coords.heading ?? v?.direcao ?? null }));
-        aoAndar(agora);
-      },
-      () => setErro("Perdi o sinal de localização. A rota continua na tela."),
-      { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 },
-    );
-  }
-
-  /* bússola: gira o cone do "você" (Android: absoluto; iPhone: webkitCompassHeading) */
-  useEffect(() => {
-    if (!navegando) return;
-    const girar = (e: DeviceOrientationEvent & { webkitCompassHeading?: number }) => {
-      const graus = e.webkitCompassHeading ?? (e.absolute && e.alpha !== null ? 360 - e.alpha : null);
-      if (graus !== null && graus !== undefined) setVoce((v) => (v ? { ...v, direcao: Math.round(graus) } : v));
-    };
-    const evento = "ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation";
-    window.addEventListener(evento, girar as EventListener);
-    return () => window.removeEventListener(evento, girar as EventListener);
-  }, [navegando]);
-
-  useEffect(() => () => parar(), [parar]);
+  /* ── navegação em tela inteira (NavegacaoTelaCheia) ─────────── */
+  /* Saiu do caminho: recalcula a partir de onde a pessoa está. */
+  const atual = useRef({ modo, terminalId });
+  useEffect(() => { atual.current = { modo, terminalId }; });
+  const sairDaRota = useCallback((p: { lat: number; lng: number }) => {
+    void calcular({ nome: "Sua localização", lat: p.lat, lng: p.lng, fonte: "gps" }, atual.current.modo, atual.current.terminalId);
+  }, [calcular]);
+  const fecharNav = useCallback(() => {
+    const qual = nav;
+    setNav(null);
+    /* O foco volta para o botão que abriu. */
+    setTimeout(() => (qual === "previa" ? botaoPrevia : botaoNav).current?.focus({ preventScroll: true }), 50);
+  }, [nav]);
 
   /* ── compartilhar / QR ───────────────────────────────────────── */
   const linkRota = origem ? `${typeof window !== "undefined" ? window.location.origin : ""}/como-chegar?de=${origem.lat.toFixed(5)},${origem.lng.toFixed(5)}&terminal=${terminalId}&modo=${modo}#rota` : "";
@@ -259,13 +220,11 @@ export function PlanejadorRota({ config }: { config: RotaConfig }) {
     ...(trechos && trechos.length > 1 ? [{ id: "trapiche", tipo: "trapiche" as const, ...config.trapiche }, { id: "terminal", tipo: "terminal" as const, nome: terminal.nome, lat: terminal.lat, lng: terminal.lng }] : []),
     ...(origem && origem.fonte !== "gps" ? [{ id: "origem", tipo: "origem" as const, ...origem }] : []),
   ];
-  const proximo = todosPassos[passo];
 
   return (
     <div id="rota" className="scroll-mt-24">
-      <div className={navegando ? "fixed inset-0 z-[60] flex flex-col bg-white" : "grid gap-5 lg:grid-cols-[minmax(0,24rem)_1fr]"}>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,24rem)_1fr]">
         {/* ── painel ── */}
-        {!navegando && (
           <div className="order-2 space-y-4 lg:order-1">
             <div className="rounded-marca border border-linha/70 bg-white p-5 shadow-marca">
               <h3 className="font-semibold text-tinta">{config.textos.titulo}</h3>
@@ -363,10 +322,14 @@ export function PlanejadorRota({ config }: { config: RotaConfig }) {
                 </ol>
 
                 {aparelho !== "desktop" && (
-                  <button onClick={navegar} className="mt-4 flex w-full min-h-12 items-center justify-center gap-2 rounded-full bg-tinta px-5 font-semibold text-white">
+                  <button ref={botaoNav} onClick={() => setNav("gps")} className="mt-4 flex w-full min-h-12 items-center justify-center gap-2 rounded-full bg-tinta px-5 font-semibold text-white">
                     <Navigation className="h-5 w-5" /> Começar a navegação
                   </button>
                 )}
+                <button ref={botaoPrevia} onClick={() => setNav("previa")}
+                  className={`flex w-full min-h-12 items-center justify-center gap-2 rounded-full px-5 font-semibold ${aparelho === "desktop" ? "mt-4 bg-tinta text-white" : "mt-2 border border-linha text-tinta hover:border-marca"}`}>
+                  <Clapperboard className="h-5 w-5" /> Ver o caminho em 3D
+                </button>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button onClick={compartilhar} className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-linha px-4 text-sm text-tinta hover:border-marca">
                     <Share2 className="h-4 w-4" /> {copiado ? "Link copiado" : "Enviar a rota"}
@@ -396,59 +359,40 @@ export function PlanejadorRota({ config }: { config: RotaConfig }) {
               </div>
             </div>
           </div>
-        )}
 
         {/* ── mapa ── */}
-        <div className={navegando ? "relative flex-1" : "order-1 lg:order-2"}>
-          <div className={`relative overflow-hidden ${navegando ? "h-full" : "h-[58vh] min-h-[22rem] rounded-marca border border-linha/70 lg:h-[40rem]"}`}>
-            <MapaRota className="h-full w-full" estilos={config.estilos} estilo={estilo} marcadores={marcadores} trechos={trechos ?? []}
-              voce={voce} seguir={navegando} tresD={tresD} centro={config.pousada} />
+        <div className="order-1 lg:order-2">
+          <div className="relative h-[58vh] min-h-[22rem] overflow-hidden rounded-marca border border-linha/70 lg:h-[40rem]">
+            {/* Durante a navegação o mapa da página sai de cena (um mapa só desenhando por vez). */}
+            {nav ? <div className="h-full w-full bg-areia/60" /> : (
+              <MapaRota key={mapbox ? "mapbox" : "livre"} className="h-full w-full" estilos={estilos} estilo={estilo} marcadores={marcadores}
+                trechos={trechos ?? []} voce={voce} tresD={tresD} centro={config.pousada} mapbox={mapbox} relevo={config.servicos.relevo}
+                intro aoFalharMapbox={falharMapbox} />
+            )}
             <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
-              <div className="flex overflow-hidden rounded-full bg-white/95 p-1 shadow-lg backdrop-blur">
-                {config.estilos.map((e) => (
-                  <button key={e.id} onClick={() => setEstilo(e.id)} aria-pressed={estilo === e.id}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold ${estilo === e.id ? "bg-tinta text-white" : "text-tinta"}`}>{e.nome}</button>
+              {estilos.length > 1 && (
+                <div className="flex overflow-hidden rounded-full bg-white/95 p-1 shadow-lg backdrop-blur">
+                  {estilos.map((e) => (
+                    <button key={e.id} onClick={() => setEstilo(e.id)} aria-pressed={estilo === e.id}
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${estilo === e.id ? "bg-tinta text-white" : "text-tinta"}`}>{e.nome}</button>
+                  ))}
+                </div>
+              )}
+              <div className="flex overflow-hidden rounded-full bg-white/95 p-1 shadow-lg backdrop-blur" role="group" aria-label="Como ver o mapa">
+                {([[true, "3D"], [false, "2D"]] as const).map(([v, r]) => (
+                  <button key={r} onClick={() => setTresD(v)} aria-pressed={tresD === v} title={v ? "Inclinado, com relevo e prédios" : "Visto de cima"}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${tresD === v ? "bg-tinta text-white" : "text-tinta"}`}>{r}</button>
                 ))}
               </div>
-              <button onClick={() => setTresD((v) => !v)} aria-pressed={tresD} title="Ver em 3D"
-                className={`flex h-9 items-center gap-1 rounded-full px-3 text-xs font-semibold shadow-lg ${tresD ? "bg-tinta text-white" : "bg-white/95 text-tinta"}`}><Box className="h-3.5 w-3.5" /> 3D</button>
             </div>
-
-            {navegando && (
-              <>
-                <div className="absolute inset-x-3 top-3 z-20 rounded-2xl bg-tinta p-4 text-white shadow-2xl">
-                  {proximo ? (
-                    <>
-                      <p className="text-xs uppercase tracking-wider text-white/70">{proximo.tipo === "barco" ? "Travessia" : "Próximo"}</p>
-                      <p className="mt-0.5 text-lg font-semibold leading-snug">{proximo.texto}</p>
-                      {voce && <p className="mt-1 text-sm text-white/80">em {formatarDistancia(distancia(voce, { lat: proximo.local[1], lng: proximo.local[0] }))} · faltam {formatarDistancia(distancia(voce, config.pousada))} até a pousada</p>}
-                    </>
-                  ) : <p className="font-semibold">Procurando sua posição…</p>}
-                </div>
-                <div className="absolute inset-x-3 bottom-4 z-20 flex gap-2">
-                  <button onClick={() => setVoce((v) => (v ? { ...v } : v))} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-white font-semibold text-tinta shadow-xl">
-                    <Compass className="h-5 w-5" /> Centralizar
-                  </button>
-                  <button onClick={parar} className="flex h-12 items-center justify-center gap-2 rounded-full bg-red-600 px-6 font-semibold text-white shadow-xl">
-                    <X className="h-5 w-5" /> Sair
-                  </button>
-                </div>
-              </>
-            )}
           </div>
         </div>
       </div>
 
-      {chegou && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-tinta/50 p-6" role="dialog" aria-label="Você chegou">
-          <div className="max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl">
-            <PartyPopper className="mx-auto h-10 w-10 text-marca" />
-            <p className="mt-3 text-lg font-semibold text-tinta">{config.textos.chegada}</p>
-            <button onClick={() => setChegou(false)} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-marca px-6 font-semibold text-marca-texto">
-              <RotateCcw className="h-4 w-4" /> Fechar
-            </button>
-          </div>
-        </div>
+      {nav && trechos && (
+        <NavegacaoTelaCheia modo={nav} trechos={trechos} config={config} marcadores={marcadores} estilos={estilos}
+          estiloInicial={estilo} tresDInicial={tresD} mapbox={mapbox} aoFalharMapbox={falharMapbox}
+          aoSairDaRota={nav === "gps" ? sairDaRota : undefined} aoFechar={fecharNav} />
       )}
     </div>
   );

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { exigirSessao } from "@/lib/admin-sessao";
 import { comSql } from "@/lib/db-conexao";
-import { mesclarRota, ROTA_PADRAO, type RotaConfig } from "@/lib/rota-base";
+import { mesclarRota, tokenMapboxValido, ROTA_PADRAO, type RotaConfig } from "@/lib/rota-base";
 import { salvarRotaNoBanco } from "@/lib/rota";
 
 export type Resultado = { ok: boolean; mensagem: string };
@@ -30,6 +30,10 @@ export async function salvarRota(fd: FormData): Promise<Resultado> {
   for (const u of [...Object.values(c.servicos), ...c.estilos.map((e) => e.url)]) {
     if (!urlValida(u)) return { ok: false, mensagem: `Endereço de serviço inválido: ${u.slice(0, 80)}` };
   }
+  /* Mapbox: só o token público vai para o site; o secreto (sk.) nunca é guardado. */
+  if (c.mapa.mapboxToken.startsWith("sk.")) return { ok: false, mensagem: "Esse é o token secreto do Mapbox (sk.). Use o público (pk.): o secreto nunca pode ir para o site." };
+  if (c.mapa.mapboxToken && !tokenMapboxValido(c.mapa.mapboxToken)) return { ok: false, mensagem: "O token do Mapbox não parece válido. Copie de novo o token público (pk.)." };
+  if (c.mapa.provedor === "mapbox" && !c.mapa.mapboxToken) return { ok: false, mensagem: "Para ligar o Mapbox, cole o token público (pk.)." };
   const limpo: RotaConfig = {
     ...c,
     terminais: c.terminais.slice(0, 6).map((t) => ({ ...t, nome: t.nome.slice(0, 80), observacao: t.observacao?.slice(0, 300) })),

@@ -34,7 +34,9 @@ try {
   ok(await pc.getByRole("button", { name: "Usar minha localização" }).isVisible(), "pc: botão de localização");
   ok(!(await pc.getByText(/Plus Code/i).count()), "pc: nada de “Plus Code” na página");
   await pc.getByPlaceholder(/Ou digite de onde vai sair/).fill("Curitiba"); await pc.waitForTimeout(1200);
-  await pc.getByRole("button", { name: /^Curitiba/ }).first().click(); await pc.waitForTimeout(3000);
+  /* Espera a sugestão aparecer: antes dela, o primeiro "Curitiba" é o atalho, que a lista cobre. */
+  await pc.locator("#rota ul button").first().waitFor({ timeout: 15000 });
+  await pc.locator("#rota ul button").first().click(); await pc.waitForTimeout(3000);
   ok(await pc.getByText("De carro até Terminal de Pontal do Sul").isVisible(), "pc: trecho de carro até o terminal");
   ok(await pc.getByText(/Barco até Trapiche de Encantadas/).isVisible(), "pc: trecho de barco");
   ok(await pc.getByText("A pé até a pousada").isVisible(), "pc: trecho a pé");
@@ -43,7 +45,13 @@ try {
   await pc.getByRole("radio", { name: /Terminal de Paranaguá/ }).click(); await pc.waitForTimeout(1500);
   ok(await pc.getByText(/até Terminal de Paranaguá/).isVisible(), "pc: troca de terminal");
   await pc.getByRole("button", { name: "Claro", exact: true }).click();
-  await pc.getByRole("button", { name: /3D/ }).click(); await pc.waitForTimeout(800);
+  await pc.getByRole("button", { name: "2D", exact: true }).click(); await pc.waitForTimeout(800);
+  await pc.getByRole("button", { name: "3D", exact: true }).click(); await pc.waitForTimeout(800);
+  /* Prévia do caminho em tela inteira (computador: Esc fecha). */
+  await pc.getByRole("button", { name: "Ver o caminho em 3D" }).click(); await pc.waitForTimeout(3000);
+  ok(await pc.getByRole("dialog", { name: /Prévia do caminho/ }).isVisible(), "pc: prévia do caminho em tela inteira");
+  await pc.keyboard.press("Escape"); await pc.waitForTimeout(800);
+  ok(!(await pc.locator(".nav-tela").count()), "pc: Esc fecha a prévia");
   await pc.getByRole("button", { name: /Abrir no celular/ }).click(); await pc.waitForTimeout(800);
   ok(await pc.locator("#rota svg path").count() > 0, "pc: QR code para abrir no celular");
   await pc.locator("#rota").screenshot({ path: `${SAIDA}/rota-computador.png` });
@@ -60,10 +68,12 @@ try {
   ok(await cel.getByRole("link", { name: "Apple Maps" }).isVisible(), "iPhone: plano B no Apple Maps");
   await cel.screenshot({ path: `${SAIDA}/rota-iphone.png`, fullPage: false });
   await cel.getByRole("button", { name: /Começar a navegação/ }).click(); await cel.waitForTimeout(2500);
-  ok(await cel.getByText(/Próximo|Procurando/).first().isVisible(), "iPhone: navegação ao vivo aberta");
+  ok(await cel.getByRole("dialog", { name: "Navegação até a pousada" }).isVisible(), "iPhone: navegação em tela inteira aberta");
   await cel.screenshot({ path: `${SAIDA}/rota-navegando.png` });
   await ctx.setGeolocation(POUSADA); await cel.waitForTimeout(3000);
-  ok(await cel.getByRole("dialog", { name: "Você chegou" }).isVisible(), "iPhone: “você chegou” na porta da pousada");
+  ok(await cel.getByRole("button", { name: "Fechar o mapa" }).isVisible(), "iPhone: “você chegou” na porta da pousada");
+  await cel.getByRole("button", { name: "Fechar o mapa" }).click(); await cel.waitForTimeout(800);
+  ok(!(await cel.locator(".nav-tela").count()), "iPhone: fechar volta para a página");
 
   /* ── Android, link compartilhado ────────────────────────────── */
   const and = await (await nav.newContext({ ...devices["Pixel 7"] })).newPage();
