@@ -1,4 +1,4 @@
-import { fetchTarifas, validarConsulta } from "@/lib/worker";
+import { fetchTarifas, validarConsulta, TIMEOUT_BUSCA } from "@/lib/worker";
 import { buildDeepLink } from "@/lib/deeplink";
 import { tituloQuarto, resumir, brl, pluralizar, escassez, dataBR } from "@/lib/format";
 import Link from "next/link";
@@ -12,6 +12,8 @@ import {
 } from "@/lib/regras-hospedagem";
 
 export const dynamic = "force-dynamic";
+/* O motor demora em datas concorridas: a busca espera até 45 s (TIMEOUT_BUSCA). */
+export const maxDuration = 60;
 
 export default async function ReservarPage({ searchParams }: { searchParams: Promise<{ check_in?: string; check_out?: string; adultos?: string; criancas?: string; bebes?: string }> }) {
   const sp = await searchParams;
@@ -41,7 +43,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
 
   // O motor e a parte lenta: a consulta comeca antes do banco, em paralelo.
   const tarifas = v?.ok
-    ? fetchTarifas(v.consulta.checkIn, v.consulta.checkOut, oc.adultosMotor, oc.criancasMotor)
+    ? fetchTarifas(v.consulta.checkIn, v.consulta.checkOut, oc.adultosMotor, oc.criancasMotor, { timeoutMs: TIMEOUT_BUSCA })
     : null;
   tarifas?.catch(() => {}); // o erro e tratado no await abaixo
 
@@ -91,7 +93,9 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
             : null,
         };
       });
-    } catch {
+    } catch (e) {
+      /* O motivo vai para os logs da Vercel (Logs → /reservar). */
+      console.error("[reservar] busca falhou:", ci, co, (e as Error)?.message ?? e);
       erro = "Não conseguimos consultar a disponibilidade agora. Tente novamente em instantes ou fale com a gente no WhatsApp.";
     } finally {
       await sql.end();

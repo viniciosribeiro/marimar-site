@@ -1,12 +1,14 @@
 import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
-import { fetchTarifas, validarConsulta } from "@/lib/worker";
+import { fetchTarifas, validarConsulta, TIMEOUT_BUSCA } from "@/lib/worker";
 import { buildDeepLink } from "@/lib/deeplink";
 import { brl, dataBR, datasExemplo, pluralizar } from "@/lib/format";
 import { comSql } from "@/lib/db-conexao";
 import { lerRegras, calcularOcupacao, textoCriancas } from "@/lib/regras-hospedagem";
 
 export const dynamic = "force-dynamic";
+/* O motor demora em datas concorridas: a busca espera até 45 s (TIMEOUT_BUSCA). */
+export const maxDuration = 60;
 
 /**
  * Disponibilidade e preço para a Marina.
@@ -41,7 +43,7 @@ export async function GET(request: NextRequest) {
     const regras = await comSql(lerRegras);
     const noites = Math.round((Date.parse(co) - Date.parse(ci)) / 86_400_000);
     const oc = calcularOcupacao({ ...v.consulta, noites }, regras);
-    const data = await fetchTarifas(ci, co, oc.adultosMotor, oc.criancasMotor);
+    const data = await fetchTarifas(ci, co, oc.adultosMotor, oc.criancasMotor, { timeoutMs: TIMEOUT_BUSCA });
     const todos = [...data.quartos, ...data.indisponiveis];
     const ids = todos.map((r) => r.id);
     const locais = ids.length
