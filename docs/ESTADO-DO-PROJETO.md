@@ -92,6 +92,9 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+00000000. **Painel como central (19/10):** estudo e protótipo aguardando aprovação
+   do Vinicios (`docs/estudo-painel-central.md`). Não começar a reorganização
+   do painel sem o OK dele; a fase 1 é a combinada para começar.
 0000000. **"À beira-mar" (18/10):** rodar `npm run db:migrate` (migration
    **0021**). Ela troca "pé na areia" por "à beira-mar" em todo texto gravado
    no banco (seções da home, cartões, banners, SEO, FAQ, treinamento da

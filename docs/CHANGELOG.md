@@ -6,6 +6,13 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 (3) — Estudo do painel como central (proposta, sem código)
+**Autor:** Claude (Claude Code)
+**Migration:** nenhuma
+
+Diagnóstico do painel, novo mapa em sete áreas, fases e protótipo clicável,
+para o Vinicios aprovar antes de qualquer código: `docs/estudo-painel-central.md`.
+
 ## 2026-10-19 (2) — Busca do topo abaixo da foto, em vidro ("liquid glass")
 **Autor:** Claude (Claude Code), com as escolhas do Vinicios
 **Migration:** nenhuma
