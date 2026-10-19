@@ -37,8 +37,11 @@ export function BuscaHome({ pacotes = [], criancas = null }: { pacotes?: Pacote[
        sem isso a fila de abas define a largura, a caixa passa da tela e a
        PAGINA INTEIRA ganha rolagem horizontal — foi o que quebrou no
        celular. */
-    <div className="w-full min-w-0 bg-white rounded-marca shadow-2xl max-w-3xl mx-auto overflow-hidden text-left">
-      <div className="flex border-b border-linha overflow-x-auto min-w-0">
+    <div className="w-full min-w-0 bg-white rounded-marca shadow-2xl max-w-3xl mx-auto overflow-hidden text-left
+      sm:bg-transparent sm:bg-gradient-to-b sm:from-white/75 sm:via-white/60 sm:to-white/50
+      sm:backdrop-blur-2xl sm:backdrop-saturate-150 sm:border sm:border-white/70
+      sm:shadow-[0_24px_60px_-18px_rgb(0_0_0/0.45),inset_0_1px_0_rgb(255_255_255/0.85),inset_0_-1px_0_rgb(255_255_255/0.25)]">
+      <div className="flex border-b border-linha sm:border-white/60 overflow-x-auto min-w-0">
         {ABAS.map((a) => (
           <button
             key={a.id}
@@ -48,7 +51,7 @@ export function BuscaHome({ pacotes = [], criancas = null }: { pacotes?: Pacote[
             className={`flex flex-1 sm:flex-none items-center justify-center gap-2 px-2.5 sm:px-5 py-3 text-xs sm:text-sm font-medium whitespace-nowrap min-w-0 transition-marca ${
               aba === a.id
                 ? "bg-marca text-marca-texto"
-                : "text-tinta-suave hover:bg-areia"
+                : "text-tinta-suave hover:bg-areia sm:hover:bg-white/55"
             }`}
           >
             <span className="shrink-0"><Icone nome={a.icone} tamanho={16} /></span>
@@ -65,24 +68,24 @@ export function BuscaHome({ pacotes = [], criancas = null }: { pacotes?: Pacote[
               <label className="col-span-2 sm:col-span-1">
                 <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Check-in</span>
                 <input type="date" name="check_in" required
-                  className="w-full px-3 py-2.5 rounded-lg border border-linha text-tinta text-sm focus:ring-2 focus:ring-marca outline-none" />
+                  className="w-full px-3 py-2.5 rounded-lg border border-linha bg-white sm:border-white/80 sm:bg-white/80 text-tinta text-sm focus:ring-2 focus:ring-marca outline-none" />
               </label>
               <label className="col-span-2 sm:col-span-1">
                 <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Check-out</span>
                 <input type="date" name="check_out" required
-                  className="w-full px-3 py-2.5 rounded-lg border border-linha text-tinta text-sm focus:ring-2 focus:ring-marca outline-none" />
+                  className="w-full px-3 py-2.5 rounded-lg border border-linha bg-white sm:border-white/80 sm:bg-white/80 text-tinta text-sm focus:ring-2 focus:ring-marca outline-none" />
               </label>
               <label>
                 <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Adultos</span>
                 <select name="adultos" defaultValue="2"
-                  className="w-full px-3 py-2.5 rounded-lg border border-linha text-tinta text-sm focus:ring-2 focus:ring-marca outline-none">
+                  className="w-full px-3 py-2.5 rounded-lg border border-linha bg-white sm:border-white/80 sm:bg-white/80 text-tinta text-sm focus:ring-2 focus:ring-marca outline-none">
                   <option>1</option><option>2</option><option>3</option><option>4</option>
                 </select>
               </label>
               <label>
                 <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">{criancas ? `Crianças (${criancas.idadeColoMax + 1}+)` : "Crianças"}</span>
                 <select name="criancas" defaultValue="0"
-                  className="w-full px-3 py-2.5 rounded-lg border border-linha text-tinta text-sm focus:ring-2 focus:ring-marca outline-none">
+                  className="w-full px-3 py-2.5 rounded-lg border border-linha bg-white sm:border-white/80 sm:bg-white/80 text-tinta text-sm focus:ring-2 focus:ring-marca outline-none">
                   <option>0</option><option>1</option><option>2</option><option>3</option>
                 </select>
               </label>
@@ -90,7 +93,7 @@ export function BuscaHome({ pacotes = [], criancas = null }: { pacotes?: Pacote[
                 <label>
                   <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Bebês (até {criancas.idadeColoMax})</span>
                   <select name="bebes" defaultValue="0"
-                    className="w-full px-3 py-2.5 rounded-lg border border-linha text-tinta text-sm focus:ring-2 focus:ring-marca outline-none">
+                    className="w-full px-3 py-2.5 rounded-lg border border-linha bg-white sm:border-white/80 sm:bg-white/80 text-tinta text-sm focus:ring-2 focus:ring-marca outline-none">
                     <option>0</option><option>1</option><option>2</option>
                   </select>
                 </label>

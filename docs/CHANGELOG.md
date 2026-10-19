@@ -6,6 +6,26 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 (2) — Busca do topo abaixo da foto, em vidro ("liquid glass")
+**Autor:** Claude (Claude Code), com as escolhas do Vinicios
+**Migration:** nenhuma
+
+- No computador e no tablet a caixa de busca (Hospedagem · Pacotes ·
+  Informações) ficava no meio da foto do topo e escondia o assunto dela.
+  Agora fica **abaixo da foto, subindo um pouco sobre a borda** (4 rem no
+  tablet, 5 rem no computador): `BuscaAbaixoDaFoto` em `CarrosselBanners.tsx`,
+  usado pelo carrossel e pelo topo de foto única. A altura da foto não mudou.
+- Do tablet para cima a caixa ganhou visual de vidro: fundo branco
+  translúcido em degradê, desfoque e saturação do que está atrás, borda e
+  brilho claros (`BuscaHome.tsx`, classes `sm:`).
+- **Celular igual a antes** (decisão do Vinicios): abaixo da foto, fundo
+  branco sólido.
+- Para a busca não cobrir o texto do banner nem os pontinhos do carrossel, o
+  espaço de baixo do banner e do topo cresceu (`sm:pb-32 lg:pb-36`) e os
+  pontinhos subiram.
+- Conferido com Playwright em 375, 768, 1280 e 1440 px, com e sem banner:
+  foto livre, sem rolagem horizontal.
+
 ## 2026-10-19 — Busca de datas no site falhava e a Marina respondia
 **Autor:** Claude (Claude Code)
 **Migration:** nenhuma
