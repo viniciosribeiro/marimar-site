@@ -6,6 +6,17 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 (5) — Gavetas e janelas do painel legíveis no vidro
+**Autor:** Claude (Claude Code), a partir de um print do Vinicios
+**Migration:** nenhuma
+
+Janelas, gavetas e diálogos são desenhados direto no `<body>` (createPortal),
+fora de `.painel-admin`. Como o vidro estava preso a essa classe, a gaveta
+"Novo roteiro" ficava transparente (o fundo aparecia atrás dos campos) e o
+botão principal sem cor. As variáveis e as classes `.vidro*` agora valem em
+qualquer lugar (`admin.css`); o vidro forte ficou um pouco mais opaco (86%).
+Conferido em 390 e 1280 px (Novo roteiro, Ensinar a Marina).
+
 ## 2026-10-19 (4) — Painel novo, fase 1: a Central em vidro líquido
 **Autor:** Claude (Claude Code), aprovado pelo Vinicios
 **Migration:** nenhuma
