@@ -6,6 +6,31 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 (11) — Calendário de estadia na busca (home e /reservar)
+**Autor:** Claude (Claude Code), aprovado pelo Vinicios depois do protótipo
+**Migration:** nenhuma
+
+As duas caixas de data do aparelho davam o problema que o Vinicios
+apontou: escolhida a entrada em 28/12, a de saída abria em outubro (mês
+atual) e a pessoa avançava mês a mês. Agora é um calendário só
+(`src/components/site/SeletorDatas.tsx`, contas em `src/lib/calendario.ts`):
+- primeiro toque = entrada, segundo = saída; o intervalo fica pintado e o
+  topo mostra "28 dez → 1 jan · 4 noites"; "Confirmar · 4 noites";
+- escolhida a entrada, o calendário fica naquele mês com o seguinte ao lado
+  (no computador, se a entrada cai no mês da direita, os meses andam um
+  passo); reaberto pela saída, abre no mês da entrada;
+- computador: janela com dois meses, centrada embaixo da busca (a página
+  desce até ela aparecer inteira), prévia das noites ao passar o mouse;
+  celular: folha que sobe com 18 meses empilhados, já rolada no mês certo;
+- dias passados riscados; hoje com círculo; feriados nacionais com um ponto
+  (Páscoa calculada: Carnaval, Sexta-feira Santa, Corpus Christi);
+- sem as duas datas, "Ver disponibilidade"/"Buscar" abre o calendário em vez
+  de enviar.
+O formulário continua mandando `check_in`/`check_out` (AAAA-MM-DD): busca,
+motor, preços, Marina e "Reservar no site oficial" não mudam. Testado em
+1366 e 390 px (home → /reservar com 28/12 → 01/01, reabrir pela saída,
+envio sem datas); 6 testes novos (`npm test` 64/64); build limpo.
+
 ## 2026-10-19 (10) — "Como chegar" passa para o menu A Pousada
 **Autor:** Claude (Claude Code), aprovado pelo Vinicios antes de mexer
 **Migration:** nenhuma

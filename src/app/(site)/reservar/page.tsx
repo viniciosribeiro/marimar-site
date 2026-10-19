@@ -1,5 +1,6 @@
 import { fetchTarifas, validarConsulta, TIMEOUT_BUSCA } from "@/lib/worker";
 import { buildDeepLink } from "@/lib/deeplink";
+import { SeletorDatas } from "@/components/site/SeletorDatas";
 import { tituloQuarto, resumir, brl, pluralizar, escassez, dataBR } from "@/lib/format";
 import Link from "next/link";
 import Image from "next/image";
@@ -116,14 +117,8 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       {/* Mesmo padrão da busca da home: campos largos e altos no celular (os
           seletores tinham a largura do número e eram difíceis de tocar). */}
       <form className={`bg-white rounded-[calc(var(--raio)*1.5)] shadow-marca-forte border border-linha/60 p-4 sm:p-5 mb-10 grid grid-cols-2 ${temRegra ? "sm:grid-cols-6 max-w-5xl" : "sm:grid-cols-5 max-w-4xl"} gap-3`}>
-        <label className="col-span-2 sm:col-span-1 min-w-0">
-          <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Check-in</span>
-          <input type="date" name="check_in" defaultValue={ci} required className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none" />
-        </label>
-        <label className="col-span-2 sm:col-span-1 min-w-0">
-          <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Check-out</span>
-          <input type="date" name="check_out" defaultValue={co} required className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none" />
-        </label>
+        {/* Calendário de estadia: abre no mês da entrada; manda check_in e check_out como antes. */}
+        <SeletorDatas variante="reservar" entradaInicial={ci} saidaInicial={co} />
         <label className="min-w-0">
           <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Adultos</span>
           <select name="adultos" defaultValue={adultos} className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none"><option>1</option><option>2</option><option>3</option><option>4</option></select>
