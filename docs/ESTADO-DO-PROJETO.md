@@ -92,6 +92,11 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+0000000000. **Marina demorando no teste do painel (19/10):** o print mostrou
+   "timeout" ao testar o roteiro "Como chegar a pousada". O teste agora diz
+   se o servidor do OpenClaw não atendeu ou se só está lento. Conferir no
+   servidor (`openclaw gateway status`, `openclaw logs`) e se a skill ainda
+   alcança `https://marimar-site.vercel.app` depois da troca de domínio.
 000000000. **Mapa da rota (19/10):** em 3D, com navegação em tela inteira e
    "Ver o caminho em 3D". Para ligar o Mapbox: painel → Site → Como chegar
    (mapa) → Visual e serviços → token **público** (`pk.`). Recomendado criar
