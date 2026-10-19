@@ -6,6 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { lerRespostaTarifas } from "../../src/lib/worker";
+import { buildDeepLink } from "../../src/lib/deeplink";
 
 const pedido = { checkIn: "2026-12-28", checkOut: "2027-01-01", adultos: 2, criancas: 0 };
 
@@ -44,4 +45,16 @@ test("null, texto no lugar de número e campos faltando não derrubam a busca", 
 test("resposta sem quartos é erro claro", () => {
   assert.throws(() => lerRespostaTarifas({ erro: "motor fora do ar" }, pedido), /motor fora do ar/);
   assert.throws(() => lerRespostaTarifas(null, pedido), /vazia/);
+});
+
+/* Link do "Reservar no site oficial" (19/10/2026): o formato do motor novo, o mesmo da Marina. */
+
+test("buildDeepLink: abre a tela de reserva do motor com datas ISO e hóspedes", () => {
+  const u = new URL(buildDeepLink({ checkIn: "2026-12-30", checkOut: "2027-01-02", adultos: 3, criancas: 1 }));
+  assert.equal(u.origin + u.pathname, "https://reservas.desbravador.com.br/hotel-app/pousada-ilha-do-mel-marimar/reservation");
+  assert.equal(u.searchParams.get("checkin"), "2026-12-30");
+  assert.equal(u.searchParams.get("checkout"), "2027-01-02");
+  assert.equal(u.searchParams.get("adults"), "3");
+  assert.equal(u.searchParams.get("child1"), "1");
+  assert.equal(new URL(buildDeepLink({ checkIn: "2026-11-20", checkOut: "2026-11-22", adultos: 2 })).searchParams.get("child1"), "0");
 });

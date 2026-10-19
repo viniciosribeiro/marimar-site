@@ -6,6 +6,20 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 (9) — "Reservar no site oficial" volta a abrir com datas e hóspedes
+**Autor:** Claude (Claude Code), a partir de um relato do Vinicios
+**Migration:** nenhuma
+
+O botão levava o hóspede à página inicial do Desbravador, que ignorava as
+datas: ele tinha de refazer a busca. O link (`src/lib/deeplink.ts`) ainda
+usava o formato antigo (`?checkin=DD/MM/AAAA&adultos=…&criancas=…`). Agora usa
+o do motor novo, o mesmo que a Marina manda no WhatsApp
+(`/reservation?checkin=AAAA-MM-DD&checkout=AAAA-MM-DD&adults=N&child1=N`).
+Vale para `/reservar`, a página de cada suíte e o `deep_link` das rotas de
+disponibilidade (site e Marina). Teste novo em `testes/unit/worker.test.ts`.
+**Não aberto daqui** (o motor não é alcançável deste ambiente); se o motor
+aceitar um parâmetro para já abrir a suíte escolhida, falta descobrir qual.
+
 ## 2026-10-19 (8) — Ícone da Marimar e abertura animada com a logo
 **Autor:** Claude (Claude Code), a partir de um print do Vinicios
 **Migration:** nenhuma (opções novas dentro de `pousada.tema`)
