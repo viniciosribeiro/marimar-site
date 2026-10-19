@@ -509,3 +509,49 @@ html[data-mov-decor="on"] .gaivotas, html[data-mov-decor="on"] .sol-raios { disp
 @media (prefers-reduced-motion: no-preference) {
   .cerebro-fluxo { stroke-dasharray: 10 4; animation: cerebro-fluxo 1.4s linear infinite; }
 }
+
+/* ═══ Abertura do site (src/components/site/Abertura.tsx, 19/10/2026) ═══
+   A logo surge no centro (do desfoque para o nítido), o texto aparece letra
+   a letra, uma linha fina se desenha e a tela se abre para o site. Só CSS:
+   termina sozinha mesmo sem JavaScript. Uma vez por visita (data-abertura). */
+.abertura {
+  position: fixed; inset: 0; z-index: 200;
+  display: grid; place-items: center;
+  background:
+    radial-gradient(60vmax 50vmax at 50% 42%, color-mix(in oklab, var(--marca) 9%, var(--fundo)) 0%, transparent 70%),
+    linear-gradient(180deg, var(--fundo) 0%, var(--areia) 100%);
+  animation: abertura-sair .7s cubic-bezier(.7, 0, .2, 1) 2.1s forwards;
+}
+html[data-abertura="vista"] .abertura { display: none; }
+.abertura__palco {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  gap: clamp(.9rem, 2.4vh, 1.4rem); padding: 0 1.5rem;
+  animation: abertura-palco-sair .7s cubic-bezier(.7, 0, .2, 1) 2.1s forwards;
+}
+.abertura__halo {
+  position: absolute; left: 50%; top: 40%; width: clamp(200px, 44vmin, 360px); aspect-ratio: 1;
+  translate: -50% -50%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in oklab, var(--acento) 20%, transparent) 0%, transparent 68%);
+  animation: abertura-halo 2.2s ease-out .15s both;
+}
+.abertura__logo { position: relative; display: inline-flex; animation: abertura-logo 1.1s cubic-bezier(.16, 1, .3, 1) .1s both; }
+.abertura__logo img { height: clamp(104px, 24vmin, 168px); width: auto; max-width: 74vw; object-fit: contain; }
+.abertura__logo svg { width: clamp(108px, 26vmin, 160px); height: auto; }
+.abertura__texto {
+  position: relative; display: flex; justify-content: center;
+  font-family: var(--fonte-titulo); font-size: clamp(.95rem, 2.6vmin, 1.25rem); font-weight: 600;
+  letter-spacing: .42em; margin-right: -.42em; text-transform: uppercase; color: var(--tinta);
+}
+.abertura__texto span { display: inline-block; animation: abertura-letra .7s cubic-bezier(.16, 1, .3, 1) calc(.7s + var(--i) * 55ms) both; }
+.abertura__linha {
+  position: relative; width: clamp(56px, 12vmin, 96px); height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--marca), transparent);
+  animation: abertura-linha .9s cubic-bezier(.16, 1, .3, 1) 1.15s both;
+}
+@keyframes abertura-logo { from { opacity: 0; transform: translateY(14px) scale(.86); filter: blur(10px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes abertura-letra { from { opacity: 0; transform: translateY(8px); filter: blur(4px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes abertura-linha { from { opacity: 0; transform: scaleX(0); } to { opacity: 1; transform: scaleX(1); } }
+@keyframes abertura-halo { 0% { opacity: 0; transform: scale(.6); } 45% { opacity: 1; } 100% { opacity: .75; transform: scale(1.12); } }
+@keyframes abertura-palco-sair { to { opacity: 0; transform: translateY(-8px) scale(1.06); filter: blur(6px); } }
+@keyframes abertura-sair { 0% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .abertura { display: none; } }

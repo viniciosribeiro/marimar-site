@@ -4,6 +4,7 @@ import { MenuPrincipal } from "@/components/site/MenuPrincipal";
 import { MarcaLockup } from "@/components/site/MarcaLockup";
 import { RevelarAoRolar } from "@/components/site/RevelarAoRolar";
 import { ChatMarina } from "@/components/site/ChatMarina";
+import { Abertura } from "@/components/site/Abertura";
 import { COLUNAS_RODAPE } from "@/lib/navegacao";
 import { COMPLEXO, CONTATO, IDENTIDADE } from "@/lib/conteudo-pousada";
 import { lerTema } from "@/lib/tema";
@@ -45,6 +46,10 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="min-h-screen flex flex-col bg-fundo">
+      {/* Abertura com a logo (Identidade visual → Forma → Movimento). */}
+      {tema.animacoes && tema.movimento.abertura && (
+        <Abertura logoUrl={p?.logo_url ?? null} texto={tema.movimento.aberturaTexto} />
+      )}
       {mostrarBanner && (
         <div className="bg-acento text-acento-texto text-center text-sm px-4 py-2.5">
           <span className={banner.animado !== false ? "inline-block animate-pulse" : ""}>

@@ -6,6 +6,29 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 (8) — Ícone da Marimar e abertura animada com a logo
+**Autor:** Claude (Claude Code), a partir de um print do Vinicios
+**Migration:** nenhuma (opções novas dentro de `pousada.tema`)
+
+- **Ícone:** o site usava o `favicon.ico` padrão do Next — o triângulo da
+  Vercel —, que aparecia na aba e na tela de abertura do celular. Agora:
+  - `src/app/marca/icone/[tamanho]` gera o ícone (32, 180, 192, 512) da
+    logo (ou do favicon próprio, se for PNG/JPG/SVG), centrada num quadrado
+    branco; sem logo, um "M" na cor da marca. Se a imagem não vier, sai o "M"
+    em vez de erro;
+  - `src/app/manifest.ts` (nome, cores, ícones comum e "maskable"): o
+    Android mostra a Marimar ao abrir o atalho;
+  - `/favicon.ico` redireciona para o ícone (`next.config.ts`);
+  - os endereços levam `?v=` da logo (`src/lib/icone.ts`), então trocar a
+    logo troca o ícone.
+- **Abertura** (`src/components/site/Abertura.tsx`, CSS `.abertura` no
+  `globals.css`): a logo surge do desfoque no centro, o texto ("Pousada")
+  aparece letra a letra, uma linha se desenha e a tela se abre para o site
+  (~2,8 s). Só CSS, desenhada no servidor; uma vez por aba (sessionStorage,
+  sem piscar ao recarregar); some para quem pede "reduzir movimento".
+  Liga/desliga e texto em Identidade visual → Forma → Movimento.
+- Conferido em 390 e 1366 px, com e sem logo; build limpo; `npm test` 57/57.
+
 ## 2026-10-19 (7) — Teste da Marina diz onde travou
 **Autor:** Claude (Claude Code), a partir de um print do Vinicios
 **Migration:** nenhuma

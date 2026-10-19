@@ -180,6 +180,14 @@ as folhagens e ondas decorativas, que usam a cor principal.
 - **Ondas em movimento:** as ondas entre as seções.
 - **Elementos decorativos:** folhas balançando, gaivotas e o sol no topo.
 - **Revelar ao rolar:** as seções surgem ao descer a página.
+- **Abertura com a logo:** ao abrir o site, a logo aparece animada no centro
+  da tela, com um texto embaixo (padrão: "Pousada"), e a tela se abre para o
+  site. Aparece uma vez por visita. O texto se troca logo abaixo do botão.
+
+**Ícone do site** (aba do navegador, atalho na tela do celular): sai sozinho
+da **logo**. Para um ícone diferente, envie um **Favicon** (PNG quadrado) em
+Identidade visual. Quem já tinha posto o site na tela inicial do celular com
+o ícone antigo precisa apagar o atalho e pôr de novo.
 
 A prévia ao lado mostra o resultado antes de publicar. Quem pediu ao celular
 para "reduzir movimento" sempre vê o site parado; isso é de propósito, por
