@@ -21,6 +21,10 @@ const nextConfig: NextConfig = {
     return [
       { source: "/cardapio", destination: "/restaurante#cardapio", permanent: true },
       { source: "/cafe-da-manha", destination: "/restaurante#cafe-da-manha", permanent: true },
+      /* Navegadores e robôs pedem /favicon.ico direto. Era o ícone padrão do
+         Next (o triângulo da Vercel); agora é o ícone gerado da logo
+         (src/app/marca/icone). Temporário: a logo pode mudar. */
+      { source: "/favicon.ico", destination: "/marca/icone/32", permanent: false },
     ];
   },
   /**

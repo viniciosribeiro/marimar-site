@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { lerPousada } from "@/lib/pousada";
 import { textoIdeal } from "@/lib/contraste";
+import { versaoIcone } from "@/lib/icone";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -18,7 +19,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: p?.seo_title || "Pousada Ilha do Mel Marimar — Reserva Oficial",
     description: p?.seo_description || "Pousada na Ilha do Mel (Encantadas, PR). Consulte disponibilidade e reserve diretamente no site oficial.",
-    icons: p?.favicon_url ? { icon: p.favicon_url } : undefined,
+    /* Ícones gerados da logo (src/app/marca/icone): antes, sem favicon
+       próprio, valia o triângulo padrão da Vercel. */
+    icons: {
+      icon: [
+        ...(p?.favicon_url ? [{ url: p.favicon_url }] : [{ url: `/marca/icone/32?v=${versaoIcone(p)}`, sizes: "32x32", type: "image/png" }]),
+        { url: `/marca/icone/192?v=${versaoIcone(p)}`, sizes: "192x192", type: "image/png" },
+      ],
+      apple: [{ url: `/marca/icone/180?v=${versaoIcone(p)}`, sizes: "180x180", type: "image/png" }],
+    },
+    manifest: "/manifest.webmanifest",
     openGraph: {
       title: p?.seo_title || "Pousada Ilha do Mel Marimar",
       description: p?.seo_description || undefined,

@@ -92,6 +92,10 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+00000000000. **Ícone e abertura (19/10):** o ícone do site agora sai da logo
+   (antes era o triângulo da Vercel) e o site abre com a logo animada e
+   "Pousada" embaixo. Conferir num celular de verdade; quem tinha o atalho na
+   tela inicial precisa apagar e pôr de novo para ver o ícone novo.
 0000000000. **Marina demorando no teste do painel (19/10):** o print mostrou
    "timeout" ao testar o roteiro "Como chegar a pousada". O teste agora diz
    se o servidor do OpenClaw não atendeu ou se só está lento. Conferir no

@@ -104,6 +104,14 @@ export type Tema = {
     decoracao: boolean;
     /** Secoes aparecem suavemente ao rolar a pagina. */
     revelar: boolean;
+    /**
+     * Abertura (19/10/2026, pedido do Vinicios): ao abrir o site, a logo
+     * aparece animada no centro, com um texto embaixo ("Pousada"), e a tela
+     * se abre para o site. Uma vez por visita (aba). src/components/site/Abertura.tsx
+     */
+    abertura: boolean;
+    /** O texto embaixo da logo na abertura. */
+    aberturaTexto: string;
   };
 };
 
@@ -132,7 +140,7 @@ export const TEMA_PADRAO: Tema = {
   },
   alinhamento: { topo: "esquerda", titulos: "esquerda", hero: "esquerda", justificado: false },
   banner: { ativo: false, texto: null, subtexto: null, animado: true },
-  movimento: { intensidade: "media", ondas: true, logo: "flutuar", decoracao: true, revelar: true },
+  movimento: { intensidade: "media", ondas: true, logo: "flutuar", decoracao: true, revelar: true, abertura: true, aberturaTexto: "Pousada" },
 };
 
 /** Junta o que veio do banco com o padrao, tolerando campo faltando. */
@@ -173,6 +181,8 @@ function lerMovimento(m: unknown): Tema["movimento"] {
     ondas: sim(v.ondas, p.ondas),
     decoracao: sim(v.decoracao, p.decoracao),
     revelar: sim(v.revelar, p.revelar),
+    abertura: sim(v.abertura, p.abertura),
+    aberturaTexto: typeof v.aberturaTexto === "string" ? v.aberturaTexto.trim().slice(0, 40) : p.aberturaTexto,
   };
 }
 
