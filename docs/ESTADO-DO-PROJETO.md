@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 19/10/2026 (painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
+> Atualizado em 19/10/2026 (mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
 
 ## Onde estamos
 
@@ -92,6 +92,14 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+000000000. **Mapa da rota (19/10):** em 3D, com navegação em tela inteira e
+   "Ver o caminho em 3D". Para ligar o Mapbox: painel → Site → Como chegar
+   (mapa) → Visual e serviços → token **público** (`pk.`). Recomendado criar
+   no Mapbox um token só do site, com restrição de URL para os domínios da
+   pousada e `marimar-site.vercel.app` (o "Default public token" não aceita
+   restrição). Conferir num celular de verdade: abrir `/como-chegar`, "Ver o
+   caminho em 3D" e, na ilha, "Começar a navegação". O Mapbox **não foi
+   aberto daqui**.
 00000000. **Painel como central (19/10):** aprovado; **fase 1 no ar** (7 áreas,
    vidro líquido, tela Hoje, busca Ctrl+K, perfis). Próximas fases em
    `docs/estudo-painel-central.md`; as fases 4 e 5 mexem no banco: perguntar

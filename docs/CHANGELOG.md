@@ -6,6 +6,35 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 (6) — Mapa em 3D, Mapbox opcional e navegação em tela inteira
+**Autor:** Claude (Claude Code), aprovado pelo Vinicios (protótipo antes)
+**Migration:** nenhuma (a configuração nova fica em `conteudo_editavel`, chave `rota`)
+
+- **Navegação em tela inteira** ao tocar em "Começar a navegação"
+  (`src/components/site/rota/NavegacaoTelaCheia.tsx`): só o mapa; em cima a
+  próxima manobra com seta; embaixo, em vidro, hora de chegada, o que falta,
+  progresso por trecho, Etapas e Sair. Tela cheia de verdade no Android e no
+  computador; no iPhone o mapa cobre a página. O "voltar" fecha só a
+  navegação e a página volta para onde estava. Antes o menu e os botões da
+  Marina ficavam por cima (um ancestral com transform prendia o `fixed`):
+  agora é `createPortal` no `<body>`.
+- **Prévia do caminho** ("Ver o caminho em 3D"): a mesma tela com o ponto
+  andando sozinho. Dá para conhecer o caminho — e testar — em casa.
+- **Mapa abre em 3D** (relevo dos Terrain Tiles da AWS, céu, prédios em pé,
+  voo suave até a pousada quando a seção aparece); 3D/2D no próprio mapa e no
+  painel ("Como o mapa abre").
+- **Mapbox opcional** (painel → Rota e mapa → Visual e serviços): token
+  público `pk.`; o `sk.` é recusado. Estilo Standard (prédios, árvores, luz
+  da hora na ilha) e Satélite. Se falhar no aparelho, volta sozinho para o
+  gratuito. Pacote `mapbox-gl` 3.32.0, baixado só quando ligado.
+- Câmera de navegação suave: segue a pessoa virada para o caminho, ponto
+  "grudado" na rota e deslizando entre leituras do GPS; parte andada em cinza.
+- Modelo do percurso em `rota-base.ts` (`montarPercurso`, `projetar`,
+  `proximoPasso`, `restante`…), com 7 testes novos (`npm test`: 57/57).
+- `testes/e2e-rota.mjs` atualizado (prévia, tela inteira, fechar): 22/22
+  com o simulador. O Mapbox real e os serviços reais **não foram abertos
+  daqui** (rede do ambiente); o recuo para o gratuito foi testado.
+
 ## 2026-10-19 (5) — Gavetas e janelas do painel legíveis no vidro
 **Autor:** Claude (Claude Code), a partir de um print do Vinicios
 **Migration:** nenhuma

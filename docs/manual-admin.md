@@ -151,6 +151,19 @@ a porta da pousada.
 4. Marque **Conferi os pontos no mapa** e clique em **Salvar rota**. Vale na
    hora.
 
+Em **Visual e serviços**:
+- **Como o mapa abre:** 3D (inclinado, com relevo e prédios) ou 2D (visto de
+  cima). O hóspede pode trocar no próprio mapa.
+- **Mapbox (opcional):** deixa o mapa mais bonito (satélite, prédios e a luz
+  da hora). Marque **Usar o Mapbox no site**, cole o token **público** (o que
+  começa com `pk.`, em account.mapbox.com → Tokens) e salve. O mapa desta tela
+  já mostra como fica. Nunca cole o token que começa com `sk.`: a tela recusa.
+  Se o Mapbox falhar, o site mostra sozinho o mapa gratuito.
+
+No site, o hóspede tem **Começar a navegação** (celular), que abre o mapa em
+tela inteira e acompanha até a porta, e **Ver o caminho em 3D**, que mostra o
+caminho andando sozinho — bom para conferir como está sem sair de casa.
+
 Se algum dia o mapa parar de carregar, veja em **Visual e serviços →
 Endereços** (o técnico sabe o que trocar: `docs/fluxo-rota.md`).
 **Voltar ao padrão** desfaz tudo o que foi ajustado nesta tela.

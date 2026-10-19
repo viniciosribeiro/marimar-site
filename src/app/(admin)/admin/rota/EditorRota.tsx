@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useMemo, useState } from "react";
-import type { RotaConfig, Terminal } from "@/lib/rota-base";
+import { tokenMapboxValido, ESTILOS_MAPBOX, type RotaConfig, type Terminal } from "@/lib/rota-base";
 import type { Marcador } from "@/components/site/rota/MapaRota";
 import { Cartao, Aviso, Selo, Rotulo, campo, botao, cn } from "@/components/admin/ui";
 import { Abas, useAcao, useConfirmar } from "@/components/admin/ui-cliente";
@@ -33,6 +33,11 @@ export function EditorRota({ inicial }: { inicial: RotaConfig }) {
   const [aba, setAba] = useState<Aba>("pontos");
   const [alvo, setAlvo] = useState<Alvo>("pousada");
   const [mudou, setMudou] = useState(false);
+  /* Mapbox no mapa daqui: só com ele ligado e token público válido; se ele recusar, avisa. */
+  const [mapboxErro, setMapboxErro] = useState<{ token: string; motivo: string } | null>(null);
+  const tokenMapbox = c.mapa.mapboxToken.trim();
+  const mapboxNaPrevia = c.mapa.provedor === "mapbox" && tokenMapboxValido(tokenMapbox) && mapboxErro?.token !== tokenMapbox ? tokenMapbox : null;
+  const aoFalharMapbox = useCallback((motivo: string) => setMapboxErro({ token: tokenMapbox, motivo }), [tokenMapbox]);
   const { executar, pendente } = useAcao();
   const { confirmar, dialogo } = useConfirmar();
 
@@ -92,7 +97,9 @@ export function EditorRota({ inicial }: { inicial: RotaConfig }) {
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <Cartao semPadding className="overflow-hidden lg:sticky lg:top-6">
           <div className="relative h-[420px] sm:h-[520px]">
-            <MapaRota className="h-full w-full" estilos={c.estilos} estilo={c.estiloPadrao} marcadores={marcadores} trechos={[]} centro={centro} aoMover={aoMover} />
+            <MapaRota key={mapboxNaPrevia ? `mapbox:${mapboxNaPrevia}` : "livre"} className="h-full w-full"
+              estilos={mapboxNaPrevia ? ESTILOS_MAPBOX : c.estilos} estilo={mapboxNaPrevia ? ESTILOS_MAPBOX[0].id : c.estiloPadrao}
+              marcadores={marcadores} trechos={[]} centro={centro} aoMover={aoMover} mapbox={mapboxNaPrevia} aoFalharMapbox={aoFalharMapbox} />
           </div>
           <p className="border-t border-linha/70 px-4 py-3 text-xs text-tinta-suave">
             Arraste 🏡 pousada, ⚓ trapiche e ⛴️ terminais. Para precisão, aproxime bem (roda do mouse ou dois dedos).
@@ -207,7 +214,56 @@ export function EditorRota({ inicial }: { inicial: RotaConfig }) {
           )}
 
           {aba === "mapa" && (
-            <Cartao titulo="Visual do mapa e serviços" descricao="Tudo gratuito e sem chave. Só troque os endereços se um serviço sair do ar (ver docs/fluxo-rota.md).">
+            <div className="space-y-5">
+            <Cartao titulo="Como o mapa abre" descricao="O hóspede pode trocar a qualquer momento, no próprio mapa.">
+              <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Como o mapa abre">
+                {([["3d", "3D", "Inclinado, com relevo e prédios em pé. Mais bonito e mais pesado."], ["2d", "2D", "Visto de cima, como um mapa de papel. Mais leve."]] as const).map(([v, nome, texto]) => (
+                  <button key={v} type="button" role="radio" aria-checked={c.mapa.vista === v} onClick={() => mudar((x) => ({ ...x, mapa: { ...x.mapa, vista: v } }))}
+                    className={cn("rounded-2xl border p-3 text-left transition-colors", c.mapa.vista === v ? "border-marca bg-marca-suave" : "border-linha/80 hover:border-marca/60")}>
+                    <span className="block text-sm font-semibold text-tinta">{nome}</span>
+                    <span className="mt-0.5 block text-xs text-tinta-suave">{texto}</span>
+                  </button>
+                ))}
+              </div>
+            </Cartao>
+
+            <Cartao titulo="Mapbox (opcional)" descricao="Com o Mapbox o mapa fica mais bonito: satélite, prédios e árvores em 3D e a luz da hora (dia, entardecer, noite). Sem ele, o site usa o mapa gratuito.">
+              <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-linha/80 p-3">
+                <span>
+                  <span className="block text-sm font-semibold text-tinta">Usar o Mapbox no site</span>
+                  <span className="block text-xs text-tinta-suave">
+                    {c.mapa.provedor === "mapbox" ? "Ligado: o hóspede vê o mapa do Mapbox." : "Desligado: o hóspede vê o mapa gratuito."}
+                  </span>
+                </span>
+                <input type="checkbox" className="h-5 w-5 accent-[var(--marca)]" checked={c.mapa.provedor === "mapbox"}
+                  onChange={(e) => mudar((x) => ({ ...x, mapa: { ...x.mapa, provedor: e.target.checked ? "mapbox" : "livre" } }))} />
+              </label>
+              <Rotulo rotulo="Token público do Mapbox (começa com pk.)">
+                <input className={cn(campo, "font-mono text-xs")} value={c.mapa.mapboxToken} maxLength={300} autoComplete="off" spellCheck={false}
+                  placeholder="pk.…" onChange={(e) => mudar((x) => ({ ...x, mapa: { ...x.mapa, mapboxToken: e.target.value.trim() } }))} />
+              </Rotulo>
+              {tokenMapbox.startsWith("sk.") ? (
+                <p className="mt-2 rounded-xl bg-red-50 p-3 text-xs text-red-800" role="alert">
+                  Este é um token <b>secreto</b> (sk.). Ele nunca pode ir para o site. Apague daqui e use o <b>público</b> (pk.), em account.mapbox.com → Tokens.
+                </p>
+              ) : tokenMapbox && !tokenMapboxValido(tokenMapbox) ? (
+                <p className="mt-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-900" role="status">Não parece um token público do Mapbox. Copie de novo pelo botão de copiar, em account.mapbox.com → Tokens.</p>
+              ) : mapboxErro?.token === tokenMapbox && tokenMapbox ? (
+                <p className="mt-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-900" role="status">
+                  O Mapbox não abriu com este token ({/401|unauthori[sz]ed/i.test(mapboxErro.motivo) ? "o Mapbox recusou o token"
+                    : /403|forbidden/i.test(mapboxErro.motivo) ? "o token não vale para este endereço"
+                    : /fetch|network/i.test(mapboxErro.motivo) ? "sem conexão com o Mapbox" : "erro do Mapbox"}). Enquanto isso, o site mostra o mapa gratuito.
+                </p>
+              ) : mapboxNaPrevia ? (
+                <p className="mt-2 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800" role="status">O mapa ao lado já está no Mapbox. Salve para valer no site.</p>
+              ) : null}
+              <p className="mt-3 text-xs text-tinta-suave">
+                Grátis até 50 mil aberturas de mapa por mês. Se o Mapbox falhar (token errado, cota, internet), o site volta sozinho para o mapa gratuito.
+                Por segurança, crie no Mapbox um token só para o site, restrito aos endereços da pousada.
+              </p>
+            </Cartao>
+
+            <Cartao titulo="Mapa gratuito e serviços" descricao="Tudo gratuito e sem chave. Só troque os endereços se um serviço sair do ar (ver docs/fluxo-rota.md).">
               <Rotulo rotulo="Estilo que abre primeiro">
                 <div className="flex flex-wrap gap-2">
                   {c.estilos.map((e) => (
@@ -227,7 +283,7 @@ export function EditorRota({ inicial }: { inicial: RotaConfig }) {
                         onChange={(ev) => mudar((x) => ({ ...x, estilos: x.estilos.map((o) => (o.id === e.id ? { ...o, url: ev.target.value.trim() } : o)) }))} />
                     </Rotulo>
                   ))}
-                  {([["rotaCarro", "Rotas de carro (OSRM)"], ["rotaPe", "Rotas a pé (OSRM)"], ["busca", "Busca de endereço (Photon)"]] as const).map(([k, rotulo]) => (
+                  {([["rotaCarro", "Rotas de carro (OSRM)"], ["rotaPe", "Rotas a pé (OSRM)"], ["busca", "Busca de endereço (Photon)"], ["relevo", "Relevo do 3D (Terrain Tiles)"]] as const).map(([k, rotulo]) => (
                     <Rotulo key={k} rotulo={rotulo}>
                       <input className={cn(campo, "font-mono text-xs")} value={c.servicos[k]}
                         onChange={(ev) => mudar((x) => ({ ...x, servicos: { ...x.servicos, [k]: ev.target.value.trim() } }))} />
@@ -236,6 +292,7 @@ export function EditorRota({ inicial }: { inicial: RotaConfig }) {
                 </div>
               </details>
             </Cartao>
+            </div>
           )}
         </div>
       </div>
