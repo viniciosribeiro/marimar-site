@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Icone } from "./Icone";
+import { SeletorDatas } from "./SeletorDatas";
 import { POLITICAS, CAFE_DA_MANHA } from "@/lib/conteudo-pousada";
 
 type Pacote = { slug: string; nome: string; resumo: string | null };
@@ -17,8 +18,9 @@ type RegraCriancas = { idadeColoMax: number; texto: string } | null;
  * quer ofertas; e quem já decidiu quer saber horário de check-in e se pode
  * levar o cachorro — e ia procurar isso rolando a página inteira.
  *
- * A aba de datas é a MESMA de antes, com os mesmos campos e a mesma ação:
- * ela manda para /reservar, que consulta o motor. Nada aqui toca nisso.
+ * A aba de datas manda para /reservar, que consulta o motor, com os mesmos
+ * campos de sempre. Desde 19/10/2026 as datas saem do calendário de estadia
+ * (SeletorDatas) em vez das duas caixas de data do aparelho.
  */
 export function BuscaHome({ pacotes = [], criancas = null }: { pacotes?: Pacote[]; criancas?: RegraCriancas }) {
   const [aba, setAba] = useState<"datas" | "pacotes" | "info">("datas");
@@ -65,16 +67,9 @@ export function BuscaHome({ pacotes = [], criancas = null }: { pacotes?: Pacote[
         {aba === "datas" && (
           <>
             <form action="/reservar" className={`grid grid-cols-2 gap-2 ${criancas ? "sm:grid-cols-6" : "sm:grid-cols-5"}`}>
-              <label className="col-span-2 sm:col-span-1">
-                <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Check-in</span>
-                <input type="date" name="check_in" required
-                  className="w-full px-3 py-2.5 rounded-lg border border-linha bg-white sm:border-white/80 sm:bg-white/80 text-tinta text-sm focus:ring-2 focus:ring-marca outline-none" />
-              </label>
-              <label className="col-span-2 sm:col-span-1">
-                <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Check-out</span>
-                <input type="date" name="check_out" required
-                  className="w-full px-3 py-2.5 rounded-lg border border-linha bg-white sm:border-white/80 sm:bg-white/80 text-tinta text-sm focus:ring-2 focus:ring-marca outline-none" />
-              </label>
+              {/* Entrada e saída num calendário só (SeletorDatas): manda os
+                  mesmos check_in e check_out de antes. */}
+              <SeletorDatas variante="home" />
               <label>
                 <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Adultos</span>
                 <select name="adultos" defaultValue="2"

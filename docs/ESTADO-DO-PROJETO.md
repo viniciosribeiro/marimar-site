@@ -92,6 +92,9 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+0000000000000. **Calendário de estadia (19/10):** entrada e saída num calendário
+   só, na busca da home e em /reservar (abre no mês da entrada). Conferir
+   num iPhone e num Android de verdade.
 000000000000. **Botão "Reservar no site oficial" (19/10):** passou ao formato
    novo do motor (o mesmo da Marina), para abrir com datas e hóspedes em vez
    da página inicial do Desbravador. Conferir num celular. Para abrir já na
