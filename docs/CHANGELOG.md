@@ -6,6 +6,39 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 — Busca de datas no site falhava e a Marina respondia
+**Autor:** Claude (Claude Code)
+**Migration:** nenhuma
+
+### O que acontecia
+`/reservar` com 28/12/2026 a 01/01/2027 dizia "Não conseguimos consultar a
+disponibilidade agora", e a Marina respondia preço para as mesmas datas.
+Os dois usam o mesmo Worker (PousadaHub), mas de jeitos diferentes:
+- a Marina (`consulta-desbravador/scripts/consultar-api.mjs`) espera até
+  **60 s** e lê o JSON sem validar;
+- o site esperava **12 s** e validava a resposta inteira com Zod: um único
+  campo `null` ou fora do formato em qualquer quarto derrubava a busca toda.
+Datas concorridas (Réveillon) deixam o motor lento e trazem pacotes com
+campos diferentes, então caíam nos dois problemas. O `catch` do `/reservar`
+não registrava o motivo, por isso não dava para ver nos logs.
+
+### O que mudou
+- `lerRespostaTarifas()` (`src/lib/worker.ts`): lê quarto por quarto. Tira
+  `null`, converte número que veio como texto, completa o que não é
+  essencial; um quarto "disponível" sem preço sai (com log); o resto aparece.
+- Busca do hóspede (`/reservar`, `/api/disponibilidade`,
+  `/api/agent/disponibilidade`) espera até **45 s** (`TIMEOUT_BUSCA`,
+  variável `WORKER_TIMEOUT_BUSCA_MS`), com `maxDuration = 60`. Painel e
+  página do quarto continuam com 12 s.
+- Toda falha do `/reservar` vai para os logs da Vercel com o motivo
+  (`[reservar] busca falhou: …`, ou "Worker não respondeu em 45 s").
+- Teste novo: `testes/unit/worker.test.ts`. `npm test`: 50/50.
+
+### Não verificado daqui
+O Worker não é acessível deste ambiente: a causa exata (tempo ou formato) só
+aparece no log da Vercel depois do deploy. Se continuar falhando, abrir
+Vercel → Logs e procurar "[reservar]".
+
 ## 2026-10-18 (3) — Migration 0021: "à beira-mar" também no que está gravado no banco
 **Autor:** Claude (Claude Code), com a confirmação do Vinicios
 **Migration:** 0021 (só troca texto; não muda tabela nem coluna)

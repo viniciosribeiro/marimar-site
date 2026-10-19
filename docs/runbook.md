@@ -50,6 +50,7 @@ Vercel (Production + Preview). Faltar variavel na Vercel e a causa mais comum de
 | `WORKER_BASE_URL` | ✅ | Worker PousadaHub |
 | `WORKER_SLUG` | ✅ | `pousada-ilha-do-mel-marimar` |
 | `WORKER_TIMEOUT_MS` | — | default 12000 |
+| `WORKER_TIMEOUT_BUSCA_MS` | — | default 45000 — busca do hóspede (`/reservar` e rotas de disponibilidade) |
 | `TARIFAS_CACHE_TTL` | — | TTL do cache de tarifas |
 | `AGENT_API_KEY` | ✅ | **min. 16 chars.** Sem ela as rotas do agente retornam 401 (fail-closed) |
 | `CRON_SECRET` | — | min. 16 chars. Chave do agendador de `/api/cron/chamados` (prazos dos chamados). Sem ela, o agendador usa a `AGENT_API_KEY` |

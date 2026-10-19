@@ -1,11 +1,13 @@
 import { NextRequest } from "next/server";
-import { fetchTarifas, validarConsulta } from "@/lib/worker";
+import { fetchTarifas, validarConsulta, TIMEOUT_BUSCA } from "@/lib/worker";
 import { buildDeepLink } from "@/lib/deeplink";
 import postgres from "postgres";
 import { comSql } from "@/lib/db-conexao";
 import { lerRegras, calcularOcupacao, REGRAS_PADRAO } from "@/lib/regras-hospedagem";
 
 export const dynamic = "force-dynamic";
+/* O motor demora em datas concorridas: a busca espera até 45 s (TIMEOUT_BUSCA). */
+export const maxDuration = 60;
 
 type QuartoLocal = {
   id: string; nome: string; slug: string; cama: string | null; metragem: number | null;
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
   const criancas = oc.criancasMotor;
 
   try {
-    const workerData = await fetchTarifas(checkIn, checkOut, adultos, criancas);
+    const workerData = await fetchTarifas(checkIn, checkOut, adultos, criancas, { timeoutMs: TIMEOUT_BUSCA });
 
     // Merge com dados locais
     const todos = [...workerData.quartos, ...workerData.indisponiveis];
