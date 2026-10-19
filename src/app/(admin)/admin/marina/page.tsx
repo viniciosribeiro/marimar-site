@@ -188,7 +188,7 @@ export default async function MarinaPage({
       <Pagina>
         <Cabecalho sobre="Atendimento" titulo="Marina" />
         <Aviso tom="erro" titulo="Não consegui abrir o banco de dados agora.">
-          Recarregue a página em alguns segundos. Se continuar, veja Sistema → Diagnóstico.
+          Recarregue a página em alguns segundos. Se continuar, veja Ajustes → Diagnóstico.
         </Aviso>
       </Pagina>
     );
@@ -234,7 +234,7 @@ export default async function MarinaPage({
           continua valendo, mas categorias, histórico e testes não são guardados.
         </Aviso>
       )}
-      <PainelMarina dados={props} abaInicial={sp.aba ?? "visao"}
+      <PainelMarina key={sp.aba ?? "visao"} dados={props} abaInicial={sp.aba ?? "visao"}
         categoriaInicial={sp.categoria ? categoriaValida(sp.categoria) : undefined} novoInicial={sp.novo === "1"} />
     </Pagina>
   );

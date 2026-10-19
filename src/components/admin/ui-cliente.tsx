@@ -61,9 +61,9 @@ export function Toaster() {
         <div key={t.id}
           className={cn(
             "pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 text-sm shadow-lg animate-[entrar_.2s_ease-out]",
-            t.tom === "ok" && "border-emerald-200 bg-white text-tinta",
+            t.tom === "ok" && "vidro-forte text-tinta",
             t.tom === "erro" && "border-red-200 bg-red-50 text-red-900",
-            t.tom === "info" && "border-linha bg-white text-tinta",
+            t.tom === "info" && "vidro-forte text-tinta",
           )}>
           <span className={cn(
             "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white",
@@ -154,7 +154,7 @@ export function Dialogo({ titulo, children, aoFechar }: { titulo: string; childr
   return createPortal(
     <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-label={titulo}>
       <div className="absolute inset-0 bg-tinta/40 backdrop-blur-[2px]" onClick={aoFechar} />
-      <div className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl bg-white p-6 shadow-2xl animate-[subir_.2s_ease-out]">
+      <div className="vidro-forte relative w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[1.75rem] p-6 animate-[subir_.2s_ease-out]">
         <h2 className="text-lg font-semibold text-tinta pr-6">{titulo}</h2>
         <div className="mt-2">{children}</div>
       </div>
@@ -171,7 +171,7 @@ export function Gaveta({ titulo, descricao, children, aoFechar, rodape }: {
   return createPortal(
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label={titulo}>
       <div className="absolute inset-0 bg-tinta/40 backdrop-blur-[2px]" onClick={aoFechar} />
-      <div className="absolute inset-x-0 bottom-0 top-10 sm:top-0 sm:left-auto sm:w-[34rem] flex flex-col rounded-t-3xl sm:rounded-none bg-fundo-suave shadow-2xl animate-[deslizar_.22s_ease-out]">
+      <div className="absolute inset-x-0 bottom-0 top-10 sm:top-0 sm:left-auto sm:w-[34rem] flex flex-col rounded-t-[2rem] sm:rounded-none vidro-forte animate-[deslizar_.22s_ease-out]">
         <div className="flex items-start justify-between gap-4 border-b border-linha/70 bg-white px-5 py-4 rounded-t-3xl sm:rounded-none">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold text-tinta">{titulo}</h2>
@@ -258,13 +258,13 @@ export function Abas<T extends string>({ abas, atual, aoTrocar, className }: {
             className={cn(
               "inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors",
               atual === a.id
-                ? "border-marca bg-marca text-marca-texto shadow-sm"
-                : "border-linha bg-white text-tinta-suave hover:border-marca/50 hover:text-tinta",
+                ? "vidro-marca text-marca-texto"
+                : "border-white/80 bg-white text-tinta-suave hover:bg-white/80 hover:text-tinta",
             )}>
             {a.rotulo}
             {a.contador !== undefined && (
               <span className={cn("rounded-full px-1.5 text-[11px] tabular-nums",
-                atual === a.id ? "bg-white/25" : a.alerta ? "bg-amber-100 text-amber-900" : "bg-areia text-tinta-suave")}>
+                atual === a.id ? "bg-white/25" : a.alerta ? "bg-amber-100 text-amber-900" : "bg-white/70 text-tinta-suave")}>
                 {a.contador}
               </span>
             )}
@@ -286,7 +286,7 @@ export function JanelaRota({ titulo, voltar, children }: { titulo: string; volta
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={titulo}>
       <div className="absolute inset-0 bg-tinta/40 backdrop-blur-[2px]" onClick={fechar} />
-      <div className="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl bg-fundo-suave shadow-2xl sm:max-w-2xl sm:rounded-2xl animate-[subir_.2s_ease-out]">
+      <div className="vidro-forte relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[2rem] sm:max-w-2xl sm:rounded-[1.75rem] animate-[subir_.2s_ease-out]">
         <div className="flex items-center justify-between border-b border-linha/70 bg-white px-5 py-4">
           <h2 className="text-lg font-semibold text-tinta">{titulo}</h2>
           <button onClick={fechar} aria-label="Fechar" className={botao("fantasma", "sm", "h-10 w-10 px-0")}>✕</button>

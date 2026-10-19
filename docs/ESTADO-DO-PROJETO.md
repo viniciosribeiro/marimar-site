@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 19/10/2026 (busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
+> Atualizado em 19/10/2026 (painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
 
 ## Onde estamos
 
@@ -92,6 +92,10 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+00000000. **Painel como central (19/10):** aprovado; **fase 1 no ar** (7 áreas,
+   vidro líquido, tela Hoje, busca Ctrl+K, perfis). Próximas fases em
+   `docs/estudo-painel-central.md`; as fases 4 e 5 mexem no banco: perguntar
+   antes. Conferir num celular de verdade (iPhone e Android) o desfoque do vidro.
 0000000. **"À beira-mar" (18/10):** rodar `npm run db:migrate` (migration
    **0021**). Ela troca "pé na areia" por "à beira-mar" em todo texto gravado
    no banco (seções da home, cartões, banners, SEO, FAQ, treinamento da

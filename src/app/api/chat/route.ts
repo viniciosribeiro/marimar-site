@@ -194,7 +194,7 @@ export async function POST(req: Request) {
               } else if (semResposta) {
                 await registrarLacuna(conexao, {
                   pergunta: mensagem, resposta: completa, canal: "site", sessao, chamadoId: null,
-                  avisoErro: "O aviso à equipe está desligado (Equipe responsável → Prazos e WhatsApp).",
+                  avisoErro: "O aviso à equipe está desligado (Marina → Prazos e WhatsApp).",
                 });
               } else {
                 /* Respondeu. Se foi com algo aprendido, conta o uso. */

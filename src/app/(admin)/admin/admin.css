@@ -3,6 +3,7 @@
 @keyframes entrar { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes subir { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 @keyframes deslizar { from { opacity: .6; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes mola { 0% { transform: scale(.94); } 60% { transform: scale(1.03); } 100% { transform: scale(1); } }
 @media (max-width: 639px) {
   @keyframes deslizar { from { opacity: .6; transform: translateY(32px); } to { opacity: 1; transform: none; } }
 }
@@ -11,4 +12,76 @@
     animation-duration: .01ms !important; transition-duration: .01ms !important;
   }
 }
-.painel-admin { font-family: var(--font-geist-sans), system-ui, sans-serif; color: var(--tinta); }
+
+/* ═══════════════ Vidro líquido ("Liquid Glass") ═══════════════
+   Decisão do Vinicios em 19/10/2026 (docs/estudo-painel-central.md).
+   O fundo do painel é vivo, feito das cores da marca (Identidade visual):
+   mar, areia e pôr do sol. Toda superfície é vidro sobre ele.
+   Como o fundo é um degradê liso, o branco translúcido já parece vidro
+   fosco; o desfoque de verdade (backdrop-filter) fica só nas superfícies
+   grandes (.vidro), para o celular não pesar. */
+.painel-admin {
+  --vidro: rgb(255 255 255 / .58);
+  --vidro-forte: rgb(255 255 255 / .82);
+  --vidro-leve: rgb(255 255 255 / .34);
+  --vidro-aro: rgb(255 255 255 / .74);
+  --vidro-brilho: rgb(255 255 255 / .95);
+  --vidro-sombra: 0 16px 40px -20px rgb(12 38 56 / .42), 0 2px 6px -3px rgb(12 38 56 / .16);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  color: var(--tinta);
+  background-color: color-mix(in oklab, var(--marca) 9%, #eef4f6);
+  background-image:
+    radial-gradient(55vmax 42vmax at 6% 4%, color-mix(in oklab, var(--marca) 34%, #ffffff) 0%, transparent 62%),
+    radial-gradient(48vmax 42vmax at 96% 8%, color-mix(in oklab, var(--acento) 36%, #ffffff) 0%, transparent 58%),
+    radial-gradient(60vmax 46vmax at 84% 96%, color-mix(in oklab, var(--marca) 46%, #ffffff) 0%, transparent 62%),
+    radial-gradient(52vmax 40vmax at 10% 92%, #f6dcb4 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+.painel-admin .vidro, .painel-admin .vidro-forte {
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / .42) 0%, transparent 44%),
+    var(--vidro);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--vidro-aro);
+  box-shadow:
+    inset 0 1px 0 var(--vidro-brilho),
+    inset 1px 0 0 rgb(255 255 255 / .35),
+    inset 0 -1px 0 rgb(255 255 255 / .28),
+    var(--vidro-sombra);
+}
+.painel-admin .vidro-forte {
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / .5) 0%, transparent 44%),
+    var(--vidro-forte);
+}
+/* "Bolha" de vidro do item escolhido (menu, abas, barra do celular). */
+.painel-admin .vidro-bolha {
+  background: linear-gradient(180deg, rgb(255 255 255 / .92), rgb(255 255 255 / .55));
+  border: 1px solid var(--vidro-aro);
+  box-shadow: inset 0 1px 0 #fff, 0 8px 18px -10px rgb(12 38 56 / .5);
+}
+/* Botão principal: vidro tingido com a cor da marca. */
+.painel-admin .vidro-marca {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / .3), transparent 58%),
+    color-mix(in oklab, var(--marca) 88%, transparent);
+  border: 1px solid rgb(255 255 255 / .45);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .55), 0 10px 22px -12px var(--marca);
+}
+
+/* As superfícies que as telas já usam viram vidro sem mexer em cada tela. */
+.painel-admin .bg-white { background-color: var(--vidro); }
+.painel-admin .bg-fundo-suave { background-color: var(--vidro-leve); }
+.painel-admin .border-linha\/80, .painel-admin .border-linha\/70 { border-color: var(--vidro-aro); }
+.painel-admin .shadow-sm { box-shadow: inset 0 1px 0 rgb(255 255 255 / .8), 0 6px 18px -12px rgb(12 38 56 / .35); }
+
+/* Prévia do site dentro do painel: mostra o site como ele é, sem vidro. */
+.painel-admin .fora-do-vidro .bg-white { background-color: #ffffff; }
+.painel-admin .fora-do-vidro .bg-fundo-suave { background-color: var(--fundo-suave); }
+
+/* Navegador sem desfoque: vidro mais opaco, para o texto continuar legível. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .painel-admin { --vidro: rgb(255 255 255 / .86); --vidro-forte: rgb(255 255 255 / .95); --vidro-leve: rgb(255 255 255 / .7); }
+}
