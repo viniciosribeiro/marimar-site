@@ -13,7 +13,7 @@ import {
 import { SETORES, rotuloSetor, type ConfigEscalonamento } from "@/lib/escalonamento-base";
 import type { Chamado } from "@/lib/escalonamento";
 import { Aviso, Cartao, Rotulo, Selo, Vazio, botao, campo, cn, quandoFoi } from "@/components/admin/ui";
-import { Abas, Gaveta, Girando, useAcao, useConfirmar } from "@/components/admin/ui-cliente";
+import { Gaveta, Girando, useAcao, useConfirmar } from "@/components/admin/ui-cliente";
 import {
   salvarContato, alternarContato, excluirContato, ordenarContatos, testarEnvio,
   salvarConfigEscalonamento, responderPeloPainel, reenviarAoCliente, cancelarChamado, rodarPrazosAgora,
@@ -47,27 +47,21 @@ export function PainelEquipe({ contatos, config, chamados, gatewayOk, abaInicial
   const pathname = usePathname();
   const [aba, setAba] = useState<Aba>((["equipe", "chamados", "config"].includes(abaInicial) ? abaInicial : "equipe") as Aba);
   const trocar = (a: Aba) => { setAba(a); router.replace(`${pathname}?aba=${a}`, { scroll: false }); };
-  const aguardando = chamados.filter((c) => c.status === "aguardando").length;
-  const comErro = chamados.filter((c) => c.entrega_erro && c.status !== "entregue").length;
 
   return (
     <div className="space-y-6">
       {!config.ativo && (
         <Aviso tom="aviso" titulo="O escalonamento está desligado."
           acao={<button onClick={() => trocar("config")} className={botao("secundario", "sm")}>Ligar</button>}>
-          Enquanto estiver desligado, quando a Marina não souber ela só anota a pergunta em Marina → Sem resposta.
+          Enquanto estiver desligado, quando a Marina não souber ela só anota a pergunta em Atendimento → Sem resposta.
         </Aviso>
       )}
       {!gatewayOk && (
         <Aviso tom="erro" titulo="O site não está ligado ao OpenClaw.">
-          Sem o gateway, o site não consegue mandar WhatsApp: a própria Marina manda os avisos (ela recebe o texto pronto). Veja Sistema → Integrações.
+          Sem o gateway, o site não consegue mandar WhatsApp: a própria Marina manda os avisos (ela recebe o texto pronto). Veja Ajustes → Integrações.
         </Aviso>
       )}
-      <Abas atual={aba} aoTrocar={trocar} abas={[
-        { id: "equipe", rotulo: "Equipe", contador: contatos.filter((c) => c.ativo).length },
-        { id: "chamados", rotulo: "Chamados", contador: aguardando, alerta: comErro > 0 },
-        { id: "config", rotulo: "Prazos e WhatsApp" },
-      ]} />
+      {/* As abas (Quem responde · Chamados · Prazos) ficam no topo do painel. */}
       {aba === "equipe" && <AbaContatos contatos={contatos} />}
       {aba === "chamados" && <AbaChamados chamados={chamados} contatos={contatos} />}
       {aba === "config" && <AbaConfig config={config} />}

@@ -2,6 +2,29 @@
 
 > Atualizado em 30/09/2026. Para quem opera o site e treina a Marina.
 
+## O painel novo: a Central (desde 19/10/2026)
+
+O painel tem **7 áreas**. Elas aparecem no menu da esquerda no computador e
+na **barra de baixo** no celular (Hoje · Atender · Marina · Site · Mais).
+Dentro de cada área, as telas ficam em abas no topo.
+
+| Área | O que tem |
+|---|---|
+| **Hoje** | Tudo o que precisa de você (clientes esperando, perguntas sem resposta, respostas para aprovar, contatos novos), atalhos e se o motor, o WhatsApp e a Marina estão funcionando |
+| **Atendimento** | Chamados · Sem resposta · Para aprovar · Conversas do site · Contatos |
+| **Marina** | Visão geral (Cérebro) · Treinamento · O que ela sabe · Documentos · Roteiros com vídeo · Jeito de falar · Voz · Quem responde · Prazos e WhatsApp · Testar · Histórico |
+| **Hospedagem** | Suítes · Categorias · Comodidades · Crianças e adicionais · Políticas · Pacotes e ofertas |
+| **Restaurante** | Cardápio |
+| **Site** | Topo e banners · Seções da página inicial · Cartões das seções · Fotos e vídeos · Ilha, chegada e eventos · Como chegar (mapa) · Atrações · Passeios · Perguntas frequentes · Depoimentos · Aparência |
+| **Ajustes** | Dados da pousada · Minha senha · (perfil Técnico: Pessoas e acessos · Integrações · Diagnóstico) |
+
+**Não sabe onde fica?** Use a busca **"O que você quer fazer?"** (no menu,
+na lupa do celular ou **Ctrl+K**) e escreva do seu jeito: "trocar a foto do
+topo", "horário do café", "criança", "WhatsApp".
+
+As seções abaixo ainda usam os nomes antigos dos grupos; o caminho de cada
+tela agora é o da tabela acima.
+
 ## Acesso
 1. Acesse o painel em `/admin` (hoje: `marimar-site.vercel.app/admin`).
 2. Entre com e-mail e senha.

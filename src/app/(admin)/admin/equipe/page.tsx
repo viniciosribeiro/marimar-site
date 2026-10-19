@@ -54,7 +54,7 @@ export default async function EquipePage({ searchParams }: { searchParams: Promi
           Rode <code className="font-mono">npm run db:migrate</code> (migration 0019) e recarregue.
         </Aviso>
       )}
-      <PainelEquipe contatos={dados.contatos} config={dados.config} chamados={dados.chamados}
+      <PainelEquipe key={sp.aba ?? "equipe"} contatos={dados.contatos} config={dados.config} chamados={dados.chamados}
         gatewayOk={gatewayConfigurado()} abaInicial={sp.aba ?? "equipe"} />
     </Pagina>
   );

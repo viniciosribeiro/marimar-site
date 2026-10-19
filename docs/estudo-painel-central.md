@@ -1,7 +1,7 @@
 # Estudo: o painel como uma central ("Central Marimar")
 
-> 19/10/2026 · proposta **aguardando aprovação do Vinicios**. Nada foi
-> implementado ainda. Página com o estudo e o protótipo clicável:
+> 19/10/2026 · **aprovado pelo Vinicios** ("tudo aprovado, pode agir"), com
+> o visual **Liquid Glass**. **Fase 1 implementada** em 19/10/2026. Página com o estudo e o protótipo clicável:
 > https://claude.ai/artifact/JGRHkhDLrjmgo65HT88opg (privada, do Vinicios).
 
 ## Decisões já tomadas pelo Vinicios
@@ -37,7 +37,23 @@ no celular: Hoje, Atendimento, Marina, Site, Mais.
 4. Hospedagem: fonte única para regras (junta dados — perguntar antes).
 5. Ajustes: pessoas, perfis, registro de atividades (tabela nova — perguntar antes).
 
-## Perguntas em aberto
+## Fase 1 (feita em 19/10/2026)
+- Casco novo: `src/components/admin/AdminNav.tsx` + `areas.ts`; busca
+  `PaletaTarefas.tsx` (Ctrl+K); tela Hoje (`src/app/(admin)/admin/page.tsx`).
+- Material de vidro: `admin.css` + `ui.tsx`/`ui-cliente.tsx`.
+- Perfis: Técnico = papel `master`; Gestão = `editor` (não vê Pessoas,
+  Integrações, Diagnóstico; no Hoje vê o semáforo sem o botão Diagnóstico).
+- Mesmos endereços de antes; nenhuma mudança no banco.
+- As 4 perguntas foram respondidas com "tudo aprovado": nomes das áreas como
+  propostos, Restaurante como área própria, Cecília só com o semáforo.
+
+## Próximas fases
+2. Atendimento unificado (uma caixa de entrada que responde de dentro).
+3. Site: página inicial num editor só com prévia.
+4. Hospedagem: fonte única para regras (perguntar antes de juntar dados).
+5. Ajustes: pessoas e perfis pelo painel (perguntar antes da tabela nova).
+
+## Perguntas que estavam em aberto (respondidas)
 1. Os nomes das sete áreas ("Recepção" no lugar de "Atendimento"?).
 2. Restaurante como área própria ou dentro de Site.
 3. A Cecília vê a parte técnica (nada / só o semáforo)?

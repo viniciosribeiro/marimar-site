@@ -301,7 +301,7 @@ function PreviaEscalada({ largura, children }: { largura: number; children: Reac
         const obs = new ResizeObserver(medir);
         obs.observe(el);
       }}
-      className="relative w-full min-w-0 overflow-hidden rounded-xl border border-linha/80 bg-areia/70"
+      className="fora-do-vidro relative w-full min-w-0 overflow-hidden rounded-xl border border-linha/80 bg-areia/70"
       style={{ height: Math.round(altura * escala) }}
     >
       <div

@@ -20,7 +20,7 @@ export default function ErroPainel({ error, reset }: { error: Error & { digest?:
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-2xl" aria-hidden>⚠️</div>
         <h1 className="mt-4 text-lg font-semibold text-tinta">Esta tela não abriu</h1>
         <p className="mt-2 text-sm leading-relaxed text-tinta-suave">
-          Pode ser uma instabilidade passageira na conexão com o banco de dados. Tente de novo — se continuar, veja Sistema → Diagnóstico.
+          Pode ser uma instabilidade passageira na conexão com o banco de dados. Tente de novo — se continuar, veja Ajustes → Diagnóstico.
         </p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
           <button onClick={reset} className={botao("primario")}><RefreshCw className="h-4 w-4" /> Tentar de novo</button>

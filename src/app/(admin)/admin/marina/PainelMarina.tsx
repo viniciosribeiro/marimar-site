@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Abas } from "@/components/admin/ui-cliente";
 import type { DadosMarina, Rascunho } from "./tipos";
 import { FormItem } from "./FormItem";
 import { HistoricoItem } from "./HistoricoItem";
@@ -45,29 +44,16 @@ export function PainelMarina({ dados, abaInicial, categoriaInicial, novoInicial 
     router.replace(`${pathname}?aba=${id}`, { scroll: false });
   }, [router, pathname]);
 
-  const vivos = dados.itens.filter((i) => !i.excluido_em);
   const s = dados.saude;
 
-  const abas: { id: AbaId; rotulo: string; contador?: number; alerta?: boolean }[] = [
-    { id: "visao", rotulo: "Visão geral" },
-    { id: "conhecimento", rotulo: "Conhecimento", contador: vivos.length },
-    { id: "testar", rotulo: "Testar" },
-    { id: "sem-resposta", rotulo: "Sem resposta", contador: s.lacunas, alerta: s.lacunas > 0 },
-    { id: "conversas", rotulo: "Conversas", contador: dados.conversas.length },
-    { id: "documentos", rotulo: "Documentos", contador: dados.documentos.length, alerta: s.docsFalhos > 0 },
-    { id: "aprendizado", rotulo: "Aprendizado", contador: dados.aprendizado.filter((a) => a.status === "pendente" || (a.status === "ativo" && (!a.revisado || !!a.conflito_id))).length, alerta: dados.aprendizado.some((a) => a.status === "pendente") },
-    { id: "roteiros", rotulo: "Mídias de orientação", contador: dados.roteiros.filter((r) => r.ativo).length },
-    { id: "regras", rotulo: "Crianças e adicionais" },
-    { id: "personalidade", rotulo: "Personalidade e regras" },
-    { id: "voz", rotulo: "Voz" },
-    { id: "historico", rotulo: "Histórico" },
-  ];
+  /* As abas desta tela agora ficam no topo do painel, nas áreas Atendimento,
+     Marina e Hospedagem (src/components/admin/areas.ts, fase 1 de 19/10/2026):
+     aqui não há mais uma segunda fileira de abas. */
 
   const ensinar = (r: Rascunho = {}) => setRascunho(r);
 
   return (
     <div className="space-y-6">
-      <Abas abas={abas} atual={aba} aoTrocar={trocar} />
 
       {aba === "visao" && <AbaVisao dados={dados} irPara={trocar} ensinar={ensinar} />}
       {aba === "conhecimento" && (

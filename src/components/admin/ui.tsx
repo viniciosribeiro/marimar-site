@@ -25,11 +25,11 @@ type Variante = "primario" | "secundario" | "fantasma" | "perigo" | "suave";
 type Tamanho = "sm" | "md" | "lg";
 
 const VARIANTES: Record<Variante, string> = {
-  primario: "bg-marca text-marca-texto hover:bg-marca-hover shadow-sm",
-  secundario: "bg-white text-tinta border border-linha hover:bg-areia/60 shadow-sm",
-  fantasma: "text-tinta-suave hover:text-tinta hover:bg-areia/70",
-  perigo: "bg-red-600 text-white hover:bg-red-700 shadow-sm",
-  suave: "bg-marca-suave text-marca-escura hover:bg-marca-borda/60",
+  primario: "vidro-marca text-marca-texto hover:brightness-105",
+  secundario: "bg-white text-tinta border border-white/80 hover:bg-white/80 shadow-sm",
+  fantasma: "text-tinta-suave hover:text-tinta hover:bg-white/55",
+  perigo: "bg-red-600/90 text-white hover:bg-red-700 border border-white/40 shadow-sm",
+  suave: "bg-marca-suave/80 text-marca-escura border border-white/60 hover:bg-marca-borda/60",
 };
 const TAMANHOS: Record<Tamanho, string> = {
   sm: "min-h-9 px-3 text-xs gap-1.5",
@@ -39,7 +39,7 @@ const TAMANHOS: Record<Tamanho, string> = {
 
 export function botao(variante: Variante = "primario", tamanho: Tamanho = "md", extra?: string) {
   return cn(
-    "inline-flex items-center justify-center rounded-xl font-semibold transition-colors",
+    "inline-flex items-center justify-center rounded-full font-semibold transition-[background-color,filter,transform] duration-200 active:scale-[.97]",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca focus-visible:ring-offset-2",
     "disabled:opacity-50 disabled:pointer-events-none select-none",
     VARIANTES[variante], TAMANHOS[tamanho], extra,
@@ -63,10 +63,10 @@ export function BotaoLink({
 /* ── campos ──────────────────────────────────────────────────────── */
 
 export const campo = cn(
-  "w-full rounded-xl border border-linha bg-white px-3.5 py-2.5 text-sm text-tinta",
+  "w-full rounded-2xl border border-white/80 bg-white/75 px-3.5 py-2.5 text-sm text-tinta",
   "placeholder:text-tinta-suave/60 shadow-sm transition-colors",
   "focus:outline-none focus:border-marca focus:ring-2 focus:ring-marca/25",
-  "disabled:bg-areia/40",
+  "disabled:bg-white/40",
 );
 
 export function Rotulo({
@@ -97,7 +97,7 @@ export function Pagina({ children, larga, className }: { children: React.ReactNo
 }
 
 export function Cabecalho({
-  titulo, descricao, acoes, voltar, sobre,
+  titulo, descricao, acoes, voltar,
 }: {
   titulo: string; descricao?: React.ReactNode; acoes?: React.ReactNode;
   voltar?: { href: string; rotulo: string }; sobre?: string;
@@ -111,7 +111,7 @@ export function Cabecalho({
       )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          {sobre && <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-marca mb-1">{sobre}</p>}
+          {/* `sobre` (o grupo da tela) agora aparece no topo do painel, com a área: não repete aqui. */}
           <h1 className="font-titulo text-2xl sm:text-[1.75rem] font-bold tracking-tight text-tinta">{titulo}</h1>
           {descricao && <p className="mt-1.5 text-sm text-tinta-suave max-w-2xl leading-relaxed">{descricao}</p>}
         </div>
@@ -128,7 +128,7 @@ export function Cartao({
   descricao?: React.ReactNode; acoes?: React.ReactNode; semPadding?: boolean;
 }) {
   return (
-    <section className={cn("min-w-0 rounded-2xl border border-linha/80 bg-white shadow-sm", className)}>
+    <section className={cn("vidro min-w-0 rounded-[1.6rem]", className)}>
       {(titulo || acoes) && (
         <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5">
           <div className="min-w-0">
@@ -198,7 +198,7 @@ export function Vazio({ icone = "🌴", titulo, children, acao }: {
   icone?: React.ReactNode; titulo: string; children?: React.ReactNode; acao?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-linha bg-areia/30 px-6 py-12 text-center">
+    <div className="flex flex-col items-center justify-center rounded-[1.6rem] border border-dashed border-white/80 bg-white/35 px-6 py-12 text-center">
       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm" aria-hidden>{icone}</div>
       <p className="font-semibold text-tinta">{titulo}</p>
       {children && <p className="mt-1 max-w-md text-sm text-tinta-suave leading-relaxed">{children}</p>}
@@ -208,7 +208,7 @@ export function Vazio({ icone = "🌴", titulo, children, acao }: {
 }
 
 export function Esqueleto({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-xl bg-areia/70", className)} aria-hidden />;
+  return <div className={cn("animate-pulse rounded-xl bg-white/55", className)} aria-hidden />;
 }
 
 /** Tela de carregamento padrão, usada pelos `loading.tsx`. */
@@ -239,7 +239,7 @@ export function Indicador({ rotulo, valor, detalhe, tom = "neutro", href }: {
 }) {
   const barra = { neutro: "bg-linha", sucesso: "bg-emerald-500", aviso: "bg-amber-500", erro: "bg-red-500" }[tom];
   const corpo = (
-    <div className="relative h-full overflow-hidden rounded-2xl border border-linha/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+    <div className="vidro relative h-full overflow-hidden rounded-[1.4rem] p-4 transition-transform hover:-translate-y-0.5">
       <span className={cn("absolute inset-y-0 left-0 w-1", barra)} aria-hidden />
       <p className="text-xs font-medium text-tinta-suave">{rotulo}</p>
       <p className="mt-1 text-2xl font-bold tabular-nums text-tinta">{valor}</p>
@@ -287,7 +287,7 @@ export function Lista<T>({
       {/* Celular: cartões */}
       <ul className={cn("space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0", CARTOES_ATE[cartoesAte][0])}>
         {itens.map((item) => (
-          <li key={chave(item)} className="rounded-2xl border border-linha/80 bg-white p-4 shadow-sm">
+          <li key={chave(item)} className="vidro rounded-[1.4rem] p-4">
             <div className="font-semibold text-tinta">{colunas[p].celula(item)}</div>
             <dl className="mt-2 space-y-1">
               {colunas.map((c, i) => i === p || c.soDesktop ? null : (
@@ -302,7 +302,7 @@ export function Lista<T>({
         ))}
       </ul>
       {/* Tablet e desktop: tabela */}
-      <div className={cn("overflow-x-auto rounded-2xl border border-linha/80 bg-white shadow-sm", CARTOES_ATE[cartoesAte][1])}>
+      <div className={cn("vidro overflow-x-auto rounded-[1.6rem]", CARTOES_ATE[cartoesAte][1])}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-linha/80 bg-areia/40">

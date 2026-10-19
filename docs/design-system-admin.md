@@ -20,6 +20,32 @@
    Excluir, quando possível, vai para a lixeira.
 5. **Todo retorno vira toast.** Nada de mensagem que fica na tela para sempre.
 
+## Vidro líquido ("Liquid Glass") — desde 19/10/2026
+
+Decisão do Vinicios (estudo em `docs/estudo-painel-central.md`). Tudo em
+`src/app/(admin)/admin/admin.css`:
+
+- **Fundo vivo** do painel, feito das cores da marca (`--marca`, `--acento`)
+  e areia. É o que dá vida ao vidro; muda junto com Identidade visual.
+- **`.vidro`** (cartões, menu, topo) e **`.vidro-forte`** (diálogos, gavetas,
+  avisos, busca): branco translúcido, desfoque e saturação, aro claro e brilho
+  no alto. **`.vidro-bolha`**: o item escolhido (menu, barra do celular).
+  **`.vidro-marca`**: botão principal e aba ativa, vidro tingido da marca.
+- As telas antigas viram vidro sem mexer nelas: dentro de `.painel-admin`,
+  `bg-white`, `bg-fundo-suave`, `border-linha/80` e `shadow-sm` são
+  redefinidos. Prévia do site dentro do painel: envolva com `.fora-do-vidro`.
+- Botões em cápsula (`rounded-full`), campos `rounded-2xl` em branco 75%.
+- Sem `backdrop-filter`, o vidro fica mais opaco (legibilidade).
+
+## Casco: as 7 áreas
+
+O menu não é mais uma lista de telas: `src/components/admin/areas.ts` define
+as áreas, as telas de cada uma (com `?aba=` quando a tela tem abas) e as
+palavras da busca. Tela nova = um item numa área (e `chaves` para a busca).
+`tecnico: true` esconde o item de quem não tem papel `master`. As telas com
+abas próprias (Marina, Equipe) não desenham mais a fileira de abas: o topo do
+casco faz isso, e a tela remonta pela `key` quando a aba muda.
+
 ## Onde estão as peças
 
 | Arquivo | O quê | Onde roda |

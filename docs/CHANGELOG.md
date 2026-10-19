@@ -6,6 +6,40 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 (4) — Painel novo, fase 1: a Central em vidro líquido
+**Autor:** Claude (Claude Code), aprovado pelo Vinicios
+**Migration:** nenhuma
+
+- **7 áreas no lugar de 27 telas soltas** (Hoje, Atendimento, Marina,
+  Hospedagem, Restaurante, Site, Ajustes), definidas em
+  `src/components/admin/areas.ts`. Mesmos endereços de antes.
+- **Visual Liquid Glass**: fundo vivo nas cores da marca, menu lateral de
+  vidro solto, topo de vidro com as telas da área em abas, cartões, botões
+  em cápsula, diálogos e avisos de vidro (`admin.css`, `ui.tsx`,
+  `ui-cliente.tsx`). As telas antigas ganharam o vidro sem ser reescritas.
+- **Celular**: barra inferior em cápsula (Hoje · Atender · Marina · Site ·
+  Mais) e folha "Mais" com as outras áreas.
+- **Hoje** (`/admin`): lista única "Precisa de você" (clientes esperando a
+  equipe, perguntas sem resposta, respostas para aprovar, contatos novos,
+  motor fora, suítes sem foto), atalhos, semáforo (motor, WhatsApp da
+  pousada com limite de 4 s, Marina no WhatsApp, banco) e números da semana.
+- **Busca "O que você quer fazer?"** (Ctrl+K, lupa no celular): tarefas e
+  telas por palavras, sem acento.
+- **Perfis**: Técnico (papel `master`) vê também Pessoas, Integrações e
+  Diagnóstico; Gestão não.
+- Números no menu: Atendimento e cada tela dele (Chamados, Sem resposta,
+  Para aprovar, Contatos).
+- Marina e Equipe não desenham mais a fileira de abas própria (o topo faz
+  isso) e remontam pela `key` quando a aba muda pela URL. Só os menus ficam
+  dentro de `Suspense` (useSearchParams): pôr a tela inteira no fallback
+  duplicava o conteúdo no HTML (o e2e pegou dois campos iguais).
+- O rótulo "sobre" do `Cabecalho` não aparece mais (a área está no topo).
+- Textos na tela que citavam "Sistema → …" e "Equipe responsável → Prazos"
+  passaram aos nomes novos.
+- Verificado no Postgres local: `npm test` 50/50, `e2e-marina` 12/12,
+  `tsc`, `build`; 45 aberturas de tela em 390/768/1024/1280/1440 px sem
+  rolagem lateral nem erro; navegação por áreas e abas conferida.
+
 ## 2026-10-19 (3) — Estudo do painel como central (proposta, sem código)
 **Autor:** Claude (Claude Code)
 **Migration:** nenhuma

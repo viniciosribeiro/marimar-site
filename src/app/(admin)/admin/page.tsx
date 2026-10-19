@@ -1,13 +1,24 @@
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { fetchTarifas } from "@/lib/worker";
+import { statusWhatsapp } from "@/lib/envio-whatsapp";
 import { PENDENTE_CONFIRMACAO } from "@/lib/conteudo-pousada";
 import { lerLeituras } from "@/lib/marina";
-import { Pagina, Cabecalho, Cartao, Indicador, Aviso, Selo, Vazio, BotaoLink, quandoFoi } from "@/components/admin/ui";
-import { MessageCircleHeart, Inbox, BedDouble, Gift, HelpCircle, Star } from "lucide-react";
+import { Pagina, Cabecalho, Cartao, Aviso, Vazio, BotaoLink, quandoFoi, cn } from "@/components/admin/ui";
+import {
+  MessageCircleHeart, BedDouble, Gift, HelpCircle, Star, GraduationCap, ImageIcon, FlaskConical, Sparkles, ChevronRight,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * "Hoje" — a primeira tela da Central (fase 1 do estudo do painel,
+ * docs/estudo-painel-central.md). Junta numa lista só tudo o que espera
+ * alguém, que antes ficava espalhado em quatro telas, e diz se o motor, a
+ * Marina e o WhatsApp estão funcionando.
+ */
 
 /** Consulta real ao motor de reservas (daqui a 7 dias, 2 noites, 2 adultos). */
 async function medirMotor(): Promise<{ ok: boolean; detalhe: string; ms: number }> {
@@ -20,21 +31,42 @@ async function medirMotor(): Promise<{ ok: boolean; detalhe: string; ms: number 
     return { ok: true, ms: Date.now() - t0, detalhe: `${d.total_disponiveis} tipos disponíveis` };
   } catch (e) {
     const m = (e as Error).message;
-    return { ok: false, ms: 0, detalhe: /fetch failed|timeout|aborted/i.test(m) ? "não respondeu a tempo" : m.slice(0, 60) };
+    return { ok: false, ms: 0, detalhe: /fetch failed|timeout|aborted|não respondeu/i.test(m) ? "não respondeu a tempo" : m.slice(0, 60) };
   }
 }
 
-export default async function DashboardPage() {
+/** O WhatsApp da pousada, sem deixar a tela esperar mais de 4 s. */
+async function medirWhatsapp(): Promise<{ sabe: boolean; conectado: boolean | null; resumo: string }> {
+  const limite = new Promise<{ sabe: boolean; conectado: null; resumo: string }>((r) =>
+    setTimeout(() => r({ sabe: false, conectado: null, resumo: "não respondeu a tempo" }), 4000));
+  return Promise.race([statusWhatsapp().catch(() => ({ sabe: false, conectado: null, resumo: "não deu para consultar" })), limite]);
+}
+
+type Tom = "erro" | "aviso" | "marca" | "info" | "neutro";
+type Pendencia = { tom: Tom; titulo: string; detalhe: string; href: string; acao: string };
+const COR_TOM: Record<Tom, string> = {
+  erro: "bg-red-500 shadow-[0_0_10px_rgb(239_68_68)]",
+  aviso: "bg-amber-500 shadow-[0_0_10px_rgb(245_158_11)]",
+  marca: "bg-marca shadow-[0_0_10px_var(--marca)]",
+  info: "bg-sky-500 shadow-[0_0_10px_rgb(14_165_233)]",
+  neutro: "bg-slate-400",
+};
+
+const plural = (n: number, um: string, varios: string) => (n === 1 ? um : varios.replace("#", String(n)));
+
+export default async function HojePage() {
   const session = await auth();
   if (!session?.user) redirect("/admin/login");
   if ((session.user as any).mustReset) redirect("/admin/trocar-senha");
+  const tecnico = (session.user as { role?: string }).role === "master";
 
-  // ─── Estatísticas ───
   let stats: Record<string, number> = {};
-  let leadsRecentes: any[] = [];
+  let naoLidos: any[] = [];
+  let chamados: { codigo: string; pergunta: string; canal: string; criado_em: string }[] = [];
+  let lacunaRecente: string | null = null;
   let semFoto = 0;
   let erroBanco = "";
-  let marina = { lacunas: 0, itens: 0, whatsapp: null as string | null, conversasHoje: 0 };
+  let marina = { lacunas: 0, whatsapp: null as string | null, conversas7: 0, leads7: 0 };
   let cerebro = { aguardando: 0, pendentes: 0, aprendidos: 0, sozinha: 0, escaladas: 0 };
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
@@ -42,29 +74,27 @@ export default async function DashboardPage() {
       SELECT
         (SELECT count(*) FROM quartos WHERE ativo = true)::int      AS quartos,
         (SELECT count(*) FROM leads WHERE lido = false)::int        AS leads_novos,
-        (SELECT count(*) FROM leads)::int                           AS leads_total,
-        (SELECT count(*) FROM midias)::int                          AS midias,
         (SELECT count(*) FROM midias WHERE destaque = true AND quarto_id IS NULL AND tipo = 'foto')::int AS hero,
         (SELECT count(*) FROM pacotes WHERE ativo = true)::int      AS pacotes,
         (SELECT count(*) FROM faq WHERE ativo = true)::int          AS faq,
         (SELECT count(*) FROM depoimentos WHERE ativo = true)::int  AS depoimentos
     `;
     stats = r as any;
-    leadsRecentes = await sql`SELECT nome, telefone, origem, lido, criado_em FROM leads ORDER BY criado_em DESC LIMIT 5`;
+    naoLidos = await sql`SELECT nome, origem, criado_em FROM leads WHERE lido = false ORDER BY criado_em DESC LIMIT 3`;
     const [f] = await sql`
       SELECT count(*)::int AS c FROM quartos q
       WHERE q.ativo = true AND NOT EXISTS (SELECT 1 FROM midias m WHERE m.quarto_id = q.id AND m.tipo = 'foto')
     `;
     semFoto = (f as any).c;
-    /* A Marina no painel inicial: é o que mais muda no dia a dia. Cada
-       consulta isolada — antes da migration 0016 as tabelas não existem. */
+    /* Cada consulta isolada: antes das migrations 0016/0019 as tabelas não existem. */
     const [lac] = await sql`SELECT count(*)::int AS n FROM marina_lacunas WHERE status = 'aberta'`.catch(() => [{ n: 0 }]);
-    const [ens] = await sql`SELECT count(*)::int AS n FROM marina_conhecimento WHERE ativo = true AND excluido_em IS NULL`
-      .catch(() => sql`SELECT count(*)::int AS n FROM marina_conhecimento WHERE ativo = true`).catch(() => [{ n: 0 }]);
-    const [hoje] = await sql`SELECT count(DISTINCT sessao)::int AS n FROM chat_mensagens WHERE criado_em > now() - interval '24 hours'`.catch(() => [{ n: 0 }]);
+    const [ult] = await sql`SELECT pergunta FROM marina_lacunas WHERE status = 'aberta' ORDER BY criado_em DESC LIMIT 1`.catch(() => [null]);
+    lacunaRecente = (ult as any)?.pergunta ?? null;
+    const [c7] = await sql`SELECT count(DISTINCT sessao)::int AS n FROM chat_mensagens WHERE criado_em > now() - interval '7 days'`.catch(() => [{ n: 0 }]);
+    const [l7] = await sql`SELECT count(*)::int AS n FROM leads WHERE criado_em > now() - interval '7 days'`.catch(() => [{ n: 0 }]);
     const leituras = await lerLeituras(sql);
-    marina = { lacunas: (lac as any).n, itens: (ens as any).n, whatsapp: leituras.whatsapp?.lido_em ?? null, conversasHoje: (hoje as any).n };
-    /* Escalonamento e aprendizado (migration 0019). */
+    marina = { lacunas: (lac as any).n, whatsapp: leituras.whatsapp?.lido_em ?? null, conversas7: (c7 as any).n, leads7: (l7 as any).n };
+    chamados = await sql<typeof chamados>`SELECT codigo, pergunta, canal, criado_em FROM marina_chamados WHERE status = 'aguardando' ORDER BY criado_em LIMIT 4`.catch(() => []);
     const [cb] = await sql`
       SELECT (SELECT count(*) FROM marina_chamados WHERE status = 'aguardando')::int AS aguardando,
              (SELECT count(*) FROM marina_aprendizado WHERE status = 'pendente')::int AS pendentes,
@@ -78,26 +108,56 @@ export default async function DashboardPage() {
     erroBanco = (e as Error).message;
   }
 
-  // ─── Motor de reservas, de verdade (antes era "—" hardcoded) ───
-  const motor = await medirMotor();
+  const [motor, whatsapp] = await Promise.all([medirMotor(), medirWhatsapp()]);
 
-  const avisos: { txt: string; href: string; acao: string }[] = [];
-  if (marina.lacunas > 0) avisos.push({ txt: marina.lacunas === 1 ? "A Marina não soube responder 1 pergunta de hóspede." : `A Marina não soube responder ${marina.lacunas} perguntas de hóspedes.`, href: "/admin/marina?aba=sem-resposta", acao: "Ensinar" });
-  if (cerebro.aguardando > 0) avisos.push({ txt: cerebro.aguardando === 1 ? "1 cliente está esperando resposta da equipe." : `${cerebro.aguardando} clientes estão esperando resposta da equipe.`, href: "/admin/equipe?aba=chamados", acao: "Ver chamados" });
-  if (cerebro.pendentes > 0) avisos.push({ txt: cerebro.pendentes === 1 ? "A Marina aprendeu 1 resposta nova que espera aprovação." : `A Marina aprendeu ${cerebro.pendentes} respostas novas que esperam aprovação.`, href: "/admin/marina?aba=aprendizado", acao: "Revisar" });
-  if (stats.hero === 0) avisos.push({ txt: "Nenhuma foto de destaque para o topo do site — a home está usando uma foto de quarto.", href: "/admin/midias", acao: "Cadastrar foto" });
-  if (semFoto > 0) avisos.push({ txt: semFoto === 1 ? "1 quarto ativo está sem nenhuma foto." : `${semFoto} quartos ativos estão sem nenhuma foto.`, href: "/admin/quartos", acao: "Ver quartos" });
-  if (!motor.ok) avisos.push({ txt: "O motor de reservas não respondeu. O site fica no ar sem preços.", href: "/admin/diagnostico", acao: "Diagnosticar" });
-  if (stats.leads_novos > 0) avisos.push({ txt: stats.leads_novos === 1 ? "1 contato ainda não foi lido." : `${stats.leads_novos} contatos ainda não foram lidos.`, href: "/admin/leads", acao: "Ler agora" });
+  /* ─── Precisa de você: do mais urgente ao menos ─── */
+  const pendencias: Pendencia[] = [];
+  for (const c of chamados) {
+    pendencias.push({
+      tom: "aviso", titulo: `#${c.codigo} · “${String(c.pergunta).slice(0, 80)}”`,
+      detalhe: `${c.canal === "site" ? "Cliente do site" : "Cliente no WhatsApp"} · esperando a equipe desde ${quandoFoi(c.criado_em)}`,
+      href: "/admin/equipe?aba=chamados", acao: "Responder",
+    });
+  }
+  if (cerebro.aguardando > chamados.length) {
+    const resto = cerebro.aguardando - chamados.length;
+    pendencias.push({ tom: "aviso", titulo: plural(resto, "Mais 1 cliente esperando a equipe", "Mais # clientes esperando a equipe"), detalhe: "Chamados abertos", href: "/admin/equipe?aba=chamados", acao: "Ver todos" });
+  }
+  if (!motor.ok) pendencias.push({ tom: "erro", titulo: "O motor de reservas não respondeu", detalhe: "O site fica no ar, mas sem preços e vagas até ele voltar.", href: tecnico ? "/admin/diagnostico" : "/admin", acao: tecnico ? "Diagnosticar" : "Avisar o Vinicios" });
+  if (marina.lacunas > 0) pendencias.push({
+    tom: "erro", titulo: plural(marina.lacunas, "A Marina não soube responder 1 pergunta", "A Marina não soube responder # perguntas"),
+    detalhe: lacunaRecente ? `Última: “${lacunaRecente.slice(0, 80)}”` : "Perguntas de hóspedes sem resposta",
+    href: "/admin/marina?aba=sem-resposta", acao: "Ensinar",
+  });
+  if (cerebro.pendentes > 0) pendencias.push({
+    tom: "marca", titulo: plural(cerebro.pendentes, "1 resposta nova espera sua aprovação", "# respostas novas esperam sua aprovação"),
+    detalhe: "A equipe respondeu pelo WhatsApp e a Marina quer guardar", href: "/admin/marina?aba=aprendizado", acao: "Aprovar",
+  });
+  for (const l of naoLidos) {
+    pendencias.push({ tom: "info", titulo: `${l.nome || "Contato sem nome"} deixou contato`, detalhe: `${l.origem || "site"} · ${quandoFoi(l.criado_em)}`, href: "/admin/leads", acao: "Abrir" });
+  }
+  if ((stats.leads_novos ?? 0) > naoLidos.length) {
+    pendencias.push({ tom: "info", titulo: plural(stats.leads_novos - naoLidos.length, "Mais 1 contato para ler", "Mais # contatos para ler"), detalhe: "Contatos recebidos", href: "/admin/leads", acao: "Ver todos" });
+  }
+  if (stats.hero === 0) pendencias.push({ tom: "neutro", titulo: "O topo do site está sem foto de destaque", detalhe: "A página inicial está usando uma foto de quarto", href: "/admin/banners", acao: "Escolher foto" });
+  if (semFoto > 0) pendencias.push({ tom: "neutro", titulo: plural(semFoto, "1 suíte está sem foto", "# suítes estão sem foto"), detalhe: "Aparecem no site sem imagem", href: "/admin/quartos", acao: "Ver suítes" });
 
   const nome = (session.user.name || session.user.email || "").split(" ")[0];
   const hora = new Date().toLocaleString("pt-BR", { hour: "numeric", hour12: false, timeZone: "America/Sao_Paulo" });
   const saudacao = Number(hora) < 12 ? "Bom dia" : Number(hora) < 18 ? "Boa tarde" : "Boa noite";
+  const resolveu = cerebro.sozinha + cerebro.escaladas ? `${Math.round((cerebro.sozinha / (cerebro.sozinha + cerebro.escaladas)) * 100)}%` : "—";
+
+  const semaforo: { ok: boolean | null; nome: string; detalhe: string }[] = [
+    { ok: motor.ok, nome: "Motor de reservas", detalhe: motor.ok ? `respondeu em ${(motor.ms / 1000).toFixed(1).replace(".", ",")} s` : motor.detalhe || "sem resposta" },
+    { ok: whatsapp.sabe ? whatsapp.conectado : null, nome: "WhatsApp da pousada", detalhe: whatsapp.sabe ? (whatsapp.conectado ? "conectado" : "desconectado") : whatsapp.resumo },
+    { ok: marina.whatsapp ? true : null, nome: "Marina no WhatsApp", detalhe: marina.whatsapp ? `leu o treinamento ${quandoFoi(marina.whatsapp)}` : "ainda não leu o treinamento" },
+    { ok: !erroBanco, nome: "Banco de dados", detalhe: erroBanco ? "não respondeu" : "funcionando" },
+  ];
 
   return (
     <Pagina larga>
-      <Cabecalho sobre="Pousada Marimar" titulo={`${saudacao}${nome ? `, ${nome}` : ""}!`}
-        descricao="O resumo do site, das reservas e do atendimento da Marina."
+      <Cabecalho sobre="Hoje" titulo={`${saudacao}${nome ? `, ${nome}` : ""}!`}
+        descricao={pendencias.length ? "Tudo o que espera alguém, do mais urgente ao menos." : "Nada esperando você agora."}
         acoes={<BotaoLink href="/admin/marina?aba=testar" variante="secundario"><MessageCircleHeart className="h-4 w-4" /> Conversar com a Marina</BotaoLink>} />
 
       {erroBanco && (
@@ -106,88 +166,99 @@ export default async function DashboardPage() {
         </Aviso>
       )}
 
-      {avisos.length > 0 && (
-        <Cartao titulo="Precisa da sua atenção" className="mb-6">
-          <ul className="space-y-2">
-            {avisos.map((a) => (
-              <li key={a.txt}>
-                <Aviso tom="aviso" acao={<BotaoLink href={a.href} variante="secundario" tamanho="sm">{a.acao}</BotaoLink>}>{a.txt}</Aviso>
-              </li>
-            ))}
-          </ul>
-        </Cartao>
-      )}
-
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Indicador rotulo="Motor de reservas" valor={motor.ok ? "No ar" : "Fora do ar"} tom={motor.ok ? "sucesso" : "erro"}
-          detalhe={motor.ok ? `${motor.detalhe} · respondeu em ${(motor.ms / 1000).toFixed(1).replace(".", ",")}s` : motor.detalhe || "sem resposta"} href="/admin/diagnostico" />
-        <Indicador rotulo="Marina" valor={`${marina.itens} ${marina.itens === 1 ? "item" : "itens"}`} tom={marina.lacunas ? "aviso" : "sucesso"}
-          detalhe={marina.whatsapp ? `WhatsApp leu o treinamento ${quandoFoi(marina.whatsapp)}` : "WhatsApp ainda não leu o treinamento"} href="/admin/marina" />
-        <Indicador rotulo="Conversas no site (24h)" valor={marina.conversasHoje} detalhe="pelo chat da Marina" href="/admin/marina?aba=conversas" />
-        <Indicador rotulo="Contatos" valor={stats.leads_total ?? 0} tom={stats.leads_novos ? "aviso" : "neutro"}
-          detalhe={stats.leads_novos ? `${stats.leads_novos} ${stats.leads_novos === 1 ? "novo" : "novos"} para ler` : "todos lidos"} href="/admin/leads" />
-      </div>
-
-      <Cartao className="mb-6" titulo="Cérebro da Marina" descricao="O que ela aprende com a equipe e quanto já resolve sozinha (últimos 30 dias)."
-        acoes={<BotaoLink href="/admin/cerebro" variante="secundario" tamanho="sm">Abrir o Cérebro</BotaoLink>}>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            ["Resolveu sozinha", cerebro.sozinha + cerebro.escaladas ? `${Math.round((cerebro.sozinha / (cerebro.sozinha + cerebro.escaladas)) * 100)}%` : "—"],
-            ["Aprendidos em uso", cerebro.aprendidos],
-            ["Esperando aprovação", cerebro.pendentes],
-            ["Clientes esperando a equipe", cerebro.aguardando],
-          ].map(([r, v]) => (
-            <div key={r as string} className="rounded-xl bg-fundo-suave p-3">
-              <p className="text-2xl font-bold tabular-nums text-tinta">{v}</p>
-              <p className="text-xs text-tinta-suave">{r}</p>
-            </div>
-          ))}
-        </div>
-      </Cartao>
-
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <Cartao titulo="Últimos contatos" acoes={<BotaoLink href="/admin/leads" variante="fantasma" tamanho="sm">Ver todos</BotaoLink>} semPadding>
-          {leadsRecentes.length === 0 ? (
-            <div className="p-5"><Vazio icone={<Inbox className="h-6 w-6 text-tinta-suave" />} titulo="Nenhum contato ainda">Quem deixar contato pelo site ou pela Marina aparece aqui.</Vazio></div>
+      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+        <Cartao titulo={<span className="flex items-center gap-2">Precisa de você {pendencias.length > 0 && <span className="rounded-full bg-marca-suave px-2 text-xs font-bold leading-5 text-marca-escura">{pendencias.length}</span>}</span>} semPadding>
+          {pendencias.length === 0 ? (
+            <div className="p-5"><Vazio icone={<Sparkles className="h-6 w-6 text-marca" />} titulo="Tudo em dia">Quando um cliente esperar a equipe, a Marina não souber algo ou chegar um contato, aparece aqui.</Vazio></div>
           ) : (
-            <ul className="divide-y divide-linha/60 px-5 pb-2 pt-2">
-              {leadsRecentes.map((l: any, i: number) => (
-                <li key={i} className="flex items-center justify-between gap-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-tinta">{l.nome}</p>
-                    <p className="truncate text-xs text-tinta-suave">{l.telefone || "sem telefone"} · {l.origem} · {quandoFoi(l.criado_em)}</p>
-                  </div>
-                  <Selo tom={l.lido ? "neutro" : "info"} ponto>{l.lido ? "lido" : "novo"}</Selo>
+            <ul className="mt-3 divide-y divide-tinta/[0.07]">
+              {pendencias.map((p, i) => (
+                <li key={i}>
+                  <Link href={p.href} className="group flex min-h-16 items-center gap-3 px-5 py-3 transition-colors hover:bg-white/45">
+                    <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full ring-[3px] ring-white/70", COR_TOM[p.tom])} aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-tinta">{p.titulo}</span>
+                      <span className="block truncate text-xs text-tinta-suave">{p.detalhe}</span>
+                    </span>
+                    <span className="hidden shrink-0 rounded-full border border-white/80 bg-white/60 px-3 py-1 text-xs font-semibold text-tinta sm:inline">{p.acao}</span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-tinta-suave sm:hidden" aria-hidden />
+                  </Link>
                 </li>
               ))}
             </ul>
           )}
         </Cartao>
 
-        <div className="space-y-6">
-          <Cartao titulo="No ar no site">
-            <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-5">
+          <Cartao titulo="Atalhos">
+            <div className="grid grid-cols-2 gap-2.5">
               {[
-                { href: "/admin/quartos", rotulo: "Quartos", n: stats.quartos, I: BedDouble },
-                { href: "/admin/pacotes", rotulo: "Pacotes", n: stats.pacotes, I: Gift },
-                { href: "/admin/faq", rotulo: "Perguntas", n: stats.faq, I: HelpCircle },
-                { href: "/admin/depoimentos", rotulo: "Depoimentos", n: stats.depoimentos, I: Star },
-              ].map(({ href, rotulo, n, I }) => (
-                <a key={href} href={href} className="flex items-center gap-3 rounded-xl border border-linha/70 p-3 hover:border-marca min-h-14">
-                  <I className="h-5 w-5 text-marca" />
-                  <span><span className="block text-lg font-bold leading-none tabular-nums text-tinta">{n ?? 0}</span><span className="text-xs text-tinta-suave">{rotulo}</span></span>
-                </a>
+                { href: "/admin/marina?aba=conhecimento&novo=1", t: "Ensinar a Marina", d: "Algo que ela ainda não sabe", I: GraduationCap },
+                { href: "/admin/banners", t: "Trocar foto do topo", d: "Página inicial do site", I: ImageIcon },
+                { href: "/admin/pacotes?novo=1", t: "Criar oferta", d: "Pacote com datas e preço", I: Gift },
+                { href: "/admin/marina?aba=testar", t: "Testar a Marina", d: "Pergunte como um hóspede", I: FlaskConical },
+              ].map(({ href, t, d, I }) => (
+                <Link key={href} href={href}
+                  className="group flex min-h-[4.5rem] flex-col justify-center gap-0.5 rounded-[1.25rem] border border-white/80 bg-white/55 p-3 shadow-[inset_0_1px_0_#fff] transition-transform duration-200 hover:-translate-y-0.5 active:scale-[.98]">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-tinta"><I className="h-4 w-4 shrink-0 text-marca" />{t}</span>
+                  <span className="text-xs text-tinta-suave">{d}</span>
+                </Link>
               ))}
             </div>
           </Cartao>
-          <Cartao titulo="A confirmar com a pousada" descricao="O site ainda não publica isto porque depende de confirmação.">
-            <ul className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
-              {PENDENTE_CONFIRMACAO.map((p) => (
-                <li key={p} className="flex gap-2 text-xs leading-relaxed text-tinta-suave"><span className="text-amber-500" aria-hidden>•</span>{p}</li>
+
+          <Cartao titulo="Está tudo funcionando?" acoes={tecnico ? <BotaoLink href="/admin/diagnostico" variante="fantasma" tamanho="sm">Diagnóstico</BotaoLink> : undefined}>
+            <ul className="space-y-2.5">
+              {semaforo.map((s) => (
+                <li key={s.nome} className="flex items-center gap-3 text-sm">
+                  <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full",
+                    s.ok === true ? "bg-emerald-500 shadow-[0_0_10px_rgb(16_185_129)]" : s.ok === false ? "bg-red-500 shadow-[0_0_10px_rgb(239_68_68)]" : "bg-amber-400 shadow-[0_0_10px_rgb(251_191_36)]")} aria-hidden />
+                  <span className="font-medium text-tinta">{s.nome}</span>
+                  <span className="ml-auto truncate pl-2 text-right text-xs text-tinta-suave">{s.detalhe}</span>
+                </li>
               ))}
             </ul>
           </Cartao>
         </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          [resolveu, "perguntas que a Marina resolveu sozinha (30 dias)"],
+          [cerebro.aprendidos, "respostas aprendidas com a equipe, em uso"],
+          [marina.conversas7, "conversas no chat do site (7 dias)"],
+          [marina.leads7, "contatos novos (7 dias)"],
+        ].map(([v, r]) => (
+          <div key={r as string} className="vidro rounded-[1.4rem] p-4">
+            <p className="font-titulo text-2xl font-bold tabular-nums text-tinta">{v}</p>
+            <p className="text-xs text-tinta-suave">{r}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+        <Cartao titulo="No ar no site">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[
+              { href: "/admin/quartos", rotulo: "Suítes", n: stats.quartos, I: BedDouble },
+              { href: "/admin/pacotes", rotulo: "Pacotes", n: stats.pacotes, I: Gift },
+              { href: "/admin/faq", rotulo: "Perguntas", n: stats.faq, I: HelpCircle },
+              { href: "/admin/depoimentos", rotulo: "Depoimentos", n: stats.depoimentos, I: Star },
+            ].map(({ href, rotulo, n, I }) => (
+              <Link key={href} href={href} className="flex min-h-14 items-center gap-3 rounded-[1.1rem] border border-white/80 bg-white/50 p-3 hover:bg-white/75">
+                <I className="h-5 w-5 text-marca" />
+                <span><span className="block text-lg font-bold leading-none tabular-nums text-tinta">{n ?? 0}</span><span className="text-xs text-tinta-suave">{rotulo}</span></span>
+              </Link>
+            ))}
+          </div>
+        </Cartao>
+        <Cartao titulo="A confirmar com a pousada" descricao="O site ainda não publica isto porque depende de confirmação.">
+          <ul className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
+            {PENDENTE_CONFIRMACAO.map((p) => (
+              <li key={p} className="flex gap-2 text-xs leading-relaxed text-tinta-suave"><span className="text-amber-500" aria-hidden>•</span>{p}</li>
+            ))}
+          </ul>
+        </Cartao>
       </div>
     </Pagina>
   );
