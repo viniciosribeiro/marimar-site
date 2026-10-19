@@ -1,13 +1,24 @@
+/**
+ * Link do botão "Reservar no site oficial": abre o motor do Desbravador já
+ * com as datas e os hóspedes da busca.
+ *
+ * Formato do motor novo (hotel-app), o mesmo que a Marina manda no WhatsApp
+ * (agente/skills/consulta-desbravador/scripts/consultar-api.mjs):
+ *   /hotel-app/<slug>/reservation?checkin=AAAA-MM-DD&checkout=AAAA-MM-DD&adults=N&child1=N
+ * Até 19/10/2026 o site usava o formato antigo (?checkin=DD/MM/AAAA&adultos=…),
+ * que o motor passou a ignorar: o hóspede caía na página inicial do
+ * Desbravador e tinha de refazer a busca.
+ */
+const MOTOR = "https://reservas.desbravador.com.br/hotel-app/pousada-ilha-do-mel-marimar";
+
 export function buildDeepLink(params: {
   checkIn: string; checkOut: string; adultos: number; criancas?: number;
 }): string {
-  const base = "https://reservas.desbravador.com.br/hotel-app/pousada-ilha-do-mel-marimar";
-  const fmt = (iso: string) => { const [y,m,d] = iso.split("-"); return `${d}/${m}/${y}`; };
   const qs = new URLSearchParams({
-    checkin: fmt(params.checkIn),
-    checkout: fmt(params.checkOut),
-    adultos: String(params.adultos),
-    criancas: String(params.criancas ?? 0),
+    checkin: params.checkIn,
+    checkout: params.checkOut,
+    adults: String(Math.max(1, params.adultos)),
+    child1: String(Math.max(0, params.criancas ?? 0)),
   });
-  return `${base}?${qs.toString()}`;
+  return `${MOTOR}/reservation?${qs.toString()}`;
 }

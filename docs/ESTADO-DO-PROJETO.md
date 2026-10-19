@@ -92,6 +92,11 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+000000000000. **Botão "Reservar no site oficial" (19/10):** passou ao formato
+   novo do motor (o mesmo da Marina), para abrir com datas e hóspedes em vez
+   da página inicial do Desbravador. Conferir num celular. Para abrir já na
+   suíte escolhida, falta saber se o motor aceita um parâmetro de quarto
+   (pedir ao Vinicios o endereço que aparece depois de escolher a suíte lá).
 00000000000. **Ícone e abertura (19/10):** o ícone do site agora sai da logo
    (antes era o triângulo da Vercel) e o site abre com a logo animada e
    "Pousada" embaixo. Conferir num celular de verdade; quem tinha o atalho na
