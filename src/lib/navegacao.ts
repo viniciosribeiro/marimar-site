@@ -87,6 +87,13 @@ export const NAVEGACAO: GrupoNav[] = [
         rotulo: "Sobre a Marimar",
         descricao: "A casa, a história e a estrutura do complexo",
       },
+      /* Em A Pousada desde 19/10/2026 (pedido do Vinicios): quem procura
+         "como chegar" quer chegar à pousada, não conhecer a ilha. */
+      {
+        href: "/como-chegar",
+        rotulo: "Como chegar",
+        descricao: "Da sua casa até a nossa porta, com mapa e navegação no celular",
+      },
       {
         href: "/galeria",
         rotulo: "Galeria de fotos",
@@ -112,11 +119,6 @@ export const NAVEGACAO: GrupoNav[] = [
         href: "/ilha-do-mel",
         rotulo: "Encantadas e a ilha",
         descricao: "Onde a pousada fica e como é o vilarejo",
-      },
-      {
-        href: "/como-chegar",
-        rotulo: "Como chegar",
-        descricao: "Rota passo a passo, e no celular até a porta",
       },
       {
         href: "/ilha-do-mel#travessia",

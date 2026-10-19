@@ -6,6 +6,16 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 (10) — "Como chegar" passa para o menu A Pousada
+**Autor:** Claude (Claude Code), aprovado pelo Vinicios antes de mexer
+**Migration:** nenhuma
+
+Quem procura "como chegar" quer chegar à pousada, não conhecer a ilha. Em
+`src/lib/navegacao.ts`, o item saiu de **Ilha do Mel** e entrou em **A
+Pousada**, logo abaixo de "Sobre a Marimar" — vale no topo, na gaveta do
+celular e no rodapé. "Travessia de barco" continua em Ilha do Mel (escolha
+do Vinicios). O endereço `/como-chegar` não mudou.
+
 ## 2026-10-19 (9) — "Reservar no site oficial" volta a abrir com datas e hóspedes
 **Autor:** Claude (Claude Code), a partir de um relato do Vinicios
 **Migration:** nenhuma
