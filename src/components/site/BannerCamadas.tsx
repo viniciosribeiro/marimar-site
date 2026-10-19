@@ -67,7 +67,7 @@ export function BannerCamadas({
 
       {/* ── 4. conteúdo ── */}
       <div
-        className={`relative flex-1 flex flex-col min-w-0 px-5 sm:px-8 ${topoImersivo ? "pb-14 sm:pb-20" : ""} ${pos.vertical} ${pos.horizontal}`}
+        className={`relative flex-1 flex flex-col min-w-0 px-5 sm:px-8 ${topoImersivo ? "pb-14 sm:pb-32 lg:pb-36" : ""} ${pos.vertical} ${pos.horizontal}`}
         style={topoImersivo ? { paddingTop: "calc(var(--altura-topo) + 1.5rem)" } : undefined}
       >
         {/* `min-w-0` nos dois niveis: em flex, o filho se recusa a encolher
@@ -122,10 +122,9 @@ export function BannerCamadas({
             </div>
           )}
 
-          {/* No celular a busca NAO fica aqui dentro: ela ocupava quase a
-              altura toda do banner e cobria a foto. O carrossel desenha a
-              busca logo abaixo do banner nessa largura (CarrosselBanners). */}
-          {children && <div className="hidden sm:block">{children}</div>}
+          {/* A busca do topo NÃO entra aqui: por cima, ela escondia a foto.
+              O carrossel a desenha abaixo do banner (BuscaAbaixoDaFoto). */}
+          {children}
         </div>
       </div>
     </div>

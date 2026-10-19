@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { CarrosselBanners, BuscaNoCelular } from "./CarrosselBanners";
+import { CarrosselBanners, BuscaAbaixoDaFoto } from "./CarrosselBanners";
 import type { Banner } from "@/lib/banners";
 import { IconeCirculo, Icone, OndaTitulo } from "./Icone";
 import { BuscaHome } from "./BuscaHome";
@@ -143,9 +143,9 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
   const img = b.img || d.heroUrl;
   const nome = b.t || d.pousada?.nome || "Pousada Marimar";
 
-  /* A busca é a MESMA nos dois caminhos: com banners cadastrados ela vai por
-     cima do carrossel; sem banners, fica sobre a foto única. Duplicá-la
-     acabaria com dois formulários de disponibilidade divergentes. */
+  /* A busca é a MESMA nos dois caminhos (com banners ou com a foto única) e
+     fica sempre ABAIXO da foto, subindo um pouco sobre a borda (19/10/2026).
+     Duplicá-la acabaria com dois formulários divergentes. */
   const busca = (
     <div className="mt-8">
       <BuscaHome pacotes={d.pacotes} criancas={d.criancas ?? null} />
@@ -160,8 +160,8 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
     <>
       <section
         data-topo-imersivo
-        className="relative isolate text-white overflow-hidden min-h-[34rem] sm:min-h-[44rem] flex items-center"
-        style={{ marginTop: "calc(-1 * var(--altura-topo))", paddingTop: "calc(var(--altura-topo) + 2rem)", paddingBottom: "5rem" }}
+        className="relative isolate text-white overflow-hidden min-h-[34rem] sm:min-h-[44rem] flex items-center pb-20 sm:pb-32 lg:pb-36"
+        style={{ marginTop: "calc(-1 * var(--altura-topo))", paddingTop: "calc(var(--altura-topo) + 2rem)" }}
       >
         {img ? (
           <>
@@ -197,13 +197,11 @@ function Hero({ b, d }: { b: { t: string | null; s: string | null; img: string |
             ))}
           </ul>
 
-          {/* No celular a busca vai abaixo da foto (BuscaNoCelular). */}
-          <div className="hidden sm:block">{busca}</div>
         </div>
 
         <OndaDivisor className="absolute bottom-0 inset-x-0 text-fundo" />
       </section>
-      <BuscaNoCelular>{busca}</BuscaNoCelular>
+      <BuscaAbaixoDaFoto>{busca}</BuscaAbaixoDaFoto>
     </>
   );
 }

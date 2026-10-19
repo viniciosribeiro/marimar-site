@@ -84,14 +84,13 @@ export function CarrosselBanners({
             aria-hidden={i !== atual}
           >
             <BannerCamadas b={b} ativo={i === atual} prioridade={i === 0} topoImersivo>
-              {i === atual ? children : null}
             </BannerCamadas>
           </div>
         ))}
       </div>
 
       {total > 1 && (
-        <div className="absolute bottom-14 sm:bottom-16 left-0 right-0 z-10 flex items-center justify-center gap-2">
+        <div className={`absolute ${children ? "bottom-14 sm:bottom-28 lg:bottom-32" : "bottom-14 sm:bottom-16"} left-0 right-0 z-10 flex items-center justify-center gap-2`}>
           {banners.map((b, i) => (
             <button
               key={b.id}
@@ -115,15 +114,19 @@ export function CarrosselBanners({
       <OndaDivisor className="absolute bottom-0 inset-x-0 text-fundo pointer-events-none" />
     </section>
 
-    {/* A busca no celular: abaixo da foto, subindo só um pouco sobre a borda
-        dela. Dentro do banner ela cobria a imagem quase inteira e a foto
-        se perdia. No computador continua sobre o banner (BannerCamadas). */}
-    {children && <BuscaNoCelular>{children}</BuscaNoCelular>}
+    {/* A busca fica ABAIXO da foto, subindo só um pouco sobre a borda dela
+        (decisão do Vinicios em 19/10/2026: por cima, ela escondia o assunto
+        da foto). No celular já era assim desde 30/09. */}
+    {children && <BuscaAbaixoDaFoto>{children}</BuscaAbaixoDaFoto>}
     </>
   );
 }
 
-/** Caixa de busca abaixo da foto, só abaixo de `sm`. Usada também pelo topo sem banner. */
-export function BuscaNoCelular({ children }: { children: React.ReactNode }) {
-  return <div className="sm:hidden relative z-10 -mt-8 px-4 [&>div]:mt-0">{children}</div>;
+/**
+ * Caixa de busca logo abaixo da foto do topo, subindo um pouco sobre a borda
+ * (no celular 2 rem, como desde 30/09; do tablet para cima 4–5 rem). Usada
+ * pelo carrossel e pelo topo de foto única.
+ */
+export function BuscaAbaixoDaFoto({ children }: { children: React.ReactNode }) {
+  return <div className="relative z-10 -mt-8 sm:-mt-16 lg:-mt-20 px-4 [&>div]:mt-0">{children}</div>;
 }
