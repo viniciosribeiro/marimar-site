@@ -32,48 +32,81 @@ export const maxDuration = 60;
  */
 type Troca = { papel: "voce" | "marina"; conteudo: string };
 
-async function perguntarAoGateway(sessao: string, sistema: string, historico: Troca[], mensagem: string) {
-  const resposta = await fetch(urlGateway("/v1/chat/completions"), {
-    method: "POST",
-    headers: cabecalhosGateway(),
-    signal: AbortSignal.timeout(55_000),
-    body: JSON.stringify({
-      model: process.env.OPENCLAW_MODELO || "openclaw",
-      stream: true,
-      user: sessao,
-      messages: [
-        { role: "system", content: sistema },
-        ...historico.slice(-10).map((t) => ({ role: t.papel === "voce" ? "user" : "assistant", content: t.conteudo })),
-        { role: "user", content: mensagem },
-      ],
-    }),
-  });
+/** Erro já explicado para quem opera o painel: vai para a tela como está. */
+class ErroGateway extends Error {}
+
+/* Prazos: o servidor da Marina tem 20 s para atender; a resposta inteira,
+   até 52 s (a função da Vercel vive 60 s). Se ela já tiver começado a
+   responder quando o tempo acaba, o teste mostra o que chegou. */
+const PRAZO_ATENDER = 20_000;
+const PRAZO_TOTAL = 52_000;
+
+async function perguntarAoGateway(sessao: string, sistema: string, historico: Troca[], mensagem: string): Promise<{ texto: string; cortada: boolean }> {
+  const inicio = Date.now();
+  const controle = new AbortController();
+  const atender = setTimeout(() => controle.abort(), PRAZO_ATENDER);
+  let resposta: Response;
+  try {
+    resposta = await fetch(urlGateway("/v1/chat/completions"), {
+      method: "POST",
+      headers: cabecalhosGateway(),
+      signal: controle.signal,
+      body: JSON.stringify({
+        model: process.env.OPENCLAW_MODELO || "openclaw",
+        stream: true,
+        user: sessao,
+        messages: [
+          { role: "system", content: sistema },
+          ...historico.slice(-10).map((t) => ({ role: t.papel === "voce" ? "user" : "assistant", content: t.conteudo })),
+          { role: "user", content: mensagem },
+        ],
+      }),
+    });
+  } catch (e) {
+    if (controle.signal.aborted) {
+      throw new ErroGateway("O servidor da Marina (OpenClaw, na Hostinger) não atendeu em 20 segundos. Ele pode estar desligado ou travado: veja “openclaw gateway status” no servidor.");
+    }
+    throw new ErroGateway(`Não consegui chegar ao servidor da Marina (${(e as Error).message}). Confira se ele está ligado e se o endereço OPENCLAW_GATEWAY_URL na Vercel está certo.`);
+  } finally {
+    clearTimeout(atender);
+  }
   if (!resposta.ok || !resposta.body) {
     const detalhe = await resposta.text().catch(() => "");
     throw new Error(`o gateway respondeu ${resposta.status}${detalhe ? `: ${detalhe.slice(0, 200)}` : ""}`);
   }
   /* Mesmo formato SSE do chat do site. */
+  const terminar = setTimeout(() => controle.abort(), Math.max(5_000, PRAZO_TOTAL - (Date.now() - inicio)));
   const leitor = resposta.body.getReader();
   const dec = new TextDecoder();
   let sobra = "";
   let texto = "";
-  for (;;) {
-    const { done, value } = await leitor.read();
-    if (done) break;
-    sobra += dec.decode(value, { stream: true });
-    const linhas = sobra.split("\n");
-    sobra = linhas.pop() ?? "";
-    for (const l of linhas) {
-      if (!l.startsWith("data:")) continue;
-      const d = l.slice(5).trim();
-      if (d === "[DONE]") continue;
-      try {
-        const p = JSON.parse(d)?.choices?.[0];
-        texto += p?.delta?.content ?? p?.message?.content ?? "";
-      } catch { /* keep-alive */ }
+  try {
+    for (;;) {
+      const { done, value } = await leitor.read();
+      if (done) break;
+      sobra += dec.decode(value, { stream: true });
+      const linhas = sobra.split("\n");
+      sobra = linhas.pop() ?? "";
+      for (const l of linhas) {
+        if (!l.startsWith("data:")) continue;
+        const d = l.slice(5).trim();
+        if (d === "[DONE]") continue;
+        try {
+          const p = JSON.parse(d)?.choices?.[0];
+          texto += p?.delta?.content ?? p?.message?.content ?? "";
+        } catch { /* keep-alive */ }
+      }
     }
+  } catch (e) {
+    if (!controle.signal.aborted) throw e;
+    if (!texto.trim()) {
+      throw new ErroGateway("A Marina recebeu a pergunta, mas não respondeu em 50 segundos. O servidor dela está atendendo, só que lento: veja os registros do OpenClaw na Hostinger (“openclaw logs”).");
+    }
+    return { texto, cortada: true };
+  } finally {
+    clearTimeout(terminar);
   }
-  return texto;
+  return { texto, cortada: false };
 }
 
 /** Fallback quando a Marina esquece de citar: a resposta cobre o conteúdo do item? */
@@ -119,7 +152,7 @@ export async function POST(req: Request) {
 
       const sistema = [CONTEXTO_CANAL, texto, PEDIDO_FONTES].filter(Boolean).join("\n\n");
       const t0 = Date.now();
-      const bruto = await perguntarAoGateway(`painel-teste:${sessaoTeste}`, sistema, verificar ? [] : historico, mensagem);
+      const { texto: bruto, cortada } = await perguntarAoGateway(`painel-teste:${sessaoTeste}`, sistema, verificar ? [] : historico, mensagem);
       const { resposta, codigos } = separarFontes(bruto);
       const aprendidoPorCodigo = new Map((ensinamentos.aprendidos ?? []).map((a) => [codigoItem(a.id), a]));
       const roteiroPorCodigo = new Map((ensinamentos.roteiros ?? []).map((r) => [codigoItem(r.id), r]));
@@ -147,7 +180,8 @@ export async function POST(req: Request) {
         ok: true,
         sessao: sessaoTeste,
         pergunta: mensagem,
-        resposta: resposta || "(a Marina não respondeu nada)",
+        resposta: (resposta || "(a Marina não respondeu nada)") + (cortada ? "\n\n(Cortada aqui: a Marina demorou mais de 50 segundos para terminar.)" : ""),
+        cortada,
         fontes,
         verificacao,
         ms: Date.now() - t0,
@@ -156,6 +190,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     console.error("[marina/teste]", (e as Error).message);
-    return Response.json({ erro: `Não consegui falar com a Marina agora (${(e as Error).message}).` }, { status: 502 });
+    const erro = e instanceof ErroGateway ? e.message : `Não consegui falar com a Marina agora (${(e as Error).message}).`;
+    return Response.json({ erro }, { status: 502 });
   }
 }

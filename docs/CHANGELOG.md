@@ -6,6 +6,22 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-19 (7) — Teste da Marina diz onde travou
+**Autor:** Claude (Claude Code), a partir de um print do Vinicios
+**Migration:** nenhuma
+
+O "Testar" do painel (aba Testar e o teste de cada roteiro) dava só "The
+operation was aborted due to timeout" quando a Marina passava de 55 s.
+Agora `src/app/api/admin/marina/teste/route.ts` separa os casos:
+- o servidor do OpenClaw não atende em 20 s → "pode estar desligado ou
+  travado: veja `openclaw gateway status`";
+- atende, mas não fala nada em 50 s → "está lento: veja `openclaw logs`";
+- começou a responder e passou de 52 s → mostra o que chegou, com o aviso
+  "Cortada aqui".
+Conferido com um gateway falso nos quatro casos (normal, desligado, mudo,
+lento). **A causa do print não foi encontrada daqui** (o servidor da
+Marina e os domínios não são alcançáveis deste ambiente).
+
 ## 2026-10-19 (6) — Mapa em 3D, Mapbox opcional e navegação em tela inteira
 **Autor:** Claude (Claude Code), aprovado pelo Vinicios (protótipo antes)
 **Migration:** nenhuma (a configuração nova fica em `conteudo_editavel`, chave `rota`)
