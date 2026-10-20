@@ -6,6 +6,45 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-20 (2) — WhatsApp da Marina: conectar e desconectar pelo painel
+**Autor:** Claude (Claude Code), aprovado pelo Vinicios antes de mexer
+**Migration:** nenhuma
+
+### O pedido
+A Cecília religar a Marina sozinha, sem o terminal da Hostinger, e o sistema
+ter as duas formas de conexão: WhatsApp Web (Baileys) e a API oficial da Meta.
+
+### O que entrou
+- **Tela `/admin/whatsapp`** (Marina → WhatsApp da Marina, só perfil
+  Administração): status com o motivo da queda, **Conectar a Marina** (QR que
+  troca sozinho até ser lido, depois "Conectada!") e **Desconectar** (só com
+  DESCONECTAR escrito). No celular, avisa para abrir no computador.
+- `src/lib/whatsapp-conexao.ts`: `web.login.start` (com `force`, que limpa a
+  credencial morta do 401), `web.login.wait` e `channels.logout`, métodos que
+  o plugin `admin-http-rpc` do OpenClaw libera (lista em
+  `docs/plugins/admin-http-rpc.md` do pacote `openclaw` 2026.9.4). Formato das
+  respostas lido no `login-qr` do `@openclaw/whatsapp` 2026.9.4.
+- A ação recusa gerar QR com a Marina no ar (o `force` a desconectaria).
+- Cartão **API oficial da Meta — Em preparação** na mesma tela: a segunda
+  forma entra ali quando o estudo e a conta da Meta estiverem prontos.
+- O aviso do Hoje agora leva a esta tela ("Religar").
+- `chamarRpc` aceita prazo por chamada (o QR leva até ~35 s).
+
+### O que mudou de fato antes da queda (investigação)
+Entre a troca de número (17/10, ~10h30) e a queda (18/10, ~11h) o site só
+mudou textos e o formato dos números da equipe. Nada do site chama
+`channels.logout` nem mexe na sessão. A mudança relevante foi o número: a
+Marina saiu do celular de testes para o número de atendimento usado pela
+Cecília. A documentação do OpenClaw recomenda um número só para o robô
+("Dedicated number (recommended)").
+
+### Testes
+`npm test` 71/71 (4 novos). `tsc`, lint dos arquivos novos e build limpos.
+`testes/e2e-whatsapp.mjs` (16 passos) contra banco local e o gateway
+simulado, que agora tem QR, leitura e logout. **Não testado com o OpenClaw de
+verdade:** o primeiro uso real vai dizer se o gateway da Hostinger libera
+`web.login.*` pelo `admin-http-rpc` com o token do site.
+
 ## 2026-10-20 — Marina fora do WhatsApp: o motivo real e o aviso no painel
 **Autor:** Claude (Claude Code)
 **Migration:** nenhuma
