@@ -199,11 +199,71 @@ export async function enviarWhatsapp(numero: string, texto: string, opcoes: Opco
 }
 
 /**
+ * Por que o WhatsApp caiu, em português. Lê os campos que o
+ * `@openclaw/whatsapp` (2026.9.4, status-issues.ts) põe em cada conta:
+ * `healthState`, `lastError`, `lastDisconnect` e `lastInboundAt`.
+ *
+ * - "logged-out" (código 401): o servidor do WhatsApp tirou o aparelho
+ *   conectado — alguém removeu no celular, o WhatsApp do celular foi
+ *   reinstalado/trocado, ou o próprio WhatsApp derrubou a conexão. Não volta
+ *   sozinho: precisa ler o QR de novo.
+ * - "conflict" (código 440): duas cópias do OpenClaw abriram o mesmo número.
+ */
+export type CaidaWhatsapp = { estado: string; motivo: string; fazer: string; desde: number | null };
+
+export function motivoQueda(dados: unknown): CaidaWhatsapp | null {
+  /* Só o que está debaixo do WhatsApp: o status traz Discord e Slack junto. */
+  const contas: Record<string, unknown>[] = [];
+  const juntar = (o: unknown, doWhatsapp: boolean) => {
+    if (!o || typeof o !== "object") return;
+    if (Array.isArray(o)) { o.forEach((x) => juntar(x, doWhatsapp)); return; }
+    const obj = o as Record<string, unknown>;
+    const eWhatsapp = doWhatsapp || String(obj.id ?? obj.channel ?? obj.name ?? "").toLowerCase() === "whatsapp";
+    if (eWhatsapp && ("healthState" in obj || "lastError" in obj || "lastDisconnect" in obj)) contas.push(obj);
+    for (const [k, v] of Object.entries(obj)) juntar(v, eWhatsapp || k.toLowerCase() === "whatsapp");
+  };
+  juntar(dados, false);
+  const c = contas.find((x) => typeof x.healthState === "string" && x.healthState) ?? contas.find((x) => x.lastError || x.lastDisconnect);
+  if (!c) return null;
+  const texto = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : "");
+  const queda = c.lastDisconnect && typeof c.lastDisconnect === "object" ? (c.lastDisconnect as Record<string, unknown>) : null;
+  const erro = texto(c.lastError) || texto(queda?.error) || texto(c.lastDisconnect);
+  const desde = typeof queda?.at === "number" ? queda.at : null;
+  const estado = texto(c.healthState) || (/\b401\b/.test(erro) ? "logged-out" : /\b440\b/.test(erro) ? "conflict" : "");
+  if (estado === "logged-out") return {
+    estado, desde,
+    motivo: "O WhatsApp tirou a Marina dos aparelhos conectados do celular da pousada",
+    fazer: "Ela não volta sozinha: é preciso ler o QR de novo (openclaw channels login --channel whatsapp)",
+  };
+  if (estado === "conflict") return {
+    estado, desde,
+    motivo: "Outra cópia da Marina abriu o mesmo WhatsApp e derrubou esta",
+    fazer: "Deixar só um OpenClaw ligado e rodar openclaw gateway restart",
+  };
+  if (estado === "stale") return {
+    estado, desde,
+    motivo: "Está conectada, mas parou de receber mensagens",
+    fazer: "Rodar openclaw gateway restart",
+  };
+  if (estado === "reconnecting") return {
+    estado, desde,
+    motivo: "Perdeu a conexão e está tentando voltar sozinha",
+    fazer: "Esperar alguns minutos; se não voltar, openclaw gateway restart",
+  };
+  if (estado === "stopped" || erro) return {
+    estado: estado || "erro", desde,
+    motivo: "O WhatsApp está parado no servidor da Marina",
+    fazer: "Ver openclaw channels status no servidor",
+  };
+  return null;
+}
+
+/**
  * O WhatsApp da pousada está conectado no OpenClaw? Usa `channels.status`
  * (plugin admin-http-rpc). Sem o plugin, diz que não dá para saber — não
  * trava o envio.
  */
-export async function statusWhatsapp(): Promise<{ sabe: boolean; conectado: boolean | null; resumo: string }> {
+export async function statusWhatsapp(): Promise<{ sabe: boolean; conectado: boolean | null; resumo: string; queda?: CaidaWhatsapp | null }> {
   const r = await chamarRpc("channels.status", {});
   if (!r.ok) return { sabe: false, conectado: null, resumo: `não deu para consultar (${r.erro})` };
   const bruto = JSON.stringify(r.dados ?? "");
@@ -224,6 +284,7 @@ export async function statusWhatsapp(): Promise<{ sabe: boolean; conectado: bool
   return {
     sabe: true,
     conectado: desligado ? false : ligado ? true : null,
+    queda: desligado ? motivoQueda(r.dados) : null,
     resumo: `${desligado ? "desconectado" : ligado ? "conectado" : "estado incerto"} — ${JSON.stringify(w).slice(0, 220)}${bruto.length > 2000 ? "…" : ""}`,
   };
 }

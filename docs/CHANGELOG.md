@@ -6,6 +6,46 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-20 — Marina fora do WhatsApp: o motivo real e o aviso no painel
+**Autor:** Claude (Claude Code)
+**Migration:** nenhuma
+
+### O que aconteceu
+A Marina foi ligada ao número de atendimento da Cecília no sábado, 17/10, por
+volta das 10h30. No domingo, 18/10, por volta das 11h, parou: recebeu a
+última mensagem perto das 9h e mandou a última perto das 11h. Em 19/10,
+`openclaw channels status` dizia
+`error:status=401 Unauthorized Stream Errored (conflict) … health:logged-out`.
+
+### O motivo (lido no código, não chutado)
+No `baileys` 7.0.0-rc14 que o `@openclaw/whatsapp` 2026.9.4 usa
+(`lib/Utils/generics.js`, `getErrorCodeFromStreamError`), um "conflict" sem
+código vira **440** (outra cópia abriu o mesmo número). O nosso veio com
+**401**: o próprio servidor do WhatsApp mandou o código, e isso é o aviso de
+que **o aparelho conectado foi removido**. O OpenClaw separa os dois
+(`monitor`: 440 → `health:conflict`; 401 → `health:logged-out`) e, no 401,
+para de tentar: só volta lendo o QR de novo. Então **não eram duas Marinas
+ligadas**. As causas que dão 401 são: alguém tirou "openclaw" em Aparelhos
+conectados no celular da pousada; o WhatsApp do celular foi reinstalado,
+trocado de aparelho ou passou entre WhatsApp e WhatsApp Business; ou o
+próprio WhatsApp derrubou a conexão (ela não é a oficial). Qual das três foi
+só o celular e o log de 18/10 dizem (`docs/runbook.md`, "WhatsApp caiu").
+
+### O que mudou no painel
+Ninguém viu por dois dias: a tela Hoje mostrava só um ponto vermelho em
+"WhatsApp da pousada" e "Marina no WhatsApp" seguia **verde** ("leu o
+treinamento…"). Agora:
+- `motivoQueda()` (`src/lib/envio-whatsapp.ts`) lê `healthState`,
+  `lastError` e `lastDisconnect` do `channels.status`, só do WhatsApp, e
+  diz em português o motivo e o que fazer;
+- a tela Hoje abre com "A Marina está fora do WhatsApp: ninguém recebe
+  resposta", o motivo, desde quando e o próximo passo;
+- "Marina no WhatsApp" fica vermelho ("fora do ar: não recebe nem
+  responde") enquanto o WhatsApp estiver caído.
+3 testes novos com o formato real do status (`npm test` 67/67); `tsc` e
+build limpos. **Não testado daqui:** o OpenClaw de verdade (o ambiente não
+alcança a Hostinger).
+
 ## 2026-10-19 (11) — Calendário de estadia na busca (home e /reservar)
 **Autor:** Claude (Claude Code), aprovado pelo Vinicios depois do protótipo
 **Migration:** nenhuma

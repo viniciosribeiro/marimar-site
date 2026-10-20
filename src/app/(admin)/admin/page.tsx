@@ -36,7 +36,7 @@ async function medirMotor(): Promise<{ ok: boolean; detalhe: string; ms: number 
 }
 
 /** O WhatsApp da pousada, sem deixar a tela esperar mais de 4 s. */
-async function medirWhatsapp(): Promise<{ sabe: boolean; conectado: boolean | null; resumo: string }> {
+async function medirWhatsapp(): Promise<Awaited<ReturnType<typeof statusWhatsapp>>> {
   const limite = new Promise<{ sabe: boolean; conectado: null; resumo: string }>((r) =>
     setTimeout(() => r({ sabe: false, conectado: null, resumo: "não respondeu a tempo" }), 4000));
   return Promise.race([statusWhatsapp().catch(() => ({ sabe: false, conectado: null, resumo: "não deu para consultar" })), limite]);
@@ -112,6 +112,14 @@ export default async function HojePage() {
 
   /* ─── Precisa de você: do mais urgente ao menos ─── */
   const pendencias: Pendencia[] = [];
+  if (whatsapp.sabe && whatsapp.conectado === false) {
+    const q = whatsapp.queda;
+    pendencias.push({
+      tom: "erro", titulo: "A Marina está fora do WhatsApp: ninguém recebe resposta",
+      detalhe: q ? `${q.motivo}${q.desde ? ` (${quandoFoi(new Date(q.desde))})` : ""}. ${q.fazer}.` : "O WhatsApp da pousada está desconectado no servidor da Marina.",
+      href: tecnico ? "/admin/integracoes" : "/admin", acao: tecnico ? "Ver integração" : "Avisar o Vinicios",
+    });
+  }
   for (const c of chamados) {
     pendencias.push({
       tom: "aviso", titulo: `#${c.codigo} · “${String(c.pergunta).slice(0, 80)}”`,
@@ -150,7 +158,9 @@ export default async function HojePage() {
   const semaforo: { ok: boolean | null; nome: string; detalhe: string }[] = [
     { ok: motor.ok, nome: "Motor de reservas", detalhe: motor.ok ? `respondeu em ${(motor.ms / 1000).toFixed(1).replace(".", ",")} s` : motor.detalhe || "sem resposta" },
     { ok: whatsapp.sabe ? whatsapp.conectado : null, nome: "WhatsApp da pousada", detalhe: whatsapp.sabe ? (whatsapp.conectado ? "conectado" : "desconectado") : whatsapp.resumo },
-    { ok: marina.whatsapp ? true : null, nome: "Marina no WhatsApp", detalhe: marina.whatsapp ? `leu o treinamento ${quandoFoi(marina.whatsapp)}` : "ainda não leu o treinamento" },
+    whatsapp.sabe && whatsapp.conectado === false
+      ? { ok: false, nome: "Marina no WhatsApp", detalhe: "fora do ar: não recebe nem responde" }
+      : { ok: marina.whatsapp ? true : null, nome: "Marina no WhatsApp", detalhe: marina.whatsapp ? `leu o treinamento ${quandoFoi(marina.whatsapp)}` : "ainda não leu o treinamento" },
     { ok: !erroBanco, nome: "Banco de dados", detalhe: erroBanco ? "não respondeu" : "funcionando" },
   ];
 
