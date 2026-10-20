@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { fetchTarifas } from "@/lib/worker";
 import { statusWhatsapp } from "@/lib/envio-whatsapp";
+import { faltandoMeta } from "@/lib/whatsapp-meta-base";
 import { PENDENTE_CONFIRMACAO } from "@/lib/conteudo-pousada";
 import { lerLeituras } from "@/lib/marina";
 import { Pagina, Cabecalho, Cartao, Aviso, Vazio, BotaoLink, quandoFoi, cn } from "@/components/admin/ui";
@@ -67,6 +68,9 @@ export default async function HojePage() {
   let semFoto = 0;
   let erroBanco = "";
   let marina = { lacunas: 0, whatsapp: null as string | null, conversas7: 0, leads7: 0 };
+  /* Qual WhatsApp está em uso (Marina → WhatsApp da Marina). Na API oficial
+     o WhatsApp Web fica pausado de propósito: não é queda. */
+  let modoWhatsapp = "web";
   let cerebro = { aguardando: 0, pendentes: 0, aprendidos: 0, sozinha: 0, escaladas: 0 };
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });
@@ -94,6 +98,8 @@ export default async function HojePage() {
     const [l7] = await sql`SELECT count(*)::int AS n FROM leads WHERE criado_em > now() - interval '7 days'`.catch(() => [{ n: 0 }]);
     const leituras = await lerLeituras(sql);
     marina = { lacunas: (lac as any).n, whatsapp: leituras.whatsapp?.lido_em ?? null, conversas7: (c7 as any).n, leads7: (l7 as any).n };
+    const [esc] = await sql<{ whatsapp_modo: string }[]>`SELECT whatsapp_modo FROM marina_escalonamento_config WHERE id = 1`.catch(() => []);
+    if (esc?.whatsapp_modo === "oficial") modoWhatsapp = "oficial";
     chamados = await sql<typeof chamados>`SELECT codigo, pergunta, canal, criado_em FROM marina_chamados WHERE status = 'aguardando' ORDER BY criado_em LIMIT 4`.catch(() => []);
     const [cb] = await sql`
       SELECT (SELECT count(*) FROM marina_chamados WHERE status = 'aguardando')::int AS aguardando,
@@ -108,7 +114,14 @@ export default async function HojePage() {
     erroBanco = (e as Error).message;
   }
 
-  const [motor, whatsapp] = await Promise.all([medirMotor(), medirWhatsapp()]);
+  const oficial = modoWhatsapp === "oficial";
+  const semChavesMeta = faltandoMeta();
+  const [motor, whatsapp] = await Promise.all([
+    medirMotor(),
+    oficial
+      ? Promise.resolve({ sabe: true, conectado: semChavesMeta.length === 0, resumo: "API oficial da Meta", queda: null })
+      : medirWhatsapp(),
+  ]);
 
   /* ─── Precisa de você: do mais urgente ao menos ─── */
   const pendencias: Pendencia[] = [];
@@ -116,7 +129,9 @@ export default async function HojePage() {
     const q = whatsapp.queda;
     pendencias.push({
       tom: "erro", titulo: "A Marina está fora do WhatsApp: ninguém recebe resposta",
-      detalhe: q ? `${q.motivo}${q.desde ? ` (${quandoFoi(new Date(q.desde))})` : ""}. ${q.fazer}.` : "O WhatsApp da pousada está desconectado no servidor da Marina.",
+      detalhe: oficial
+        ? `A forma em uso é a API oficial da Meta, mas faltam na Vercel: ${semChavesMeta.join(", ")}.`
+        : q ? `${q.motivo}${q.desde ? ` (${quandoFoi(new Date(q.desde))})` : ""}. ${q.fazer}.` : "O WhatsApp da pousada está desconectado no servidor da Marina.",
       href: tecnico ? "/admin/whatsapp" : "/admin", acao: tecnico ? "Religar" : "Avisar o Vinicios",
     });
   }
@@ -157,7 +172,7 @@ export default async function HojePage() {
 
   const semaforo: { ok: boolean | null; nome: string; detalhe: string }[] = [
     { ok: motor.ok, nome: "Motor de reservas", detalhe: motor.ok ? `respondeu em ${(motor.ms / 1000).toFixed(1).replace(".", ",")} s` : motor.detalhe || "sem resposta" },
-    { ok: whatsapp.sabe ? whatsapp.conectado : null, nome: "WhatsApp da pousada", detalhe: whatsapp.sabe ? (whatsapp.conectado ? "conectado" : "desconectado") : whatsapp.resumo },
+    { ok: whatsapp.sabe ? whatsapp.conectado : null, nome: "WhatsApp da pousada", detalhe: oficial ? (whatsapp.conectado ? "API oficial da Meta" : "API oficial sem chaves") : whatsapp.sabe ? (whatsapp.conectado ? "conectado" : "desconectado") : whatsapp.resumo },
     whatsapp.sabe && whatsapp.conectado === false
       ? { ok: false, nome: "Marina no WhatsApp", detalhe: "fora do ar: não recebe nem responde" }
       : { ok: marina.whatsapp ? true : null, nome: "Marina no WhatsApp", detalhe: marina.whatsapp ? `leu o treinamento ${quandoFoi(marina.whatsapp)}` : "ainda não leu o treinamento" },

@@ -80,7 +80,7 @@ try {
   ok(equipe.length === 2 && equipe[0].numero === GERAL && equipe[1].numero === FIN, "painel: equipe cadastrada, número com 55 normalizado");
 
   await pag.getByRole("button", { name: "Testar envio" }).first().click(); await pag.waitForTimeout(2000);
-  ok((await enviadas()).some((m) => m.para === `+${GERAL}` && /Teste da Marina/.test(m.texto)), "painel: “Testar envio” chegou ao WhatsApp da pessoa");
+  ok((await enviadas()).some((m) => m.para === "+554133334444" && /Teste da Marina/.test(m.texto)), "painel: “Testar envio” chegou ao WhatsApp da pessoa");
 
   await pag.goto(`${BASE}/admin/marina?aba=aprendizado`); await pag.waitForTimeout(1500);
   await pag.getByRole("button", { name: /Só depois de aprovado/ }).click(); await pag.waitForTimeout(1200);
@@ -94,7 +94,7 @@ try {
   const [ch1] = await sql`SELECT * FROM marina_chamados WHERE canal = 'site' ORDER BY criado_em DESC LIMIT 1`;
   ok(!!ch1 && ch1.status === "aguardando", "site: chamado aberto");
   ok(ch1 && !/Ana|Souza/.test(ch1.pergunta), "site: nome do cliente não foi guardado na pergunta");
-  const aviso1 = (await enviadas()).find((m) => m.para === `+${GERAL}`);
+  const aviso1 = (await enviadas()).find((m) => m.para === "+554133334444");
   ok(aviso1 && aviso1.texto.includes(`#${ch1.codigo}`) && /chat do site/.test(aviso1.texto), "site: equipe avisada com código e canal");
   const [lac1] = await sql`SELECT chamado_id, aviso_erro FROM marina_lacunas WHERE status = 'aberta' AND chamado_id = ${ch1.id}`;
   ok(!!lac1 && lac1.aviso_erro === null, "sem resposta: a pergunta entra na lista ligada ao chamado");
@@ -145,8 +145,9 @@ try {
   const ra = await agente("/api/agent/chamados/resposta", { numero: GERAL, texto: `${a.dados.codigo.toLowerCase()}: temos ferro na recepção, é só pedir.` });
   ok(rb.dados?.entregue && ra.dados?.entregue, "whatsapp: as duas respostas entregues");
   const env = await enviadas();
-  const para1 = env.filter((m) => m.para === "+5541977770001").map((m) => m.texto).join(" ");
-  const para2 = env.filter((m) => m.para === "+5541977770002").map((m) => m.texto).join(" ");
+  /* Desde 17/10 o envio tira o 9 dos celulares de DDD 31 em diante (numeroWhatsapp). */
+  const para1 = env.filter((m) => m.para === "+554177770001").map((m) => m.texto).join(" ");
+  const para2 = env.filter((m) => m.para === "+554177770002").map((m) => m.texto).join(" ");
   ok(/ferro/.test(para1) && !/12h/.test(para1), "whatsapp: cliente 1 recebeu só a resposta dele");
   ok(/12h às 22h/.test(para2) && !/ferro/.test(para2), "whatsapp: cliente 2 recebeu só a resposta dele");
   ok(!/#?[A-Z0-9]{4}\b/.test(para2.replace(/12h|22h/g, "")) || !para2.includes(b.dados.codigo), "whatsapp: o código não vai para o cliente");
@@ -183,12 +184,12 @@ try {
   ok((await fetch(`${BASE}/api/cron/chamados`)).status === 401, "prazos: rota de prazos fechada sem chave");
   await sql`UPDATE marina_chamados SET notificado_em = now() - interval '25 minutes', criado_em = now() - interval '25 minutes' WHERE codigo = ${d.dados.codigo}`;
   const p1 = await cron();
-  ok(p1.dados?.lembretes === 1 && (await enviadas()).some((m) => m.para === `+${GERAL}` && /Lembrete/.test(m.texto)), "prazos: lembrete para a mesma pessoa");
+  ok(p1.dados?.lembretes === 1 && (await enviadas()).some((m) => m.para === "+554133334444" && /Lembrete/.test(m.texto)), "prazos: lembrete para a mesma pessoa");
   await sql`UPDATE marina_chamados SET notificado_em = now() - interval '50 minutes', criado_em = now() - interval '50 minutes' WHERE codigo = ${d.dados.codigo}`;
   const p2 = await cron();
   const env2 = await enviadas();
-  ok(p2.dados?.repasses === 1 && env2.some((m) => m.para === `+${FIN}` && /veio para você/.test(m.texto)), "prazos: sem resposta, passou para o próximo da fila");
-  ok(p2.dados?.avisos === 1 && env2.some((m) => m.para === "+5541977770004" && /ainda estou confirmando/i.test(m.texto)), "prazos: cliente avisado que ainda está confirmando");
+  ok(p2.dados?.repasses === 1 && env2.some((m) => m.para === "+554111112222" && /veio para você/.test(m.texto)), "prazos: sem resposta, passou para o próximo da fila");
+  ok(p2.dados?.avisos === 1 && env2.some((m) => m.para === "+554177770004" && /ainda estou confirmando/i.test(m.texto)), "prazos: cliente avisado que ainda está confirmando");
   await sql`UPDATE marina_chamados SET criado_em = now() - interval '5 hours' WHERE codigo = ${d.dados.codigo}`;
   const p3 = await cron();
   const [dx] = await sql`SELECT status, destino FROM marina_chamados WHERE codigo = ${d.dados.codigo}`;

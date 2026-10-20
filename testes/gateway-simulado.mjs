@@ -20,6 +20,8 @@ let ultima = null;
 const enviadas = [];
 /* WhatsApp da Marina simulado: começa caído (como em 18/10) com SIM_WHATSAPP_DESCONECTADO=1. */
 const whatsapp = { conectado: !process.env.SIM_WHATSAPP_DESCONECTADO, leituras: 0 };
+/* Métodos de RPC que o site chamou (GET /__rpcs), para conferir channels.stop/start. */
+const rpcs = [];
 /* Um "QR" desenhado em SVG: só precisa ser imagem em data URL e mudar de versão. */
 const qrSimulado = (versao) => {
   const quadros = Array.from({ length: 64 }, (_, i) => ((i * 7 + versao * 13) % 5 < 2 ? `<rect x="${(i % 8) * 25}" y="${Math.floor(i / 8) * 25}" width="25" height="25"/>` : "")).join("");
@@ -82,6 +84,10 @@ http.createServer((req, res) => {
     enviadas.length = 0;
     res.writeHead(204); return res.end();
   }
+  if (req.method === "GET" && req.url === "/__rpcs") {
+    res.writeHead(200, { "content-type": "application/json" });
+    return res.end(JSON.stringify(rpcs));
+  }
   if (req.method === "GET" && req.url === "/__ultima") {
     res.writeHead(200, { "content-type": "application/json" });
     return res.end(JSON.stringify(ultima));
@@ -113,6 +119,7 @@ http.createServer((req, res) => {
     }
     if (req.url === "/api/v1/admin/rpc") {
       const pedido = JSON.parse(bruto || "{}");
+      rpcs.push(pedido.method);
       const responderRpc = (payload) => { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify({ ok: true, payload })); };
       if (pedido.method === "channels.status") {
         const conta = whatsapp.conectado

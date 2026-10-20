@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { exigirSessao } from "@/lib/admin-sessao";
 import { statusWhatsapp } from "@/lib/envio-whatsapp";
 import { gerarQr, esperarLeitura, desconectarWhatsapp, faseDoPasso, type Fase } from "@/lib/whatsapp-conexao";
+import { comSql } from "@/lib/db-conexao";
+import { lerConfigEscalonamento } from "@/lib/escalonamento";
+import { chamarRpc } from "@/lib/openclaw-config";
+import { faltandoMeta } from "@/lib/whatsapp-meta-base";
+import { infoNumeroMeta } from "@/lib/whatsapp-meta";
 
 /**
  * Ações da tela "WhatsApp da Marina". Só o perfil Administração (papel
@@ -18,12 +23,19 @@ async function exigirAdministracao() {
   return (s.user as { role?: string }).role === "master";
 }
 
+const modoAtual = () => comSql(lerConfigEscalonamento).then((c) => c.whatsapp_modo).catch(() => "web");
+
 const semPermissao: RespostaQr = { ok: false, fase: "erro", texto: "Só quem tem acesso de Administração conecta ou desconecta o WhatsApp." };
 
 const atualizar = () => { revalidatePath("/admin/whatsapp"); revalidatePath("/admin"); };
 
 export async function pedirQr(): Promise<RespostaQr> {
   if (!(await exigirAdministracao())) return semPermissao;
+  /* Com a API oficial em uso, o QR ligaria a segunda forma no mesmo número
+     e a Marina responderia duas vezes. */
+  if ((await modoAtual()) === "oficial") {
+    return { ok: false, fase: "erro", texto: "A Marina está usando a API oficial da Meta. Para usar o QR, escolha WhatsApp Web (QR) em “Qual WhatsApp a Marina usa”." };
+  }
   /* O QR novo apaga a sessão antiga (ver gerarQr): com a Marina no ar, isso
      a derrubaria. Na dúvida (status sem resposta), segue: se o servidor não
      responde, ela já não está atendendo. */
@@ -55,4 +67,50 @@ export async function desconectar(confirmacao: string): Promise<{ ok: boolean; t
   return r.ok
     ? { ok: true, texto: "A Marina foi desconectada do WhatsApp. Os clientes ficam sem resposta automática até conectar de novo." }
     : { ok: false, texto: `Não deu para desconectar: ${r.erro}` };
+}
+
+/**
+ * Troca a forma em uso: WhatsApp Web (QR, pelo OpenClaw) ou API oficial da
+ * Meta. Grava em `marina_escalonamento_config.whatsapp_modo` (a mesma
+ * escolha que os chamados usam para mandar) e pausa ou religa o WhatsApp
+ * Web no OpenClaw (`channels.stop` / `channels.start`, que guardam o QR),
+ * para as duas nunca responderem juntas.
+ */
+export async function escolherModo(modo: string): Promise<{ ok: boolean; texto: string }> {
+  const s = await exigirSessao();
+  if ((s.user as { role?: string }).role !== "master") return { ok: false, texto: semPermissao.texto };
+  const novo = modo === "oficial" ? "oficial" : "web";
+  if (novo === "oficial") {
+    const faltam = faltandoMeta();
+    if (faltam.length) return { ok: false, texto: `A API oficial ainda não tem as chaves na Vercel: ${faltam.join(", ")}.` };
+  }
+  const autor = (s.user?.name || s.user?.email || "painel") as string;
+  try {
+    await comSql((sql) => sql`
+      INSERT INTO marina_escalonamento_config (id, whatsapp_modo, atualizado_por, atualizado_em)
+      VALUES (1, ${novo}, ${autor}, now())
+      ON CONFLICT (id) DO UPDATE SET whatsapp_modo = excluded.whatsapp_modo, atualizado_por = excluded.atualizado_por, atualizado_em = now()`);
+  } catch (e) {
+    return { ok: false, texto: `Não consegui gravar a escolha: ${(e as Error).message}. Se for "relation does not exist", rode npm run db:migrate.` };
+  }
+  const r = await chamarRpc(novo === "oficial" ? "channels.stop" : "channels.start", { channel: "whatsapp" }, 20_000);
+  atualizar(); revalidatePath("/admin/equipe");
+  const feito = novo === "oficial" ? "Pronto: a Marina agora atende pela API oficial da Meta." : "Pronto: a Marina voltou para o WhatsApp Web (QR).";
+  if (r.ok) return { ok: true, texto: `${feito} ${novo === "oficial" ? "O WhatsApp Web foi pausado no servidor (o QR fica guardado)." : "O WhatsApp Web foi religado no servidor."}` };
+  return {
+    ok: true,
+    texto: novo === "oficial"
+      ? `${feito} Atenção: não consegui pausar o WhatsApp Web no servidor da Marina (${r.erro}). Desconecte o QR abaixo para ela não responder duas vezes.`
+      : `${feito} Atenção: não consegui religar o WhatsApp Web no servidor (${r.erro}). Se ele não voltar sozinho, conecte pelo QR abaixo.`,
+  };
+}
+
+/** "Testar a ligação com a Meta": o número e o nome que a Meta devolve. */
+export async function testarMeta(): Promise<{ ok: boolean; texto: string }> {
+  if (!(await exigirAdministracao())) return { ok: false, texto: semPermissao.texto };
+  const faltam = faltandoMeta();
+  if (faltam.length) return { ok: false, texto: `Faltam na Vercel: ${faltam.join(", ")}.` };
+  const r = await infoNumeroMeta();
+  if (!r.ok) return { ok: false, texto: r.erro };
+  return { ok: true, texto: `A Meta respondeu: número ${r.numero ?? "?"}${r.nome ? `, nome “${r.nome}”` : ""}${r.qualidade ? `, qualidade ${r.qualidade}` : ""}.` };
 }

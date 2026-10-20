@@ -176,7 +176,7 @@ async function notificar(sql: Sql, c: Chamado, tipo: "novo" | "repasse" | "lembr
      confirmação vai para a fila do painel, senão a resposta a ESTE chamado
      (sem código) seria lida como alteração daquela. */
   if (tipo !== "lembrete") await encerrarConfirmacoes(sql, { contatoId: contato.id }, cfg);
-  const envio = await enviarWhatsapp(contato.numero, texto, { template, chave: `${c.id}:${tipo}:${contato.id}` });
+  const envio = await enviarWhatsapp(contato.numero, texto, { template, chave: `${c.id}:${tipo}:${contato.id}`, oficial: cfg.whatsapp_modo === "oficial" });
   const tentativa = { contato_id: contato.id, nome: contato.nome, em: agora.toISOString(), tipo, ok: envio.ok, ...(envio.ok ? { id: envio.id ?? null } : { erro: envio.erro }) };
   if (tipo === "lembrete") {
     await sql`UPDATE marina_chamados SET lembrete_em = now(), atualizado_em = now(), tentativas = tentativas || ${sql.json([tentativa])} WHERE id = ${c.id}`;
@@ -210,6 +210,7 @@ export async function entregarAoCliente(sql: Sql, c: Chamado, texto: string, cfg
     return { ok: false, erro: "Fora da janela de 24 h do WhatsApp oficial e sem template configurado. Responda o cliente manualmente." };
   }
   return enviarWhatsapp(c.destino, texto, {
+    oficial: cfg.whatsapp_modo === "oficial",
     template: aberta ? null : { nome: cfg.template_cliente!, idioma: cfg.template_idioma },
     chave: `${c.id}:cliente:${texto.length}:${texto.slice(0, 20)}`,
   });
@@ -486,15 +487,17 @@ export async function testarContato(sql: Sql, id: string): Promise<Envio & { wha
   const [c] = await sql<{ nome: string; numero: string }[]>`SELECT nome, numero FROM equipe_contatos WHERE id = ${id}`;
   if (!c) return { ok: false, erro: "Contato não encontrado." };
   /* Antes de mandar: o WhatsApp da pousada está conectado no OpenClaw?
-     Desconectado, nenhum envio sai — e é a causa mais comum de "não chegou". */
-  const status = await statusWhatsapp();
+     Desconectado, nenhum envio sai — e é a causa mais comum de "não chegou".
+     Na API oficial o OpenClaw fica pausado de propósito: o envio vai pela Meta. */
+  const oficial = (await lerConfigEscalonamento(sql)).whatsapp_modo === "oficial";
+  const status = oficial ? { sabe: true, conectado: true, resumo: "API oficial da Meta" } : await statusWhatsapp();
   if (status.sabe && status.conectado === false) {
     const erro = `O WhatsApp da pousada está DESCONECTADO no OpenClaw (${status.resumo}). No servidor: openclaw channels status e, se preciso, openclaw channels login --channel whatsapp.`;
     await sql`UPDATE equipe_contatos SET ultimo_teste_em = now(), ultimo_teste_ok = false, ultimo_teste_erro = ${erro.slice(0, 500)} WHERE id = ${id}`;
     return { ok: false, erro };
   }
   const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-  const envio = await enviarWhatsapp(c.numero, `👋 Oi, ${c.nome}! Teste da Marina (${hora}): é por este número que vou pedir ajuda quando um cliente perguntar algo que eu não sei. Não precisa responder.`);
+  const envio = await enviarWhatsapp(c.numero, `👋 Oi, ${c.nome}! Teste da Marina (${hora}): é por este número que vou pedir ajuda quando um cliente perguntar algo que eu não sei. Não precisa responder.`, { oficial });
   await sql`UPDATE equipe_contatos SET ultimo_teste_em = now(), ultimo_teste_ok = ${envio.ok}, ultimo_teste_erro = ${envio.ok ? null : envio.erro} WHERE id = ${id}`;
   return { ...envio, whatsapp: status.resumo };
 }

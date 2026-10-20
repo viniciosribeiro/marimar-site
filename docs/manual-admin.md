@@ -264,8 +264,12 @@ aparece para quem tem acesso de **Administração**.
 - **Para não cair:** não remova "openclaw" em Aparelhos conectados; avise
   antes de reinstalar o WhatsApp ou trocar de celular; abra o WhatsApp no
   celular da pousada ao menos a cada 14 dias.
-- **API oficial da Meta:** a segunda forma de conexão, em preparação. As duas
-  não ficam ligadas juntas no mesmo número.
+- **Qual WhatsApp a Marina usa:** no topo da tela, "WhatsApp Web (QR)" ou
+  "API oficial da Meta". Um clique troca, e a outra forma é pausada sozinha
+  (o QR fica guardado para voltar). A API oficial só pode ser escolhida
+  depois que o Vinicios configurar a conta na Meta; até lá aparece "Sem
+  chaves". Com ela em uso, as conversas aparecem em Marina → Conversas
+  ("WhatsApp · final 1234").
 
 ### Equipe responsável
 Quem a Marina chama quando não sabe a resposta.

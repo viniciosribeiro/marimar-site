@@ -41,7 +41,7 @@ export const AREAS: Area[] = [
       { href: "/admin/equipe?aba=chamados", rotulo: "Chamados", chaves: "chamado cliente esperando equipe responder whatsapp" },
       { href: "/admin/marina?aba=sem-resposta", rotulo: "Sem resposta", chaves: "lacuna nao soube pergunta sem resposta" },
       { href: "/admin/marina?aba=aprendizado", rotulo: "Para aprovar", chaves: "aprovar aprendizado guardar resposta equipe" },
-      { href: "/admin/marina?aba=conversas", rotulo: "Conversas do site", chaves: "conversa chat site historico hospede" },
+      { href: "/admin/marina?aba=conversas", rotulo: "Conversas", chaves: "conversa chat site historico hospede whatsapp oficial" },
       { href: "/admin/leads", rotulo: "Contatos", chaves: "contato lead telefone email hospede formulario" },
     ],
   },

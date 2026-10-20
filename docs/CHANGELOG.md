@@ -6,6 +6,47 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-20 (3) — API oficial da Meta pronta, e a escolha entre as duas formas no painel
+**Autor:** Claude (Claude Code), a pedido do Vinicios ("já deixe pronto, quero poder escolher entre uma ou outra")
+**Migration:** nenhuma (usa `marina_escalonamento_config.whatsapp_modo`, `integracoes` e `chat_mensagens`, que já existem)
+
+### O que entrou
+- **Seletor em Marina → WhatsApp da Marina:** "WhatsApp Web (QR)" ou "API
+  oficial da Meta", um clique, com confirmação. Grava `whatsapp_modo` e, no
+  OpenClaw, `channels.stop` (pausa o QR, que fica guardado) ou
+  `channels.start` (religa). Só uma forma responde por vez.
+- **Webhook `/api/whatsapp/meta`:** GET valida com `WHATSAPP_META_VERIFY_TOKEN`;
+  POST só com assinatura HMAC (`WHATSAPP_META_APP_SECRET`), responde 200 na
+  hora e atende depois (`after`). Falha fechado sem as chaves.
+- **Atendimento (`src/lib/whatsapp-oficial.ts`):** a mensagem vai à Marina pelo
+  mesmo caminho do chat do site (treinamento + histórico, `user: "wa:<número>"`),
+  e a resposta volta pela Graph API: texto, foto e vídeo (`![..](url)`), e
+  áudio quando o cliente mandou áudio (transcrição e voz da ElevenLabs, como no
+  site). Lida + "digitando…", sem resposta duplicada (`integracoes`
+  `wa_msg:<id>`), teto de 40 por conversa por hora.
+- **Equipe e chamados:** com a oficial em uso, `enviarWhatsapp` vai pela Meta
+  (modelo aprovado fora das 24 h); a equipe responde pelo WhatsApp e o webhook
+  usa o mesmo `responderChamado` da skill, inclusive citando o aviso
+  (`wa_env:<id>` guarda o texto enviado).
+- **Coexistência:** o eco do que a Cecília manda pelo aplicativo
+  (`smb_message_echoes`) entra na conversa e segura a Marina por 30 min.
+  **Escrito pela documentação; não testado com a Meta real.**
+- **Painel:** conversas do WhatsApp oficial em Marina → Conversas ("WhatsApp ·
+  final 1234"); Hoje sem alarme falso com o QR pausado e com o semáforo da API
+  oficial; Prazos e WhatsApp mostra a forma em uso e os modelos da Meta.
+- Passo a passo na Meta, chaves e limites: **`docs/fluxo-whatsapp-oficial.md`**.
+
+### Testes
+- `npm test` 77/77 (6 novos em `testes/unit/whatsapp-meta.test.ts`).
+- `testes/e2e-whatsapp-oficial.mjs` (21 passos) com `testes/meta-simulada.mjs`
+  (Graph API simulada) e o gateway simulado: webhook, assinatura, troca pelo
+  painel, resposta pela Meta, aviso repetido, painel e Hoje.
+- `testes/e2e-whatsapp.mjs` 16/16 e `testes/e2e-escalonamento.mjs` 47/47.
+  Este último tinha 7 checagens com o número no formato antigo (com o 9),
+  quebradas desde a correção de 17/10 — atualizadas.
+- `tsc`, lint dos arquivos novos e build limpos.
+- **Não testado com a Meta real** (sem conta daqui).
+
 ## 2026-10-20 (2) — WhatsApp da Marina: conectar e desconectar pelo painel
 **Autor:** Claude (Claude Code), aprovado pelo Vinicios antes de mexer
 **Migration:** nenhuma

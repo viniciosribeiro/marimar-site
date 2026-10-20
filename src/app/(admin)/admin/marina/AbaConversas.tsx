@@ -38,7 +38,7 @@ export function AbaConversas({ conversas }: { conversas: Conversa[] }) {
 
       {lista.length === 0 ? (
         <Vazio icone="💬" titulo={soProblemas ? "Nenhuma conversa com problema" : "Nenhuma conversa ainda"}>
-          {soProblemas ? "Todas as respostas recentes pareceram certas." : "Quando alguém usar o chat do site, a conversa aparece aqui."}
+          {soProblemas ? "Todas as respostas recentes pareceram certas." : "Quando alguém usar o chat do site (ou o WhatsApp pela API oficial), a conversa aparece aqui."}
         </Vazio>
       ) : (
         <ul className="space-y-3">
@@ -63,7 +63,10 @@ function ItemConversa({ c, problema, aoCorrigir }: {
         className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-areia/25 min-h-14">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-tinta">{primeira}</p>
-          <p className="text-[11px] text-tinta-suave">{quandoFoi(c.fim)} · {c.trocas.length} mensagens</p>
+          <p className="text-[11px] text-tinta-suave">
+            {/* Conversas da API oficial do WhatsApp têm sessão "wa:<número>": mostra só o final do número. */}
+            {c.sessao.startsWith("wa:") ? `WhatsApp · final ${c.sessao.slice(-4)} · ` : ""}{quandoFoi(c.fim)} · {c.trocas.length} mensagens
+          </p>
         </div>
         {c.trocas.some((t) => t.sem_resposta && !t.correcao) && <Selo tom="aviso">não soube</Selo>}
         {c.trocas.some((t) => t.correcao) && <Selo tom="sucesso">corrigida</Selo>}
@@ -75,10 +78,12 @@ function ItemConversa({ c, problema, aoCorrigir }: {
           {c.trocas.map((t, i) => {
             const pergunta = [...c.trocas.slice(0, i)].reverse().find((x) => x.papel === "visitante")?.conteudo ?? "";
             return (
-              <div key={t.id} className={cn("flex", t.papel === "marina" ? "justify-start" : "justify-end")}>
+              <div key={t.id} className={cn("flex", t.papel === "visitante" ? "justify-end" : "justify-start")}>
                 <div className="max-w-[90%] sm:max-w-[75%]">
+                  {t.papel === "equipe" && <p className="mb-1 text-[11px] font-medium text-tinta-suave">A equipe, pelo celular</p>}
                   <div className={cn("rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap leading-relaxed",
-                    t.papel === "marina" ? "rounded-bl-md border border-linha/70 bg-white text-tinta" : "rounded-br-md bg-tinta text-white",
+                    t.papel === "visitante" ? "rounded-br-md bg-tinta text-white" : "rounded-bl-md border border-linha/70 bg-white text-tinta",
+                    t.papel === "equipe" && "bg-areia/40",
                     t.sem_resposta && !t.correcao && "border-amber-300")}>
                     {t.conteudo}
                   </div>
