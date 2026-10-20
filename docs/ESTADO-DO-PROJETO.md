@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 20/10/2026 (WhatsApp da Marina religado pelo painel, com a API oficial da Meta em estudo; Marina fora do WhatsApp desde 18/10: o motivo real e o aviso no painel; mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
+> Atualizado em 20/10/2026 (WhatsApp da Marina: QR e API oficial da Meta prontos, escolha no painel; Marina fora do WhatsApp desde 18/10: o motivo real e o aviso no painel; mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
 
 ## Onde estamos
 
@@ -96,8 +96,11 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
    da Marina conecta pelo QR e desconecta, só perfil Administração (a
    Cecília precisa desse perfil em Pessoas e acessos para usar). Primeiro uso
    real: conferir que o gateway da Hostinger aceita `web.login.start` pelo
-   `admin-http-rpc`. **Segunda opção, API oficial da Meta:** em estudo; o
-   cartão já está na tela. As duas não ligam juntas no mesmo número.
+   `admin-http-rpc`. **API oficial da Meta: pronta e desligada.** Para usar:
+   conta na Meta, as quatro `WHATSAPP_META_*` na Vercel, webhook e modelos
+   (`docs/fluxo-whatsapp-oficial.md`), depois "Usar a API oficial" na tela.
+   Decidir antes o número (estudo: mesmo número com parceiro, ou número novo).
+   Não testado com a Meta real.
 00000000000000. **Marina fora do WhatsApp desde 18/10 (~11h):** o WhatsApp
    removeu o aparelho conectado (código 401; não é Marina duplicada, que daria
    440). Ela não volta sozinha: ler o QR de novo (pelo painel desde 20/10, ou
@@ -273,6 +276,10 @@ Variaveis obrigatorias (precisam existir em `.env.local` **e** na Vercel):
 `AUTH_TRUST_HOST` · `NEXT_PUBLIC_SITE_URL` · `WORKER_BASE_URL` · `WORKER_SLUG` ·
 `AGENT_API_KEY`
 
+Opcionais (API oficial do WhatsApp; sem elas, só o QR): `WHATSAPP_META_TOKEN` ·
+`WHATSAPP_META_PHONE_ID` · `WHATSAPP_META_APP_SECRET` · `WHATSAPP_META_VERIFY_TOKEN`
+(ver `docs/fluxo-whatsapp-oficial.md`).
+
 ```bash
 npx vercel env pull .env.local   # sincroniza da Vercel
 ```
@@ -302,6 +309,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | `docs/design-system-admin.md` | componentes, tokens e regras visuais do painel |
 | `docs/fluxo-midia.md` | fotos, vídeos, compressão no navegador, limites do WhatsApp e roteiros da Marina |
 | `docs/fluxo-escalonamento.md` | escalonamento para a equipe, base de aprendizado, Cérebro da Marina, segurança |
+| `docs/fluxo-whatsapp-oficial.md` | as duas formas do WhatsApp (QR e API oficial da Meta), a troca, chaves e passo a passo na Meta |
 | `docs/runbook.md` | deploy, env vars, incidentes, rotacao de chave |
 | `docs/samples/` | amostras de payload do Worker |
 | `AGENTS.md` | regras do Next.js 16 (bloco gerado pelo `next dev`) |

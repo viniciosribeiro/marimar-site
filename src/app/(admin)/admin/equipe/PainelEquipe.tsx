@@ -363,13 +363,14 @@ function Min({ nome, rotulo, ajuda, valor }: { nome: string; rotulo: string; aju
 function AbaConfig({ config }: { config: ConfigEscalonamento }) {
   const { executar, pendente } = useAcao();
   const [ativo, setAtivo] = useState(config.ativo);
-  const [modo, setModo] = useState(config.whatsapp_modo);
+  /* A forma em uso (QR ou API oficial) é trocada em Marina → WhatsApp da
+     Marina, que também pausa a outra. Aqui só os modelos da Meta. */
+  const oficial = config.whatsapp_modo === "oficial";
   return (
     <form className="grid gap-6 lg:grid-cols-2" onSubmit={(e) => {
       e.preventDefault();
       const fd = new FormData(e.currentTarget);
       fd.set("ativo", ativo ? "on" : "off");
-      fd.set("whatsapp_modo", modo);
       executar(salvarConfigEscalonamento, fd);
     }}>
       <Cartao titulo="Escalonamento" descricao="Quando a Marina não sabe, perguntar à equipe.">
@@ -385,23 +386,19 @@ function AbaConfig({ config }: { config: ConfigEscalonamento }) {
           <Min nome="desistir_min" rotulo="Desistir e passar o contato da recepção" ajuda="Contado da pergunta do cliente." valor={config.desistir_min} />
         </div>
       </Cartao>
-      <Cartao titulo="WhatsApp" descricao="Como o número da pousada está ligado ao OpenClaw.">
-        <div className="space-y-2">
-          {([["web", "Pelo aparelho (WhatsApp Web / OpenClaw)", "Sem limite de 24 horas. É o modo de hoje."],
-            ["oficial", "API oficial da Meta (WhatsApp Business Platform)", "Mensagem livre só até 24 h depois da última mensagem da pessoa; depois disso, só template aprovado."]] as const).map(([v, t, a]) => (
-            <label key={v} className={cn("flex cursor-pointer items-start gap-3 rounded-xl border p-3", modo === v ? "border-marca bg-marca/5" : "border-linha/80 bg-white")}>
-              <input type="radio" name="modo" checked={modo === v} onChange={() => setModo(v)} className="mt-1 h-4 w-4 accent-[var(--color-marca)]" />
-              <span><span className="block text-sm font-medium text-tinta">{t}</span><span className="block text-xs text-tinta-suave">{a}</span></span>
-            </label>
-          ))}
+      <Cartao titulo="WhatsApp" descricao="Por onde a Marina avisa a equipe e devolve a resposta ao cliente.">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha/80 bg-white p-3">
+          <span className="text-sm text-tinta">Em uso: <strong>{oficial ? "API oficial da Meta" : "WhatsApp Web (QR)"}</strong></span>
+          <a href="/admin/whatsapp" className={botao("fantasma", "sm")}>Trocar em WhatsApp da Marina →</a>
         </div>
-        {modo === "oficial" && (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Rotulo rotulo="Template para o cliente" ajuda="Nome do template aprovado na Meta, com 1 variável (o texto)."><input name="template_cliente" defaultValue={config.template_cliente ?? ""} className={campo} /></Rotulo>
-            <Rotulo rotulo="Template para a equipe" ajuda="Idem, para avisos à equipe."><input name="template_equipe" defaultValue={config.template_equipe ?? ""} className={campo} /></Rotulo>
-            <Rotulo rotulo="Idioma do template"><input name="template_idioma" defaultValue={config.template_idioma} className={campo} /></Rotulo>
-          </div>
-        )}
+        <p className="mt-4 text-xs text-tinta-suave leading-relaxed">
+          Modelos da Meta (só valem na API oficial): mensagem livre só até 24 h depois da última mensagem da pessoa; depois disso, só modelo aprovado, com 1 variável (o texto).
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Rotulo rotulo="Modelo para o cliente" ajuda="Nome do modelo aprovado na Meta."><input name="template_cliente" defaultValue={config.template_cliente ?? ""} className={campo} /></Rotulo>
+          <Rotulo rotulo="Modelo para a equipe" ajuda="Para os avisos à equipe."><input name="template_equipe" defaultValue={config.template_equipe ?? ""} className={campo} /></Rotulo>
+          <Rotulo rotulo="Idioma do modelo"><input name="template_idioma" defaultValue={config.template_idioma} className={campo} /></Rotulo>
+        </div>
         <Aviso tom="info" className="mt-4">
           Os prazos rodam sozinhos quando alguém usa o chat ou a Marina, e pelo endereço <code className="font-mono text-xs">/api/cron/chamados</code> — para garantir, peça para um agendador chamá-lo a cada 5 minutos (ver o manual).
         </Aviso>

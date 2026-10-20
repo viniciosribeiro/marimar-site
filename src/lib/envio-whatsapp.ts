@@ -1,6 +1,7 @@
 import { chamarRpc } from "./openclaw-config";
 import { urlGateway, cabecalhosGateway } from "./chat";
 import { numeroWhatsapp } from "./escalonamento-base";
+import { enviarPelaMeta } from "./whatsapp-meta";
 
 /**
  * Manda uma mensagem de WhatsApp pelo número da pousada (o que a Marina usa),
@@ -34,7 +35,8 @@ export type Envio = { ok: true; via?: string; id?: string | null; detalhe?: stri
 
 export type Template = { nome: string; idioma: string };
 
-type Opcoes = { template?: Template | null; chave?: string };
+/** `oficial`: a forma em uso é a API oficial da Meta (`whatsapp_modo` = "oficial"); o envio não passa pelo OpenClaw. */
+type Opcoes = { template?: Template | null; chave?: string; oficial?: boolean };
 
 /** A resposta da ferramenta: `result.details` (ou o JSON do `content`). */
 function detalhesDa(res: unknown): Record<string, unknown> | null {
@@ -172,6 +174,7 @@ async function porAgente(para: string, texto: string, o: Opcoes): Promise<Envio>
 }
 
 export async function enviarWhatsapp(numero: string, texto: string, opcoes: Opcoes = {}): Promise<Envio> {
+  if (opcoes.oficial) return enviarPelaMeta(numeroWhatsapp(numero) ?? numero.replace(/\D/g, ""), texto, opcoes.template);
   if (!process.env.OPENCLAW_GATEWAY_URL || !process.env.OPENCLAW_GATEWAY_TOKEN) {
     return { ok: false, erro: "O gateway do OpenClaw não está configurado neste site (OPENCLAW_GATEWAY_URL e OPENCLAW_GATEWAY_TOKEN na Vercel)." };
   }

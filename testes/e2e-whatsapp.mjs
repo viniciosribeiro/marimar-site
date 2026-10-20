@@ -84,7 +84,7 @@ try {
     await entrar(ed, process.env.EMAIL_EDICAO ?? "cecilia@teste.local", process.env.SENHA_EDICAO);
     await ed.goto(`${BASE}/admin/whatsapp`); await ed.waitForTimeout(1200);
     ok(!(await ed.getByRole("button", { name: "Conectar a Marina" }).isVisible()), "edição: sem botão Conectar");
-    ok(await ed.getByText("Só quem tem acesso de Administração").isVisible(), "edição: explica quem pode");
+    ok(await ed.getByText("Só quem tem acesso de Administração conecta ou desconecta").isVisible(), "edição: explica quem pode");
   }
 } finally {
   await nav.close();

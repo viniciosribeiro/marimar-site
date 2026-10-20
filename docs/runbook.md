@@ -203,6 +203,22 @@ Environment Variables e faça Redeploy:
 Trocar antes quebra o login do painel. A skill da Marina pode continuar em
 `marimar-site.vercel.app`, que segue funcionando.
 
+## API oficial do WhatsApp (Meta)
+
+Pronta desde 20/10/2026 e desligada. A forma em uso (QR ou oficial) é escolhida
+em Marina → WhatsApp da Marina. Chaves (`WHATSAPP_META_TOKEN`,
+`WHATSAPP_META_PHONE_ID`, `WHATSAPP_META_APP_SECRET`,
+`WHATSAPP_META_VERIFY_TOKEN`), webhook (`/api/whatsapp/meta`, campo
+`messages`), modelos e passo a passo: `docs/fluxo-whatsapp-oficial.md`.
+
+- Webhook responde 503: faltam chaves na Vercel (falha fechado).
+- 401 no POST: assinatura inválida (o `APP_SECRET` não é o do app que manda).
+- Chega e ninguém responde: a forma em uso é o QR (as mensagens são ignoradas
+  de propósito) ou o gateway do OpenClaw está fora (o cliente recebe "a equipe
+  vai te responder").
+- "Passaram mais de 24 h": a Meta só aceita modelo aprovado; cadastre os nomes
+  em Equipe → Prazos e WhatsApp.
+
 ## WhatsApp caiu (a Marina parou de responder)
 
 A tela **Hoje** do painel avisa no topo ("A Marina está fora do WhatsApp") e
