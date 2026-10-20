@@ -203,6 +203,47 @@ Environment Variables e faça Redeploy:
 Trocar antes quebra o login do painel. A skill da Marina pode continuar em
 `marimar-site.vercel.app`, que segue funcionando.
 
+## WhatsApp caiu (a Marina parou de responder)
+
+A tela **Hoje** do painel avisa no topo ("A Marina está fora do WhatsApp") e
+diz o motivo. No terminal da Hostinger:
+
+```bash
+openclaw channels status
+```
+
+| O que aparece | O que é | O que fazer |
+|---|---|---|
+| `health:logged-out`, `status=401 … (conflict)` | o **WhatsApp tirou o aparelho conectado** (removido no celular, WhatsApp reinstalado/trocado, ou derrubado pelo WhatsApp) | ler o QR de novo (abaixo) |
+| `health:conflict`, `status=440` | **duas cópias** do OpenClaw no mesmo número | deixar uma só, `openclaw gateway restart` |
+| `health:stale` | conectada, mas sem receber | `openclaw gateway restart` |
+| `reconnecting` | caiu a internet do servidor | esperar; se não voltar, `openclaw gateway restart` |
+
+**Descobrir a causa de um 401 antes de religar:**
+
+1. No celular da pousada: WhatsApp → **Aparelhos conectados**. Se "openclaw"
+   sumiu da lista, perguntar a quem usa o celular se alguém removeu, trocou
+   de aparelho ou reinstalou o WhatsApp.
+2. No servidor, o log do dia (troque a data):
+   ```bash
+   grep -n -i "stream errored\|logged out\|device_removed" /tmp/openclaw/openclaw-2026-10-18.log | head -20
+   ```
+   `type":"device_removed"` = removido (pelo celular ou pelo WhatsApp).
+
+**Religar (um 401 nunca volta sozinho):**
+
+```bash
+openclaw channels logout --channel whatsapp
+openclaw channels login --channel whatsapp    # QR expira em ~1 min
+# celular da pousada: WhatsApp → Aparelhos conectados → Conectar um aparelho
+openclaw channels status                      # "linked, running, connected, health:healthy"
+```
+
+Depois, de outro celular, mandar "oi" para o número da pousada: ela deve
+responder em até 1 minuto. Se o 401 voltar sem ninguém mexer no celular, o
+WhatsApp está barrando a conexão não oficial: o caminho é a API oficial do
+WhatsApp (Meta), que não cai assim.
+
 ## Trocar o número do WhatsApp da Marina
 
 O OpenClaw usa o WhatsApp como aparelho conectado (WhatsApp Web). Desde

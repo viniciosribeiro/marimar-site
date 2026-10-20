@@ -4,7 +4,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { avaliarRespostaFerramenta } from "../../src/lib/envio-whatsapp";
+import { avaliarRespostaFerramenta, motivoQueda } from "../../src/lib/envio-whatsapp";
 import { lerConfirmacao, textoPedirConfirmacao, textoConfirmarVersao } from "../../src/lib/escalonamento-base";
 
 /* Formato real do OpenClaw 2026.9: { ok, result: { content: [{type:"text", text}], details } }. */
@@ -50,4 +50,35 @@ test("confirmação: os textos mostram a resposta, o código e as opções", () 
   const p = textoPedirConfirmacao("K7Q2", "O berço é gratuito.");
   assert.match(p, /#K7Q2/); assert.match(p, /“O berço é gratuito\.”/); assert.match(p, /SIM/); assert.match(p, /NÃO/);
   assert.match(textoConfirmarVersao("K7Q2", "Nova versão"), /Ficou assim.*\n\n“Nova versão”[\s\S]*Confirma\?/);
+});
+
+/* channels.status do OpenClaw 2026.9.4 com o WhatsApp derrubado (19/10/2026). */
+const status = (whatsapp: Record<string, unknown>) => ({
+  channels: { discord: { configured: false }, whatsapp: { configured: true, linked: true } },
+  channelAccounts: {
+    discord: [{ accountId: "default", lastError: "not configured", healthState: "stopped" }],
+    whatsapp: [{ accountId: "default", linked: true, running: false, ...whatsapp }],
+  },
+});
+
+test("queda: 401 é o WhatsApp tirando o aparelho conectado (pede QR), não duas cópias", () => {
+  const q = motivoQueda(status({
+    healthState: "logged-out",
+    lastError: "status=401 Unauthorized Stream Errored (conflict)",
+    lastDisconnect: { at: 1_760_797_440_000, error: "status=401 Unauthorized Stream Errored (conflict)" },
+  }));
+  assert.equal(q?.estado, "logged-out");
+  assert.match(q?.motivo ?? "", /tirou a Marina dos aparelhos conectados/);
+  assert.match(q?.fazer ?? "", /QR/);
+  assert.equal(q?.desde, 1_760_797_440_000);
+});
+
+test("queda: 440 é outra cópia da Marina no mesmo número", () => {
+  const q = motivoQueda(status({ healthState: "conflict", lastError: "status=440 Stream Errored (conflict)" }));
+  assert.match(q?.motivo ?? "", /Outra cópia/);
+});
+
+test("queda: sem healthState, o código do erro decide; o Discord não entra na conta", () => {
+  assert.equal(motivoQueda(status({ lastError: "status=401 Unauthorized" }))?.estado, "logged-out");
+  assert.equal(motivoQueda(status({})), null);
 });

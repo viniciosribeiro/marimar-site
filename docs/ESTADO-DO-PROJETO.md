@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 19/10/2026 (mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
+> Atualizado em 20/10/2026 (Marina fora do WhatsApp desde 18/10: o motivo real e o aviso no painel; mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
 
 ## Onde estamos
 
@@ -92,6 +92,13 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+00000000000000. **Marina fora do WhatsApp desde 18/10 (~11h):** o WhatsApp
+   removeu o aparelho conectado (código 401; não é Marina duplicada, que daria
+   440). Ela não volta sozinha: ler o QR de novo (`docs/runbook.md`,
+   "WhatsApp caiu"). Antes, descobrir a causa no celular da pousada
+   (Aparelhos conectados) e no log de 18/10. Combinar com quem usa o celular
+   de atendimento: não remover "openclaw" e não reinstalar o WhatsApp. Se cair
+   de novo sem ninguém mexer, pensar na API oficial do WhatsApp.
 0000000000000. **Calendário de estadia (19/10):** entrada e saída num calendário
    só, na busca da home e em /reservar (abre no mês da entrada). Conferir
    num iPhone e num Android de verdade.
