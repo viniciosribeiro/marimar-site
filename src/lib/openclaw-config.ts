@@ -37,7 +37,7 @@ async function rpc(method: string, params: Record<string, unknown>): Promise<Res
  * O mesmo RPC, devolvendo o que o gateway respondeu. Usado pelo envio de
  * WhatsApp da equipe (src/lib/envio-whatsapp.ts).
  */
-export async function chamarRpc(method: string, params: Record<string, unknown>): Promise<{ ok: true; dados: unknown } | { ok: false; erro: string }> {
+export async function chamarRpc(method: string, params: Record<string, unknown>, prazoMs = 12_000): Promise<{ ok: true; dados: unknown } | { ok: false; erro: string }> {
   if (!configurado()) return { ok: false, erro: "O gateway do OpenClaw não está configurado." };
 
   const base = process.env.OPENCLAW_GATEWAY_URL!.replace(/\/+$/, "");
@@ -49,7 +49,7 @@ export async function chamarRpc(method: string, params: Record<string, unknown>)
         authorization: `Bearer ${process.env.OPENCLAW_GATEWAY_TOKEN}`,
       },
       body: JSON.stringify({ method, params }),
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(prazoMs),
     });
 
     const texto = await r.text();

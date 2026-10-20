@@ -206,7 +206,12 @@ Trocar antes quebra o login do painel. A skill da Marina pode continuar em
 ## WhatsApp caiu (a Marina parou de responder)
 
 A tela **Hoje** do painel avisa no topo ("A Marina está fora do WhatsApp") e
-diz o motivo. No terminal da Hostinger:
+diz o motivo. **Religar pelo painel (desde 20/10):** Marina → WhatsApp da
+Marina → Conectar a Marina, com a tela aberta no computador e o celular da
+pousada lendo o QR (perfil Administração). A tela usa `web.login.start`,
+`web.login.wait` e `channels.logout` do plugin `admin-http-rpc`, o mesmo do
+"Testar envio": se ele estiver desligado, a tela diz que não falou com o
+servidor. Pelo terminal da Hostinger, como antes:
 
 ```bash
 openclaw channels status

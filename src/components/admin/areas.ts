@@ -49,6 +49,7 @@ export const AREAS: Area[] = [
     id: "marina", nome: "Marina", descricao: "O que ela sabe, como fala e a quem pergunta",
     itens: [
       { href: "/admin/cerebro", rotulo: "Visão geral", chaves: "cerebro aprendizado resolve sozinha mapa" },
+      { href: "/admin/whatsapp", rotulo: "WhatsApp da Marina", tecnico: true, chaves: "whatsapp conectar desconectar qr religar caiu aparelho conexao api oficial meta" },
       { href: "/admin/marina?aba=visao", rotulo: "Treinamento", padrao: true, chaves: "treinamento leitura canal whatsapp site" },
       { href: "/admin/marina?aba=conhecimento", rotulo: "O que ela sabe", chaves: "ensinar conhecimento fato saber informacao treinar" },
       { href: "/admin/marina?aba=documentos", rotulo: "Documentos", chaves: "documento pdf arquivo enviar" },
@@ -115,6 +116,7 @@ export const TAREFAS: { rotulo: string; href: string; chaves: string; tecnico?: 
   { rotulo: "Mudar cores e letras do site", href: "/admin/identidade-visual", chaves: "cor letra fonte visual logo" },
   { rotulo: "Horário de check-in e check-out", href: "/admin/politicas", chaves: "horario checkin checkout entrada saida cafe" },
   { rotulo: "Escolher a quem a Marina pergunta", href: "/admin/equipe?aba=equipe", chaves: "quem responde equipe numero pergunta" },
+  { rotulo: "Religar o WhatsApp da Marina", href: "/admin/whatsapp", chaves: "religar conectar qr whatsapp caiu marina fora do ar desconectar", tecnico: true },
   { rotulo: "Conversar com a Marina para testar", href: "/admin/marina?aba=testar", chaves: "testar conversar marina perguntar" },
   { rotulo: "Ver se está tudo funcionando", href: "/admin/diagnostico", chaves: "funcionando erro problema motor sistema", tecnico: true },
   { rotulo: "Abrir o site em outra aba", href: "/", chaves: "ver site abrir publico", externo: true },

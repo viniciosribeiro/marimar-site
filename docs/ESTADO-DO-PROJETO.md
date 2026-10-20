@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 20/10/2026 (Marina fora do WhatsApp desde 18/10: o motivo real e o aviso no painel; mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
+> Atualizado em 20/10/2026 (WhatsApp da Marina religado pelo painel, com a API oficial da Meta em estudo; Marina fora do WhatsApp desde 18/10: o motivo real e o aviso no painel; mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
 
 ## Onde estamos
 
@@ -92,10 +92,16 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+000000000000000. **WhatsApp da Marina pelo painel (20/10):** Marina → WhatsApp
+   da Marina conecta pelo QR e desconecta, só perfil Administração (a
+   Cecília precisa desse perfil em Pessoas e acessos para usar). Primeiro uso
+   real: conferir que o gateway da Hostinger aceita `web.login.start` pelo
+   `admin-http-rpc`. **Segunda opção, API oficial da Meta:** em estudo; o
+   cartão já está na tela. As duas não ligam juntas no mesmo número.
 00000000000000. **Marina fora do WhatsApp desde 18/10 (~11h):** o WhatsApp
    removeu o aparelho conectado (código 401; não é Marina duplicada, que daria
-   440). Ela não volta sozinha: ler o QR de novo (`docs/runbook.md`,
-   "WhatsApp caiu"). Antes, descobrir a causa no celular da pousada
+   440). Ela não volta sozinha: ler o QR de novo (pelo painel desde 20/10, ou
+   `docs/runbook.md`, "WhatsApp caiu"). Antes, descobrir a causa no celular da pousada
    (Aparelhos conectados) e no log de 18/10. Combinar com quem usa o celular
    de atendimento: não remover "openclaw" e não reinstalar o WhatsApp. Se cair
    de novo sem ninguém mexer, pensar na API oficial do WhatsApp.

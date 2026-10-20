@@ -251,6 +251,22 @@ partir da próxima conversa**. As abas, na ordem em que se usa:
 regras de como contar (criança como adulto, por exemplo) se ensinam, e ela
 segue ao consultar.
 
+### WhatsApp da Marina (Marina → WhatsApp da Marina)
+Para ver se a Marina está no WhatsApp e religar sem abrir o servidor. Só
+aparece para quem tem acesso de **Administração**.
+- **Se ela caiu:** a tela Hoje avisa no topo; toque em **Religar**.
+- **Conectar:** abra a tela **no computador**, toque em **Conectar a Marina**
+  e, no celular da pousada, WhatsApp → Aparelhos conectados → Conectar um
+  aparelho → aponte para o QR. O QR troca sozinho até ser lido; em seguida
+  aparece "Conectada!". Teste mandando "oi" de outro celular.
+- **Desconectar:** só para trocar de celular ou de número. Abra
+  "Desconectar a Marina do WhatsApp" e escreva DESCONECTAR.
+- **Para não cair:** não remova "openclaw" em Aparelhos conectados; avise
+  antes de reinstalar o WhatsApp ou trocar de celular; abra o WhatsApp no
+  celular da pousada ao menos a cada 14 dias.
+- **API oficial da Meta:** a segunda forma de conexão, em preparação. As duas
+  não ficam ligadas juntas no mesmo número.
+
 ### Equipe responsável
 Quem a Marina chama quando não sabe a resposta.
 - **Equipe**: cadastre cada pessoa com o WhatsApp, os assuntos que atende

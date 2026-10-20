@@ -117,7 +117,7 @@ export default async function HojePage() {
     pendencias.push({
       tom: "erro", titulo: "A Marina está fora do WhatsApp: ninguém recebe resposta",
       detalhe: q ? `${q.motivo}${q.desde ? ` (${quandoFoi(new Date(q.desde))})` : ""}. ${q.fazer}.` : "O WhatsApp da pousada está desconectado no servidor da Marina.",
-      href: tecnico ? "/admin/integracoes" : "/admin", acao: tecnico ? "Ver integração" : "Avisar o Vinicios",
+      href: tecnico ? "/admin/whatsapp" : "/admin", acao: tecnico ? "Religar" : "Avisar o Vinicios",
     });
   }
   for (const c of chamados) {

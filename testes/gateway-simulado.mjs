@@ -18,6 +18,14 @@ const PORTA = Number(process.env.PORTA ?? 4010);
 let ultima = null;
 /* Mensagens de WhatsApp que o site mandou pelo RPC (método "send"). */
 const enviadas = [];
+/* WhatsApp da Marina simulado: começa caído (como em 18/10) com SIM_WHATSAPP_DESCONECTADO=1. */
+const whatsapp = { conectado: !process.env.SIM_WHATSAPP_DESCONECTADO, leituras: 0 };
+/* Um "QR" desenhado em SVG: só precisa ser imagem em data URL e mudar de versão. */
+const qrSimulado = (versao) => {
+  const quadros = Array.from({ length: 64 }, (_, i) => ((i * 7 + versao * 13) % 5 < 2 ? `<rect x="${(i % 8) * 25}" y="${Math.floor(i / 8) * 25}" width="25" height="25"/>` : "")).join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#fff"/><g fill="#111">${quadros}</g><text x="100" y="110" font-size="22" text-anchor="middle" fill="#c00">QR ${versao}</text></svg>`;
+  return "data:image/svg+xml;base64," + Buffer.from(svg).toString("base64");
+};
 
 const normal = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const palavras = (s) => normal(s).split(/[^a-z0-9]+/).filter((p) => p.length > 3);
@@ -91,7 +99,7 @@ http.createServer((req, res) => {
       const pedido = JSON.parse(bruto || "{}");
       const para = String(pedido.args?.target ?? pedido.args?.to ?? "");
       const detalhes = (d) => ({ ok: true, result: { content: [{ type: "text", text: JSON.stringify(d) }], details: d } });
-      if (para.endsWith("0000") || process.env.SIM_WHATSAPP_DESCONECTADO) {
+      if (para.endsWith("0000") || !whatsapp.conectado) {
         if (pedido.args?.bestEffort === false) {
           res.writeHead(500, { "content-type": "application/json" });
           return res.end(JSON.stringify({ ok: false, error: { type: "tool_error", message: "tool execution failed" } }));
@@ -105,9 +113,30 @@ http.createServer((req, res) => {
     }
     if (req.url === "/api/v1/admin/rpc") {
       const pedido = JSON.parse(bruto || "{}");
+      const responderRpc = (payload) => { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify({ ok: true, payload })); };
       if (pedido.method === "channels.status") {
-        res.writeHead(200, { "content-type": "application/json" });
-        return res.end(JSON.stringify({ ok: true, payload: { channels: [{ id: "whatsapp", accounts: [{ accountId: "default", connected: !process.env.SIM_WHATSAPP_DESCONECTADO, linked: true }] }] } }));
+        const conta = whatsapp.conectado
+          ? { accountId: "default", connected: true, linked: true, running: true, healthState: "healthy" }
+          : { accountId: "default", connected: false, linked: true, running: false, healthState: "logged-out",
+              lastError: "status=401 Unauthorized Stream Errored (conflict)",
+              lastDisconnect: { at: Date.now() - 41 * 3600_000, error: "status=401 Unauthorized Stream Errored (conflict)" } };
+        return responderRpc({ channels: [{ id: "whatsapp", accounts: [conta] }] });
+      }
+      /* Login por QR (web.login.start/wait), no formato do @openclaw/whatsapp
+         2026.9.4: o primeiro wait devolve um QR novo, o segundo "lê" o QR. */
+      if (pedido.method === "web.login.start") {
+        whatsapp.leituras = 0;
+        return setTimeout(() => responderRpc({ qrDataUrl: qrSimulado(1), sessionKey: "sim-sessao", message: "Scan this QR in WhatsApp → Linked Devices." }), 800);
+      }
+      if (pedido.method === "web.login.wait") {
+        whatsapp.leituras++;
+        if (whatsapp.leituras === 1) return setTimeout(() => responderRpc({ connected: false, qrDataUrl: qrSimulado(2), message: "QR refreshed. Scan the latest code in WhatsApp → Linked Devices." }), 1500);
+        whatsapp.conectado = true;
+        return setTimeout(() => responderRpc({ connected: true, message: "✅ Linked! WhatsApp is ready." }), 1500);
+      }
+      if (pedido.method === "channels.logout") {
+        whatsapp.conectado = false;
+        return responderRpc({ channel: "whatsapp", accountId: "default", cleared: true });
       }
       if (pedido.method === "send") {
         /* Número terminado em 0000 simula aparelho fora do ar. */
