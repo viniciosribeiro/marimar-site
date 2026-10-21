@@ -1,6 +1,6 @@
 import type { Sql } from "./db-conexao";
 import { lerConfig } from "./marina";
-import { cifrar, decifrar, finalDaChave } from "./segredo";
+import { cifrar, decifrar, finalDaChave } from "./cifra-chaves";
 import { corrigirConfig, lerConfigOpenClaw } from "./openclaw-config";
 import {
   PROVEDOR, PROVEDORES_VOZ, doProvedor, oProvedor, diferencas, normalizarOpcoes, openaiAceitaInstrucoes, openaiAceitaVelocidade, patchDaVoz, pcmParaWav, textoGoogle, vozDoWhatsapp,

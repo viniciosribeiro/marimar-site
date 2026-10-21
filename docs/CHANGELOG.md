@@ -57,6 +57,14 @@ Formato de cada entrada:
 - **Não testado com o OpenClaw e os provedores de verdade** (a rede desta sessão
   não alcança): o primeiro "Salvar nos dois canais" em produção é a prova.
 
+### Deploy: o primeiro falhou (corrigido no mesmo dia)
+O arquivo da cifra se chamava `src/lib/segredo.ts`; o `.gitignore` bloqueia
+`*segredo*` (proteção contra arquivo com chave solto na pasta), então ele não
+subiu e a Vercel não achou o módulo. Renomeado para `src/lib/cifra-chaves.ts`;
+a regra do `.gitignore` continua. **Nome de arquivo de código não pode conter
+`secret`, `segredo`, `credenciais` nem `api…txt`.** Conferido com o build feito
+a partir do que está no git (`git archive`), não da pasta de trabalho.
+
 ## 2026-10-21 (2) — Aviso no celular ligado pelo painel; servidor da Marina ajustado
 **Autor:** Claude (Claude Code), a pedido do Vinicios ("consegue fazer a parte 2 automaticamente?")
 **Migration:** nenhuma (`integracoes`, chave `alerta_whatsapp_url`)

@@ -107,7 +107,7 @@ A **transcrição** (áudio do cliente → texto) continua sempre ElevenLabs
 
 `src/lib/voz-base.ts` (regras, listas, patch, leitura das camadas) ·
 `src/lib/voz.ts` (opções, chaves, síntese, aplicar e conferir) ·
-`src/lib/segredo.ts` (cifra) · `src/lib/openclaw-config.ts`
+`src/lib/cifra-chaves.ts` (cifra) · `src/lib/openclaw-config.ts`
 (`lerConfigOpenClaw`, `corrigirConfig`) · `src/app/(admin)/admin/marina/AbaVoz.tsx`
 e `voz-actions.ts` · `src/app/api/chat/voz`, `src/app/api/admin/voz-teste`.
 Gravado em `marina_config` (colunas da ElevenLabs, como antes) e
