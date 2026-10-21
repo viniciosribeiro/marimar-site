@@ -63,14 +63,22 @@ no máximo 1 vez por minuto: ao abrir o painel, no chat do site e quando a
 Marina lê o treinamento (`/api/agent/conhecimento`, a cada conversa e a cada
 15 min). Uma trava no banco impede duas cópias do site de agirem juntas.
 
-**Alerta no celular:** com `ALERTA_WHATSAPP_URL` na Vercel, cada aviso vai por
-POST de texto para esse endereço. Feito para o **ntfy** (gratuito):
+**Aviso no celular (ntfy, gratuito), ligado pelo painel, sem mexer na Vercel:**
 
-1. instale o app ntfy no celular;
-2. assine um tópico com nome difícil de adivinhar (ex.: `marimar-marina-7k2q9`);
-3. na Vercel: `ALERTA_WHATSAPP_URL=https://ntfy.sh/marimar-marina-7k2q9` → Redeploy.
+1. Painel → WhatsApp da Marina → **Aviso no seu celular quando a Marina cair** →
+   **Ligar o aviso no meu celular**. O painel cria um tópico com nome sorteado
+   (`marimar-` + 10 letras) e guarda o endereço em `integracoes`
+   (`alerta_whatsapp_url`).
+2. No celular: instalar o app **ntfy**, tocar em **+** e digitar o nome do tópico
+   que a tela mostra (servidor padrão, sem "Use another server").
+3. **Mandar alerta de teste** na mesma tela: deve chegar em segundos.
 
-O alerta nunca leva dado de cliente.
+No ntfy.sh o nome do tópico funciona como senha: quem souber o nome recebe os
+avisos. Por isso o nome é sorteado e o aviso nunca leva dado de cliente.
+**Desligar o aviso** apaga o endereço; ligar de novo cria outro tópico.
+
+Alternativa: `ALERTA_WHATSAPP_URL` na Vercel (qualquer endereço que receba POST
+de texto) vale por cima do que o painel ligou.
 
 ### 3. Prazos dos chamados sem duplicidade
 
@@ -101,18 +109,38 @@ openclaw config set channels.whatsapp.groupPolicy '"disabled"' --strict-json
 # 2. Mensagem do próprio número nunca vira conversa (evita a Marina falar sozinha)
 openclaw config set channels.whatsapp.selfChatMode false --strict-json
 
-# 3. Atualizar o OpenClaw (a 2026.10.5 entrega mensagens que chegam ilegíveis logo depois de religar)
-openclaw backup create
-openclaw update status
-openclaw update
-
-# 4. Reiniciar e conferir
+# 3. Reiniciar e conferir
 openclaw gateway restart
 openclaw channels status        # "linked, running, connected"
 ```
 
-Fazer de madrugada ou em horário calmo. Depois da atualização, conferir
-`openclaw channels status` e mandar um "oi" de outro celular.
+**Feito em 21/10/2026:** 1, 2 e 3 aplicados; depois do reinício,
+`linked, running, connected, health:healthy`.
+
+### Cópia de segurança e atualização (não deram certo em 21/10)
+
+- **`openclaw backup create` falha** na 2026.9.4 com
+  `Archive symbolic link target must be relative: …/.venv-transcribe/bin/python3 -> /usr/bin/python3`.
+  É um defeito conhecido do OpenClaw com atalhos absolutos (o ambiente Python
+  da transcrição de áudio), corrigido depois no projeto (openclaw/openclaw
+  #141923). Enquanto isso, a cópia vai pelo `tar`, que guarda atalhos como estão:
+
+  ```bash
+  ls -d /data/.openclaw            # confirma onde mora o OpenClaw (o erro mostrou /data/.openclaw)
+  tar -czf /data/copia-openclaw-2026-10-21.tar.gz -C /data .openclaw
+  ls -lh /data/copia-openclaw-2026-10-21.tar.gz
+  ```
+
+  A cópia leva a sessão do WhatsApp da Marina: não mandar esse arquivo para
+  ninguém.
+- **`openclaw update` responde "Update from command line is not allowed"**: a
+  instalação da Hostinger (modelo de 1 clique, em Docker) não se atualiza pelo
+  terminal. Pela documentação do OpenClaw para a Hostinger, a atualização é no
+  hPanel → VPS → **Docker Manager** → **Update** (baixa a imagem nova; a imagem
+  da Hostinger pode chegar alguns dias depois da versão oficial). Não é urgente:
+  a 2026.10.5 corrige mensagens que chegam ilegíveis logo depois de religar, mas
+  a Marina funciona sem ela. Fazer em horário calmo, depois da cópia acima, e
+  conferir `openclaw channels status` e um "oi" de outro celular.
 
 ## Ao ligar o número real da pousada
 
@@ -141,6 +169,9 @@ Authorization: Bearer <CRON_SECRET ou AGENT_API_KEY>
 - `testes/e2e-blindagem.mjs` com `SIM_WHATSAPP_DESCONECTADO=1 SIM_TRAVA_DEPOIS_DO_QR=1 node testes/gateway-simulado.mjs`
   e `ALERTA_WHATSAPP_URL=http://localhost:4010/__alerta` no servidor: reproduz
   21/10, 18/10, servidor fora, repetição e número da Marina na Equipe.
+- `testes/e2e-alerta.mjs`: servidor **sem** `ALERTA_WHATSAPP_URL` e com
+  `ALERTA_NTFY_URL=http://localhost:4010/__ntfy` (o "ntfy" do simulador): liga
+  pelo painel, manda o teste, o vigia avisa no tópico (401 e "voltou"), desliga.
 - **Não testado com o OpenClaw de verdade:** se `channels.stop` + `channels.start`
   destravam como o `gateway restart` destravou em 21/10. Se não destravarem, o
   vigia avisa depois de 6 tentativas e o caminho é o terminal.
@@ -150,5 +181,6 @@ Authorization: Bearer <CRON_SECRET ou AGENT_API_KEY>
 `src/lib/whatsapp-saude.ts` (regras) · `src/lib/whatsapp-vigia.ts` (vigia,
 disjuntor, travas, alerta) · `src/lib/envio-whatsapp.ts` (disjuntor no envio) ·
 `src/lib/escalonamento.ts` (trava dos prazos) ·
-`src/app/(admin)/admin/whatsapp/` (tela) · tudo guardado em `integracoes`
-(`wa_vigia`, `wa_out:*`, `wa_blq:*`, `trava:*`), sem migration.
+`src/app/(admin)/admin/whatsapp/` (tela; `AlertaCelular.tsx`, o aviso no celular) ·
+tudo guardado em `integracoes` (`wa_vigia`, `wa_out:*`, `wa_blq:*`, `trava:*`,
+`alerta_whatsapp_url`), sem migration.

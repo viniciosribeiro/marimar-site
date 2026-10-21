@@ -25,7 +25,8 @@ const enviadas = [];
    SIM_WHATSAPP_DESCONECTADO=1 começa caído. SIM_TRAVA_DEPOIS_DO_QR=1: depois
    de ler o QR fica travado, e só channels.stop + channels.start destravam.
    GET /__estado?e=<estado> muda na hora; ?e=fora deixa o RPC sem responder.
-   POST /__alerta recebe os alertas do vigia (GET /__alertas lista). */
+   POST /__alerta recebe os alertas do vigia, e POST /__ntfy/<tópico> os do
+   aviso ligado pelo painel (GET /__alertas lista os dois). */
 const whatsapp = { estado: process.env.SIM_WHATSAPP_DESCONECTADO ? "caido" : "conectado", leituras: 0, fora: false };
 const NUMERO_SIM = "+5541999990000";
 const alertas = [];
@@ -136,8 +137,9 @@ http.createServer((req, res) => {
       res.writeHead(200, { "content-type": "application/json" });
       return res.end(JSON.stringify(detalhes({ channel: "whatsapp", to: para, via: "direct", result: { messageId: "3EB0SIM" + enviadas.length } })));
     }
-    if (req.url === "/__alerta") {
-      alertas.push({ texto: bruto, titulo: req.headers.title ?? null, em: new Date().toISOString() });
+    /* /__ntfy/<tópico>: o servidor do ntfy, para o alerta ligado pelo painel (ALERTA_NTFY_URL). */
+    if (req.url === "/__alerta" || req.url.startsWith("/__ntfy/")) {
+      alertas.push({ texto: bruto, titulo: req.headers.title ?? null, topico: req.url.startsWith("/__ntfy/") ? req.url.slice(8) : null, em: new Date().toISOString() });
       res.writeHead(200); return res.end("ok");
     }
     if (req.url === "/api/v1/admin/rpc") {

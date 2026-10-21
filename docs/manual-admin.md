@@ -265,6 +265,10 @@ aparece para quem tem acesso de **Administração**.
 - **Saúde e proteções:** número ligado, desde quando está conectada, última
   mensagem, o que o site segurou para proteger o número e o histórico. Número
   novo fica 3 dias em "período de adaptação" (menos mensagens automáticas).
+- **Aviso no seu celular quando a Marina cair:** toque em **Ligar o aviso no
+  meu celular**, instale o app **ntfy** no celular, toque em **+** e digite o
+  nome do tópico que a tela mostra. Depois, **Mandar alerta de teste**. Não
+  publique o nome do tópico: quem souber o nome recebe os avisos.
 - **Desconectar:** só para trocar de celular ou de número. Abra
   "Desconectar a Marina do WhatsApp" e escreva DESCONECTAR.
 - **Para não cair:** não remova "openclaw" em Aparelhos conectados; avise

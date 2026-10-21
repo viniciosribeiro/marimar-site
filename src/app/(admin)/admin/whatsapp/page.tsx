@@ -5,10 +5,11 @@ import { statusWhatsapp } from "@/lib/envio-whatsapp";
 import { comSql } from "@/lib/db-conexao";
 import { lerConfigEscalonamento } from "@/lib/escalonamento";
 import { VARIAVEIS_META, faltandoMeta } from "@/lib/whatsapp-meta-base";
-import { lerMemoria, resumoProtecoes } from "@/lib/whatsapp-vigia";
-import { ADAPTACAO_DIAS, ROTULO, VIGIA, emAdaptacao, MEMORIA_VAZIA } from "@/lib/whatsapp-saude";
+import { enderecoAlerta, lerMemoria, resumoProtecoes } from "@/lib/whatsapp-vigia";
+import { ADAPTACAO_DIAS, ROTULO, VIGIA, emAdaptacao, topicoDe, MEMORIA_VAZIA } from "@/lib/whatsapp-saude";
 import { Pagina, Cabecalho, Cartao, Selo, Aviso, BotaoLink, quandoFoi } from "@/components/admin/ui";
 import { ConexaoWhatsapp } from "./ConexaoWhatsapp";
+import { AlertaCelular } from "./AlertaCelular";
 import { EscolhaModo, TesteMeta } from "./PainelModo";
 
 export const dynamic = "force-dynamic";
@@ -28,12 +29,12 @@ export default async function WhatsappPage() {
   const s = await auth(); if (!s?.user) redirect("/admin/login");
   const podeMexer = (s.user as { role?: string }).role === "master";
 
-  const [modo, ultimaOficial, memoria, protecoes] = await comSql(async (sql) => {
+  const [modo, ultimaOficial, memoria, protecoes, alerta] = await comSql(async (sql) => {
     const cfg = await lerConfigEscalonamento(sql);
     const [u] = await sql<{ quando: Date | null }[]>`
       SELECT MAX(criado_em) AS quando FROM chat_mensagens WHERE sessao LIKE 'wa:%' AND papel = 'visitante'`.catch(() => [{ quando: null }]);
-    return [cfg.whatsapp_modo === "oficial" ? "oficial" : "web", u?.quando ?? null, await lerMemoria(sql), await resumoProtecoes(sql)] as const;
-  }).catch(() => ["web", null, MEMORIA_VAZIA, { envios24h: 0, segurados24h: 0, ultimosSegurados: [] }] as const);
+    return [cfg.whatsapp_modo === "oficial" ? "oficial" : "web", u?.quando ?? null, await lerMemoria(sql), await resumoProtecoes(sql), await enderecoAlerta(sql)] as const;
+  }).catch(() => ["web", null, MEMORIA_VAZIA, { envios24h: 0, segurados24h: 0, ultimosSegurados: [] }, { url: null, origem: null }] as const);
   const oficial = modo === "oficial";
   const faltam = faltandoMeta();
 
@@ -127,7 +128,7 @@ export default async function WhatsappPage() {
               ["Vigia: última verificação", memoria.ultimaVez ? `${quandoFoi(new Date(memoria.ultimaVez))} · ${ROTULO[memoria.estado]}` : "ainda não rodou"],
               ["Destravamentos automáticos (24 h)", `${ultimas24h(memoria.acoes)} de no máximo ${VIGIA.acoesPorDia}`],
               ["Mensagens automáticas (24 h)", `${protecoes.envios24h} ${protecoes.envios24h === 1 ? "enviada" : "enviadas"} · ${protecoes.segurados24h} ${protecoes.segurados24h === 1 ? "segurada" : "seguradas"}`],
-              ["Alerta no seu celular", process.env.ALERTA_WHATSAPP_URL ? "ligado" : "desligado (ver manual: ALERTA_WHATSAPP_URL)"],
+              ["Aviso no seu celular", alerta.origem === "vercel" ? "ligado (pela Vercel)" : alerta.origem === "painel" ? "ligado (pelo painel)" : "desligado (ligue no cartão abaixo)"],
             ].map(([rotulo, valor]) => (
               <div key={rotulo} className="flex flex-col border-b border-linha/50 py-1.5">
                 <dt className="text-xs text-tinta-suave">{rotulo}</dt>
@@ -156,6 +157,14 @@ export default async function WhatsappPage() {
               </ul>
             </div>
           )}
+        </Cartao>
+
+        <Cartao titulo="Aviso no seu celular quando a Marina cair"
+          descricao="O site tenta trazer a Marina de volta sozinho; quando o problema pede uma pessoa (QR novo, celular desligado), avisa aqui."
+          acoes={alerta.origem ? <Selo tom="sucesso" ponto>Ligado</Selo> : <Selo tom="neutro">Desligado</Selo>}>
+          {podeMexer
+            ? <AlertaCelular origem={alerta.origem} topico={topicoDe(alerta.url)} />
+            : <Aviso tom="info">Só quem tem acesso de Administração liga ou desliga o aviso.</Aviso>}
         </Cartao>
 
         <Cartao titulo="Para a Marina não cair">

@@ -93,10 +93,13 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 ## As pendencias que importam
 
 0000000000000000. **Blindagem do WhatsApp (21/10):** feita no site
-   (`docs/blindagem-whatsapp.md`). Falta no servidor, de madrugada: `groupPolicy
-   "disabled"`, `selfChatMode false`, `openclaw backup create` e `openclaw update`
-   (2026.9.4 → 2026.10.5) — comandos no documento. Na Vercel:
-   `ALERTA_WHATSAPP_URL` (ntfy) para o alerta no celular, e um agendador a cada
+   (`docs/blindagem-whatsapp.md`). No servidor, `groupPolicy "disabled"` e
+   `selfChatMode false` **aplicados em 21/10** (connected, healthy). Faltam: a
+   cópia de segurança pelo `tar` (o `openclaw backup create` falha na 2026.9.4)
+   e a atualização para a 2026.10.5 pelo **Docker Manager** do hPanel (o
+   terminal não deixa) — não urgente. **Aviso no celular:** ligar no painel
+   (WhatsApp da Marina → Aviso no seu celular), instalar o ntfy e mandar o
+   alerta de teste; não testado com o ntfy de verdade. Falta o agendador a cada
    5 min em `/api/cron/chamados` (vigia + prazos). Hoje a Marina está num
    **celular de testes**; para o número real, seguir "Ao ligar o número real da
    pousada" no mesmo documento.
@@ -287,7 +290,8 @@ Variaveis obrigatorias (precisam existir em `.env.local` **e** na Vercel):
 Opcionais (API oficial do WhatsApp; sem elas, só o QR): `WHATSAPP_META_TOKEN` ·
 `WHATSAPP_META_PHONE_ID` · `WHATSAPP_META_APP_SECRET` · `WHATSAPP_META_VERIFY_TOKEN`
 (ver `docs/fluxo-whatsapp-oficial.md`). Alerta da Marina fora do WhatsApp:
-`ALERTA_WHATSAPP_URL` (ver `docs/blindagem-whatsapp.md`).
+ligado pelo painel; `ALERTA_WHATSAPP_URL`, se existir, vale por cima (ver
+`docs/blindagem-whatsapp.md`).
 
 ```bash
 npx vercel env pull .env.local   # sincroniza da Vercel
