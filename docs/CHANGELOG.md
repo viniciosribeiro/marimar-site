@@ -6,6 +6,57 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-21 (3) — Voz da Marina: a mesma no site e no WhatsApp, com ElevenLabs, OpenAI e Google
+**Autor:** Claude (Claude Code), a pedido do Vinicios ("a voz do WhatsApp não condiz com o ID do painel"; aprovado: "Tudo", chave enviada pelo painel)
+**Migration:** nenhuma (`integracoes`: `voz_marina`, `chave_voz:<provedor>`)
+
+### Por que o WhatsApp falava com outra voz (`docs/voz-marina.md`)
+- O guia `agente/README.md` e o painel gravavam `tts.providers.elevenlabs.speakerVoiceId`
+  e `.model`; o OpenClaw 2026.9.4 lê `voiceId` e `modelId`. Sem `voiceId`, ele
+  usa a voz padrão dele (`pMsXgVXv3BLzUgSXRplE`).
+- O painel chamava `config.set` com `{ path, value }`; na 2026.9.4 o `config.set`
+  só aceita a config inteira (`{ raw, baseHash }`). Toda gravação era recusada.
+- De fábrica, o modelo de IA podia trocar a voz no meio da resposta.
+- O simulador de testes aceitava qualquer método, por isso nada disso aparecia.
+
+### O que entrou
+- **Envio certo ao OpenClaw:** `config.get` → `config.patch` (merge patch com o
+  `hash`) → `config.get` de novo para conferir. Nomes certos por provedor,
+  `tts.modelOverrides` travado, e a mesma voz em toda camada que a redefine
+  (agente, canal WhatsApp, conta, persona ativa). Conflito de versão: lê de novo
+  e tenta mais uma vez.
+- **Três provedores:** ElevenLabs, OpenAI (gpt-4o-mini-tts com "jeito de falar",
+  tts-1/tts-1-hd com velocidade) e Google (Gemini TTS, 30 vozes, jeito de
+  falar). O site gera o áudio com os mesmos parâmetros do OpenClaw
+  (`src/lib/voz.ts`); vale no chat do site, na prova do painel e na API oficial
+  (Google na API oficial vai só em texto: a Meta não aceita WAV).
+- **Aba Voz nova:** cartão "A voz da Marina agora" (site × WhatsApp, lido do
+  servidor, com "Levar ao WhatsApp de novo"), escolha do provedor, lista de
+  vozes com ▶ (ElevenLabs: as vozes da conta, clonadas primeiro, com busca;
+  OpenAI e Google: sugeridas e todas), jeito de falar, "Ouvir a Marina" e
+  "Salvar nos dois canais".
+- **Conectar conta pelo painel:** abrir a página da chave, colar, "Testar e
+  conectar" (testa na hora; só Administração). Guardada cifrada (AES-GCM,
+  chave derivada do `AUTH_SECRET`; sem ele, recusa). Chave da Vercel continua
+  valendo por cima. Ao salvar, a chave vai para `tts.providers.<p>.apiKey` no
+  OpenClaw: o WhatsApp usa a mesma conta do site.
+- Transcrição (áudio do cliente) segue ElevenLabs, agora também com a chave
+  conectada pelo painel. Diagnóstico mostra o provedor da voz e a transcrição.
+- `agente/README.md` corrigido (`voiceId`/`modelId`).
+
+### Testes
+- `npm test` 95/95 (9 novos em `testes/unit/voz.test.ts`, inclusive o defeito
+  de 21/10 aparecendo na conferência).
+- `testes/e2e-voz.mjs` 25/25 com `gateway-simulado.mjs` (agora fiel ao
+  `config.get`/`config.patch`/`config.set` da 2026.9.4) e `voz-simulada.mjs`
+  (os três provedores): defeito reproduzido, chave recusada e aceita (cifrada),
+  vozes da conta, ouvir, salvar nos três provedores com o pedido do site igual à
+  config do WhatsApp, camada do canal corrigida, conflito de versão, servidor
+  fora, celular 375 px (nada sai pela borda).
+- `e2e-whatsapp-oficial` 21/21. `tsc`, lint dos arquivos novos e build limpos.
+- **Não testado com o OpenClaw e os provedores de verdade** (a rede desta sessão
+  não alcança): o primeiro "Salvar nos dois canais" em produção é a prova.
+
 ## 2026-10-21 (2) — Aviso no celular ligado pelo painel; servidor da Marina ajustado
 **Autor:** Claude (Claude Code), a pedido do Vinicios ("consegue fazer a parte 2 automaticamente?")
 **Migration:** nenhuma (`integracoes`, chave `alerta_whatsapp_url`)

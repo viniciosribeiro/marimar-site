@@ -80,21 +80,26 @@ export async function chamarRpc(method: string, params: Record<string, unknown>,
   }
 }
 
-/** Grava um caminho da config do OpenClaw. */
-export async function definirConfig(caminho: string, valor: unknown): Promise<Resultado> {
-  return rpc("config.set", { path: caminho, value: valor });
+/**
+ * A config do OpenClaw como o gateway mostra (segredos trocados por um
+ * marcador) e o `hash` da versão, que toda escrita precisa levar.
+ */
+export async function lerConfigOpenClaw(): Promise<{ ok: true; config: unknown; hash: string | null } | { ok: false; erro: string }> {
+  const r = await chamarRpc("config.get", {}, 12_000);
+  if (!r.ok) return r;
+  const d = r.dados as { payload?: Record<string, unknown> } & Record<string, unknown>;
+  const p = (d?.payload ?? d) as Record<string, unknown>;
+  const config = p?.config ?? p?.parsed ?? p?.sourceConfig ?? null;
+  if (!config || typeof config !== "object") return { ok: false, erro: "o gateway não devolveu a configuração" };
+  return { ok: true, config, hash: typeof p.hash === "string" ? p.hash : null };
 }
 
 /**
- * Manda a voz do painel para o OpenClaw, para o WhatsApp falar igual ao site.
- *
- * Os ajustes finos (estabilidade, semelhança, velocidade) não vão: o
- * OpenClaw os expõe sob outro formato e enviar às cegas arriscaria corromper
- * uma config que hoje funciona. Voz e modelo são o que muda o timbre, que é
- * o que a Cecília percebe.
+ * Muda só um pedaço da config (merge patch): `config.patch` com o `hash`
+ * lido agora. Na 2026.9.4 o `config.set` exige a config INTEIRA
+ * (`{ raw, baseHash }`) — o `{ path, value }` que o painel mandava até
+ * 21/10 era recusado sempre, e a voz nunca chegava ao WhatsApp.
  */
-export async function sincronizarVoz(vozId: string, modelo: string): Promise<Resultado> {
-  const voz = await definirConfig("tts.providers.elevenlabs.speakerVoiceId", vozId);
-  if (!voz.ok) return voz;
-  return definirConfig("tts.providers.elevenlabs.model", modelo);
+export async function corrigirConfig(patch: Record<string, unknown>, hash: string | null, nota: string): Promise<Resultado> {
+  return rpc("config.patch", { raw: JSON.stringify(patch), ...(hash ? { baseHash: hash } : {}), note: nota });
 }

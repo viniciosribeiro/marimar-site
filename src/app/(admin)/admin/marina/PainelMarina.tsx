@@ -69,7 +69,7 @@ export function PainelMarina({ dados, abaInicial, categoriaInicial, novoInicial 
       {aba === "personalidade" && (
         <AbaPersonalidade dados={dados} ensinar={ensinar} verHistorico={setHistoricoDe} />
       )}
-      {aba === "voz" && <AbaVoz config={dados.config} vozApi={s.vozApi} />}
+      {aba === "voz" && <AbaVoz voz={dados.voz} />}
       {aba === "historico" && <AbaHistorico dados={dados} />}
 
       {rascunho && <FormItem rascunho={rascunho} aoFechar={() => setRascunho(null)} />}

@@ -104,12 +104,17 @@ porque a versao por habilidade (`sag` + `openai-whisper-api`) quebra sempre
 que a lista de permissao `agents.defaults.skills` muda — e quebrou exatamente
 assim em 19/09/2026.
 
-Config aplicada (terminal do OpenClaw):
+**Desde 21/10/2026 a voz se escolhe no painel (Marina → Voz)**, que grava
+isto sozinho no OpenClaw e confere: ver `docs/voz-marina.md`. Até 21/10 este
+guia mandava `speakerVoiceId` e `model` — nomes que o OpenClaw não lê; o
+WhatsApp falava com a voz padrão do OpenClaw, não com a do painel.
+
+Config (terminal do OpenClaw), se precisar fazer à mão:
 
 ```
 openclaw config set tts.provider elevenlabs
-openclaw config set tts.providers.elevenlabs.speakerVoiceId RGymW84CSmfVugnA5tvA
-openclaw config set tts.providers.elevenlabs.model eleven_multilingual_v2
+openclaw config set tts.providers.elevenlabs.voiceId RGymW84CSmfVugnA5tvA
+openclaw config set tts.providers.elevenlabs.modelId eleven_multilingual_v2
 openclaw config set tts.providers.elevenlabs.applyTextNormalization on
 openclaw config set tts.providers.elevenlabs.languageCode pt
 openclaw config set tts.auto inbound
@@ -124,8 +129,10 @@ openclaw config set tools.media.models '[{"provider":"elevenlabs","model":"scrib
 | `languageCode=pt` | Sem isso numero sai com sotaque ingles no meio da frase |
 | `tools.media.*` | O lado de ENTENDER o audio. Sem ele o `inbound` nunca dispara |
 
-A chave `ELEVENLABS_API_KEY` fica na aba **Ambiente** do painel da Hostinger,
-nunca na config — o OpenClaw le do ambiente sozinho.
+A chave `ELEVENLABS_API_KEY` ficava na aba **Ambiente** do painel da
+Hostinger. Desde 21/10, ao salvar a voz, o painel grava a chave da conta do
+site em `tts.providers.<provedor>.apiKey` (decisão do Vinicios): ela vale por
+cima do ambiente, e o WhatsApp usa a mesma conta do site.
 
 
 ## A skill `consulta-desbravador` (preço e vaga)
@@ -158,7 +165,7 @@ A Cecilia treina a Marina pelo site, sem abrir a Hostinger. Principais abas:
 
 | Aba | O que faz | Onde vive |
 |---|---|---|
-| Voz | ID, modelo, estabilidade, semelhanca, velocidade, com botao de prova | `marina_config` |
+| Voz | Provedor (ElevenLabs, OpenAI, Google), voz da lista com ▶, jeito de falar; leva ao WhatsApp e confere | `marina_config` + `integracoes` (`voz_marina`, `chave_voz:*`) |
 | Jeito de falar | O tom, em portugues corrido | `marina_config.tom` |
 | Conhecimento | Informacoes, perguntas e respostas (com variacoes), por categoria | `marina_conhecimento` (tipos `fato`, `pergunta`) |
 | Personalidade e regras | Tom, escalonamento, o que ela nunca diz, quando chamar uma pessoa | `marina_config`, `marina_conhecimento` (tipos `limite`, `escalar`) |
@@ -182,7 +189,8 @@ a skill manda consultar essa rota antes de responder.
 
 **A voz agora vem do banco**, nao da variavel de ambiente. A
 `ELEVENLABS_VOICE_ID` continua como reserva: se ninguem salvou no painel,
-ela e usada. Trocar a fonte da verdade nao pode calar a Marina.
+ela e usada. Trocar a fonte da verdade nao pode calar a Marina. O WhatsApp
+recebe a mesma voz quando o painel salva (`docs/voz-marina.md`).
 
 > **O que este painel NAO faz.** A Marina nao aprende sozinha com as
 > conversas. Nao ha ajuste fino aqui, nao ha evolucao por osmose. O que

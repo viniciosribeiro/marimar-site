@@ -1,4 +1,6 @@
 import type { ConfigMarina, ItemTreino, Leitura } from "@/lib/marina";
+import type { OpcoesVoz, Provedor } from "@/lib/voz-base";
+import type { EstadoChave } from "@/lib/voz";
 import type { Cobertura } from "@/lib/agent-mapa";
 import type { Regras, Adicional } from "@/lib/regras-hospedagem-base";
 import type { Roteiro } from "@/lib/roteiros";
@@ -40,8 +42,17 @@ export type Saude = {
   semTom: boolean; semEscalonamento: boolean; gateway: boolean; vozApi: boolean;
 };
 
+/** A aba Voz: o que está gravado e quais contas de voz estão conectadas. */
+export type DadosVoz = {
+  opcoes: OpcoesVoz;
+  chaves: Record<Provedor, EstadoChave>;
+  /** Perfil Administração: conecta e desconecta contas. */
+  podeConectar: boolean;
+};
+
 export type DadosMarina = {
   config: ConfigMarina;
+  voz: DadosVoz;
   itens: ItemTreino[];
   leituras: Record<string, Leitura>;
   documentos: DocumentoPainel[];

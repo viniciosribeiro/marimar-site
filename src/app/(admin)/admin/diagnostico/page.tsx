@@ -6,6 +6,8 @@ import { datasExemplo } from "@/lib/format";
 import { contarDominioAntigo } from "@/lib/dominio-antigo";
 import { lerLeituras, type Leitura } from "@/lib/marina";
 import { gatewayConfigurado } from "@/lib/chat";
+import { chaveDoProvedor, lerOpcoesVoz } from "@/lib/voz";
+import { PROVEDOR, type Provedor } from "@/lib/voz-base";
 import { Pagina, Cabecalho, Cartao, Indicador, Aviso, Selo, quandoFoi } from "@/components/admin/ui";
 
 export const dynamic = "force-dynamic";
@@ -38,10 +40,17 @@ export default async function DiagnosticoPage() {
   let antigas: Awaited<ReturnType<typeof contarDominioAntigo>> = { total: 0, porLugar: [] };
   let leituras: Record<string, Leitura> = {};
   let banco = true;
+  let voz: { provedor: Provedor; pronta: boolean; transcricao: boolean } = { provedor: "elevenlabs", pronta: false, transcricao: false };
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false, connect_timeout: 5 });
     antigas = await contarDominioAntigo(sql);
     leituras = await lerLeituras(sql);
+    const o = await lerOpcoesVoz(sql);
+    voz = {
+      provedor: o.provedor,
+      pronta: Boolean((await chaveDoProvedor(sql, o.provedor)).chave),
+      transcricao: Boolean((await chaveDoProvedor(sql, "elevenlabs")).chave),
+    };
     await sql.end();
   } catch { banco = false; }
 
@@ -49,7 +58,8 @@ export default async function DiagnosticoPage() {
     { nome: "Banco de dados", ok: banco, ajuda: "DATABASE_URL" },
     { nome: "Chave da API da Marina", ok: Boolean(process.env.AGENT_API_KEY), ajuda: "AGENT_API_KEY — sem ela as rotas da Marina recusam tudo" },
     { nome: "Ligação com a Marina (OpenClaw)", ok: gatewayConfigurado(), ajuda: "OPENCLAW_GATEWAY_URL e OPENCLAW_GATEWAY_TOKEN — chat do site e área de teste" },
-    { nome: "Voz (ElevenLabs)", ok: Boolean(process.env.ELEVENLABS_API_KEY), ajuda: "ELEVENLABS_API_KEY — áudio no site e prova de voz" },
+    { nome: `Voz da Marina (${PROVEDOR[voz.provedor].nome})`, ok: voz.pronta, ajuda: "conta conectada em Marina → Voz, ou a chave na Vercel — áudio no site e no WhatsApp" },
+    { nome: "Ouvir áudio do cliente (ElevenLabs)", ok: voz.transcricao, ajuda: "ElevenLabs conectada em Marina → Voz, ou ELEVENLABS_API_KEY — transcreve os áudios" },
     { nome: "Motor de reservas", ok: Boolean(process.env.WORKER_BASE_URL), ajuda: "WORKER_BASE_URL e WORKER_SLUG" },
   ];
 

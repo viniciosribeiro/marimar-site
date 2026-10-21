@@ -2,8 +2,9 @@ import postgres from "postgres";
 import {
   LIMITE_AUDIO_POR_HORA, LIMITE_AUDIO_BYTES,
   URL_TRANSCRICAO, MODELO_TRANSCRICAO,
-  hashIp, ipDaRequisicao, vozConfigurada,
+  hashIp, ipDaRequisicao,
 } from "@/lib/chat";
+import { chaveDoProvedor } from "@/lib/voz";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,10 +27,6 @@ export async function POST(req: Request) {
   let sql: ReturnType<typeof postgres> | null = null;
 
   try {
-    if (!vozConfigurada()) {
-      return Response.json({ erro: "Voz não configurada." }, { status: 503 });
-    }
-
     const form = await req.formData().catch(() => null);
     const arquivo = form?.get("audio");
     const sessao = String(form?.get("sessao") ?? "").slice(0, 64);
@@ -48,6 +45,14 @@ export async function POST(req: Request) {
     if (!p?.chat_ativo) {
       await sql.end();
       return Response.json({ erro: "desligado" }, { status: 503 });
+    }
+
+    /* Transcrição é sempre ElevenLabs (Scribe), seja qual for a voz da Marina:
+       chave da Vercel ou conectada pelo painel. */
+    const { chave } = await chaveDoProvedor(sql, "elevenlabs");
+    if (!chave) {
+      await sql.end();
+      return Response.json({ erro: "Voz não configurada." }, { status: 503 });
     }
 
     const ip = hashIp(ipDaRequisicao(req));
@@ -69,7 +74,7 @@ export async function POST(req: Request) {
 
     const resposta = await fetch(URL_TRANSCRICAO, {
       method: "POST",
-      headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY! },
+      headers: { "xi-api-key": chave },
       body: envio,
     });
 

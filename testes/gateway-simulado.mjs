@@ -13,6 +13,7 @@
  *   node testes/gateway-simulado.mjs            (porta 4010)
  */
 import http from "node:http";
+import { createHash } from "node:crypto";
 
 const PORTA = Number(process.env.PORTA ?? 4010);
 let ultima = null;
@@ -29,6 +30,35 @@ const enviadas = [];
    aviso ligado pelo painel (GET /__alertas lista os dois). */
 const whatsapp = { estado: process.env.SIM_WHATSAPP_DESCONECTADO ? "caido" : "conectado", leituras: 0, fora: false };
 const NUMERO_SIM = "+5541999990000";
+/* Config do OpenClaw simulada (voz da Marina, docs/voz-marina.md), como o
+   2026.9.4: config.get devolve a config sem segredos e um hash; config.patch
+   (merge patch, listas por id) exige esse hash; config.set só aceita a
+   config inteira ({ raw, baseHash }) — o { path, value } que o painel
+   mandava até 21/10 é recusado, como no servidor de verdade.
+   GET /__config lê (com segredos); POST /__config troca; ?conflito=1 faz o
+   próximo patch achar a config mudada. */
+const CONFIG_INICIAL = () => ({
+  tts: { auto: "inbound", provider: "elevenlabs", providers: { elevenlabs: { apiKey: "sk_servidor_antigo", voiceId: "VozAntigaDoServidor", modelId: "eleven_multilingual_v2" } } },
+  channels: { whatsapp: { dmPolicy: "open", tts: { providers: { elevenlabs: { voiceId: "VozDoCanal" } } } } },
+  agents: { list: [{ id: "main", default: true }] },
+});
+let configOC = CONFIG_INICIAL();
+let conflitoNoProximo = false;
+const OCULTO = "__OPENCLAW_REDACTED__";
+const hashDe = (c) => createHash("sha256").update(JSON.stringify(c)).digest("hex").slice(0, 16);
+const semSegredos = (v) => Array.isArray(v) ? v.map(semSegredos)
+  : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, /apikey|token|secret/i.test(k) && typeof x === "string" ? OCULTO : semSegredos(x)])) : v;
+const aplicarPatch = (alvo, p) => {
+  if (Array.isArray(p) && Array.isArray(alvo)) {
+    const r = alvo.map((x) => ({ ...x }));
+    for (const item of p) { const i = r.findIndex((x) => x?.id === item?.id); if (i >= 0) r[i] = aplicarPatch(r[i], item); else r.push(item); }
+    return r;
+  }
+  if (!p || typeof p !== "object" || Array.isArray(p)) return p === OCULTO ? alvo : p;
+  const r = { ...(alvo && typeof alvo === "object" && !Array.isArray(alvo) ? alvo : {}) };
+  for (const [k, v] of Object.entries(p)) { if (v === null) delete r[k]; else r[k] = aplicarPatch(r[k], v); }
+  return r;
+};
 const alertas = [];
 /* Métodos de RPC que o site chamou (GET /__rpcs), para conferir channels.stop/start. */
 const rpcs = [];
@@ -104,6 +134,13 @@ http.createServer((req, res) => {
     res.writeHead(200, { "content-type": "application/json" });
     return res.end(JSON.stringify(alertas));
   }
+  if (req.method === "GET" && req.url.startsWith("/__config")) {
+    const q = new URL(req.url, "http://x").searchParams;
+    if (q.has("reset")) configOC = CONFIG_INICIAL();
+    if (q.has("conflito")) conflitoNoProximo = true;
+    res.writeHead(200, { "content-type": "application/json" });
+    return res.end(JSON.stringify(configOC));
+  }
   if (req.method === "GET" && req.url === "/__rpcs") {
     res.writeHead(200, { "content-type": "application/json" });
     return res.end(JSON.stringify(rpcs));
@@ -140,6 +177,10 @@ http.createServer((req, res) => {
     /* /__ntfy/<tópico>: o servidor do ntfy, para o alerta ligado pelo painel (ALERTA_NTFY_URL). */
     if (req.url === "/__alerta" || req.url.startsWith("/__ntfy/")) {
       alertas.push({ texto: bruto, titulo: req.headers.title ?? null, topico: req.url.startsWith("/__ntfy/") ? req.url.slice(8) : null, em: new Date().toISOString() });
+      res.writeHead(200); return res.end("ok");
+    }
+    if (req.url === "/__config") {
+      configOC = JSON.parse(bruto || "{}");
       res.writeHead(200); return res.end("ok");
     }
     if (req.url === "/api/v1/admin/rpc") {
@@ -179,6 +220,26 @@ http.createServer((req, res) => {
       if (pedido.method === "channels.start") {
         if (whatsapp.estado === "parado" || whatsapp.estado === "travado") whatsapp.estado = "conectado";
         return responderRpc({ channel: "whatsapp", accountId: "default", started: true, outcome: { status: "handed-off" } });
+      }
+      const recusar = (msg) => { res.writeHead(400, { "content-type": "application/json" }); res.end(JSON.stringify({ ok: false, error: { code: "INVALID_REQUEST", message: msg } })); };
+      if (pedido.method === "config.get") return responderRpc({ exists: true, valid: true, config: semSegredos(configOC), hash: hashDe(configOC) });
+      if (pedido.method === "config.set") {
+        const p = pedido.params ?? {};
+        if (Object.keys(p).some((k) => k !== "raw" && k !== "baseHash")) return recusar("invalid config.set params: must NOT have additional properties");
+        if (typeof p.raw !== "string") return recusar("invalid config.set params: raw (string) required");
+        if (p.baseHash !== hashDe(configOC)) return recusar("config base hash required; re-run config.get and retry");
+        configOC = aplicarPatch(configOC, JSON.parse(p.raw));
+        return responderRpc({ ok: true, hash: hashDe(configOC) });
+      }
+      if (pedido.method === "config.patch") {
+        const p = pedido.params ?? {};
+        if (typeof p.raw !== "string") return recusar("invalid config.patch params: raw (string) required");
+        if (!p.baseHash) return recusar("config base hash required; re-run config.get and retry");
+        if (conflitoNoProximo) { conflitoNoProximo = false; return recusar("config changed since last load; re-run config.get and retry"); }
+        if (p.baseHash !== hashDe(configOC)) return recusar("config changed since last load; re-run config.get and retry");
+        configOC = aplicarPatch(configOC, JSON.parse(p.raw));
+        /* mudar tts reinicia os canais no OpenClaw de verdade */
+        return responderRpc({ ok: true, hash: hashDe(configOC), restart: { channels: ["whatsapp"] } });
       }
       if (pedido.method === "channels.logout") {
         whatsapp.estado = "sem_aparelho";

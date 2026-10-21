@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 21/10/2026 (blindagem do WhatsApp: vigia, disjuntor, QR seguro e alerta; WhatsApp da Marina: QR e API oficial da Meta prontos, escolha no painel; Marina fora do WhatsApp desde 18/10: o motivo real e o aviso no painel; mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
+> Atualizado em 21/10/2026 (voz da Marina igual no site e no WhatsApp, com ElevenLabs, OpenAI e Google; blindagem do WhatsApp: vigia, disjuntor, QR seguro e alerta; WhatsApp da Marina: QR e API oficial da Meta prontos, escolha no painel; Marina fora do WhatsApp desde 18/10: o motivo real e o aviso no painel; mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
 
 ## Onde estamos
 
@@ -92,6 +92,14 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+00000000000000000. **Voz da Marina (21/10):** o WhatsApp falava com outra voz porque
+   o painel e o guia gravavam nomes que o OpenClaw não lê, por um método que ele
+   recusa (`docs/voz-marina.md`). Corrigido e com três provedores. **Fazer:** em
+   Marina → Voz, conferir o cartão "A voz da Marina agora" e usar "Salvar nos
+   dois canais" uma vez (o WhatsApp reconecta em segundos); depois mandar um
+   áudio para a Marina e conferir a voz. Para OpenAI ou Google: conectar a conta
+   na mesma tela (chave de API; o login do ChatGPT da Hostinger não gera voz).
+   Não testado com o OpenClaw e os provedores de verdade daqui.
 0000000000000000. **Blindagem do WhatsApp (21/10):** feita no site
    (`docs/blindagem-whatsapp.md`). No servidor, `groupPolicy "disabled"` e
    `selfChatMode false` **aplicados em 21/10** (connected, healthy). Faltam: a
@@ -291,7 +299,9 @@ Opcionais (API oficial do WhatsApp; sem elas, só o QR): `WHATSAPP_META_TOKEN` �
 `WHATSAPP_META_PHONE_ID` · `WHATSAPP_META_APP_SECRET` · `WHATSAPP_META_VERIFY_TOKEN`
 (ver `docs/fluxo-whatsapp-oficial.md`). Alerta da Marina fora do WhatsApp:
 ligado pelo painel; `ALERTA_WHATSAPP_URL`, se existir, vale por cima (ver
-`docs/blindagem-whatsapp.md`).
+`docs/blindagem-whatsapp.md`). Voz: `ELEVENLABS_API_KEY`, `OPENAI_API_KEY`,
+`GEMINI_API_KEY` são opcionais — as contas também se conectam em Marina → Voz
+(guardadas cifradas com o `AUTH_SECRET`; ver `docs/voz-marina.md`).
 
 ```bash
 npx vercel env pull .env.local   # sincroniza da Vercel
@@ -322,6 +332,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | `docs/design-system-admin.md` | componentes, tokens e regras visuais do painel |
 | `docs/fluxo-midia.md` | fotos, vídeos, compressão no navegador, limites do WhatsApp e roteiros da Marina |
 | `docs/fluxo-escalonamento.md` | escalonamento para a equipe, base de aprendizado, Cérebro da Marina, segurança |
+| `docs/voz-marina.md` | a voz da Marina: por que o WhatsApp falava diferente, provedores, chaves pelo painel, o que vai ao OpenClaw |
 | `docs/blindagem-whatsapp.md` | o que derrubou a Marina, vigia, disjuntor, QR seguro, alerta, comandos do servidor e troca para o número real |
 | `docs/fluxo-whatsapp-oficial.md` | as duas formas do WhatsApp (QR e API oficial da Meta), a troca, chaves e passo a passo na Meta |
 | `docs/runbook.md` | deploy, env vars, incidentes, rotacao de chave |

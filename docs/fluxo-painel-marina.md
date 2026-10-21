@@ -122,7 +122,7 @@ restaurar versão, lixeira fora da Marina).
 | Ligar / desligar / lixeira / restaurar | idem | `ligarItem`, `desligarItem`, `excluirItem`, `restaurarItem` |
 | Voltar a uma versão | aplica o `depois` da entrada do histórico | `voltarVersao` |
 | Jeito de falar, escalonamento | `marina_config` | `salvarPersonalidade` |
-| Voz | `marina_config` + `config.set` no OpenClaw (WhatsApp) | `salvarVoz`, `lib/openclaw-config.ts` |
+| Voz | `marina_config` + `integracoes` (`voz_marina`) + `config.patch` no OpenClaw (WhatsApp), conferido lendo de volta | `voz-actions.ts`, `lib/voz.ts` (ver `docs/voz-marina.md`) |
 | Documento | Vercel Blob + `marina_documentos` | `/api/admin/marina/documento` |
 | Corrigir resposta de conversa | `chat_mensagens.correcao` + item `pergunta` | `corrigirResposta` |
 | Responder pergunta sem resposta | item `pergunta` + `marina_lacunas.status='resolvida'` | `salvarItem` com `lacuna_id` |

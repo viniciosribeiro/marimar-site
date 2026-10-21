@@ -3,7 +3,7 @@ import {
   LIMITE_VOZ_POR_HORA, LIMITE_VOZ_CARACTERES,
   hashIp, ipDaRequisicao,
 } from "@/lib/chat";
-import { lerConfig, ajustesDeVoz } from "@/lib/marina";
+import { falarComAVozGravada } from "@/lib/voz";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,16 +17,14 @@ export const dynamic = "force-dynamic";
  * alguém mandar o texto que quisesse.
  *
  * Três travas, nesta ordem: o interruptor da administração, o teto por IP
- * por hora, e o tamanho do texto. A chave da ElevenLabs nunca sai daqui.
+ * por hora, e o tamanho do texto. A chave do provedor nunca sai daqui.
+ * A voz (ElevenLabs, OpenAI ou Google) é a escolhida no painel, gerada do
+ * mesmo jeito que o OpenClaw gera no WhatsApp (src/lib/voz.ts).
  */
 export async function POST(req: Request) {
   let sql: ReturnType<typeof postgres> | null = null;
 
   try {
-    if (!process.env.ELEVENLABS_API_KEY) {
-      return Response.json({ erro: "Voz não configurada." }, { status: 503 });
-    }
-
     const corpo = await req.json().catch(() => null);
     const sessao = typeof corpo?.sessao === "string" ? corpo.sessao.slice(0, 64) : "";
     const texto = typeof corpo?.texto === "string" ? corpo.texto.trim() : "";
@@ -67,41 +65,11 @@ export async function POST(req: Request) {
       return Response.json({ erro: "Muitos áudios seguidos. Tente mais tarde." }, { status: 429 });
     }
 
-    /* A voz vem do painel, não do ambiente: e é o que permite a Cecília
-       trocar o timbre sem ninguém publicar nada. Se ela nunca salvou,
-       `lerConfig` cai na variável de ambiente — trocar a fonte da verdade
-       não pode calar a Marina. */
-    const config = await lerConfig(sql);
-    if (!config.voz_id) {
+    const falado = await falarComAVozGravada(sql, texto);
+    if (!falado.ok) {
+      if (falado.status !== 503) console.error("[voz]", falado.erro);
       await sql.end();
-      return Response.json({ erro: "Voz não configurada." }, { status: 503 });
-    }
-
-    const resposta = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${config.voz_id}`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          accept: "audio/mpeg",
-          "xi-api-key": process.env.ELEVENLABS_API_KEY!,
-        },
-        body: JSON.stringify({
-          text: texto,
-          model_id: config.voz_modelo,
-          language_code: "pt",
-          // Sem isto ela lê "26/09" como dígito solto em vez de data.
-          apply_text_normalization: "on",
-          voice_settings: ajustesDeVoz(config),
-        }),
-      },
-    );
-
-    if (!resposta.ok || !resposta.body) {
-      const detalhe = await resposta.text().catch(() => "");
-      console.error("[voz] elevenlabs respondeu", resposta.status, detalhe.slice(0, 300));
-      await sql.end();
-      return Response.json({ erro: "Não consegui gerar o áudio agora." }, { status: 502 });
+      return Response.json({ erro: falado.status === 503 ? "Voz não configurada." : "Não consegui gerar o áudio agora." }, { status: falado.status === 503 ? 503 : 502 });
     }
 
     // Só conta depois que a síntese deu certo: cobrar do teto um pedido que
@@ -111,10 +79,9 @@ export async function POST(req: Request) {
       VALUES (${sessao}, ${ip}, 'tts', ${texto.length})`;
     await sql.end();
 
-    const audio = await resposta.arrayBuffer();
-    return new Response(audio, {
+    return new Response(falado.audio, {
       headers: {
-        "content-type": "audio/mpeg",
+        "content-type": falado.tipo,
         "cache-control": "no-store",
       },
     });

@@ -15,6 +15,8 @@ import { lerRoteiros } from "@/lib/roteiros";
 import { lerAprendizado } from "@/lib/aprendizado";
 import { blobConfigurado } from "@/lib/blob";
 import { nomeSecao } from "@/lib/fotos";
+import { estadoDasChaves, lerOpcoesVoz } from "@/lib/voz";
+import { OPCOES_PADRAO } from "@/lib/voz-base";
 import { PainelMarina } from "./PainelMarina";
 import type { DadosMarina, DocumentoPainel, Conversa, Lacuna, EntradaHistorico, Saude, MidiaEscolha } from "./tipos";
 
@@ -180,7 +182,14 @@ export default async function MarinaPage({
       for (const c of await sql<{ id: string; titulo: string }[]>`SELECT id, titulo FROM marina_conhecimento WHERE id IN ${sql(idsConflito)}`) conflitos[c.id] = c.titulo;
     }
 
-    return { config, itens, leituras, documentos, conversas, lacunas, escalonamentoAtivo, historico, cobertura, regras, adicionais, roteiros, midiasEscolha, aprendizado, aprendizadoModo, conflitos };
+    /* A voz: o que está gravado e quais contas estão conectadas (sem a chave). */
+    const voz = {
+      opcoes: await lerOpcoesVoz(sql).catch(() => OPCOES_PADRAO),
+      chaves: await estadoDasChaves(sql),
+      podeConectar: (s.user as { role?: string }).role === "master",
+    };
+
+    return { config, voz, itens, leituras, documentos, conversas, lacunas, escalonamentoAtivo, historico, cobertura, regras, adicionais, roteiros, midiasEscolha, aprendizado, aprendizadoModo, conflitos };
   }).catch(() => null);
 
   if (!dados) {
@@ -216,7 +225,7 @@ export default async function MarinaPage({
     semTom: !dados.config.tom?.trim(),
     semEscalonamento: !dados.config.escalonamento?.trim() && !ativos.some((i) => i.tipo === "escalar"),
     gateway: gatewayConfigurado(),
-    vozApi: Boolean(process.env.ELEVENLABS_API_KEY),
+    vozApi: dados.voz.chaves[dados.voz.opcoes.provedor].origem !== null,
   };
 
   const props: DadosMarina = { ...dados, saude, blobOk: blobConfigurado() };

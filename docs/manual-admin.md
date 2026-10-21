@@ -244,7 +244,18 @@ partir da próxima conversa**. As abas, na ordem em que se usa:
   na busca e a Marina oferece.
 - **Personalidade e regras** — o jeito de falar, quando passar para uma
   pessoa e as regras do que ela nunca diz.
-- **Voz** — ajustes da ElevenLabs, com prova de voz de qualquer frase antes de salvar.
+- **Voz** — a voz da Marina no site e no WhatsApp, a mesma nos dois.
+  1. **De onde vem a voz:** ElevenLabs, OpenAI ou Google. Se aparecer "Falta
+     conectar": **Abrir a página da chave**, criar a chave na conta, colar e
+     **Testar e conectar** (só Administração).
+  2. **Qual voz:** toque em ▶ para ouvir cada uma; **Usar** escolhe. Na
+     ElevenLabs aparecem as vozes da sua conta, inclusive as clonadas.
+  3. **Jeito de falar:** ajustes da ElevenLabs, ou um texto dizendo como ela
+     fala (OpenAI e Google).
+  4. **Ouvir a Marina** com qualquer frase, e **Salvar nos dois canais**.
+  O cartão do topo diz se o WhatsApp está com a mesma voz do site (lendo o
+  servidor da Marina). Ao salvar, o WhatsApp reconecta sozinho em alguns
+  segundos.
 - **Histórico** — toda mudança no treinamento, de todos, com "voltar para esta versão".
 
 **Preço e vaga não se ensinam** — vêm ao vivo do sistema de reservas. Mas

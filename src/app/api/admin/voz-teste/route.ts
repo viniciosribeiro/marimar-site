@@ -1,19 +1,23 @@
 import { auth } from "@/lib/auth";
+import { comSql } from "@/lib/db-conexao";
+import { opcoesDeCampos } from "@/lib/voz-base";
+import { chaveDoProvedor, sintetizar } from "@/lib/voz";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /**
- * Ouvir a voz antes de salvar.
+ * Ouvir a voz antes de salvar, com o provedor e os ajustes da tela.
  *
  * Sem isto, escolher voz vira tentativa e erro em produção: salva, abre o
- * site, pergunta alguma coisa, escuta, volta. Com o botão de prova a
- * Cecília decide em cinco segundos — e é a diferença entre ela mexer nos
- * ajustes ou ter medo deles.
+ * site, pergunta alguma coisa, escuta, volta. O pedido sai igual ao do
+ * chat e ao do WhatsApp (src/lib/voz.ts), então o que se ouve aqui é o
+ * que o cliente ouve.
  *
  * Só quem está logado no admin chega aqui. A frase pode ser escolhida (até
- * 300 caracteres, para ouvir como ela fala uma resposta real), mas o teto
- * impede que este endereço vire uma API de voz de uso livre.
+ * 300 caracteres), mas o teto impede que este endereço vire uma API de voz
+ * de uso livre.
  */
 const FRASE =
   "Oi! Sou a Marina, da Pousada Marimar. O café da manhã é servido das 8 às 10, " +
@@ -23,53 +27,18 @@ export async function POST(req: Request) {
   const sessao = await auth();
   if (!sessao?.user) return Response.json({ erro: "Não autorizado." }, { status: 401 });
 
-  if (!process.env.ELEVENLABS_API_KEY) {
-    return Response.json({ erro: "Falta a chave da ElevenLabs nas variáveis do site." }, { status: 503 });
+  const corpo = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  const o = opcoesDeCampos((k) => corpo?.[k]);
+  if (o.provedor === "elevenlabs" && !o.elevenlabs.voz) return Response.json({ erro: "Escolha uma voz." }, { status: 400 });
+
+  const { chave } = await comSql((sql) => chaveDoProvedor(sql, o.provedor));
+  if (!chave) return Response.json({ erro: "Conecte a conta deste provedor para ouvir." }, { status: 503 });
+
+  const frase = typeof corpo?.frase === "string" && corpo.frase.trim() ? corpo.frase.trim().slice(0, 300) : FRASE;
+  const r = await sintetizar(o, frase, chave);
+  if (!r.ok) {
+    console.error("[voz-teste]", o.provedor, r.erro);
+    return Response.json({ erro: r.erro }, { status: r.status });
   }
-
-  const corpo = await req.json().catch(() => null);
-  const voz = typeof corpo?.voz_id === "string" ? corpo.voz_id.trim() : "";
-  if (!voz) return Response.json({ erro: "Escolha um ID de voz." }, { status: 400 });
-
-  const limite = (v: unknown, min: number, max: number, padrao: number) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : padrao;
-  };
-
-  const resposta = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voz}`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      accept: "audio/mpeg",
-      "xi-api-key": process.env.ELEVENLABS_API_KEY,
-    },
-    body: JSON.stringify({
-      text: typeof corpo?.frase === "string" && corpo.frase.trim()
-        ? corpo.frase.trim().slice(0, 300)
-        : FRASE,
-      model_id: typeof corpo?.voz_modelo === "string" ? corpo.voz_modelo : "eleven_multilingual_v2",
-      language_code: "pt",
-      apply_text_normalization: "on",
-      voice_settings: {
-        stability: limite(corpo?.voz_estabilidade, 0, 100, 50) / 100,
-        similarity_boost: limite(corpo?.voz_semelhanca, 0, 100, 75) / 100,
-        speed: limite(corpo?.voz_velocidade, 70, 120, 100) / 100,
-      },
-    }),
-  });
-
-  if (!resposta.ok) {
-    const detalhe = await resposta.text().catch(() => "");
-    console.error("[voz-teste] elevenlabs", resposta.status, detalhe.slice(0, 300));
-    return Response.json(
-      { erro: resposta.status === 401
-          ? "A chave da ElevenLabs foi recusada."
-          : "Não consegui gerar a prova. Confira o ID da voz." },
-      { status: 502 },
-    );
-  }
-
-  return new Response(await resposta.arrayBuffer(), {
-    headers: { "content-type": "audio/mpeg", "cache-control": "no-store" },
-  });
+  return new Response(r.audio, { headers: { "content-type": r.tipo, "cache-control": "no-store" } });
 }
