@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { exigirSessao } from "@/lib/admin-sessao";
 import { comSql } from "@/lib/db-conexao";
 import { normalizarNumero, setorValido } from "@/lib/escalonamento-base";
+import { lerMemoria } from "@/lib/whatsapp-vigia";
+import { mesmoCelular } from "@/lib/whatsapp-saude";
 import {
   testarContato, responderChamado, entregarAoCliente, lerChamado, lerConfigEscalonamento, processarPrazos,
 } from "@/lib/escalonamento";
@@ -43,6 +45,12 @@ export async function salvarContato(fd: FormData): Promise<Resultado> {
   const r = await comSql(async (sql) => {
     const [igual] = await sql`SELECT id FROM equipe_contatos WHERE numero = ${numero} AND id <> ${id ?? "00000000-0000-0000-0000-000000000000"}`;
     if (igual) return { ok: false, mensagem: "Este número já está cadastrado." };
+    /* O número ligado à Marina não pode ser da equipe: ela mandaria os avisos
+       para si mesma (docs/blindagem-whatsapp.md). */
+    const marina = (await lerMemoria(sql)).numero;
+    if (marina && mesmoCelular(numero, marina)) {
+      return { ok: false, mensagem: "Este é o número que está ligado à Marina no WhatsApp. Cadastre aqui o celular pessoal da pessoa." };
+    }
     if (id) {
       await sql`UPDATE equipe_contatos SET nome = ${nome}, numero = ${numero}, setores = ${sql.json(setores.length ? setores : ["geral"])},
         dias = ${sql.json(dias)}, hora_inicio = ${inicio}, hora_fim = ${fim}, ativo = ${ativo}, atualizado_em = now() WHERE id = ${id}`;

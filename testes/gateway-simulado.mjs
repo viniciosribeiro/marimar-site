@@ -19,7 +19,16 @@ let ultima = null;
 /* Mensagens de WhatsApp que o site mandou pelo RPC (método "send"). */
 const enviadas = [];
 /* WhatsApp da Marina simulado: começa caído (como em 18/10) com SIM_WHATSAPP_DESCONECTADO=1. */
-const whatsapp = { conectado: !process.env.SIM_WHATSAPP_DESCONECTADO, leituras: 0 };
+/* Estado do WhatsApp da Marina simulado, igual aos casos reais:
+   conectado | travado (21/10: ligado ao celular, sem conexão) | parado |
+   caido (18/10: 401, aparelho removido) | sem_aparelho.
+   SIM_WHATSAPP_DESCONECTADO=1 começa caído. SIM_TRAVA_DEPOIS_DO_QR=1: depois
+   de ler o QR fica travado, e só channels.stop + channels.start destravam.
+   GET /__estado?e=<estado> muda na hora; ?e=fora deixa o RPC sem responder.
+   POST /__alerta recebe os alertas do vigia (GET /__alertas lista). */
+const whatsapp = { estado: process.env.SIM_WHATSAPP_DESCONECTADO ? "caido" : "conectado", leituras: 0, fora: false };
+const NUMERO_SIM = "+5541999990000";
+const alertas = [];
 /* Métodos de RPC que o site chamou (GET /__rpcs), para conferir channels.stop/start. */
 const rpcs = [];
 /* Um "QR" desenhado em SVG: só precisa ser imagem em data URL e mudar de versão. */
@@ -84,6 +93,16 @@ http.createServer((req, res) => {
     enviadas.length = 0;
     res.writeHead(204); return res.end();
   }
+  if (req.method === "GET" && req.url.startsWith("/__estado")) {
+    const e = new URL(req.url, "http://x").searchParams.get("e") ?? "";
+    if (e === "fora") whatsapp.fora = true; else { whatsapp.fora = false; if (e) whatsapp.estado = e; }
+    res.writeHead(200, { "content-type": "text/plain" });
+    return res.end(whatsapp.fora ? "fora" : whatsapp.estado);
+  }
+  if (req.method === "GET" && req.url === "/__alertas") {
+    res.writeHead(200, { "content-type": "application/json" });
+    return res.end(JSON.stringify(alertas));
+  }
   if (req.method === "GET" && req.url === "/__rpcs") {
     res.writeHead(200, { "content-type": "application/json" });
     return res.end(JSON.stringify(rpcs));
@@ -105,7 +124,7 @@ http.createServer((req, res) => {
       const pedido = JSON.parse(bruto || "{}");
       const para = String(pedido.args?.target ?? pedido.args?.to ?? "");
       const detalhes = (d) => ({ ok: true, result: { content: [{ type: "text", text: JSON.stringify(d) }], details: d } });
-      if (para.endsWith("0000") || !whatsapp.conectado) {
+      if (para.endsWith("0000") || whatsapp.estado !== "conectado") {
         if (pedido.args?.bestEffort === false) {
           res.writeHead(500, { "content-type": "application/json" });
           return res.end(JSON.stringify({ ok: false, error: { type: "tool_error", message: "tool execution failed" } }));
@@ -117,17 +136,27 @@ http.createServer((req, res) => {
       res.writeHead(200, { "content-type": "application/json" });
       return res.end(JSON.stringify(detalhes({ channel: "whatsapp", to: para, via: "direct", result: { messageId: "3EB0SIM" + enviadas.length } })));
     }
+    if (req.url === "/__alerta") {
+      alertas.push({ texto: bruto, titulo: req.headers.title ?? null, em: new Date().toISOString() });
+      res.writeHead(200); return res.end("ok");
+    }
     if (req.url === "/api/v1/admin/rpc") {
       const pedido = JSON.parse(bruto || "{}");
       rpcs.push(pedido.method);
+      if (whatsapp.fora) { res.writeHead(503, { "content-type": "application/json" }); return res.end(JSON.stringify({ error: { message: "gateway indisponível (simulado)" } })); }
       const responderRpc = (payload) => { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify({ ok: true, payload })); };
       if (pedido.method === "channels.status") {
-        const conta = whatsapp.conectado
-          ? { accountId: "default", connected: true, linked: true, running: true, healthState: "healthy" }
-          : { accountId: "default", connected: false, linked: true, running: false, healthState: "logged-out",
-              lastError: "status=401 Unauthorized Stream Errored (conflict)",
-              lastDisconnect: { at: Date.now() - 41 * 3600_000, error: "status=401 Unauthorized Stream Errored (conflict)" } };
-        return responderRpc({ channels: [{ id: "whatsapp", accounts: [conta] }] });
+        const base = { accountId: "default", linked: true, self: { e164: NUMERO_SIM, jid: "5541999990000@s.whatsapp.net" } };
+        const contas = {
+          conectado: { ...base, connected: true, running: true, healthState: "healthy", lastConnectedAt: Date.now() - 3600_000, lastInboundAt: Date.now() - 600_000 },
+          travado: { ...base, connected: false, running: true, healthState: "disconnected", reconnectAttempts: 0 },
+          parado: { ...base, connected: false, running: false, healthState: "stopped" },
+          caido: { accountId: "default", linked: true, self: { e164: null, jid: null }, connected: false, running: false, healthState: "logged-out",
+            lastError: "status=401 Unauthorized Stream Errored (conflict)",
+            lastDisconnect: { at: Date.now() - 41 * 3600_000, error: "status=401 Unauthorized Stream Errored (conflict)" } },
+          sem_aparelho: { accountId: "default", linked: false, connected: false, running: false, self: { e164: null, jid: null } },
+        };
+        return responderRpc({ channels: [{ id: "whatsapp", accounts: [contas[whatsapp.estado] ?? contas.caido] }] });
       }
       /* Login por QR (web.login.start/wait), no formato do @openclaw/whatsapp
          2026.9.4: o primeiro wait devolve um QR novo, o segundo "lê" o QR. */
@@ -138,11 +167,19 @@ http.createServer((req, res) => {
       if (pedido.method === "web.login.wait") {
         whatsapp.leituras++;
         if (whatsapp.leituras === 1) return setTimeout(() => responderRpc({ connected: false, qrDataUrl: qrSimulado(2), message: "QR refreshed. Scan the latest code in WhatsApp → Linked Devices." }), 1500);
-        whatsapp.conectado = true;
+        whatsapp.estado = process.env.SIM_TRAVA_DEPOIS_DO_QR ? "travado" : "conectado";
         return setTimeout(() => responderRpc({ connected: true, message: "✅ Linked! WhatsApp is ready." }), 1500);
       }
+      if (pedido.method === "channels.stop") {
+        if (whatsapp.estado === "conectado" || whatsapp.estado === "travado") whatsapp.estado = "parado";
+        return responderRpc({ channel: "whatsapp", accountId: "default", stopped: true });
+      }
+      if (pedido.method === "channels.start") {
+        if (whatsapp.estado === "parado" || whatsapp.estado === "travado") whatsapp.estado = "conectado";
+        return responderRpc({ channel: "whatsapp", accountId: "default", started: true, outcome: { status: "handed-off" } });
+      }
       if (pedido.method === "channels.logout") {
-        whatsapp.conectado = false;
+        whatsapp.estado = "sem_aparelho";
         return responderRpc({ channel: "whatsapp", accountId: "default", cleared: true });
       }
       if (pedido.method === "send") {

@@ -5,6 +5,9 @@ import postgres from "postgres";
 import { fetchTarifas } from "@/lib/worker";
 import { statusWhatsapp } from "@/lib/envio-whatsapp";
 import { faltandoMeta } from "@/lib/whatsapp-meta-base";
+import { after } from "next/server";
+import { comSql } from "@/lib/db-conexao";
+import { talvezVigiar } from "@/lib/whatsapp-vigia";
 import { PENDENTE_CONFIRMACAO } from "@/lib/conteudo-pousada";
 import { lerLeituras } from "@/lib/marina";
 import { Pagina, Cabecalho, Cartao, Aviso, Vazio, BotaoLink, quandoFoi, cn } from "@/components/admin/ui";
@@ -60,6 +63,8 @@ export default async function HojePage() {
   if (!session?.user) redirect("/admin/login");
   if ((session.user as any).mustReset) redirect("/admin/trocar-senha");
   const tecnico = (session.user as { role?: string }).role === "master";
+  /* Abrir o painel também faz o vigia do WhatsApp dar uma volta, depois da página. */
+  after(() => comSql((sql) => talvezVigiar(sql, "painel")).catch(() => {}));
 
   let stats: Record<string, number> = {};
   let naoLidos: any[] = [];

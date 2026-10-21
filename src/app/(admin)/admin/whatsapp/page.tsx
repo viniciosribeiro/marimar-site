@@ -5,6 +5,8 @@ import { statusWhatsapp } from "@/lib/envio-whatsapp";
 import { comSql } from "@/lib/db-conexao";
 import { lerConfigEscalonamento } from "@/lib/escalonamento";
 import { VARIAVEIS_META, faltandoMeta } from "@/lib/whatsapp-meta-base";
+import { lerMemoria, resumoProtecoes } from "@/lib/whatsapp-vigia";
+import { ADAPTACAO_DIAS, ROTULO, VIGIA, emAdaptacao, MEMORIA_VAZIA } from "@/lib/whatsapp-saude";
 import { Pagina, Cabecalho, Cartao, Selo, Aviso, BotaoLink, quandoFoi } from "@/components/admin/ui";
 import { ConexaoWhatsapp } from "./ConexaoWhatsapp";
 import { EscolhaModo, TesteMeta } from "./PainelModo";
@@ -18,21 +20,25 @@ export const maxDuration = 60;
  * escolha de qual está em uso — o WhatsApp Web (QR, pelo OpenClaw) e a API
  * oficial da Meta (webhook /api/whatsapp/meta). Só uma responde por vez.
  */
+/* Contas com o relógio fora do componente (regra de pureza do React). */
+const ultimas24h = (horarios: number[]) => horarios.filter((t) => Date.now() - t < 864e5).length;
+const adaptacaoAgora = (desde: number | null) => emAdaptacao(desde, Date.now());
+
 export default async function WhatsappPage() {
   const s = await auth(); if (!s?.user) redirect("/admin/login");
   const podeMexer = (s.user as { role?: string }).role === "master";
 
-  const [modo, ultimaOficial] = await comSql(async (sql) => {
+  const [modo, ultimaOficial, memoria, protecoes] = await comSql(async (sql) => {
     const cfg = await lerConfigEscalonamento(sql);
     const [u] = await sql<{ quando: Date | null }[]>`
       SELECT MAX(criado_em) AS quando FROM chat_mensagens WHERE sessao LIKE 'wa:%' AND papel = 'visitante'`.catch(() => [{ quando: null }]);
-    return [cfg.whatsapp_modo === "oficial" ? "oficial" : "web", u?.quando ?? null] as const;
-  }).catch(() => ["web", null] as const);
+    return [cfg.whatsapp_modo === "oficial" ? "oficial" : "web", u?.quando ?? null, await lerMemoria(sql), await resumoProtecoes(sql)] as const;
+  }).catch(() => ["web", null, MEMORIA_VAZIA, { envios24h: 0, segurados24h: 0, ultimosSegurados: [] }] as const);
   const oficial = modo === "oficial";
   const faltam = faltandoMeta();
 
   const status = oficial ? null : await Promise.race([
-    statusWhatsapp().catch(() => ({ sabe: false, conectado: null, resumo: "não deu para consultar", queda: null })),
+    statusWhatsapp().catch(() => ({ sabe: false, conectado: null, resumo: "não deu para consultar", queda: null, saude: null })),
     new Promise<Awaited<ReturnType<typeof statusWhatsapp>>>((r) => setTimeout(() => r({ sabe: false, conectado: null, resumo: "o servidor da Marina não respondeu em 6 segundos" }), 6000)),
   ]);
   const queda = status?.queda ?? null;
@@ -76,7 +82,7 @@ export default async function WhatsappPage() {
                 </Aviso>
               )}
               {podeMexer
-                ? <ConexaoWhatsapp conectado={status?.sabe ? status.conectado : null} />
+                ? <ConexaoWhatsapp conectado={status?.sabe ? status.conectado : null} estadoAtual={status?.saude?.estado ?? null} />
                 : <Aviso tom="info" titulo="Só quem tem acesso de Administração conecta ou desconecta">Peça ao Vinicios, ou peça para ele mudar o seu acesso em Pessoas e acessos.</Aviso>}
             </>
           )}
@@ -110,6 +116,46 @@ export default async function WhatsappPage() {
               <BotaoLink href="/admin/equipe?aba=config" variante="fantasma" tamanho="sm">Modelos de mensagem da Meta →</BotaoLink>
             </div>
           </div>
+        </Cartao>
+
+        <Cartao titulo="Saúde e proteções" descricao="O que o site faz sozinho para a conexão não cair (docs/blindagem-whatsapp.md).">
+          <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+            {[
+              ["Número ligado à Marina", (status?.saude?.numero ?? memoria.numero) ? `+${status?.saude?.numero ?? memoria.numero}` : "—"],
+              ["Conectada desde", status?.saude?.conectadoDesde ? quandoFoi(new Date(status.saude.conectadoDesde)) : "—"],
+              ["Última mensagem recebida", status?.saude?.ultimaEntrada ? quandoFoi(new Date(status.saude.ultimaEntrada)) : "—"],
+              ["Vigia: última verificação", memoria.ultimaVez ? `${quandoFoi(new Date(memoria.ultimaVez))} · ${ROTULO[memoria.estado]}` : "ainda não rodou"],
+              ["Destravamentos automáticos (24 h)", `${ultimas24h(memoria.acoes)} de no máximo ${VIGIA.acoesPorDia}`],
+              ["Mensagens automáticas (24 h)", `${protecoes.envios24h} ${protecoes.envios24h === 1 ? "enviada" : "enviadas"} · ${protecoes.segurados24h} ${protecoes.segurados24h === 1 ? "segurada" : "seguradas"}`],
+              ["Alerta no seu celular", process.env.ALERTA_WHATSAPP_URL ? "ligado" : "desligado (ver manual: ALERTA_WHATSAPP_URL)"],
+            ].map(([rotulo, valor]) => (
+              <div key={rotulo} className="flex flex-col border-b border-linha/50 py-1.5">
+                <dt className="text-xs text-tinta-suave">{rotulo}</dt>
+                <dd className="font-medium text-tinta">{valor}</dd>
+              </div>
+            ))}
+          </dl>
+          {adaptacaoAgora(memoria.numeroDesde) && (
+            <Aviso tom="info" titulo="Número novo: período de adaptação" className="mt-4">
+              Nos primeiros {ADAPTACAO_DIAS} dias de um número ligado à Marina, o site manda metade das mensagens automáticas e espera mais entre uma e outra. Termina {new Date(memoria.numeroDesde! + ADAPTACAO_DIAS * 864e5).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}.
+            </Aviso>
+          )}
+          {protecoes.ultimosSegurados.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-medium text-tinta-suave">Seguradas pelo disjuntor</p>
+              <ul className="mt-1 space-y-1 text-xs text-tinta">
+                {protecoes.ultimosSegurados.map((b, i) => <li key={i}>{quandoFoi(new Date(b.em))}: {b.motivo}</li>)}
+              </ul>
+            </div>
+          )}
+          {memoria.historico.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-medium text-tinta-suave">Histórico</p>
+              <ul className="mt-1 space-y-1 text-xs text-tinta">
+                {memoria.historico.slice(0, 8).map((h, i) => <li key={i}>{quandoFoi(new Date(h.em))}: {h.texto}</li>)}
+              </ul>
+            </div>
+          )}
         </Cartao>
 
         <Cartao titulo="Para a Marina não cair">
