@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { exigirSessao } from "@/lib/admin-sessao";
 import { comSql } from "@/lib/db-conexao";
-import { podeCifrar, finalDaChave } from "@/lib/segredo";
+import { podeCifrar, finalDaChave } from "@/lib/cifra-chaves";
 import { PROVEDORES_VOZ, conectadoA, oProvedor, opcoesDeCampos, type Provedor } from "@/lib/voz-base";
 import {
   aplicarVozNoWhatsapp, apagarChave, chaveDoProvedor, conferirVozNoWhatsapp, guardarChave, gravarOpcoesVoz,

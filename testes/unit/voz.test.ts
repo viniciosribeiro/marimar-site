@@ -8,7 +8,7 @@ import {
   OPCOES_PADRAO, camposDaTela, camposDoProvedor, diferencas, normalizarOpcoes, opcoesDeCampos, patchDaVoz, pcmParaWav,
   textoGoogle, vozDoWhatsapp, type OpcoesVoz,
 } from "../../src/lib/voz-base";
-import { cifrar, decifrar, finalDaChave } from "../../src/lib/segredo";
+import { cifrar, decifrar, finalDaChave } from "../../src/lib/cifra-chaves";
 
 /** Lê "a.b.c" de um objeto qualquer (o patch e a config são JSON livre). */
 const ler = (o: unknown, caminho: string): unknown =>
