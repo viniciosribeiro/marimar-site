@@ -8,8 +8,9 @@ import { lerConfigEscalonamento } from "@/lib/escalonamento";
 import { chamarRpc } from "@/lib/openclaw-config";
 import { faltandoMeta } from "@/lib/whatsapp-meta-base";
 import { infoNumeroMeta } from "@/lib/whatsapp-meta";
-import { anotarNoHistorico, destravarCanal, lerConexao } from "@/lib/whatsapp-vigia";
-import type { EstadoConexao } from "@/lib/whatsapp-saude";
+import { randomBytes } from "crypto";
+import { anotarNoHistorico, destravarCanal, enderecoAlerta, enviarAlerta, lerConexao, servidorNtfy } from "@/lib/whatsapp-vigia";
+import { novoTopico, topicoDe, type EstadoConexao } from "@/lib/whatsapp-saude";
 
 /**
  * Ações da tela "WhatsApp da Marina". Só o perfil Administração (papel
@@ -148,4 +149,43 @@ export async function destravarConexao(): Promise<{ ok: boolean; texto: string }
   return r.ok
     ? { ok: true, texto: "Pedido de destravar enviado ao servidor. Conferindo a conexão…" }
     : { ok: false, texto: `Não consegui destravar: ${r.erro}. No terminal da Hostinger: openclaw gateway restart.` };
+}
+
+/* ── aviso no celular quando a Marina cair ─────────────────────────
+   Sem precisar da Vercel: o painel cria um tópico no ntfy e guarda o
+   endereço em integracoes (alerta_whatsapp_url). ALERTA_WHATSAPP_URL na
+   Vercel, se existir, vale por cima (ver enderecoAlerta). */
+
+export type RespostaAlerta = { ok: boolean; texto: string; topico?: string | null };
+
+export async function ligarAlerta(): Promise<RespostaAlerta> {
+  if (!(await exigirAdministracao())) return { ok: false, texto: semPermissao.texto };
+  return comSql(async (sql) => {
+    const atual = await enderecoAlerta(sql);
+    if (atual.origem === "vercel") return { ok: true, texto: "O aviso já está ligado pela Vercel (ALERTA_WHATSAPP_URL).", topico: topicoDe(atual.url) };
+    if (atual.url) return { ok: true, texto: "O aviso já estava ligado.", topico: topicoDe(atual.url) };
+    const topico = novoTopico(randomBytes(10));
+    await sql`
+      INSERT INTO integracoes (chave, valor, atualizado_em) VALUES ('alerta_whatsapp_url', ${`${servidorNtfy()}/${topico}`}, now())
+      ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor, atualizado_em = now()`;
+    atualizar();
+    return { ok: true, texto: "Aviso ligado. Agora assine o tópico no app ntfy do seu celular.", topico };
+  }).catch((e) => ({ ok: false, texto: `Não consegui ligar o aviso: ${(e as Error).message}` }));
+}
+
+export async function testarAlerta(): Promise<RespostaAlerta> {
+  if (!(await exigirAdministracao())) return { ok: false, texto: semPermissao.texto };
+  const destino = await comSql(enderecoAlerta).catch(() => ({ url: null, origem: null }));
+  const r = await enviarAlerta(destino.url, "Teste do painel: se você está lendo isto no celular, o aviso da Marina está funcionando.");
+  return r.ok
+    ? { ok: true, texto: "Alerta de teste enviado. Deve chegar no celular em alguns segundos. Se não chegar, confira o nome do tópico no app ntfy." }
+    : { ok: false, texto: `O alerta de teste não saiu: ${r.erro}.` };
+}
+
+export async function desligarAlerta(): Promise<RespostaAlerta> {
+  if (!(await exigirAdministracao())) return { ok: false, texto: semPermissao.texto };
+  if (process.env.ALERTA_WHATSAPP_URL?.trim()) return { ok: false, texto: "Este aviso está ligado pela Vercel (ALERTA_WHATSAPP_URL); desligue apagando a variável lá." };
+  await comSql((sql) => sql`DELETE FROM integracoes WHERE chave = 'alerta_whatsapp_url'`).catch(() => {});
+  atualizar();
+  return { ok: true, texto: "Aviso no celular desligado. No app ntfy, você pode apagar o tópico." };
 }

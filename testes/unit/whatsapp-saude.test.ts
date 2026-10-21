@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  lerSaude, decidirVigia, decidirEnvio, mesmoCelular, emAdaptacao, MEMORIA_VAZIA, VIGIA, DISJUNTOR, ADAPTACAO_DIAS,
+  lerSaude, decidirVigia, decidirEnvio, mesmoCelular, emAdaptacao, novoTopico, topicoDe, MEMORIA_VAZIA, VIGIA, DISJUNTOR, ADAPTACAO_DIAS,
   type MemoriaVigia, type EnvioRegistrado,
 } from "../../src/lib/whatsapp-saude";
 
@@ -126,4 +126,16 @@ test("disjuntor: no período de adaptação, metade dos limites e o dobro do int
   assert.match(!r.ok ? r.motivo : "", /adaptação/);
   const e = decidirEnvio([{ numero: "554133334444", chave: "a", em: agora }], "554191494742", "b", agora, null, true);
   assert.equal(e.ok && e.esperarMs, DISJUNTOR.intervaloMs * 2);
+});
+
+test("alerta: tópico do ntfy fácil de digitar e difícil de adivinhar", () => {
+  const t = novoTopico(new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 30, 99, 99]));
+  assert.equal(t, "marimar-abcdefghj9");
+  assert.match(novoTopico(crypto.getRandomValues(new Uint8Array(10))), /^marimar-[a-hj-km-np-z2-9]{10}$/);
+  assert.notEqual(novoTopico(crypto.getRandomValues(new Uint8Array(10))), novoTopico(crypto.getRandomValues(new Uint8Array(10))));
+  assert.equal(topicoDe("https://ntfy.sh/marimar-abc"), "marimar-abc");
+  assert.equal(topicoDe("https://ntfy.sh/marimar-abc/"), "marimar-abc");
+  assert.equal(topicoDe("https://ntfy.sh"), null);
+  assert.equal(topicoDe("não é endereço"), null);
+  assert.equal(topicoDe(null), null);
 });

@@ -252,3 +252,28 @@ export function decidirEnvio(historico: EnvioRegistrado[], numero: string, chave
   const ultimo = recentes.reduce((m, h) => Math.max(m, h.em), 0);
   return { ok: true, esperarMs: Math.max(0, lim.intervaloMs - (agora - ultimo)) };
 }
+
+/* ── alerta no celular ───────────────────────────────────────────── */
+
+/* Sem letras e números que se confundem ao digitar no celular (i, l, o, 0, 1). */
+const LETRAS_TOPICO = "abcdefghjkmnpqrstuvwxyz23456789";
+
+/**
+ * Nome do tópico do ntfy que o painel cria. No ntfy.sh o nome do tópico é a
+ * senha: quem souber o nome lê os avisos. Por isso 10 letras sorteadas
+ * (~49 bits), e o aviso nunca leva dado de cliente.
+ */
+export function novoTopico(sorteio: Uint8Array): string {
+  return "marimar-" + Array.from(sorteio.slice(0, 10), (b) => LETRAS_TOPICO[b % LETRAS_TOPICO.length]).join("");
+}
+
+/** O tópico de um endereço do ntfy (a última parte). Sem tópico, null. */
+export function topicoDe(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const t = new URL(url).pathname.split("/").filter(Boolean).pop();
+    return t ? decodeURIComponent(t) : null;
+  } catch {
+    return null;
+  }
+}

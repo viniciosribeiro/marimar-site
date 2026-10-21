@@ -53,14 +53,30 @@ const modoWhatsapp = async (sql: Sql) =>
   (await sql<{ whatsapp_modo: string }[]>`SELECT whatsapp_modo FROM marina_escalonamento_config WHERE id = 1`.catch(() => []))[0]?.whatsapp_modo ?? "web";
 
 /* ── alerta no celular de quem cuida ────────────────────────────────
-   ALERTA_WHATSAPP_URL: um endereço que recebe POST de texto. Feito para o
-   ntfy (https://ntfy.sh/<tópico-difícil-de-adivinhar>, app gratuito no
-   celular), mas qualquer webhook de texto serve. Sem a variável, não avisa
-   ninguém fora do painel. Nunca leva dado de cliente. */
+   Um endereço que recebe POST de texto. Feito para o ntfy (app gratuito no
+   celular; https://ntfy.sh/<tópico-difícil-de-adivinhar>), mas qualquer
+   webhook de texto serve. Vale, nesta ordem:
+     1. ALERTA_WHATSAPP_URL na Vercel;
+     2. o que o painel ligou (WhatsApp da Marina → Aviso no seu celular),
+        guardado em integracoes, chave alerta_whatsapp_url.
+   Sem nenhum dos dois, não avisa ninguém fora do painel. Nunca leva dado
+   de cliente. */
 
-export async function enviarAlerta(texto: string): Promise<boolean> {
-  const url = process.env.ALERTA_WHATSAPP_URL?.trim();
-  if (!url) return false;
+export type EnderecoAlerta = { url: string | null; origem: "vercel" | "painel" | null };
+
+export async function enderecoAlerta(sql: Sql): Promise<EnderecoAlerta> {
+  const daVercel = process.env.ALERTA_WHATSAPP_URL?.trim();
+  if (daVercel) return { url: daVercel, origem: "vercel" };
+  const [l] = await sql<{ valor: string | null }[]>`SELECT valor FROM integracoes WHERE chave = 'alerta_whatsapp_url'`.catch(() => []);
+  const doPainel = l?.valor?.trim();
+  return doPainel ? { url: doPainel, origem: "painel" } : { url: null, origem: null };
+}
+
+/** Servidor do ntfy onde o painel cria o tópico (troca só nos testes). */
+export const servidorNtfy = () => (process.env.ALERTA_NTFY_URL?.trim() || "https://ntfy.sh").replace(/\/+$/, "");
+
+export async function enviarAlerta(url: string | null, texto: string): Promise<{ ok: boolean; erro?: string }> {
+  if (!url) return { ok: false, erro: "o alerta no celular está desligado" };
   try {
     const r = await fetch(url, {
       method: "POST",
@@ -68,10 +84,10 @@ export async function enviarAlerta(texto: string): Promise<boolean> {
       body: texto,
       signal: AbortSignal.timeout(6000),
     });
-    return r.ok;
+    return r.ok ? { ok: true } : { ok: false, erro: `o serviço de alerta respondeu ${r.status}` };
   } catch (e) {
     console.error("[vigia] alerta não saiu:", (e as Error).message);
-    return false;
+    return { ok: false, erro: `o serviço de alerta não respondeu (${(e as Error).message})` };
   }
 }
 
@@ -121,8 +137,10 @@ export async function vigiarWhatsapp(sql: Sql, origem: string): Promise<Resultad
       console.warn("[vigia] destravamento automático:", r.ok ? "ok" : r.erro);
     }
     if (d.alerta) {
-      const saiu = await enviarAlerta(d.alerta);
-      d.memoria.historico = [{ em: Date.now(), texto: `Alerta${saiu ? " enviado" : " (sem ALERTA_WHATSAPP_URL)"}: ${d.alerta}` }, ...d.memoria.historico].slice(0, 20);
+      const destino = await enderecoAlerta(sql);
+      const saiu = await enviarAlerta(destino.url, d.alerta);
+      const como = saiu.ok ? " enviado ao celular" : destino.url ? " não saiu" : " (aviso no celular desligado)";
+      d.memoria.historico = [{ em: Date.now(), texto: `Alerta${como}: ${d.alerta}` }, ...d.memoria.historico].slice(0, 20);
     }
     await gravarMemoria(sql, d.memoria);
     return { rodou: true, estado: d.memoria.estado, acao: d.acao, alerta: d.alerta };

@@ -222,7 +222,7 @@ em Marina → WhatsApp da Marina. Chaves (`WHATSAPP_META_TOKEN`,
 ## WhatsApp caiu (a Marina parou de responder)
 
 > Desde 21/10 o site vigia e destrava sozinho quando a conexão trava, e avisa
-> no celular (`ALERTA_WHATSAPP_URL`) quando o problema pede gente: ver
+> no celular (ligado no painel, ou `ALERTA_WHATSAPP_URL`) quando o problema pede gente: ver
 > `docs/blindagem-whatsapp.md`. A tela WhatsApp da Marina mostra o estado e o
 > histórico em "Saúde e proteções".
 

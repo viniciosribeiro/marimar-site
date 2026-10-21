@@ -6,6 +6,40 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-21 (2) — Aviso no celular ligado pelo painel; servidor da Marina ajustado
+**Autor:** Claude (Claude Code), a pedido do Vinicios ("consegue fazer a parte 2 automaticamente?")
+**Migration:** nenhuma (`integracoes`, chave `alerta_whatsapp_url`)
+
+### Por quê
+A parte 2 da blindagem pedia criar `ALERTA_WHATSAPP_URL` na Vercel. A sessão
+do Claude não tem acesso às variáveis da Vercel (a integração GitHub → Vercel
+só publica). Em vez de depender disso, o painel passou a ligar o aviso sozinho.
+
+### O que entrou
+- WhatsApp da Marina → cartão **Aviso no seu celular quando a Marina cair**:
+  **Ligar** (cria um tópico do ntfy com nome sorteado, `novoTopico`, e guarda
+  em `integracoes`), passo a passo do app, **Mandar alerta de teste**,
+  **Desligar**. Só perfil Administração.
+- `enderecoAlerta()`: `ALERTA_WHATSAPP_URL` (Vercel) vale primeiro; sem ela, o
+  endereço do painel. O vigia usa os dois. Histórico diz se o aviso saiu.
+- `ALERTA_NTFY_URL` só para os testes (servidor do ntfy simulado).
+
+### Servidor (feito pelo Vinicios em 21/10)
+- `groupPolicy "disabled"` e `selfChatMode false` aplicados; reinício;
+  `connected, health:healthy`.
+- `openclaw backup create` falhou (defeito do OpenClaw 2026.9.4 com o atalho
+  absoluto do Python da transcrição): cópia pelo `tar` em
+  `docs/blindagem-whatsapp.md`.
+- `openclaw update`: "Update from command line is not allowed" (instalação de
+  1 clique da Hostinger, em Docker): atualização pelo Docker Manager do hPanel.
+
+### Testes
+- `npm test` 86/86 (tópico e leitura do endereço).
+- `testes/e2e-alerta.mjs` 9/9 (servidor sem a variável da Vercel; celular 375 px
+  sem rolagem lateral); `e2e-blindagem` de novo com a variável da Vercel.
+- **Não testado com o ntfy de verdade** (a rede desta sessão não alcança
+  ntfy.sh): o "Mandar alerta de teste" no painel em produção é a prova.
+
 ## 2026-10-21 — Blindagem do WhatsApp da Marina
 **Autor:** Claude (Claude Code), a pedido do Vinicios ("algo que realmente não fique caindo")
 **Migration:** nenhuma (tudo em `integracoes`)
