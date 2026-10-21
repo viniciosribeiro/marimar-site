@@ -6,6 +6,61 @@ uma entrada no topo.**
 Formato de cada entrada:
 
 ```
+## 2026-10-21 — Blindagem do WhatsApp da Marina
+**Autor:** Claude (Claude Code), a pedido do Vinicios ("algo que realmente não fique caindo")
+**Migration:** nenhuma (tudo em `integracoes`)
+
+### O que aconteceu em 21/10
+A Marina foi ligada a um celular de testes pelo QR do painel: o celular leu,
+a tela disse "Conectada", mas o canal ficou **travado** no servidor
+(`linked, running, disconnected, reconnectAttempts=0`) até um
+`openclaw gateway restart`.
+
+### Investigação
+- Do lado do site, o elo concreto com a queda de 18/10: nas primeiras horas
+  no número novo (17/10, 10h30–14h), o "Testar envio" mandou mensagens para
+  um número que não existe no WhatsApp (o 9 a mais), num aparelho recém-ligado
+  que respondia todo mundo. É o que o anti-robô do WhatsApp vigia. Não dá para
+  provar; dá para não repetir.
+- Riscos encontrados no código: nenhum limite de envio automático; prazos
+  dos chamados podiam rodar em duas cópias do servidor ao mesmo tempo
+  (mensagem em dobro); o QR do painel podia apagar uma conexão boa quando o
+  status não respondia e não conferia a conexão depois da leitura.
+- OpenClaw 2026.10.5 (a Hostinger roda a 2026.9.4) corrige "mensagens que
+  chegam ilegíveis logo depois de religar".
+
+### O que entrou (`docs/blindagem-whatsapp.md`)
+- **Disjuntor** antes de todo envio automático (`passarDisjuntor`): nunca
+  para o próprio número da Marina, nada repetido em 30 min, até 20 por número
+  por hora, 30 em 10 min, 90 por hora, 3 s entre envios.
+- **Período de adaptação:** número novo ligado à Marina → 3 dias com metade
+  dos limites e o dobro do intervalo.
+- **Vigia** (`vigiarWhatsapp`): travada/parada há 4 min → para e liga o canal
+  (`channels.stop` + `channels.start`, no máximo 1 a cada 20 min e 6 por dia);
+  401, 440, sem celular, reconectando há 15 min, servidor sem resposta há
+  10 min → alerta (`ALERTA_WHATSAPP_URL`, feito para o ntfy), uma vez, e
+  outro quando volta. Roda no `/api/cron/chamados` e de carona no painel, no
+  chat do site e quando a Marina lê o treinamento.
+- **Trava** nos prazos dos chamados (`trava:prazos`): uma cópia por vez.
+- **QR seguro:** só gera QR com o servidor confirmando que não há ligação boa
+  a perder; depois da leitura confere a conexão, destrava sozinho se travar e
+  só então diz "Conectada!" com o número. Travada ao abrir a tela → botão
+  **Destravar a conexão**, sem QR.
+- **Saúde e proteções** na tela: número ligado, conectada desde, última
+  mensagem, vigia, destravamentos, enviadas/seguradas, alerta, adaptação,
+  histórico.
+- Equipe recusa o número ligado à Marina.
+
+### Testes
+- `npm test` 85/85 (8 novos em `testes/unit/whatsapp-saude.test.ts`).
+- `testes/e2e-blindagem.mjs` 21/21: servidor fora (sem QR), 21/10 (trava
+  depois do QR → destrava sozinha), botão Destravar, vigia pelo agendador,
+  18/10 (alerta uma vez, e "voltou"), disjuntor, Equipe, painel.
+- `e2e-whatsapp` 16/16, `e2e-whatsapp-oficial` 21/21, `e2e-escalonamento`
+  47/47. `tsc`, lint dos arquivos novos e build limpos.
+- **Não testado com o OpenClaw real:** se `channels.stop` + `channels.start`
+  destravam como o `gateway restart` destravou.
+
 ## 2026-10-20 (3) — API oficial da Meta pronta, e a escolha entre as duas formas no painel
 **Autor:** Claude (Claude Code), a pedido do Vinicios ("já deixe pronto, quero poder escolher entre uma ou outra")
 **Migration:** nenhuma (usa `marina_escalonamento_config.whatsapp_modo`, `integracoes` e `chat_mensagens`, que já existem)

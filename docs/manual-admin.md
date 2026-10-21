@@ -259,6 +259,12 @@ aparece para quem tem acesso de **Administração**.
   e, no celular da pousada, WhatsApp → Aparelhos conectados → Conectar um
   aparelho → aponte para o QR. O QR troca sozinho até ser lido; em seguida
   aparece "Conectada!". Teste mandando "oi" de outro celular.
+- **Destravar a conexão:** aparece quando o celular continua ligado à Marina
+  mas a conexão travou no servidor. Resolve sem QR. O site também destrava
+  sozinho e, se não conseguir, avisa.
+- **Saúde e proteções:** número ligado, desde quando está conectada, última
+  mensagem, o que o site segurou para proteger o número e o histórico. Número
+  novo fica 3 dias em "período de adaptação" (menos mensagens automáticas).
 - **Desconectar:** só para trocar de celular ou de número. Abra
   "Desconectar a Marina do WhatsApp" e escreva DESCONECTAR.
 - **Para não cair:** não remova "openclaw" em Aparelhos conectados; avise

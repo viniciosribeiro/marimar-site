@@ -2,13 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { exigirSessao } from "@/lib/admin-sessao";
-import { statusWhatsapp } from "@/lib/envio-whatsapp";
 import { gerarQr, esperarLeitura, desconectarWhatsapp, faseDoPasso, type Fase } from "@/lib/whatsapp-conexao";
 import { comSql } from "@/lib/db-conexao";
 import { lerConfigEscalonamento } from "@/lib/escalonamento";
 import { chamarRpc } from "@/lib/openclaw-config";
 import { faltandoMeta } from "@/lib/whatsapp-meta-base";
 import { infoNumeroMeta } from "@/lib/whatsapp-meta";
+import { anotarNoHistorico, destravarCanal, lerConexao } from "@/lib/whatsapp-vigia";
+import type { EstadoConexao } from "@/lib/whatsapp-saude";
 
 /**
  * Ações da tela "WhatsApp da Marina". Só o perfil Administração (papel
@@ -36,12 +37,22 @@ export async function pedirQr(): Promise<RespostaQr> {
   if ((await modoAtual()) === "oficial") {
     return { ok: false, fase: "erro", texto: "A Marina está usando a API oficial da Meta. Para usar o QR, escolha WhatsApp Web (QR) em “Qual WhatsApp a Marina usa”." };
   }
-  /* O QR novo apaga a sessão antiga (ver gerarQr): com a Marina no ar, isso
-     a derrubaria. Na dúvida (status sem resposta), segue: se o servidor não
-     responde, ela já não está atendendo. */
-  const status = await statusWhatsapp().catch(() => null);
-  if (status?.sabe && status.conectado === true) {
+  /* O QR novo APAGA a ligação atual com o celular (ver gerarQr). Só sai
+     quando o servidor confirma que não há ligação boa para perder: na
+     dúvida, não. Ligada mas travada se resolve destravando, não com QR. */
+  const c = await lerConexao();
+  if (!c.ok) {
+    return { ok: false, fase: "erro", texto: `Não consegui perguntar ao servidor da Marina (${c.erro}). Para não apagar uma conexão que pode estar funcionando, o QR só sai quando ele responde. Tente de novo em 1 minuto.` };
+  }
+  const estado = c.leitura?.estado;
+  if (estado === "conectado") {
     return { ok: false, fase: "conectado", texto: "A Marina já está conectada. Para trocar de celular, desconecte primeiro." };
+  }
+  if (estado === "travado" || estado === "parado" || estado === "reconectando") {
+    return { ok: false, fase: "erro", texto: "O WhatsApp ainda está ligado ao celular, só sem conexão: um QR novo apagaria essa ligação. Use “Destravar a conexão”. Para trocar de celular, desconecte primeiro." };
+  }
+  if (estado === "conflito") {
+    return { ok: false, fase: "erro", texto: "Duas cópias da Marina usaram o mesmo número. Deixe só um OpenClaw ligado e reinicie o gateway (openclaw gateway restart) antes de qualquer QR." };
   }
   const r = await gerarQr();
   if (!r.ok) return { ok: false, fase: "erro", texto: `Não deu para falar com o servidor da Marina: ${r.erro}` };
@@ -113,4 +124,28 @@ export async function testarMeta(): Promise<{ ok: boolean; texto: string }> {
   const r = await infoNumeroMeta();
   if (!r.ok) return { ok: false, texto: r.erro };
   return { ok: true, texto: `A Meta respondeu: número ${r.numero ?? "?"}${r.nome ? `, nome “${r.nome}”` : ""}${r.qualidade ? `, qualidade ${r.qualidade}` : ""}.` };
+}
+
+/** Depois do QR (e do destravar): o servidor abriu mesmo a conexão? */
+export async function conferirConexao(): Promise<{ estado: EstadoConexao | "inalcancavel"; numero: string | null }> {
+  if (!(await exigirAdministracao())) return { estado: "desconhecido", numero: null };
+  const c = await lerConexao();
+  if (!c.ok) return { estado: "inalcancavel", numero: null };
+  return { estado: c.leitura?.estado ?? "desconhecido", numero: c.leitura?.numero ?? null };
+}
+
+/**
+ * Ligada ao celular mas sem conexão (21/10, depois do QR pelo painel):
+ * para e liga de novo o canal no OpenClaw. Não apaga a ligação nem pede QR.
+ */
+export async function destravarConexao(): Promise<{ ok: boolean; texto: string }> {
+  const s = await exigirSessao();
+  if ((s.user as { role?: string }).role !== "master") return { ok: false, texto: semPermissao.texto };
+  if ((await modoAtual()) === "oficial") return { ok: false, texto: "A Marina está usando a API oficial; o WhatsApp Web está pausado de propósito." };
+  const r = await destravarCanal();
+  await comSql((sql) => anotarNoHistorico(sql, r.ok ? `Destravado pelo painel (${s.user?.name || s.user?.email || "painel"})` : `Destravar pelo painel falhou: ${r.erro}`)).catch(() => {});
+  atualizar();
+  return r.ok
+    ? { ok: true, texto: "Pedido de destravar enviado ao servidor. Conferindo a conexão…" }
+    : { ok: false, texto: `Não consegui destravar: ${r.erro}. No terminal da Hostinger: openclaw gateway restart.` };
 }

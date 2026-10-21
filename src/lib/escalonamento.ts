@@ -4,6 +4,7 @@ import { aprenderDeChamado, registrarEvento } from "./aprendizado";
 import { lerConfig } from "./marina";
 import { sugerirCategoria } from "./marina-base";
 import { gatewayConfigurado, urlGateway, cabecalhosGateway } from "./chat";
+import { pegarTrava, soltarTrava } from "./whatsapp-vigia";
 import {
   CONFIG_ESCALONAMENTO_PADRAO, acoesDePrazo, anonimizar, codigosNoTexto, dentroDoHorario, escolherContato,
   gerarCodigo, janelaAberta, mesmoNumero, setorPara, setorValido, similaridade, LIMIAR_MESMA_PERGUNTA,
@@ -433,8 +434,19 @@ export async function responderChamado(
 /* ── prazos ──────────────────────────────────────────────────────── */
 
 export async function processarPrazos(sql: Sql, agora = new Date()): Promise<{ lembretes: number; repasses: number; avisos: number; expirados: number }> {
-  const cfg = await lerConfigEscalonamento(sql);
   const n = { lembretes: 0, repasses: 0, avisos: 0, expirados: 0 };
+  /* Uma cópia do servidor por vez: duas rodando juntas mandariam o mesmo
+     lembrete duas vezes (docs/blindagem-whatsapp.md). */
+  if (!(await pegarTrava(sql, "prazos", 120).catch(() => true))) return n;
+  try {
+    return await rodarPrazos(sql, agora, n);
+  } finally {
+    await soltarTrava(sql, "prazos");
+  }
+}
+
+async function rodarPrazos(sql: Sql, agora: Date, n: { lembretes: number; repasses: number; avisos: number; expirados: number }) {
+  const cfg = await lerConfigEscalonamento(sql);
   await encerrarConfirmacoes(sql, { vencidas: true }, cfg);
   let abertos: Chamado[] = [];
   try {

@@ -7,6 +7,7 @@ import {
 import { montarTreinamento, pareceSemResposta, registrarLacuna } from "@/lib/marina";
 import { abrirChamado, lerConfigEscalonamento, talvezProcessarPrazos, vinculoDaAbertura } from "@/lib/escalonamento";
 import { registrarUso } from "@/lib/aprendizado";
+import { talvezVigiar } from "@/lib/whatsapp-vigia";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -201,6 +202,7 @@ export async function POST(req: Request) {
                 await registrarUso(conexao, mensagem, "site");
               }
               await talvezProcessarPrazos(conexao);
+              await talvezVigiar(conexao, "chat do site");
             }
           } catch (e) {
             console.error("[chat] nao gravou a resposta:", (e as Error).message);

@@ -2,6 +2,9 @@ import { chamarRpc } from "./openclaw-config";
 import { urlGateway, cabecalhosGateway } from "./chat";
 import { numeroWhatsapp } from "./escalonamento-base";
 import { enviarPelaMeta } from "./whatsapp-meta";
+import { comSql } from "./db-conexao";
+import { passarDisjuntor } from "./whatsapp-vigia";
+import { lerSaude, type LeituraWhatsapp } from "./whatsapp-saude";
 
 /**
  * Manda uma mensagem de WhatsApp pelo número da pousada (o que a Marina usa),
@@ -174,6 +177,17 @@ async function porAgente(para: string, texto: string, o: Opcoes): Promise<Envio>
 }
 
 export async function enviarWhatsapp(numero: string, texto: string, opcoes: Opcoes = {}): Promise<Envio> {
+  /* Disjuntor (docs/blindagem-whatsapp.md): nada repetido, nada em rajada,
+     nada para o próprio número, e um intervalo entre envios. Se o banco
+     falhar, o envio segue — a proteção não pode derrubar o aviso à equipe. */
+  const destino = numeroWhatsapp(numero) ?? numero.replace(/\D/g, "");
+  const guarda = await comSql((sql) => passarDisjuntor(sql, destino, texto)).catch((e) => {
+    console.error("[disjuntor] sem banco, envio segue:", (e as Error).message);
+    return { ok: true as const, esperarMs: 0 };
+  });
+  if (!guarda.ok) return { ok: false, via: "disjuntor", erro: `Segurado para proteger o número da Marina: ${guarda.motivo}.` };
+  if (guarda.esperarMs > 0) await new Promise((r) => setTimeout(r, Math.min(guarda.esperarMs, 10_000)));
+
   if (opcoes.oficial) return enviarPelaMeta(numeroWhatsapp(numero) ?? numero.replace(/\D/g, ""), texto, opcoes.template);
   if (!process.env.OPENCLAW_GATEWAY_URL || !process.env.OPENCLAW_GATEWAY_TOKEN) {
     return { ok: false, erro: "O gateway do OpenClaw não está configurado neste site (OPENCLAW_GATEWAY_URL e OPENCLAW_GATEWAY_TOKEN na Vercel)." };
@@ -248,6 +262,14 @@ export function motivoQueda(dados: unknown): CaidaWhatsapp | null {
     motivo: "Está conectada, mas parou de receber mensagens",
     fazer: "Rodar openclaw gateway restart",
   };
+  /* Ligado ao celular, canal rodando, mas a conexão nunca abriu
+     (reconnectAttempts=0). Visto em 21/10 depois do QR pelo painel: o
+     reinício resolveu. Não é caso de QR novo. */
+  if (estado === "disconnected" || estado === "starting") return {
+    estado: "travado", desde,
+    motivo: "O WhatsApp está ligado ao celular, mas o servidor da Marina não abriu a conexão",
+    fazer: "Toque em Destravar a conexão (WhatsApp da Marina); se não voltar, openclaw gateway restart no terminal",
+  };
   if (estado === "reconnecting") return {
     estado, desde,
     motivo: "Perdeu a conexão e está tentando voltar sozinha",
@@ -266,7 +288,7 @@ export function motivoQueda(dados: unknown): CaidaWhatsapp | null {
  * (plugin admin-http-rpc). Sem o plugin, diz que não dá para saber — não
  * trava o envio.
  */
-export async function statusWhatsapp(): Promise<{ sabe: boolean; conectado: boolean | null; resumo: string; queda?: CaidaWhatsapp | null }> {
+export async function statusWhatsapp(): Promise<{ sabe: boolean; conectado: boolean | null; resumo: string; queda?: CaidaWhatsapp | null; saude?: LeituraWhatsapp | null }> {
   const r = await chamarRpc("channels.status", {});
   if (!r.ok) return { sabe: false, conectado: null, resumo: `não deu para consultar (${r.erro})` };
   const bruto = JSON.stringify(r.dados ?? "");
@@ -288,6 +310,7 @@ export async function statusWhatsapp(): Promise<{ sabe: boolean; conectado: bool
     sabe: true,
     conectado: desligado ? false : ligado ? true : null,
     queda: desligado ? motivoQueda(r.dados) : null,
+    saude: lerSaude(r.dados),
     resumo: `${desligado ? "desconectado" : ligado ? "conectado" : "estado incerto"} — ${JSON.stringify(w).slice(0, 220)}${bruto.length > 2000 ? "…" : ""}`,
   };
 }

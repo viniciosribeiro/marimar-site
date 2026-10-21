@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> Atualizado em 20/10/2026 (WhatsApp da Marina: QR e API oficial da Meta prontos, escolha no painel; Marina fora do WhatsApp desde 18/10: o motivo real e o aviso no painel; mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
+> Atualizado em 21/10/2026 (blindagem do WhatsApp: vigia, disjuntor, QR seguro e alerta; WhatsApp da Marina: QR e API oficial da Meta prontos, escolha no painel; Marina fora do WhatsApp desde 18/10: o motivo real e o aviso no painel; mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
 
 ## Onde estamos
 
@@ -92,6 +92,14 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
 
 ## As pendencias que importam
 
+0000000000000000. **Blindagem do WhatsApp (21/10):** feita no site
+   (`docs/blindagem-whatsapp.md`). Falta no servidor, de madrugada: `groupPolicy
+   "disabled"`, `selfChatMode false`, `openclaw backup create` e `openclaw update`
+   (2026.9.4 → 2026.10.5) — comandos no documento. Na Vercel:
+   `ALERTA_WHATSAPP_URL` (ntfy) para o alerta no celular, e um agendador a cada
+   5 min em `/api/cron/chamados` (vigia + prazos). Hoje a Marina está num
+   **celular de testes**; para o número real, seguir "Ao ligar o número real da
+   pousada" no mesmo documento.
 000000000000000. **WhatsApp da Marina pelo painel (20/10):** Marina → WhatsApp
    da Marina conecta pelo QR e desconecta, só perfil Administração (a
    Cecília precisa desse perfil em Pessoas e acessos para usar). Primeiro uso
@@ -278,7 +286,8 @@ Variaveis obrigatorias (precisam existir em `.env.local` **e** na Vercel):
 
 Opcionais (API oficial do WhatsApp; sem elas, só o QR): `WHATSAPP_META_TOKEN` ·
 `WHATSAPP_META_PHONE_ID` · `WHATSAPP_META_APP_SECRET` · `WHATSAPP_META_VERIFY_TOKEN`
-(ver `docs/fluxo-whatsapp-oficial.md`).
+(ver `docs/fluxo-whatsapp-oficial.md`). Alerta da Marina fora do WhatsApp:
+`ALERTA_WHATSAPP_URL` (ver `docs/blindagem-whatsapp.md`).
 
 ```bash
 npx vercel env pull .env.local   # sincroniza da Vercel
@@ -309,6 +318,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | `docs/design-system-admin.md` | componentes, tokens e regras visuais do painel |
 | `docs/fluxo-midia.md` | fotos, vídeos, compressão no navegador, limites do WhatsApp e roteiros da Marina |
 | `docs/fluxo-escalonamento.md` | escalonamento para a equipe, base de aprendizado, Cérebro da Marina, segurança |
+| `docs/blindagem-whatsapp.md` | o que derrubou a Marina, vigia, disjuntor, QR seguro, alerta, comandos do servidor e troca para o número real |
 | `docs/fluxo-whatsapp-oficial.md` | as duas formas do WhatsApp (QR e API oficial da Meta), a troca, chaves e passo a passo na Meta |
 | `docs/runbook.md` | deploy, env vars, incidentes, rotacao de chave |
 | `docs/samples/` | amostras de payload do Worker |

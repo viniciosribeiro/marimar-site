@@ -48,6 +48,11 @@ try {
   /* ── zera o que o teste usa ─────────────────────────────────── */
   await sql`DELETE FROM marina_chamados`; await sql`DELETE FROM marina_aprendizado`;
   await sql`DELETE FROM equipe_contatos`; await sql`DELETE FROM marina_eventos`;
+  /* Blindagem (docs/blindagem-whatsapp.md): sem histórico de envios e com o
+     número da Marina fora do período de adaptação, como no dia a dia. */
+  await sql`DELETE FROM integracoes WHERE chave LIKE 'wa_%' OR chave LIKE 'trava:%'`;
+  await sql`INSERT INTO integracoes (chave, valor) VALUES ('wa_vigia', ${JSON.stringify({ estado: "conectado", desde: Date.now(), numero: "5541999990000", numeroDesde: Date.now() - 30 * 864e5, acoes: [], avisado: null, ultimaVez: Date.now(), historico: [] })})
+    ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor`;
   await sql`UPDATE pousada SET chat_ativo = true`;
   await limparEnviadas();
 

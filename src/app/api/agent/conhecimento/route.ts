@@ -1,5 +1,6 @@
 import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
+import { talvezVigiar } from "@/lib/whatsapp-vigia";
 import { comSql } from "@/lib/db-conexao";
 import {
   lerConfig, lerEnsinamentos, ensinamentosEmTexto, registrarLeitura, totalItens,
@@ -22,6 +23,9 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: NextRequest) {
   if (!checkAgentAuth(request)) return agentUnauthorized();
+  /* A Marina lê esta rota a cada conversa e a cada 15 min: carona para o
+     vigia do WhatsApp, depois da resposta, sem atrasá-la. */
+  after(() => comSql((sql) => talvezVigiar(sql, "Marina")).catch(() => {}));
 
   const { config, ensinamentos, texto } = await comSql(async (sql) => {
     const config = await lerConfig(sql);
