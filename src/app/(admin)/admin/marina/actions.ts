@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { exigirSessao } from "@/lib/admin-sessao";
 import { comSql, type Sql } from "@/lib/db-conexao";
-import { sincronizarVoz } from "@/lib/openclaw-config";
 import { abrirChamado, avisarDeNovo, vinculoDaAbertura } from "@/lib/escalonamento";
 import {
   categoriaValida, tipoValido, registrarHistorico, sugerirCategoria, type AcaoHistorico,
@@ -25,10 +24,6 @@ export type Resultado = { ok: boolean; mensagem: string; id?: string };
 const txt = (fd: FormData, k: string) => {
   const v = fd.get(k);
   return typeof v === "string" && v.trim() !== "" ? v.trim() : null;
-};
-const faixa = (fd: FormData, k: string, min: number, max: number, padrao: number) => {
-  const n = Number(fd.get(k));
-  return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : padrao;
 };
 /** Uma variação por linha; linhas repetidas e vazias saem. */
 const linhas = (fd: FormData, k: string) =>
@@ -209,26 +204,7 @@ async function gravarConfig(sql: Sql, dados: Record<string, unknown>) {
   else await sql`INSERT INTO marina_config ${sql(dados)}`;
 }
 
-export async function salvarVoz(fd: FormData): Promise<Resultado> {
-  await exigirSessao();
-  const dados = {
-    voz_id: txt(fd, "voz_id"),
-    voz_modelo: txt(fd, "voz_modelo") ?? "eleven_multilingual_v2",
-    voz_estabilidade: faixa(fd, "voz_estabilidade", 0, 100, 50),
-    voz_semelhanca: faixa(fd, "voz_semelhanca", 0, 100, 75),
-    voz_velocidade: faixa(fd, "voz_velocidade", 70, 120, 100),
-  };
-  await comSql((sql) => gravarConfig(sql, dados));
-  atualizar();
-
-  /* O banco governa o chat do site; o WhatsApp lê a voz da config do
-     OpenClaw. A falha aqui NÃO desfaz o salvamento do site. */
-  if (dados.voz_id) {
-    const eco = await sincronizarVoz(dados.voz_id, dados.voz_modelo);
-    if (!eco.ok) return { ok: false, mensagem: `Voz salva para o site, mas o WhatsApp não aceitou: ${eco.erro}` };
-  }
-  return { ok: true, mensagem: "Voz salva nos dois canais." };
-}
+/* A voz (salvar, conectar provedor, conferir o WhatsApp) fica em voz-actions.ts. */
 
 /** Jeito de falar e quando passar para uma pessoa. */
 export async function salvarPersonalidade(fd: FormData): Promise<Resultado> {

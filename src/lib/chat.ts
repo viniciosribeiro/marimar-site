@@ -102,7 +102,7 @@ export const CONTEXTO_CANAL = [
 
 /* ── voz ───────────────────────────────────────────────────────────
    A Marina fala no site sob demanda: um botao por mensagem, nunca
-   automatico. A diferenca nao e estetica — a ElevenLabs cobra por
+   automatico. A diferenca nao e estetica — o provedor de voz cobra por
    caractere, e tocar audio sozinho num canal publico transforma cada
    visitante curioso em gasto. Quem quer ouvir, clica.                */
 
@@ -124,10 +124,6 @@ export const LIMITE_AUDIO_BYTES = 4 * 1024 * 1024;
 /** Transcricao (audio -> texto). Mesmo fornecedor da voz, mesma chave. */
 export const URL_TRANSCRICAO = "https://api.elevenlabs.io/v1/speech-to-text";
 export const MODELO_TRANSCRICAO = "scribe_v2";
-
-export function vozConfigurada(): boolean {
-  return Boolean(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_VOICE_ID);
-}
 
 /**
  * Perguntas sugeridas no primeiro contato.

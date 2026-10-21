@@ -1,6 +1,7 @@
 import { comSql, type Sql } from "./db-conexao";
-import { CONTEXTO_MENSAGENS, LIMITE_AUDIO_BYTES, LIMITE_VOZ_CARACTERES, MODELO_TRANSCRICAO, URL_TRANSCRICAO, cabecalhosGateway, gatewayConfigurado, urlGateway, vozConfigurada } from "./chat";
-import { ajustesDeVoz, lerConfig, montarTreinamento, pareceSemResposta, registrarLacuna } from "./marina";
+import { CONTEXTO_MENSAGENS, LIMITE_AUDIO_BYTES, LIMITE_VOZ_CARACTERES, MODELO_TRANSCRICAO, URL_TRANSCRICAO, cabecalhosGateway, gatewayConfigurado, urlGateway } from "./chat";
+import { montarTreinamento, pareceSemResposta, registrarLacuna } from "./marina";
+import { chaveDoProvedor, falarComAVozGravada } from "./voz";
 import { abrirChamado, lerConfigEscalonamento, responderChamado, talvezProcessarPrazos, vinculoDaAbertura } from "./escalonamento";
 import type { ConfigEscalonamento } from "./escalonamento-base";
 import { registrarUso } from "./aprendizado";
@@ -62,8 +63,10 @@ async function primeiraVez(sql: Sql, id: string, de: string): Promise<boolean> {
   return Boolean(novo);
 }
 
-async function transcrever(idMidia: string): Promise<string | null> {
-  if (!vozConfigurada()) return null;
+async function transcrever(sql: Sql, idMidia: string): Promise<string | null> {
+  /* Transcrição é sempre ElevenLabs (Scribe), seja qual for a voz que a Marina usa para falar. */
+  const { chave } = await chaveDoProvedor(sql, "elevenlabs");
+  if (!chave) return null;
   const midia = await baixarMidiaMeta(idMidia, LIMITE_AUDIO_BYTES * 2);
   if (!midia.ok) { console.error("[whatsapp-oficial] áudio:", midia.erro); return null; }
   const form = new FormData();
@@ -71,7 +74,7 @@ async function transcrever(idMidia: string): Promise<string | null> {
   form.append("model_id", MODELO_TRANSCRICAO);
   form.append("language_code", "por");
   try {
-    const r = await fetch(URL_TRANSCRICAO, { method: "POST", headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY! }, body: form, signal: AbortSignal.timeout(15_000) });
+    const r = await fetch(URL_TRANSCRICAO, { method: "POST", headers: { "xi-api-key": chave }, body: form, signal: AbortSignal.timeout(15_000) });
     if (!r.ok) { console.error("[whatsapp-oficial] transcrição", r.status); return null; }
     const d = await r.json().catch(() => null);
     return typeof d?.text === "string" && d.text.trim() ? d.text.trim() : null;
@@ -83,19 +86,14 @@ async function transcrever(idMidia: string): Promise<string | null> {
 
 /** Quem mandou áudio ouve a resposta também (como o `tts.auto: "inbound"` do WhatsApp Web). */
 async function responderEmAudio(sql: Sql, para: string, resposta: string) {
-  if (!vozConfigurada()) return;
   const falar = resposta.replace(/^\s*!\[[^\]]*\]\([^)]*\)\s*$/gm, "").replace(/https?:\/\/\S+/g, "").replace(/[*_#>`]/g, "").trim();
   if (!falar || falar.length > LIMITE_VOZ_CARACTERES) return;
-  const config = await lerConfig(sql);
-  if (!config.voz_id) return;
-  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${config.voz_id}?output_format=mp3_44100_128`, {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "audio/mpeg", "xi-api-key": process.env.ELEVENLABS_API_KEY! },
-    body: JSON.stringify({ text: falar, model_id: config.voz_modelo, language_code: "pt", apply_text_normalization: "on", voice_settings: ajustesDeVoz(config) }),
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!r.ok) { console.error("[whatsapp-oficial] voz", r.status); return; }
-  const envio = await enviarAudioMeta(para, await r.arrayBuffer());
+  /* A mesma voz do site e do WhatsApp Web (src/lib/voz.ts). */
+  const r = await falarComAVozGravada(sql, falar);
+  if (!r.ok) { if (r.status !== 503) console.error("[whatsapp-oficial] voz:", r.erro); return; }
+  /* A Meta não aceita WAV (o Google só devolve PCM): nesse caso vai só o texto. */
+  if (r.tipo !== "audio/mpeg") { console.warn("[whatsapp-oficial] voz do Google não vai em áudio pela API oficial (formato)"); return; }
+  const envio = await enviarAudioMeta(para, r.audio);
   if (!envio.ok) console.error("[whatsapp-oficial] áudio não saiu:", envio.erro);
 }
 
@@ -133,7 +131,7 @@ async function atender(sql: Sql, cfg: ConfigEscalonamento, m: MensagemRecebida) 
   let texto = m.texto;
   const veioAudio = m.tipo === "audio" && !!m.midia;
   if (veioAudio) {
-    const ouvido = await transcrever(m.midia!.id);
+    const ouvido = await transcrever(sql, m.midia!.id);
     if (!ouvido) {
       await enviarTextoMeta(m.de, "Não consegui ouvir o seu áudio. Pode escrever, por favor?");
       return;
