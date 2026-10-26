@@ -1,5 +1,14 @@
 # Changelog — Marimar Site
 
+## 2026-10-26 — Marina: links não são lidos pela voz e redução do consumo ElevenLabs
+**Autor:** ChatGPT, a pedido do proprietário. **Migration:** nenhuma.
+- Respostas do chat continuam com links clicáveis, porém \`/api/chat/voz\`, \`src/lib/whatsapp-oficial.ts\` e \`src/lib/voz.ts\` removem endereços antes de pagar pelo áudio. O texto curto é limitado a 235 caracteres quando há link, com frase breve se a resposta for só URL.
+- Registro do consumo no site agora contabiliza somente caracteres realmente sintetizados.
+- Habilidade \`marimar-pousada\` orientada a enviar o URL por texto e áudio separado e curto no OpenClaw/WhatsApp QR, usando diretivas de TTS quando disponíveis.
+- Testes de regressão para URLs, links Markdown, fotos, valor e comprimento, sem chamadas pagas.
+- **Pendente:** reinstalar a habilidade no OpenClaw da Hostinger e testar áudio real no WhatsApp Web (esse TTS não passa pela API do site). Nenhuma alteração em reservas, tarifas ou armazenamento de hóspedes.
+
+
 ## 2026-10-26 — Marina: sigilo da memória e contexto das mensagens
 **Autor:** ChatGPT, por solicitação do proprietário. **Migration:** nenhuma.
 - Corrigida a skill `marimar-pousada` para associar perguntas como "quanto custa ele, quarta para quinta?" à suíte recentemente mostrada na mesma conversa, inclusive com áudio ou resposta a foto, e consultar o preço real novamente.
