@@ -2,6 +2,7 @@ import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
 import { comSql } from "@/lib/db-conexao";
 import { midiaParaWhatsapp } from "@/lib/roteiros";
+import { urlFotoWhatsapp } from "@/lib/foto-whatsapp";
 
 export const dynamic = "force-dynamic";
 
@@ -98,7 +99,9 @@ export async function GET(request: NextRequest) {
   const dados = (lista as unknown as Quarto[]).map((q) => ({
     ...q,
     url: `${base}/quartos/${q.slug}`,
-    fotos: porQuarto.get(q.id) ?? [],
+    // Endpoint publico controlado pelo catalogo (somente as fotos deste quarto).
+    // O WhatsApp baixa bytes pela Vercel/gru1, nao diretamente do Desbravador.
+    fotos: (porQuarto.get(q.id) ?? []).map((f, indice) => ({ ...f, url_whatsapp: urlFotoWhatsapp(q.slug, indice) })),
     videos: videosDe.get(q.id) ?? [],
     comodidades: comodidadesDe.get(q.id) ?? [],
   }));
