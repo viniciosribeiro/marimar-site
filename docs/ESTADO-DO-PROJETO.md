@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **/saude — 26/10/2026:** nova página pública *isolada* com escritório 2.5D da Marina, inventário de serviços, sondas somente de leitura, navegação, simulação de incidentes e aprovações que não alteram nada. Não é um agente corretivo real; monitoria autenticada do OpenClaw/WhatsApp e persistência de histórico ainda não foram feitas. Detalhes para Claude em `docs/saude-marina.md`.
+
+
 > **Incidente de disponibilidade — 26/10/2026:** o site de producao retornou Worker HTTP 502 nas buscas; teste isolado em Vercel `gru1` retornou Worker HTTP 200 (9 quartos, 1 indisponivel). Correcao versionada em `vercel.json` (`regions: ["gru1"]`). **Resolvido em producao:** deploy `dpl_G8uK5LhX66s3EZZT18FGg8FVeMCn` em `gru1`; API `/api/disponibilidade` HTTP 200, `ok:true`, com 6 suites disponiveis em 10-12/11 e 9 em 08-11/12; `/reservar` tambem conferida. **Pendente:** validar especificamente a rota autenticada da Marina e acompanhar recorrencias de 502. Ver `docs/incidente-disponibilidade-2026-10-26.md`.
 
 
