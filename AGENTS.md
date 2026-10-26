@@ -26,11 +26,26 @@ Hermes/OpenRouter, e outras). Para nao se atropelarem, existe um protocolo.
 5. `docs/contrato-api.md` — se for mexer em disponibilidade/tarifas
 6. `docs/runbook.md` — deploy, env vars, rotacao de chave
 
-## Ao terminar qualquer trabalho
+## Ao terminar qualquer trabalho (continuidade obrigatoria entre IAs)
 
-1. Nova entrada **no topo** de `docs/CHANGELOG.md` (o formato esta no proprio arquivo)
-2. Atualizar a secao "Pendencias conhecidas" e a data em `docs/ESTADO-DO-PROJETO.md`
-3. Commitar — nao deixar trabalho so no working directory
+O proprietario pediu explicitamente em **26/10/2026** que tudo fique
+documentado para Claude e os demais agentes continuarem depois. Ao concluir
+cada mudanca relevante, na MESMA entrega:
+
+1. Nova entrada **no topo** de `docs/CHANGELOG.md`: intencao, arquivos
+   alterados, contexto, teste/evidencia, commit/PR, o que ainda falta.
+2. Atualizar estado e **pendencias reais** em `docs/ESTADO-DO-PROJETO.md`.
+3. Atualizar a secao **ESTADO ATUAL** de
+   `docs/HANDOFF-PROXIMO-AGENTE.md`: resumo que alguem sem o chat
+   consiga entender e procedimento de validacao/continuidade.
+4. Se a mudanca exigir comando na Hostinger, registrar se foi so preparada
+   no repositorio, realmente instalada, ou validada em atendimento real.
+   **Merge no GitHub e deploy Vercel NAO instalam skills OpenClaw.**
+5. Diferenciar claramente: implementado, compilado, implantado, testado
+   em producao, **confirmado pelo usuario**, parcial e pendente.
+   Nao afirmar sucesso que nao foi observado.
+6. Commitar tudo. Nunca commitar segredos, transcricoes ou identificadores
+   de hospedes; nao guardar backup de config OpenClaw no repositorio.
 
 ## Regras rigidas
 
