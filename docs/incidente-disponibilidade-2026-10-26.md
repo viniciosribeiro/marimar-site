@@ -1,6 +1,6 @@
 # Incidente 2026-10-26 — consultas de disponibilidade retornando HTTP 502
 
-**Status:** correcao de regiao proposta no Git; validacao de producao obrigatoria.
+**Status:** RESOLVIDO EM PRODUCAO em 26/10/2026, com consulta publica validada em Vercel gru1.
 **Responsavel pelo registro:** ChatGPT (investigacao Vercel + GitHub), com evidencias da sessao anterior do usuario.
 **Servicos:** Marimar (Next.js/Vercel) -> PousadaHub (Cloudflare Worker) -> motor Desbravador.
 **Sem migration, sem mudancas de segredos, banco ou precos.**
@@ -52,3 +52,19 @@ Nao alterar SLUG, parametros, tarifas ou resposta do Worker para contornar uma i
 - Verificar eventuais regras geograficas/antibot do Desbravador com o provedor; nao usar proxies de evasao ou copiar credenciais para o repositorio.
 - Em caso de regressao grave introduzida pelo deploy, usar o historico de deploys da Vercel para rollback, ciente de que o rollout antigo volta a executar nos EUA e pode retornar 502 nas reservas.
 - Nao considerar resolvido enquanto a rota publica de disponibilidade nao tiver teste real de producao com HTTP 200.
+
+## Verificacao real de producao — 26/10/2026 (apos merge)
+
+- PR #33 foi mergeado em `main`: commit `11efbeb24f62b0c5c227b9a643f8149918fc19d2`.
+- Deploy de producao `dpl_G8uK5LhX66s3EZZT18FGg8FVeMCn` = READY, `regions: ["gru1"]`, aliases oficiais atualizados.
+- GET `/` = HTTP 200 e GET `/reservar` = HTTP 200.
+- GET `/api/disponibilidade` com 2 adultos e zero criancas respondeu HTTP 200, `ok: true` e 10 tipos de quarto nos quatro periodos:
+  - 30/10 a 01/11: 0 disponiveis (consulta valida, sem vagas).
+  - 10/11 a 12/11: 6 disponiveis com precos reais (primeiro total de teste R$ 780).
+  - 20/11 a 22/11: 0 disponiveis (consulta valida, sem vagas).
+  - 08/12 a 11/12: 9 disponiveis com precos reais (primeiro total de teste R$ 1.170).
+- GET `/reservar?check_in=2026-11-10&check_out=2026-11-12&adultos=2&criancas=0` = HTTP 200, quarto e preco exibidos, botao "Reservar no site oficial" presente, sem a mensagem "Nao conseguimos consultar".
+- Logs de erro/fatal de producao, filtrados pelo novo deployment nos 15 minutos de verificacao: **nenhum erro retornado**.
+- Nao foram criadas reservas nem alterados precos, banco, chaves ou configuracao do Cloudflare.
+- **Resultado:** incidente de consulta publica encerrado apos testes. Monitorar recorrencia e continuar avaliando a rota autenticada da Marina (nao testada nesta sessao).
+- Observacao: o 502 historico do Desbravador/Worker para chamadas originadas fora do Brasil pode continuar; este conserto corrige o caminho de execucao do site, nao as restricoes do provedor upstream.
