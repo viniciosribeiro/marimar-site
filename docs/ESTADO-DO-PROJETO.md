@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> **Incidente de disponibilidade — 26/10/2026:** o site de producao retornou Worker HTTP 502 nas buscas; teste isolado em Vercel `gru1` retornou Worker HTTP 200 (9 quartos, 1 indisponivel). Correcao versionada em `vercel.json` (`regions: ["gru1"]`). **Prioridade absoluta:** confirmar deploy de producao, `/api/disponibilidade` com HTTP 200, `/reservar` e consulta pela Marina. Nao assumir resolvido apenas por READY. Ver `docs/incidente-disponibilidade-2026-10-26.md`.
+> **Incidente de disponibilidade — 26/10/2026:** o site de producao retornou Worker HTTP 502 nas buscas; teste isolado em Vercel `gru1` retornou Worker HTTP 200 (9 quartos, 1 indisponivel). Correcao versionada em `vercel.json` (`regions: ["gru1"]`). **Resolvido em producao:** deploy `dpl_G8uK5LhX66s3EZZT18FGg8FVeMCn` em `gru1`; API `/api/disponibilidade` HTTP 200, `ok:true`, com 6 suites disponiveis em 10-12/11 e 9 em 08-11/12; `/reservar` tambem conferida. **Pendente:** validar especificamente a rota autenticada da Marina e acompanhar recorrencias de 502. Ver `docs/incidente-disponibilidade-2026-10-26.md`.
 
 
 > Atualizado em 21/10/2026 (voz da Marina igual no site e no WhatsApp, com ElevenLabs, OpenAI e Google; blindagem do WhatsApp: vigia, disjuntor, QR seguro e alerta; WhatsApp da Marina: QR e API oficial da Meta prontos, escolha no painel; Marina fora do WhatsApp desde 18/10: o motivo real e o aviso no painel; mapa da rota em 3D, Mapbox opcional e navegação em tela inteira com prévia do caminho; painel novo fase 1 em vidro líquido; busca do topo abaixo da foto, em vidro; busca de datas tolerante e com 45 s; "à beira-mar" no lugar de "pé na areia"; domínios saindo da Cloudflare antiga para a Vercel; Marina no número de atendimento da Cecília).
@@ -9,7 +9,7 @@
 
 **No ar e funcionando**
 
-- Site publicado na Vercel (`marimar-site.vercel.app`). Em 26/10/2026, a integracao de disponibilidade/tarifas com o Desbravador foi identificada com falha HTTP 502; validar apos deploy da correcao de regiao Sao Paulo (gru1).
+- Site publicado na Vercel (`marimar-site.vercel.app`). Em 26/10/2026, a integracao de disponibilidade/tarifas com o Desbravador foi corrigida com Vercel Functions em Sao Paulo (`gru1`) e validada em producao em 26/10 (HTTP 200, quartos e precos reais).
 - **Chat da Marina no site**, falando com a MESMA agente do WhatsApp pelo
   gateway do OpenClaw. Interruptor em `/admin/integracoes`.
 - **Audio nos dois canais**: no site a pessoa grava e recebe resposta falada;
