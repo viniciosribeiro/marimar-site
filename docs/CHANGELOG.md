@@ -1,5 +1,25 @@
 # Changelog — Marimar Site
 
+## 2026-10-26 — Correcao de regiao para consultas de disponibilidade (GRU)
+**Autor:** ChatGPT, a pedido do proprietario; documentado para continuidade pelo Claude.
+**Migration:** nenhuma.
+
+### Incidente e causa
+- Desde 24/10, /reservar e APIs de disponibilidade falhavam com Worker HTTP 502 (51 logs agrupados de /reservar; 15 usuarios); o site permanecia publicado.
+- Investigacao anterior indicou que o motor Desbravador recusava acesso (403) partindo da regiao de Vercel nos EUA.
+- Diagnostico de staging /api/diagnostico em Sao Paulo (gru1) confirmou Worker HTTP 200 com 9 quartos e 1 indisponivel; o deploy diagnostico NAO continha a API completa e nao constitui teste final.
+
+### Mudanca
+- `vercel.json`: define `"regions": ["gru1"]` para todas as Vercel Functions do site completo.
+- Sem alteracoes em regras de ocupacao, precos, banco, chaves ou codigo do Worker.
+- Evidencias, impacto, limites e roteiro de producao em `docs/incidente-disponibilidade-2026-10-26.md`.
+
+### Validacao necessaria
+- Aguardar deploy production do commit, conferir a regiao `gru1`, HTTP 200 de /api/disponibilidade com dados reais e busca publica /reservar.
+- Se nao voltar: inspecionar logs do Worker e resposta upstream do Desbravador, nao mascarar HTTP 502.
+- Esta entrada registra a correcao de configuracao; NAO declarar incidente resolvido antes da verificacao de producao.
+
+
 Historico de mudancas do projeto. **Toda sessao de trabalho (humana ou de IA) adiciona
 uma entrada no topo.**
 
