@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **Memória da Marina no WhatsApp — 26/10/2026:** o atendimento perdeu contexto de uma suíte apresentada por imagem e exibiu diagnóstico interno sobre `memory.search.experimental.sessionMemory`. A skill `marimar-pousada` recebeu regras de contexto da conversa atual e de sigilo dos erros técnicos. O script `agente/scripts/corrigir-memoria-marina.mjs` prepara correção da configuração OpenClaw da Hostinger com backup + `config.patch`, isolamento de DMs por canal/remetente, visibilidade de sessão `self`, indexação de sessões e desativação de recordação entre hóspedes. **PENDENTE:** executar na Hostinger através de login/terminal autorizado, reinstalar skill e testar com WhatsApp real. Nenhum efeito na produção até esse passo.
+
+
 > **Central de reservas privada /reservas — 26/10/2026:** página implementada com login próprio Cecília (credenciais protegidas em variáveis de ambiente no cofre Vercel: hash scrypt + segredo HMAC), sessão httpOnly/Secure/SameSite Strict de 8 horas, visualização responsiva do calendário por suíte e registros futuros. A conexão local de quartos usa apenas SELECT na tabela quartos; **não há integração autenticada de registros de reservas confirmadas ao Desbravador PMS/ROL**, então os períodos são exibidos como sem informação, sem inventar hóspedes, valores ou ocupação. Teste navegador em preview validou login, navegação de datas, alerta sobre integração pendente e logout. Preview não tem DATABASE_URL, portanto catálogo de suítes somente pode ser validado em produção. Próxima etapa: aprovar credenciais read-only PMS ou exportação oficial; nunca extrair nomes de clientes do motor público de tarifas.
 
 
