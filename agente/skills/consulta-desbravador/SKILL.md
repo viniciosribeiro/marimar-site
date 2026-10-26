@@ -1,15 +1,17 @@
 ---
 name: consulta-desbravador
-description: Consulta disponibilidade e valores reais ao vivo dos quartos da Pousada Marimar, com link oficial de reserva. Já aplica a regra de crianças e bebês configurada pela pousada.
+description: Consulta disponibilidade e valores reais ao vivo pela API autenticada da Marimar na Vercel (região São Paulo), com link oficial de reserva e regra de crianças e bebês.
 metadata: { "openclaw": { "requires": { "bins": ["node"] } } }
 ---
 
 # Consulta ao vivo - Pousada Marimar
 
 Use SEMPRE que o cliente perguntar vaga, disponibilidade, valor, preço,
-"tem quarto", "quanto fica", ou quiser reservar. Consulta em tempo real:
-disponibilidade E valor, na hora. Nunca use valor de memória ou de conversa
-anterior — rode a skill toda vez.
+"tem quarto", "quanto fica", ou quiser reservar. Consulte em tempo real
+pela rota autenticada `/api/agent/disponibilidade` do site da Marimar, que
+encaminha ao motor pela Vercel em São Paulo. NÃO consulte diretamente o Worker
+Cloudflare pela Hostinger: este caminho pode retornar HTTP 502. Nunca use valor
+de memória ou de conversa anterior — rode a skill toda vez.
 
 ## Pré-requisitos
 Tenha entrada, saída, adultos, crianças e bebês de colo. Falta algo,
@@ -27,14 +29,19 @@ não configurou a regra, pergunte só "quantas crianças" e passe bebês = 0.
 os números como o hóspede informou — o script aplica a regra da pousada
 sozinho (não some crianças aos adultos você mesma).
 
-A consulta leva de 1 a 3 segundos (cota cada quarto ao vivo).
+A consulta pode demorar, principalmente em datas concorridas. O script precisa
+de `MARIMAR_API_KEY` na Hostinger (mesma `AGENT_API_KEY` da Vercel).
+`MARIMAR_SITE_URL` é opcional; o padrão é o domínio oficial do site.
+Se houver erro 401, confira a chave no servidor — não informe preço sem consulta.
 
 ## Como interpretar
 Retorna: quartos (disponíveis), esgotados, noites, estadia_minima,
 aviso_crianca, regra_criancas, valor_bebes, link_reserva.
 
-Cada quarto tem: quarto (nome), capacidade, total, diaria_media,
-unidades, ultima_unidade, comodidades, fotos.
+Cada quarto disponível tem: quarto (nome), capacidade, total e diaria_media.
+A API do agente ainda não devolve quantidade de unidades, fotos, comodidades
+nem estadia mínima nesta rota; os campos correspondentes vêm `null` ou vazios.
+Não deduza quantidade de quartos restantes nem use esse resultado para mandar fotos.
 
 - total = valor final da estadia inteira, já com crianças e bebês pela
   regra da pousada. É SEMPRE este que se informa.
@@ -48,12 +55,16 @@ unidades, ultima_unidade, comodidades, fotos.
 - aviso_crianca preenchido = a pousada ainda não configurou a regra. Aí
   NÃO informe valor de criança. Diga: "Para crianças preciso confirmar a
   idade com a recepção para passar o valor correto."
-- ultima_unidade true = pode dizer que é a última unidade: o dado veio
-  desta consulta, agora.
+- ultima_unidade = `null` nesta integração. **Nunca** diga que é a última
+  unidade sem uma fonte real e atual de estoque unitário.
 - esgotados = NUNCA ofereça. Cada um tem "motivo" — use para explicar
   e sugerir alternativa.
-- estadia_minima maior que as noites pedidas = avise o hóspede.
-- ok:false = não invente; tente 1 vez; persistindo, mande o link.
+- estadia_minima = `null` nesta rota. Não afirme mínimo de diárias a partir
+  dela; se for necessário, confirme em fonte oficial.
+- ok:false = não invente; tente 1 vez; persistindo, informe que não foi
+  possível confirmar e ofereça o link oficial de reservas ou a recepção.
+  HTTP 401 indica falha na chave da Hostinger; HTTP 5xx indica erro na API.
+  Não volte a consultar o Worker diretamente.
 
 Máximo 3 quartos por mensagem. Sempre ofereça o link_reserva ao final para
 concluir a reserva.
