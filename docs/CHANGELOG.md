@@ -1,4 +1,13 @@
 # Changelog — Marimar Site
+
+## 2026-10-26 — Marina: sigilo da memória e contexto das mensagens
+**Autor:** ChatGPT, por solicitação do proprietário. **Migration:** nenhuma.
+- Corrigida a skill `marimar-pousada` para associar perguntas como "quanto custa ele, quarta para quinta?" à suíte recentemente mostrada na mesma conversa, inclusive com áudio ou resposta a foto, e consultar o preço real novamente.
+- A skill não deve mostrar configurações, nomes internos ou falhas de `memory_search` aos hóspedes; essas falhas não impedem consulta às APIs oficiais.
+- Criado `agente/scripts/corrigir-memoria-marina.mjs`: rotina de correção no servidor Hostinger com backup privado, RPC `config.patch`, isolamento por remetente/canal, visibilidade de sessão somente para o próprio atendimento, indexação incremental e validação. Não habilita recuperação entre diferentes hóspedes. Em backend QMD, aborta sem alteração.
+- **Pendente:** executar o comando único na Hostinger (necessária sessão autenticada; repositório GitHub não instala config automaticamente), conferir saída sem segredos e testar continuidade real no WhatsApp.
+- Sem alterações no site, banco de reservas, preços, Vercel, gateway de WhatsApp ou motor Desbravador.
+
 ## 2026-10-26 — Busca de suítes: indicador e rolagem automática aos resultados
 **Autor:** ChatGPT, solicitado pelo proprietário. **Migration:** nenhuma.
 - Busca da home e de `/reservar` preserva os parâmetros de disponibilidade e exibe estado de carregamento enquanto o Desbravador é consultado; não faz chamadas extras.
