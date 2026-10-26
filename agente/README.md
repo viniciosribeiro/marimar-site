@@ -135,6 +135,57 @@ site em `tts.providers.<provedor>.apiKey` (decisão do Vinicios): ela vale por
 cima do ambiente, e o WhatsApp usa a mesma conta do site.
 
 
+## Correção de 26/10/2026 — Continuidade e memória da Marina
+
+**Sintoma:** no WhatsApp, após mandar uma foto da suíte, o hóspede perguntou
+"Quanto está a diária dele, de quarta para quinta?". A Marina perdeu a
+referência da suíte e exibiu no atendimento público um diagnóstico interno
+sobre `memory.search.experimental.sessionMemory` e `memory.search.sources`.
+
+**Duas partes:** a skill `marimar-pousada` passou a usar a sequência das
+mensagens/fotos/áudios da **mesma pessoa** para entender "dele", "esse
+quarto", "quarta para quinta"; quando faltarem dados, faz só uma pergunta
+curta. Nunca revela ao hóspede avisos técnicos, erros de índice ou segredos.
+As tarifas são sempre consultadas ao vivo, sem alterar o motor Desbravador.
+
+O reparo de configuração do OpenClaw está versionado em
+`agente/scripts/corrigir-memoria-marina.mjs`. **Um comando no terminal da
+Hostinger** (no diretório em que já se usou `git pull`):
+
+```bash
+cd ~/marimar-site && git pull --ff-only && openclaw skills install ./agente/skills/marimar-pousada --force && node agente/scripts/corrigir-memoria-marina.mjs
+```
+
+Esse comando:
+- copia o `openclaw.json` ativo para uma pasta privada antes de modificar;
+- preserva o restante da configuração e usa `config.patch` do Gateway ativo;
+- isola DMs do WhatsApp por canal e remetente (`session.dmScope`);
+- limita a ferramenta de histórico a sua sessão (`tools.sessions.visibility=self`);
+- habilita indexação de sessão, mas desabilita memória cruzada entre hóspedes;
+- valida a configuração e tenta indexação incremental (sem apagar arquivos).
+
+**Atenção:** alterar `dmScope` pode criar uma nova sessão para a próxima
+mensagem de cada cliente; o histórico existente permanece gravado, mas não
+é automaticamente incorporado à nova sessão. É uma escolha de privacidade
+para um WhatsApp multi-hóspede. O script não apaga transcrições nem reinicia
+manualmente o servidor. As regras do OpenClaw definem se o Gateway aplica
+hot reload ou reinicia após o patch. Configurações com backend QMD não são
+alteradas automaticamente — exigem revisão específica.
+
+Se o terminal exibir `NAO CONCLUIDO`, não execute comandos de limpeza,
+nem envie chaves ou registros de hóspedes. Envie somente o erro e o status
+(sem dados pessoais), para diagnosticarmos antes de tentar de novo.
+É possível verificar previamente sem modificar nada:
+
+```bash
+node agente/scripts/corrigir-memoria-marina.mjs --verificar
+```
+
+**Validação final no WhatsApp:** dentro da mesma conversa, pedir uma foto
+da suíte, perguntar "E de quarta para quinta, quanto fica para dois?" e
+conferir que a Marina reconhece a suíte e consulta preço atual, sem emitir
+mensagens de configuração. Confrontar o preço com o site nas mesmas datas.
+
 ## Correção de 26/10/2026 — Fotos como anexos no WhatsApp
 
 O OpenClaw da Hostinger recebia HTTP 403 ao baixar as imagens diretamente
