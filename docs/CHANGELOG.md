@@ -15,9 +15,9 @@
 - Evidencias, impacto, limites e roteiro de producao em `docs/incidente-disponibilidade-2026-10-26.md`.
 
 ### Validacao necessaria
-- Aguardar deploy production do commit, conferir a regiao `gru1`, HTTP 200 de /api/disponibilidade com dados reais e busca publica /reservar.
+- Em producao: merge PR #33, commit `11efbeb2`, deploy `dpl_G8uK5LhX66s3EZZT18FGg8FVeMCn` READY na regiao `gru1`. API de disponibilidade HTTP 200, ok:true; verificadas 6 vagas em 10-12/11 e 9 vagas em 08-11/12; /reservar com quarto, preco e botao funcionando.
 - Se nao voltar: inspecionar logs do Worker e resposta upstream do Desbravador, nao mascarar HTTP 502.
-- Esta entrada registra a correcao de configuracao; NAO declarar incidente resolvido antes da verificacao de producao.
+- **Incidente de consulta publica RESOLVIDO em 26/10/2026** apos teste real em producao e nenhum erro novo no recorte de logs verificado. Ver detalhes, outros periodos e ressalvas em `docs/incidente-disponibilidade-2026-10-26.md`.
 
 
 Historico de mudancas do projeto. **Toda sessao de trabalho (humana ou de IA) adiciona
