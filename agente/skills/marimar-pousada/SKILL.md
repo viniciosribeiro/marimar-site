@@ -254,7 +254,7 @@ perguntou o horário do café não quer deixar telefone.
   do motor recebido na consulta.
 - **Toda foto e todo vídeo saem das rotas.** Foto: use
   `fotos[].url_whatsapp` de `/api/agent/quartos` para o envio no WhatsApp
-  (`fotos[].url` é apenas a origem). Vídeo: `videos` da mesma rota ou
+  (ambos os campos apontam para imagens seguras servidas pela Marimar). Vídeo: `videos` da mesma rota ou
   `/api/agent/roteiros`. Não reutilize imagens de outra conversa.
 - **Não diz que enviou o que não enviou.** Só prometa foto, vídeo, áudio ou
   arquivo no canal em que você realmente consegue mandar.
@@ -267,8 +267,8 @@ de lá.
 1. **Pediram foto de um quarto:** chame AGORA `GET /api/agent/quartos`
    com `Authorization: Bearer $MARIMAR_API_KEY`, ache o quarto pelo nome e
    leia as primeiras 3 entradas em `fotos[]`. Cada foto tem
-   `url` (origem, NÃO usar no WhatsApp) e **`url_whatsapp`** (imagem
-   binária servida pela Marimar na Vercel/gru1, sem token na URL).
+   `url` e **`url_whatsapp`** apontando para a mesma imagem binária
+   servida pela Marimar na Vercel/gru1, sem token na URL.
    Para cada foto, no WhatsApp, use a ferramenta **message**, com
    `action: "send"`, `channel: "whatsapp"`,
    `target` = destinatário da conversa, `media` = `fotos[i].url_whatsapp`,

@@ -139,7 +139,9 @@ cima do ambiente, e o WhatsApp usa a mesma conta do site.
 
 O OpenClaw da Hostinger recebia HTTP 403 ao baixar as imagens diretamente
 do Desbravador, embora o site exibisse fotos na galeria com cache da Vercel.
-Agora `GET /api/agent/quartos` informa `fotos[].url_whatsapp`, um caminho
+Agora `GET /api/agent/quartos` informa `fotos[].url_whatsapp` e 
+`fotos[].url` apontando para a MESMA imagem segura da Marimar, garantindo
+compatibilidade com a skill que já estava instalada. É um caminho
 de bytes de imagem do próprio site: `/api/midia-quarto/<slug>/<indice>`.
 A rota pública só permite fotos de quartos ativos, visíveis para a Marina,
 registradas no banco, origens aprovadas e MIME JPEG/PNG/WebP, até 10 MB.
