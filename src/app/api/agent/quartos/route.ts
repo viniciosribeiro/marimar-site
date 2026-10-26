@@ -99,9 +99,13 @@ export async function GET(request: NextRequest) {
   const dados = (lista as unknown as Quarto[]).map((q) => ({
     ...q,
     url: `${base}/quartos/${q.slug}`,
-    // Endpoint publico controlado pelo catalogo (somente as fotos deste quarto).
-    // O WhatsApp baixa bytes pela Vercel/gru1, nao diretamente do Desbravador.
-    fotos: (porQuarto.get(q.id) ?? []).map((f, indice) => ({ ...f, url_whatsapp: urlFotoWhatsapp(q.slug, indice) })),
+    // Compatibilidade: a skill OpenClaw ja instalada le fotos[].url.
+    // Ambos os campos precisam trazer a mesma URL segura do nosso site;
+    // nunca expor a origem bloqueada do Desbravador ao agente.
+    fotos: (porQuarto.get(q.id) ?? []).map((f, indice) => {
+      const fotoUrl = urlFotoWhatsapp(q.slug, indice);
+      return { alt: f.alt, url: fotoUrl, url_whatsapp: fotoUrl };
+    }),
     videos: videosDe.get(q.id) ?? [],
     comodidades: comodidadesDe.get(q.id) ?? [],
   }));
