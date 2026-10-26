@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import SaudePainel from "./SaudePainel";
+import SaudeV2 from "./SaudeV2";
 
 export const metadata: Metadata = {
   title: "Saúde da Plataforma | Pousada Marimar",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function SaudePage() {
-  return <SaudePainel />;
+  return <SaudeV2 />;
 }
