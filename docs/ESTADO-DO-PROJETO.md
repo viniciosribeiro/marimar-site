@@ -1,5 +1,14 @@
 # Estado do projeto — Marimar Site
 
+> **CONTINUIDADE / FONTE MAIS RECENTE — 26/10/2026:** por pedido do proprietário, todas as entregas e validações precisam ficar registradas para Claude em `docs/HANDOFF-PROXIMO-AGENTE.md`, `docs/CHANGELOG.md` e `AGENTS.md`. O `CLAUDE.md` importa esses arquivos. Os blocos históricos mais abaixo podem citar tarefas que já foram resolvidas: **considerar este bloco e o handoff atual como prioridade**.
+>
+> **Marina/WhatsApp QR — voz curta aprovada:** a correção anti-narração de links (PR #47, commit `a682f21`) foi implantada na Vercel e a skill `marimar-pousada` reinstalada via OpenClaw CLI na Hostinger em 26/10. O proprietário realizou teste real e confirmou **“ficou perfeito”**. Considerar esse comportamento **funcional e aprovado**, embora não haja métrica auditada de economia de créditos ElevenLabs. Preservar links completos no texto e apenas fala curta no áudio; não reverter.
+>
+> **Marina/Hostinger — memória parcialmente pronta:** `OpenClaw 2026.9.4` aceitou a configuração de isolamento por hóspede e pesquisa de sessões via script com backup local; validador OK. **Indexação continua INCOMPLETA**: `memory status --deep` acusou embeddings OpenAI `text-embedding-3-small` indisponíveis por `429 credit_balance_exhausted`, índice 1/96 arquivos, 0/93 sessões, 0 chunks. Não tratar recuperação semântica como pronta, não gastar crédito tentando reindexar sem resolver cota, não apagar SQLite/WAL. `dreaming` desativado por opção, não falha.
+>
+> **Demais avanços de 26/10:** pesquisa de disponibilidade em Vercel/GRU1; cards de quartos em 2 colunas no celular testados; rolagem suave + mensagem “Buscando suas suítes” preservadas; `/reservas` protegida sem fonte PMS autenticada; `/saude` em modo de leitura. Evidências, PRs e pendências detalhados no handoff.
+
+
 > **Correção de TTS da Marina (26/10/2026):** áudios extensos estavam soletrando URLs de reservas no WhatsApp e consumindo créditos da ElevenLabs. O caminho do chat do site e Meta Oficial foi protegido antes da API de síntese; links completos permanecem clicáveis na mensagem visível e a fala com link é limitada a 235 caracteres, com registro correto de consumo. Skill do OpenClaw/WhatsApp QR ajustada para falar somente um resumo e enviar URL por texto. **Pendente:** reinstalação da skill na Hostinger e teste real do WhatsApp; mudar apenas repositório Vercel não reconfigura automaticamente a narração do OpenClaw.
 
 
