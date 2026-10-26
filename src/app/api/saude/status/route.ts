@@ -71,7 +71,9 @@ async function medir(): Promise<Dados> {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Evita que query strings aleatorias burlem o cache publico da CDN.
+  if (new URL(request.url).search) return Response.redirect(new URL("/api/saude/status", request.url), 308);
   if (instantaneo && instantaneo.ate > Date.now()) {
     return Response.json(instantaneo.dados, { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=300", "X-Content-Type-Options": "nosniff" } });
   }
