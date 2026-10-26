@@ -1,5 +1,99 @@
 # Handoff — continuar de onde paramos
 
+> **Atualização operacional: 26/10/2026 — leia esta seção PRIMEIRO.**
+> O histórico abaixo, datado de **30/09/2026**, é mantido para auditoria,
+> **não** é a lista atual de pendências. Algumas tarefas antigas já foram
+> realizadas; verifique o estado real antes de executá-las novamente.
+
+## ESTADO ATUAL — 26/10/2026 (ChatGPT → Claude e outros agentes)
+
+**Preferência explícita do proprietário:** toda mudança, correção, descoberta,
+teste, decisão, impedimento e validação humana deve permanecer registrada no
+repositório para qualquer agente posterior recuperar **sem depender do histórico
+do chat**. Seguir o protocolo em `AGENTS.md` / `CLAUDE.md`; manter este
+handoff atualizado em cada entrega. Não confundir **commit/deploy** com
+**instalação na Hostinger**, nem **teste técnico** com confirmação de cliente.
+
+### Ambiente e limites
+
+- Código oficial: `viniciosribeiro/marimar-site`, branch `main`.
+- Produção: `https://www.pousadamarimarilhadomel.com.br` na Vercel,
+  projeto `marimar-site`; funções de disponibilidade em `gru1`.
+- Agente Marina: OpenClaw **2026.9.4** na Hostinger; atende via WhatsApp QR
+  e pelo gateway integrado ao site. Skill local:
+  `/data/.openclaw/workspace/skills/marimar-pousada`.
+- Ajustes da **skill** exigem `git pull` e reinstalação no **CLI da
+  Hostinger**. Deploy da Vercel não atualiza skill já instalada.
+- Nunca modificar preços, regras de reservas, dados, autenticação, canais
+  WhatsApp ou configurações de TTS sem necessidade explícita, teste e backup.
+  Não registrar neste repositório senha, token, telefone de hóspede, segredo
+  de API, transcrições pessoais ou dados de pagamento.
+
+### Entregas recentes e evidências
+
+| Área | Entregue e verificado | Limites / pendência |
+|---|---|---|
+| **Tarifas Marina** | OpenClaw passou a consultar o proxy autenticado `/api/agent/disponibilidade` via Vercel/GRU1, evitando Worker diretamente da Hostinger (HTTP 502). PR #37; consulta pública ao motor validada com preços reais. | Validar sempre a chamada autenticada e preço na conversa real; nunca inventar valor. |
+| **Fotos da Marina** | Rota `/api/midia-quarto/[slug]/[indice]`, URLs `url_whatsapp` e instrução de anexar mídia pelo `message`; PRs #38/#40. | Não declarar entrega real de foto confirmada sem observar anexo no WhatsApp. |
+| **/reservas privada** | Painel protegido para Cecília, sessão segura, mapa visual, navegação e logout (PR #42). | **Não há fonte autenticada das reservas confirmadas do PMS/ROL Desbravador.** Calendário desconhecido ≠ livre; não inventar hóspedes/dados. |
+| **Busca pública /reservar** | Loading com mensagem **“Buscando suas suítes”**, transição GET confiável, rolagem automática suave às suítes e mensagem com quantidade disponível (PRs #43/#44). | **Preservar rigorosamente** carregamento, mensagem, movimento, consulta e preços quando editar UI. |
+| **Cards das suítes** | Interface moderna e compacta; **2 colunas no celular**, 3/4 em telas maiores (PR #45). Testado em viewport móvel com 6 suítes reais, valores, links e sem overflow. | Ajustes visuais somente na apresentação dos cards, sem mudar busca, motor, datas e animação. |
+| **/saude** | Painel de saúde com Marina visual/interativa e sondas apenas de leitura; arquivos e limites descritos em `docs/saude-marina.md`. | Não tratar como agente autônoma de reparos; evitar ações automáticas sem aprovação. |
+| **Contexto/memória Marina** | PR #46: skill preserva referência do quarto entre foto/áudio/pergunta, oculta diagnóstico interno. Proprietário executou script na Hostinger: backup privado, patch validado, sessão isolada por hóspede, `sources:[memory,sessions]`, `visibility:self`; instalação concluída. | **Busca semântica NÃO funciona plenamente**: `openclaw memory status --deep --agent main` mostrou 1/96 arquivos, 0 chunks, 0/93 sessões, provedor `text-embedding-3-small` respondeu **429 / credit_balance_exhausted**. NÃO alegar memória completa, NÃO rodar indexação até resolver créditos/provedor. `dreaming` off é opcional. |
+| **Economia de áudio** | PR #47, commit `a682f21`: URL fica no texto, sem ser enviada ao TTS da Vercel/Meta; limitador de fala antes do provedor; skill orienta voz curta no OpenClaw QR. **Proprietário executou `git pull` + reinstalou skill na Hostinger e confirmou por mensagem: “ficou perfeito”**, após teste do WhatsApp. | **Considerar solução de não narrar links aprovada e funcional para o proprietário. NÃO reverter.** Manter mesmo estilo/voz e evitar gerar áudios longos lendo URL. |
+
+### Logs e diagnósticos preservados em nível seguro (sem dados pessoais)
+
+- OpenClaw CLI: `OpenClaw 2026.9.4 (3a9d69d)`.
+- Correção de memória: `config.patch` aceito; `openclaw config validate`
+  válido; backup na Hostinger sob `/data/.openclaw/backups-marina/`;
+  isolamento `session.dmScope=per-channel-peer` e visibilidade
+  `tools.sessions.visibility=self` confirmados no terminal.
+- A indexação automática apresentou **aviso**, não sucesso; exame profundo
+  encontrou cota esgotada na **API OpenAI** para embeddings. A assinatura do
+  ChatGPT não cobre os créditos dessa API. Vector/FTS SQLite disponíveis.
+  Não apagar SQLite, WAL, arquivos de sessão ou backups.
+- Depois da correção de TTS, OpenClaw recebeu o commit `a682f21` e confirmou
+  “Installed marimar-pousada from path -> /data/.openclaw/workspace/skills/marimar-pousada”.
+  Dois avisos não relacionados: device-pair não habilitado e Gateway
+  `loopback`; não abrir `gateway.bind=lan` sem plano de segurança.
+- O teste de áudio curto no WhatsApp foi **aprovado pelo proprietário**
+  nesta conversa. Não há benchmark de economia de caracteres/créditos
+  medido na ElevenLabs; não inventar percentual.
+
+### Prioridades para a próxima sessão
+
+1. **Preservar o que funciona.** Começar pelo `git status`,
+   últimos commits, este handoff e changelog. Antes de qualquer edição
+   comparar efeitos nas rotas de reserva, no WhatsApp e no áudio.
+2. **Memória OpenClaw:** se houver solicitação, resolver a falta de créditos
+   do provedor de embeddings (ou avaliar opção local compatível), depois
+   indexar e validar a pesquisa sem misturar hóspedes. Configuração da sessão
+   já foi aplicada e **não deve ser resetada desnecessariamente**.
+3. **Fotos no WhatsApp:** só classificar como funcionamento confirmado após
+   ver anexos reais no canal; checar `message(media=...)`.
+4. **Reservas confirmadas:** exigir fonte oficial read-only do PMS Desbravador
+   e permissão explícita antes de mostrar dados de hóspedes em `/reservas`.
+5. **Voz/link:** após modificações futuras, testar que a Marina ainda envia
+   URL clicável no texto, fala **somente o essencial** e não soletra link.
+   Exemplo: “Enviei o link de reserva, é só tocar nele”.
+
+### Protocolo obrigatório de continuidade entre agentes
+
+Para **cada** tarefa concluída, atualizar, no mesmo conjunto de commits:
+`docs/CHANGELOG.md` (o que mudou e por quê), `docs/ESTADO-DO-PROJETO.md`
+(status REAL e pendências), **este documento** (resumo para a próxima
+sessão), e documentação técnica específica se mudou comportamento.
+Registrar data, caminhos, commits/PRs, teste e evidência, o que não foi
+testado, procedimento de instalação separado quando houver, e pendências.
+Os arquivos `AGENTS.md` e `CLAUDE.md` orientam a leitura.
+Se um agente não tiver autorização/acesso ao servidor, dizer
+**“preparado no GitHub; pendente instalar na Hostinger”**, jamais declarar
+implantado por suposição.
+
+---
+
+
 > Atualizado em 30/09/2026, ao fim da sessão que reestruturou o treinamento da
 > Marina e redesenhou o painel. Cole a seção **PROMPT** em qualquer ferramenta
 > agêntica para retomar.
