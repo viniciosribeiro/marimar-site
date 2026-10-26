@@ -1,6 +1,8 @@
 import { fetchTarifas, validarConsulta, TIMEOUT_BUSCA } from "@/lib/worker";
 import { buildDeepLink } from "@/lib/deeplink";
 import { SeletorDatas } from "@/components/site/SeletorDatas";
+import { FormularioBuscaDisponibilidade } from "@/components/site/FormularioBuscaDisponibilidade";
+import { RolarParaResultados } from "@/components/site/RolarParaResultados";
 import { tituloQuarto, resumir, brl, pluralizar, escassez, dataBR } from "@/lib/format";
 import Link from "next/link";
 import Image from "next/image";
@@ -16,7 +18,7 @@ export const dynamic = "force-dynamic";
 /* O motor demora em datas concorridas: a busca espera até 45 s (TIMEOUT_BUSCA). */
 export const maxDuration = 60;
 
-export default async function ReservarPage({ searchParams }: { searchParams: Promise<{ check_in?: string; check_out?: string; adultos?: string; criancas?: string; bebes?: string }> }) {
+export default async function ReservarPage({ searchParams }: { searchParams: Promise<{ check_in?: string; check_out?: string; adultos?: string; criancas?: string; bebes?: string; ver_resultados?: string }> }) {
   const sp = await searchParams;
   const ci = sp.check_in; const co = sp.check_out;
   // Datas e hospedes passam pela mesma validacao das rotas de API: antes,
@@ -116,7 +118,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
 
       {/* Mesmo padrão da busca da home: campos largos e altos no celular (os
           seletores tinham a largura do número e eram difíceis de tocar). */}
-      <form className={`bg-white rounded-[calc(var(--raio)*1.5)] shadow-marca-forte border border-linha/60 p-4 sm:p-5 mb-10 grid grid-cols-2 ${temRegra ? "sm:grid-cols-6 max-w-5xl" : "sm:grid-cols-5 max-w-4xl"} gap-3`}>
+      <FormularioBuscaDisponibilidade variante="reservar" className={`bg-white rounded-[calc(var(--raio)*1.5)] shadow-marca-forte border border-linha/60 p-4 sm:p-5 mb-10 grid grid-cols-2 ${temRegra ? "sm:grid-cols-6 max-w-5xl" : "sm:grid-cols-5 max-w-4xl"} gap-3`}>
         {/* Calendário de estadia: abre no mês da entrada; manda check_in e check_out como antes. */}
         <SeletorDatas variante="reservar" entradaInicial={ci} saidaInicial={co} />
         <label className="min-w-0">
@@ -133,8 +135,14 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
             <select name="bebes" defaultValue={bebes} className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none"><option>0</option><option>1</option><option>2</option></select>
           </label>
         )}
-        <button type="submit" className="col-span-2 sm:col-span-1 self-end h-12 rounded-full bg-marca text-marca-texto hover:bg-marca-hover font-semibold shadow-marca transition-marca">Buscar</button>
-      </form>
+      </FormularioBuscaDisponibilidade>
+
+      {/* A ancora so surge apos uma busca; nunca rolar a pagina ao abrir /reservar sem datas. */}
+      {(ci && co) && (
+        <div id="resultados-disponibilidade" className="scroll-mt-24 sm:scroll-mt-28" aria-label="Resultado da consulta de disponibilidade">
+          <RolarParaResultados ativo={sp.ver_resultados === "1"} />
+        </div>
+      )}
 
       {erro && (
         <div className="text-red-700 bg-red-50 border border-red-100 p-4 rounded-lg mb-6">
@@ -160,6 +168,15 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
             <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-4 py-3 mb-6">
               ℹ️ {avisoCrianca}
             </p>
+          )}
+
+          {disponiveis.length > 0 && (
+            <div className="mb-5 flex flex-col gap-1">
+              <h2 className="font-titulo text-2xl font-bold text-tinta">
+                {pluralizar(disponiveis.length, "tipo de suíte")} disponível{disponiveis.length === 1 ? "" : "is"} para você
+              </h2>
+              <p className="text-sm text-tinta-suave">Confira as fotos, as tarifas e escolha sua acomodação.</p>
+            </div>
           )}
 
           {resultados.length === 0 ? (
