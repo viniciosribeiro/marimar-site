@@ -112,3 +112,37 @@ A **transcrição** (áudio do cliente → texto) continua sempre ElevenLabs
 e `voz-actions.ts` · `src/app/api/chat/voz`, `src/app/api/admin/voz-teste`.
 Gravado em `marina_config` (colunas da ElevenLabs, como antes) e
 `integracoes` (`voz_marina`, `chave_voz:*`), sem migration.
+
+## Economia de áudio: links não são narrados (26/10/2026)
+
+O hóspede recebe o URL completo de reservas/localização **por escrito**,
+mas o áudio da Marina não lê o endereço (isso gerava áudios de um minuto e
+custos elevados no plano ElevenLabs). A política vale para o OpenClaw Web,
+WhatsApp Oficial da Meta e chat do site:
+
+- Chat do site e WhatsApp Oficial: função pura
+  \`src/lib/voz-fala.ts:prepararFalaDaMarina()\`, executada depois de
+  validar a mensagem original e antes da chamada ao provedor.
+  Ela remove URLs, imagens Markdown e links extensos; preserva texto
+  explicativo e preços, limitando falas **com link** a 235 caracteres.
+  Se a resposta for somente um link, sintetiza uma instrução curta.
+- \`src/lib/voz.ts:sintetizar()\` também valida a fala como segunda
+  barreira antes de chamar **qualquer** provedor (ElevenLabs/OpenAI/Google).
+  O registro \`chat_voz.caracteres\` passa a refletir somente caracteres
+  efetivamente sintetizados. A resposta visível original fica intacta.
+- WhatsApp Web (OpenClaw na Hostinger) gera TTS no próprio Gateway,
+  **fora do código da Vercel**. A skill \`marimar-pousada\` foi treinada a
+  separar endereço clicável da mensagem falada, usar a diretiva de fala
+  curta \`[[tts:text]]\` onde suportada e nunca enviar URL ao TTS.
+  Isso exige **reinstalação da skill na Hostinger**; a proteção completa
+  do Gateway depende da validação de um áudio real.
+- **Nenhum parâmetro de voz, modo TTS automático, API key ou modelo foi
+  alterado.** Evitamos mudar \`tts.auto=inbound\` para \`tagged\` sem
+  validação, porque o recurso depende das diretivas do agente e pode
+  suprimir áudio na versão instalada.
+
+Teste unitário sem custo: \`npm test\`, arquivo
+\`testes/unit/voz-fala.test.ts\`. Em produção, envie um áudio solicitando
+link da reserva, confirme que o texto contém o endereço completo e que
+a resposta falada tem somente uma frase curta.
+
