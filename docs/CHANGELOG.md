@@ -1,5 +1,15 @@
 # Changelog — Marimar Site
 
+## 2026-10-26 — /reservas: central privada com mapa visual
+**Autor:** ChatGPT a pedido do proprietário. **Migration:** nenhuma.
+- Criada /reservas com tela de acesso isolada da área /admin, usuário "cecilia" e senha exclusivamente no cofre Vercel como hash scrypt (nunca no GitHub).
+- Sessão HMAC com cookie HttpOnly/Secure/SameSite Strict, path /reservas e expiração em 8 horas; login/logout POST e contenção básica de tentativas por instância (necessário rate limit persistente/WAF para escala).
+- Calendário responsivo com quartos do banco real, navegação por datas, 7/14/30 dias, busca e filtros; área de registros detalhados (titular, datas, origem, valor, pagamento, status) pronta para fonte autenticada.
+- **Importante:** o sistema só possui integração para tarifas/disponibilidade. NÃO há acesso autenticado ao ROL/PMS do Desbravador, nem tabela de reservas confirmadas no banco local. Por isso, a fonte aparece "aguardando integração", a área de registros está vazia e os dias do calendário são desconhecidos — jamais "livres" por dedução. Leads não são reservas.
+- A página e seus dados são restritos a sessão autorizada; rota noindex, força renderização dinâmica e não fornece endpoint público de hóspedes. Sem alteração do banco, do Worker, da disponibilidade, da API do WhatsApp ou de reservas reais.
+- Configuração necessária: RESERVAS_PASSWORD_SCRYPT e RESERVAS_SESSION_SECRET na Vercel (produção/preview/dev). Não compartilhar valores nem inserir senha em logs.
+
+
 ## 2026-10-26 — Envio das fotos oficiais pelo WhatsApp da Marina
 **Autor:** ChatGPT, a pedido do proprietário. **Migration:** nenhuma.
 - Identificada diferença entre site e WhatsApp: links diretos de fotos do Desbravador retornam HTTP 403 ao OpenClaw/Hostinger, mas fotos são exibidas no site via otimizador/cache da Vercel.
