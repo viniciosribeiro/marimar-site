@@ -18,7 +18,7 @@ export async function GET() {
       const data = await r.arrayBuffer();
       out.push({ tipo, status: r.status, mimetype: r.headers.get("content-type"),
         tamanho: data.byteLength, magic: Array.from(new Uint8Array(data).slice(0, 4)) });
-    } catch (e) { out.push({ tipo, erro: e.message }); }
+    } catch (e) { out.push({ tipo, erro: e instanceof Error ? e.message : String(e) }); }
   }
   return Response.json(out, { headers: { "cache-control": "no-store" } });
 }
