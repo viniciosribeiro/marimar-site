@@ -1,5 +1,14 @@
 # Changelog — Marimar Site
 
+## 2026-10-26 — Continuidade documental obrigatória (ChatGPT → Claude)
+**Autor:** ChatGPT, pedido explícito do proprietário. **Migration:** nenhuma. **Código de produção:** não alterado.
+- Atualizado o handoff `docs/HANDOFF-PROXIMO-AGENTE.md` com estado verificado, PRs, testes, confirmação humana, pendências e limites dos recursos da Marina (tarifas, fotos, TTS, memória), busca de suítes, cards, `/reservas` e `/saude`.
+- `CLAUDE.md` agora importa o handoff e changelog; `AGENTS.md` exige registrar **cada entrega relevante** nos três documentos (changelog, estado e handoff), com evidências e diferenças entre GitHub/Vercel/Hostinger.
+- Corrigida a informação de pendência anterior: a skill `marimar-pousada` **foi reinstalada na Hostinger** após PR #47 / commit `a682f21`; o proprietário testou e confirmou **“ficou perfeito”** para a correção que impede narrar URLs longas no áudio. Não alterar o comportamento aprovado sem solicitação.
+- Memória: o patch de privacidade e sessão passou na Hostinger, mas a pesquisa vetorial continua pendente por **OpenAI API 429 / crédito esgotado**, índice 1/96 arquivos e 0/93 sessões; não declarar resolvido até reconstrução e teste com cota disponível.
+- Nenhum segredo, senha, telefone de hóspede, transcrição privada ou dado de reserva confirmado foi inserido nos documentos.
+
+
 ## 2026-10-26 — Marina: links não são lidos pela voz e redução do consumo ElevenLabs
 **Autor:** ChatGPT, a pedido do proprietário. **Migration:** nenhuma.
 - Respostas do chat continuam com links clicáveis, porém \`/api/chat/voz\`, \`src/lib/whatsapp-oficial.ts\` e \`src/lib/voz.ts\` removem endereços antes de pagar pelo áudio. O texto curto é limitado a 235 caracteres quando há link, com frase breve se a resposta for só URL.
