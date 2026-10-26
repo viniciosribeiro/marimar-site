@@ -121,7 +121,7 @@ async function medir(): Promise<Dados> {
       await list({limit:1,token:blob});
     }) : NAO("Armazenamento Blob não configurado"),
     sonda("OpenFreeMap", "HTTPS GET estilo de mapa", async () => {
-      const r=await getSeguro("https://tiles.openfreemap.org/styles/liberty/style.json",6000);
+      const r=await getSeguro("https://tiles.openfreemap.org/styles/liberty",6000);
       const ct=r.headers.get("content-type")??"";
       if(!ct.includes("json")) throw new Error("invalid map");
     }),
