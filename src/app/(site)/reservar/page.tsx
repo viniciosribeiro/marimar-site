@@ -187,7 +187,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           ) : (
             <>
               {disponiveis.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6 mb-10">
                   {disponiveis.map((r: any) => <CardQuarto key={r.id} r={r} noites={noites} />)}
                 </div>
               )}
@@ -197,7 +197,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
                   <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
                     Sem disponibilidade nessas datas
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
                     {esgotados.map((r: any) => <CardQuarto key={r.id} r={r} noites={noites} />)}
                   </div>
                 </div>
@@ -240,83 +240,96 @@ function Adicionais({ itens, destacarBebe }: { itens: Adicional[]; destacarBebe:
 
 function CardQuarto({ r, noites }: { r: any; noites: number }) {
   return (
-    <div className={`bg-white rounded-marca shadow overflow-hidden flex flex-col ${!r.disponivel ? "opacity-60" : ""}`}>
-      <div className="relative h-48 bg-gradient-to-br from-marca-borda to-marca-suave">
+    <article className={`group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-linha/60 bg-white shadow-[0_5px_20px_-12px_rgba(13,49,55,0.35)] transition-shadow duration-200 hover:shadow-[0_12px_28px_-14px_rgba(13,49,55,0.30)] ${!r.disponivel ? "opacity-75" : ""}`}>
+      <div className="relative aspect-[1.45] sm:aspect-[1.65] overflow-hidden bg-gradient-to-br from-marca-borda to-marca-suave">
         {r.fotoCapa ? (
           <Image
             src={r.fotoCapa}
             alt={r.nomeLocal}
             fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover"
+            sizes="(max-width: 640px) 44vw, (max-width: 1024px) 45vw, (max-width: 1280px) 30vw, 23vw"
+            className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-[1.035]"
           />
         ) : (
-          <div className="h-full flex items-center justify-center"><span className="text-5xl">🏨</span></div>
+          <div className="flex h-full items-center justify-center text-3xl sm:text-5xl" aria-label="Sem foto disponível">🏨</div>
         )}
         {r.alertaEstoque && (
-          <span className="absolute top-3 left-3 bg-amber-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+          <span className="absolute bottom-2 left-2 right-2 w-fit max-w-[calc(100%-1rem)] rounded-md bg-amber-500/95 px-2 py-1 text-[10px] font-bold leading-tight text-white shadow sm:bottom-auto sm:top-3 sm:left-3 sm:right-auto sm:rounded-full sm:px-3 sm:text-xs">
             {r.alertaEstoque}
           </span>
         )}
       </div>
 
-      <div className="p-4 flex flex-col flex-1">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="font-semibold text-lg leading-tight">{r.nomeLocal}</h3>
-          {r.catNome && <span className="text-xs text-marca-ativa bg-marca-sutil px-2 py-0.5 rounded shrink-0">{tituloQuarto(r.catNome)}</span>}
+      <div className="flex flex-1 flex-col p-2.5 sm:p-4">
+        <div className="min-w-0">
+          <h3 className="min-h-[2.5em] line-clamp-2 font-titulo text-[0.96rem] font-bold leading-[1.25] text-tinta sm:min-h-0 sm:text-xl">{r.nomeLocal}</h3>
+          {r.catNome && (
+            <span className="mt-1.5 inline-flex max-w-full truncate rounded-full bg-marca-sutil px-2 py-0.5 text-[10px] font-semibold text-marca-ativa sm:text-xs">
+              {tituloQuarto(r.catNome)}
+            </span>
+          )}
+          <p className="mt-2 text-[11px] leading-snug text-tinta-suave sm:text-sm">
+            <span aria-hidden="true">👥 </span>Até {pluralizar(r.ocupacao_max, "pessoa")}
+          </p>
+          <p className="mt-2 hidden text-xs leading-relaxed text-tinta-suave sm:line-clamp-2">{resumir(r.descricaoLocal, 105)}</p>
+          {r.cama && <p className="mt-1 hidden text-xs text-tinta-suave sm:block">🛏 {r.cama}{r.metragem ? ` · ${r.metragem}m²` : ""}</p>}
+          {r.estadia_minima > 1 && <p className="mt-1 text-[10px] leading-snug text-amber-800 sm:text-xs">Mínimo: {pluralizar(r.estadia_minima, "noite")}</p>}
         </div>
 
-        <p className="text-xs text-gray-500 mb-2 leading-relaxed">{resumir(r.descricaoLocal, 120)}</p>
-
-        <div className="text-xs text-gray-500 space-y-1 mb-3">
-          {r.cama && <p>🛏 {r.cama}{r.metragem ? ` • ${r.metragem}m²` : ""}</p>}
-          <p>👥 Até {pluralizar(r.ocupacao_max, "pessoa")}</p>
-          {r.estadia_minima > 1 && <p>🗓 Mínimo de {pluralizar(r.estadia_minima, "noite")}</p>}
-        </div>
-
-        <div className="border-t pt-3 mb-3 mt-auto">
-          <div className="flex items-baseline gap-1">
-            <span className="text-sm text-gray-500">Diária:</span>
-            <span className="text-xl font-bold text-marca">{brl(r.diaria)}</span>
+        <div className="mt-auto pt-3">
+          <div className="grid grid-cols-2 gap-1 border-t border-linha/70 pt-2.5 sm:gap-3 sm:pt-3">
+            <div className="min-w-0">
+              <p className="text-[10px] leading-tight text-tinta-suave sm:text-xs">Diária</p>
+              <p className="mt-0.5 whitespace-nowrap text-[clamp(0.78rem,2.75vw,1.25rem)] font-bold leading-tight tracking-tight text-marca">{brl(r.diaria)}</p>
+            </div>
+            <div className="min-w-0 border-l border-linha/70 pl-1.5 sm:pl-3">
+              <p className="whitespace-nowrap text-[9px] leading-tight text-tinta-suave sm:text-xs">Total {pluralizar(noites, "noite")}</p>
+              <p className="mt-0.5 whitespace-nowrap text-[clamp(0.78rem,2.75vw,1.25rem)] font-extrabold leading-tight tracking-tight text-tinta">{brl(r.totalFinal)}</p>
+            </div>
           </div>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-sm text-gray-500">Total {pluralizar(noites, "noite")}:</span>
-            <span className="text-xl font-bold text-marca">{brl(r.totalFinal)}</span>
-          </div>
-          {r.valor_adulto > 0 && <p className="text-xs text-gray-400 mt-1">Por adulto: {brl(r.valor_adulto)}/noite</p>}
-          {r.valorBebes > 0 && <p className="text-xs text-gray-400">Bebê de colo: {brl(r.valorBebes)} (pago à parte na pousada)</p>}
+          {r.valor_adulto > 0 && <p className="mt-1.5 text-[10px] leading-snug text-tinta-suave sm:text-xs">Adulto: {brl(r.valor_adulto)}/noite</p>}
+          {r.valorBebes > 0 && <p className="mt-1 text-[10px] leading-snug text-tinta-suave sm:text-xs">Bebê de colo: {brl(r.valorBebes)} (à parte na pousada)</p>}
           {r.total_criancas > 0 && (
-            <p className="text-xs text-gray-400">
+            <p className="mt-1 text-[10px] leading-snug text-tinta-suave sm:text-xs">
               Crianças: {brl(r.total_criancas)}
               {r.crianca_valor_variavel && r.valor_crianca_max ? ` (${brl(r.valor_crianca)}–${brl(r.valor_crianca_max)}/noite)` : ""}
             </p>
           )}
         </div>
 
-        {!r.disponivel ? (
-          <span className="block text-center text-sm text-gray-600 bg-gray-100 py-2 rounded">
-            {r.motivo_indisponivel ? r.motivo_indisponivel.charAt(0).toUpperCase() + r.motivo_indisponivel.slice(1) : "Esgotado no período"}
-          </span>
-        ) : r.avisoEstadia ? (
-          <span className="block text-center text-sm text-amber-800 bg-amber-50 py-2 rounded">
-            Exige mínimo de {pluralizar(r.avisoEstadia, "noite")}
-          </span>
-        ) : (
-          <div className="space-y-2">
-            <a href={r.deepLink} target="_blank" className="block text-center bg-marca text-marca-texto text-sm px-4 py-2.5 rounded-lg hover:bg-marca-hover font-medium">
-              Reservar no site oficial
-            </a>
-            {r.whatsappUrl && (
-              <a href={r.whatsappUrl} target="_blank" className="block text-center border-2 border-green-500 text-green-600 text-sm px-4 py-2.5 rounded-lg hover:bg-green-50 font-medium">
-                💬 Consultar no WhatsApp
+        <div className="mt-3 space-y-2">
+          {!r.disponivel ? (
+            <span className="block rounded-lg bg-gray-100 px-2 py-3 text-center text-xs leading-snug text-gray-600">
+              {r.motivo_indisponivel ? r.motivo_indisponivel.charAt(0).toUpperCase() + r.motivo_indisponivel.slice(1) : "Esgotado no período"}
+            </span>
+          ) : r.avisoEstadia ? (
+            <span className="block rounded-lg bg-amber-50 px-2 py-3 text-center text-xs leading-snug text-amber-800">
+              Exige mínimo de {pluralizar(r.avisoEstadia, "noite")}
+            </span>
+          ) : (
+            <>
+              <a href={r.deepLink} target="_blank" rel="noopener noreferrer" aria-label={`Reservar ${r.nomeLocal} no site oficial`}
+                className="flex min-h-10 items-center justify-center rounded-lg bg-marca px-2 py-2 text-center text-[12px] font-semibold text-marca-texto transition-colors hover:bg-marca-hover sm:min-h-11 sm:text-sm">
+                Reservar
               </a>
-            )}
-            {r.slugLocal && (
-              <Link href={`/quartos/${r.slugLocal}`} className="block text-center text-marca text-xs hover:underline">Ver detalhes do quarto</Link>
-            )}
-          </div>
-        )}
+              <div className="grid grid-cols-2 items-stretch gap-1.5 sm:gap-2">
+                {r.whatsappUrl ? (
+                  <a href={r.whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label={`Consultar ${r.nomeLocal} pelo WhatsApp`}
+                    className="flex min-h-9 items-center justify-center rounded-lg border border-green-500 px-1 text-center text-[10px] font-semibold leading-none text-green-700 transition-colors hover:bg-green-50 sm:min-h-10 sm:text-xs">
+                    WhatsApp
+                  </a>
+                ) : <span />}
+                {r.slugLocal ? (
+                  <Link href={`/quartos/${r.slugLocal}`} aria-label={`Ver detalhes do quarto ${r.nomeLocal}`}
+                    className="flex min-h-9 items-center justify-center rounded-lg border border-marca/30 px-1 text-center text-[10px] font-semibold leading-none text-marca transition-colors hover:bg-marca-sutil sm:min-h-10 sm:text-xs">
+                    Detalhes
+                  </Link>
+                ) : <span />}
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </article>
   );
 }
