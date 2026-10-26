@@ -1,5 +1,16 @@
 # Changelog — Marimar Site
 
+## 2026-10-26 — /saude: Escritório visual da Marina (isolado)
+**Autor:** ChatGPT, a pedido do proprietário.
+**Migration:** nenhuma. **Deploy:** Vercel, branch isolada até validação.
+
+- Adicionada a nova rota pública `/saude`, independente do layout `(site)`. Nenhum código existente de reservas, chat, login, banco, menu, domínios ou configurações foi modificado.
+- Marina simplificada em SVG/CSS e escritório 2.5D pastel navegável: rondas, módulos, dependências, filtros, catálogo de 20 serviços, alertas e aprovações fictícias.
+- `/api/saude/status` é GET, com cache de 5 minutos. Sondas reais somente de leitura: API do próprio site, raiz do Worker, consulta de tarifas para período futuro (sem reserva) e `SELECT 1` no Neon. Não expõe segredos.
+- Serviços sem integração recebem estado `não verificado`, sem disponibilidade inventada. O gráfico e as simulações são ilustrativos. A aprovação visual NUNCA executa mudanças reais.
+- Segurança e roteiro completo para o Claude: `docs/saude-marina.md`. Acompanhamento real da Marina/WhatsApp, geolocalização agregada e histórico persistente continuam pendentes.
+
+
 ## 2026-10-26 — Correcao de regiao para consultas de disponibilidade (GRU)
 **Autor:** ChatGPT, a pedido do proprietario; documentado para continuidade pelo Claude.
 **Migration:** nenhuma.
