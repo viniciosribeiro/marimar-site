@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { LoaderCircle, Search } from "lucide-react";
 
@@ -17,15 +17,34 @@ export function FormularioBuscaDisponibilidade({
   variante: "home" | "reservar";
 }) {
   const [consultando, setConsultando] = useState(false);
+
+  // O navegador pode preservar a tela antiga no voltar (BFCache).
+  useEffect(() => {
+    const aoVoltar = () => setConsultando(false);
+    window.addEventListener("pageshow", aoVoltar);
+    return () => window.removeEventListener("pageshow", aoVoltar);
+  }, []);
+
   function aoEnviar(evento: FormEvent<HTMLFormElement>) {
     // SeletorDatas bloqueia envios sem check-in/check-out e abre o calendario.
-    // Nessa situacao NAO mostrar carregamento.
     if (evento.defaultPrevented) return;
     const formulario = evento.currentTarget;
     const entrada = (formulario.elements.namedItem("check_in") as HTMLInputElement | null)?.value;
     const saida = (formulario.elements.namedItem("check_out") as HTMLInputElement | null)?.value;
     if (!entrada || !saida) return;
+
+    // Forcar navegacao de documento GET: elimina falhas intermitentes na
+    // transicao client-side/RSC que deixavam "This page couldn't load".
+    // Mantem todos os parametros identicos ao formulario original.
+    evento.preventDefault();
+    const url = new URL(action || "/reservar", window.location.origin);
+    const parametros = new URLSearchParams();
+    new FormData(formulario).forEach((valor, chave) => {
+      if (typeof valor === "string") parametros.append(chave, valor);
+    });
+    url.search = parametros.toString();
     flushSync(() => setConsultando(true));
+    window.location.assign(url.toString());
   }
 
   const home = variante === "home";
