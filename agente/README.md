@@ -135,6 +135,36 @@ site em `tts.providers.<provedor>.apiKey` (decisão do Vinicios): ela vale por
 cima do ambiente, e o WhatsApp usa a mesma conta do site.
 
 
+## Correção de 26/10/2026 — Fotos como anexos no WhatsApp
+
+O OpenClaw da Hostinger recebia HTTP 403 ao baixar as imagens diretamente
+do Desbravador, embora o site exibisse fotos na galeria com cache da Vercel.
+Agora `GET /api/agent/quartos` informa `fotos[].url_whatsapp`, um caminho
+de bytes de imagem do próprio site: `/api/midia-quarto/<slug>/<indice>`.
+A rota pública só permite fotos de quartos ativos, visíveis para a Marina,
+registradas no banco, origens aprovadas e MIME JPEG/PNG/WebP, até 10 MB.
+Executa na Vercel/gru1 e tem fallback no otimizador/cache da própria Marimar.
+
+A skill `marimar-pousada` exige enviar a foto como mídia com
+`message(action=send, channel=whatsapp, media=url_whatsapp)`, nunca
+abrir o Browser/Desbravador nem colar links diretos do motor. Em erro,
+avisa e oferece o endereço oficial da suíte.
+
+**Instalação real na Hostinger (depois do merge PR #38):**
+
+```bash
+cd ~/marimar-site
+git pull --ff-only
+openclaw skills install ./agente/skills/marimar-pousada --force
+openclaw skills list
+```
+
+A skill precisa estar `ready`. Peça pelo WhatsApp de teste "Mande 2 fotos
+da Suíte Família", confirme que chegaram como **imagens anexadas**, e não
+somente como links. Se houver falha, abra os detalhes do uso da ferramenta
+`Message` para ver o erro de download/entrega. **A Vercel não consegue
+instalar essa cópia da skill automaticamente na Hostinger.**
+
 ## A skill `consulta-desbravador` (preço e vaga)
 
 **Correção de 26/10/2026:** o Worker Desbravador passou a retornar HTTP 502

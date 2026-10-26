@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **Fotos da Marina no WhatsApp — 26/10/2026:** o OpenClaw na Hostinger recebe HTTP 403 ao tentar baixar imagens originais do Desbravador. Rota `/api/midia-quarto/[slug]/[indice]` prepara bytes JPEG/PNG/WebP de fotos ativas e visíveis no banco via Vercel/gru1, com fallback do cache da imagem do próprio site; `/api/agent/quartos` fornece `fotos[].url_whatsapp`; skill `marimar-pousada` passa este URL no campo `media` da ferramenta `message` (máx. 3 anexos), nunca pelo Browser. **Pendente:** reinstalar skill no OpenClaw/Hostinger e testar anexo real num WhatsApp; isso não é feito por deploy Vercel. Código isolado de banco/reservas/preços.
+
+
 > **Marina WhatsApp — ajuste de 26/10/2026:** a skill `consulta-desbravador` foi corrigida para usar `/api/agent/disponibilidade` via Vercel/`gru1` e não mais chamar o Worker diretamente da Hostinger (502 externo). Incluídos cinco testes de regressão, instruções de instalação e proteção contra preços inventados. **PENDENTE:** reinstalar `consulta-desbravador` e `marimar-pousada` no OpenClaw da Hostinger, validar `MARIMAR_API_KEY` e testar WhatsApp real; o merge no GitHub sozinho não atualiza habilidades instaladas. Sem alteração de banco ou motor.
 
 
