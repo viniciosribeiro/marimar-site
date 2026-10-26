@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import SaudeV2 from "./SaudeV2";
+import SaudeCecilia from "./SaudeCecilia";
 
 export const metadata: Metadata = {
-  title: "Saúde da Plataforma | Pousada Marimar",
-  description: "Central pública de observabilidade da Pousada Marimar. Estado dos serviços, dependências e a Marina acompanhando a plataforma.",
+  title: "Marina cuida da Pousada | Saúde da Marimar",
+  description: "A Marina explica, de forma simples, as verificações reais de saúde do site, das reservas e do WhatsApp da Pousada Marimar.",
   robots: { index: false, follow: false },
 };
 
 export default function SaudePage() {
-  return <SaudeV2 />;
+  return <SaudeCecilia />;
 }
