@@ -33,7 +33,7 @@ export function origemFotoPermitida(raw: string): boolean {
       return /^\/reservas\/images\/hoteis\/[a-zA-Z0-9_./-]+\.(jpe?g|png|webp)$/i.test(u.pathname) && !u.pathname.includes("..");
     }
     return /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/.test(u.hostname) &&
-      u.pathname.startsWith("/midias/") && !u.pathname.includes("..");
+      u.pathname.length > 1 && !u.pathname.includes("..");
   } catch { return false; }
 }
 
