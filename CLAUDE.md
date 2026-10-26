@@ -1,12 +1,13 @@
 @AGENTS.md
 @docs/ESTADO-DO-PROJETO.md
 @docs/HANDOFF-PROXIMO-AGENTE.md
-@docs/CHANGELOG.md
 
 # Instrucao persistente ao Claude
 
 Leia PRIMEIRO a secao **ESTADO ATUAL** (mais recente) de
-`docs/HANDOFF-PROXIMO-AGENTE.md`. Trate os planos de setembro de 2026
+`docs/HANDOFF-PROXIMO-AGENTE.md`. Consulte o topo de
+`docs/CHANGELOG.md` quando precisar dos detalhes historicos (nao importe
+todo o changelog em cada contexto: o arquivo e longo). Trate os planos de setembro de 2026
 como historico, nao tarefas automaticamente pendentes.
 
 O proprietario exige preservar todas as decisoes, correcoes, validacoes
