@@ -173,7 +173,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           {disponiveis.length > 0 && (
             <div className="mb-5 flex flex-col gap-1">
               <h2 className="font-titulo text-2xl font-bold text-tinta">
-                {pluralizar(disponiveis.length, "tipo de suíte")} disponível{disponiveis.length === 1 ? "" : "is"} para você
+                {pluralizar(disponiveis.length, "tipo de suíte", "tipos de suíte")} disponível{disponiveis.length === 1 ? "" : "is"} para você
               </h2>
               <p className="text-sm text-tinta-suave">Confira as fotos, as tarifas e escolha sua acomodação.</p>
             </div>
