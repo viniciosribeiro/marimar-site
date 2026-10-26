@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **Marina WhatsApp — ajuste de 26/10/2026:** a skill `consulta-desbravador` foi corrigida para usar `/api/agent/disponibilidade` via Vercel/`gru1` e não mais chamar o Worker diretamente da Hostinger (502 externo). Incluídos cinco testes de regressão, instruções de instalação e proteção contra preços inventados. **PENDENTE:** reinstalar `consulta-desbravador` e `marimar-pousada` no OpenClaw da Hostinger, validar `MARIMAR_API_KEY` e testar WhatsApp real; o merge no GitHub sozinho não atualiza habilidades instaladas. Sem alteração de banco ou motor.
+
+
 > **Atualização /saude V2 (26/10/2026):** reorganização da interface com Marina SVG expressiva (olhos/cabeça/braços/pernas), navegação e sondas reais de leitura em src/app/api/saude/status/route.ts. Nenhuma correção automática. OpenClaw/WhatsApp, ElevenLabs, Blob, DNS/TLS e tabelas têm verificações específicas; alertas externos e webhooks permanecem não verificados por dependerem de envios. Histórico do navegador, não uptime 30 dias. Ver docs/saude-marina.md.
 
 

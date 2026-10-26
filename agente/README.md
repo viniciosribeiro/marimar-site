@@ -137,19 +137,33 @@ cima do ambiente, e o WhatsApp usa a mesma conta do site.
 
 ## A skill `consulta-desbravador` (preço e vaga)
 
-Até 30/09/2026 ela vivia só no servidor, fora deste repositório — e era a
-causa do "Marina pede a idade das crianças": consultava o motor direto e
-tinha a instrução de nunca informar valor de criança quando o motor manda
-o aviso de faixa etária (ele manda sempre). Agora está versionada em
-`agente/skills/consulta-desbravador/` e, antes de consultar o motor,
-pergunta ao site como montar a consulta (`/api/agent/regras`, a mesma conta
-da busca do site). Sem resposta do site, age como antes.
+**Correção de 26/10/2026:** o Worker Desbravador passou a retornar HTTP 502
+quando consultado diretamente de fora da região correta. O site já foi
+corrigido para executar na Vercel em São Paulo (`gru1`). Por isso a skill
+`consulta-desbravador` agora chama **somente** a rota autenticada
+`/api/agent/disponibilidade` no site da Marimar, que calcula ocupação, consulta
+o Worker em `gru1` e devolve valores e disponibilidade reais. A Hostinger
+não deve mais chamar `pousadahub.*.workers.dev/tarifas` diretamente.
+
+A skill depende de `MARIMAR_API_KEY` no ambiente do OpenClaw (igual à
+`AGENT_API_KEY` da Vercel). A ausência ou uma chave errada retorna erro claro
+sem preço inventado. `MARIMAR_SITE_URL` é opcional: o padrão agora é
+`https://www.pousadamarimarilhadomel.com.br`.
+
+O script mantém o JSON esperado pela Marina, mas não afirma quantas unidades
+restam, fotos ou estadia mínima: esses campos não vêm na rota autenticada.
+Testes de regressão: `node --test testes/unit/consulta-desbravador.test.mjs`.
+
+**Atenção:** publicar no GitHub não atualiza a cópia instalada na Hostinger.
+Depois do merge, um operador autorizado precisa executar os comandos abaixo
+no servidor da Marina e fazer uma consulta real pelo WhatsApp.
 
 Instalar (terminal da Hostinger, dentro de `marimar-site`, depois do merge):
 
 ```
-cp -r /data/.openclaw/workspace/skills/consulta-desbravador ~/backup-consulta-desbravador
-git pull
+cp -r /data/.openclaw/workspace/skills/consulta-desbravador ~/backup-consulta-desbravador-20261026
+# No clone do repositorio marimar-site na Hostinger:
+git pull --ff-only
 openclaw skills install ./agente/skills/consulta-desbravador --force
 openclaw skills install ./agente/skills/marimar-pousada --force
 openclaw skills list

@@ -1,88 +1,74 @@
 /**
- * Consulta ao vivo de vaga e preço — skill consulta-desbravador.
+ * Consulta de tarifas da Marina via API autenticada do site.
+ * A Vercel executa o acesso ao Worker Desbravador em gru1 (Sao Paulo).
+ * NAO chamar o Worker direto da Hostinger: requisicoes externas podem receber 502.
  *
- *   node consultar-api.mjs <checkin> <checkout> <adultos> <criancas> [bebes]
- *
- * `criancas` = crianças que NÃO são de colo; `bebes` = de colo.
- *
- * Desde 30/09/2026, antes de ir ao motor, pergunta ao site da pousada
- * (/api/agent/regras) como montar a consulta — a mesma conta que a busca do
- * site faz. Com a regra da pousada ("criança que não é de colo paga como
- * adulto"), as crianças vão ao motor como adultos, o bebê fica fora e o
- * aviso de faixa etária do motor deixa de valer. Se o site não responder, a
- * consulta segue como antes (crianças ao motor, com o aviso dele).
- *
- * Ambiente: MARIMAR_API_KEY (a mesma da skill marimar-pousada) e,
- * opcional, MARIMAR_SITE_URL (padrão https://marimar-site.vercel.app).
- * Versionado em agente/skills/consulta-desbravador no repositório do site.
+ * node consultar-api.mjs <checkin> <checkout> <adultos> <criancas> [bebes]
+ * MARIMAR_API_KEY deve corresponder a AGENT_API_KEY da Vercel.
+ * MARIMAR_SITE_URL e opcional (padrao: dominio publico da Marimar).
  */
-const API = process.env.DESBRAVADOR_API_URL || 'https://pousadahub.viniciosribeiro.workers.dev/tarifas'; // variável só para teste local
-const SLUG = 'pousada-ilha-do-mel-marimar';
-const SITE = (process.env.MARIMAR_SITE_URL || 'https://marimar-site.vercel.app').replace(/\/+$/, '');
+const SITE = (process.env.MARIMAR_SITE_URL || 'https://www.pousadamarimarilhadomel.com.br').replace(/\/+$/, '');
 const CHAVE = process.env.MARIMAR_API_KEY || '';
-
+const SLUG = 'pousada-ilha-do-mel-marimar';
 const [, , checkin, checkout, adArg = '2', chArg = '0', bbArg = '0'] = process.argv;
-const adultos = Math.max(1, Number(adArg) || 0);
-const criancas = Math.max(0, Number(chArg) || 0);
-const bebes = Math.max(0, Number(bbArg) || 0);
-const out = (o) => { console.log(JSON.stringify(o)); process.exit(0); };
+const inteiro = (s, minimo, maximo) => {
+  const n = Number(s);
+  return Number.isInteger(n) ? Math.min(maximo, Math.max(minimo, n)) : minimo;
+};
+const adultos = inteiro(adArg, 1, 20);
+const criancas = inteiro(chArg, 0, 20);
+const bebes = inteiro(bbArg, 0, 10);
+const out = (dados) => { console.log(JSON.stringify(dados)); process.exit(0); };
+const dataValida = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !Number.isNaN(Date.parse(s)) && new Date(`${s}T12:00:00Z`).toISOString().slice(0, 10) === s;
+if (!dataValida(checkin) || !dataValida(checkout) || checkout <= checkin) out({ ok: false, erro: 'Datas invalidas ou periodo invertido' });
+if (!CHAVE) out({ ok: false, erro: 'MARIMAR_API_KEY ausente na Hostinger. Configure a mesma AGENT_API_KEY da Vercel.' });
 
-if (!/^\d{4}-\d{2}-\d{2}$/.test(checkin || '') || !/^\d{4}-\d{2}-\d{2}$/.test(checkout || '')) out({ ok: false, erro: 'Datas invalidas' });
-if (new Date(checkout) <= new Date(checkin)) out({ ok: false, erro: 'Saida deve ser depois da entrada' });
-const noites = Math.round((Date.parse(checkout) - Date.parse(checkin)) / 86400000);
-
-/* 1. A regra da pousada: quem vai ao motor como adulto, quanto paga o bebê. */
-let regra = null;
-if (CHAVE) {
-  try {
-    const qs = new URLSearchParams({ adultos, criancas, bebes, noites });
-    const r = await fetch(`${SITE}/api/agent/regras?${qs}`, {
-      headers: { authorization: `Bearer ${CHAVE}` }, signal: AbortSignal.timeout(8000),
-    });
-    if (r.ok) regra = (await r.json())?.dados?.ocupacao ?? null;
-  } catch { /* site fora do ar: segue como antes */ }
-}
-const aplicada = Boolean(regra?.regraAplicada);
-const adMotor = aplicada ? regra.adultosMotor : adultos;
-const chMotor = aplicada ? regra.criancasMotor : criancas + bebes;
-const valorBebes = aplicada ? Number(regra.valorBebes || 0) : 0;
-
-const link = 'https://reservas.desbravador.com.br/hotel-app/' + SLUG + '/reservation?checkin=' + checkin + '&checkout=' + checkout + '&adults=' + adMotor + '&child1=' + chMotor;
-
-/* 2. O motor, com a consulta já montada pela regra. */
-const url = API + '?slug=' + SLUG + '&check_in=' + checkin + '&check_out=' + checkout + '&adultos=' + adMotor + '&criancas=' + chMotor;
+const qs = new URLSearchParams({ check_in: checkin, check_out: checkout, adultos: String(adultos), criancas: String(criancas), bebes: String(bebes) });
 let d;
 try {
-  const r = await fetch(url, { signal: AbortSignal.timeout(60000) });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const r = await fetch(`${SITE}/api/agent/disponibilidade?${qs}`, {
+    headers: { Authorization: `Bearer ${CHAVE}`, Accept: 'application/json' },
+    signal: AbortSignal.timeout(65000),
+    cache: 'no-store',
+  });
+  if (!r.ok) {
+    if (r.status === 401 || r.status === 403) throw new Error(`API autenticada recusou acesso (HTTP ${r.status}); confira MARIMAR_API_KEY`);
+    throw new Error(`API de disponibilidade retornou HTTP ${r.status}`);
+  }
   d = await r.json();
+  if (d?.ok !== true || !Array.isArray(d.dados)) throw new Error('API nao retornou dados de disponibilidade validos');
 } catch (e) {
-  out({ ok: false, erro: 'Falha na consulta: ' + e.message, link });
+  out({ ok: false, erro: `Falha na consulta: ${e.message}` });
 }
 
-const quartos = (d.quartos || []).map((q) => ({
+const oc = d.ocupacao || {};
+const adultoMotor = Number.isInteger(oc.adultosMotor) ? oc.adultosMotor : adultos;
+const criancaMotor = Number.isInteger(oc.criancasMotor) ? oc.criancasMotor : criancas + bebes;
+const linkFallback = 'https://reservas.desbravador.com.br/hotel-app/' + SLUG + '/reservation?' + new URLSearchParams({
+  checkin, checkout, adults: String(adultoMotor), child1: String(criancaMotor),
+});
+const link = d.dados.find((q) => typeof q.deep_link === 'string' && q.deep_link.startsWith('https://reservas.desbravador.com.br/'))?.deep_link || linkFallback;
+const numero = (v) => typeof v === 'number' && Number.isFinite(v) ? v : null;
+const disponiveis = d.dados.filter((q) => q.disponivel === true);
+const indisponiveis = d.dados.filter((q) => q.disponivel === false);
+const quartos = disponiveis.map((q) => ({
   codigo: q.id, quarto: q.nome, capacidade: q.ocupacao_max,
-  // total_geral já inclui crianças; o bebê pago (quando houver) é somado aqui.
-  total: q.total_geral == null ? null : q.total_geral + valorBebes,
-  diaria_media: q.diaria, parcelas: null,
-  unidades: q.unidades_disponiveis, ultima_unidade: q.unidades_disponiveis === 1,
-  estadia_minima: q.estadia_minima, comodidades: q.comodidades,
-  fotos: (q.fotos || []).slice(0, 4),
+  total: numero(q.total), diaria_media: numero(q.diaria),
+  // A rota do agente ainda nao devolve estoque unitario nem imagens.
+  // Nunca deduzir que e a ultima unidade.
+  unidades: null, ultima_unidade: null, estadia_minima: null,
+  comodidades: [], fotos: [],
 }));
-
-const esgotados = (d.indisponiveis || []).map((q) => ({ quarto: q.nome, motivo: q.motivo_indisponivel }));
-
+const noites = Math.round((Date.parse(checkout) - Date.parse(checkin)) / 86400000);
 out({
-  ok: true, pousada: 'Pousada Marimar',
-  checkin, checkout, adultos, criancas, bebes, noites: d.noites,
+  ok: true, pousada: 'Pousada Marimar', checkin, checkout, adultos, criancas, bebes, noites,
   tem_disponibilidade: quartos.length > 0,
-  quartos, esgotados,
-  estadia_minima: Math.max(0, ...quartos.map((q) => q.estadia_minima || 0)),
-  // Com a regra da pousada aplicada, o aviso de faixa etária do motor não vale.
-  aviso_crianca: aplicada ? null : d.aviso_crianca || null,
-  regra_criancas: aplicada ? regra.explicacao : null,
-  valor_bebes: aplicada ? valorBebes : null,
-  link_reserva: link,
-  consultado_em: new Date().toISOString(),
-  nota: 'Valores ao vivo do motor. Total ja inclui as noites do periodo' + (aplicada ? ' e a regra de criancas da pousada.' : '.'),
+  quartos,
+  esgotados: indisponiveis.map((q) => ({ quarto: q.nome, motivo: 'Indisponivel no periodo consultado' })),
+  estadia_minima: null, aviso_crianca: oc.regraAplicada ? null : (criancas || bebes ? 'Confirme a regra de criancas com a recepcao.' : null),
+  regra_criancas: oc.regraAplicada ? (oc.explicacao || null) : null,
+  valor_bebes: numero(oc.valorBebes),
+  link_reserva: link, fonte: d.fonte || 'worker',
+  consultado_em: d.consultado_em || new Date().toISOString(),
+  nota: 'Disponibilidade e totais obtidos agora da API autenticada do site Marimar (Vercel/gru1). Nao inventar valores quando total for null.',
 });

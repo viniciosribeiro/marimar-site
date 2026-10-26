@@ -1,5 +1,14 @@
 # Changelog — Marimar Site
 
+## 2026-10-26 — Marina WhatsApp: tarifas via API do site em gru1
+**Autor:** ChatGPT, a pedido do proprietário. **Migration:** nenhuma.
+- A skill `consulta-desbravador` deixou de acessar diretamente o Worker Cloudflare a partir da Hostinger (HTTP 502 geográfico). Agora consulta a rota autenticada `/api/agent/disponibilidade` do site na Vercel (região `gru1`).
+- Disponibilidade, totais e regras de crianças/bebês são os mesmos dados do site; erros 401/5xx retornam explicitamente, sem preço simulado. A skill não presume estoque unitário, fotos ou estadia mínima que a rota atual não expõe.
+- Atualizada a orientação da skill `marimar-pousada`, o guia de instalação na Hostinger e os testes (5 cenários com servidor HTTP local, integrados ao `npm test`).
+- **Pendente operacional importante:** instalar as duas skills atualizadas no OpenClaw da Hostinger e testar consulta com um WhatsApp real. Merge/publicação no GitHub não substitui esse passo; não foi feita mudança automática no servidor da Marina.
+- Sem modificações no Next.js, API de reservas, banco, chaves, motor Desbravador ou configurações da Vercel.
+
+
 ## 2026-10-26 — /saude V2: organização e sondagem real de serviços
 **Autor:** ChatGPT, a pedido do proprietário. **Migration:** nenhuma.
 - Revisada a tela existente /saude (não criada imagem): novo SaudeV2.tsx e CSS isolado, navegação direta, grade de módulos, detalhe por serviço, status sem estimativas fictícias.

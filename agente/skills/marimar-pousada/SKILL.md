@@ -25,7 +25,7 @@ as que mais tentam a improvisação.
 
 | Pergunta | Onde buscar |
 |---|---|
-| "Tem vaga dia X?" · "Quanto custa?" | `consulta-desbravador` — já aplica a regra de crianças e bebês da pousada. Se ela falhar, `/api/agent/disponibilidade` (abaixo) faz o mesmo |
+| "Tem vaga dia X?" · "Quanto custa?" | `consulta-desbravador` — já usa `/api/agent/disponibilidade` da Vercel, com regra de crianças e bebês. Se falhar, não consultar o Worker diretamente: informar a indisponibilidade e oferecer o link oficial/recepção |
 | Todo o resto | **esta skill** |
 
 Se a pergunta misturar as duas ("tem vaga no feriado e aceita cachorro?"),
@@ -197,7 +197,7 @@ pode consultar não fica calado: improvisa. Já aconteceu aqui.
 | `/api/agent/chamados/resposta` (POST) | **Repassar a resposta da equipe** — o site entrega ao cliente |
 | `/api/agent/aprendizado/uso` (POST) | Registrar que você usou algo aprendido |
 
-Para datas, vagas e tarifas, a `consulta-desbravador` já tem o caminho certo.
+Para datas, vagas e tarifas, use `consulta-desbravador`: ela chama a API autenticada da Marimar na Vercel. Não use o Worker Cloudflare diretamente pelo servidor da Hostinger.
 
 ### Sobre os documentos
 
