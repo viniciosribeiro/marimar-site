@@ -1,5 +1,15 @@
 # Changelog — Marimar Site
 
+## 2026-10-26 — Envio das fotos oficiais pelo WhatsApp da Marina
+**Autor:** ChatGPT, a pedido do proprietário. **Migration:** nenhuma.
+- Identificada diferença entre site e WhatsApp: links diretos de fotos do Desbravador retornam HTTP 403 ao OpenClaw/Hostinger, mas fotos são exibidas no site via otimizador/cache da Vercel.
+- Nova rota limitada `/api/midia-quarto/[slug]/[indice]`, somente fotos de quartos ativos registradas em `midias` e visíveis para a Marina; busca na Vercel em `gru1`, com alternativa no cache/otimizador Next Image da própria Marimar. Sem URL arbitrária, hosts privados ou tipos de arquivo fora de JPEG/PNG/WebP, limite de 10 MB.
+- `/api/agent/quartos` agora entrega também `fotos[].url_whatsapp`, preservando `fotos[].url` e sem alterar preços ou reservas. A habilidade `marimar-pousada` deve enviar esses endereços via ferramenta `message` usando argumento `media`, nunca como texto ou através do Browser/Desbravador.
+- Limite de três fotos; em falha de mídia, oferecer página oficial do quarto. Adicionados testes de URL/SSRF e tipo de imagem.
+- **Pendente operacional:** após o merge, reinstalar `marimar-pousada` na Hostinger; testar anexo real de foto num WhatsApp e verificar a ferramenta `message`. Publicar o código no GitHub não atualiza skill instalada no servidor.
+- Sem alteração de banco, chaves, gateways, tarifas ou disponibilidade.
+
+
 ## 2026-10-26 — Marina WhatsApp: tarifas via API do site em gru1
 **Autor:** ChatGPT, a pedido do proprietário. **Migration:** nenhuma.
 - A skill `consulta-desbravador` deixou de acessar diretamente o Worker Cloudflare a partir da Hostinger (HTTP 502 geográfico). Agora consulta a rota autenticada `/api/agent/disponibilidade` do site na Vercel (região `gru1`).
