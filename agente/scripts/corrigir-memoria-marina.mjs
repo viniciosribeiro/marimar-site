@@ -101,8 +101,14 @@ try {
   const hash = nestedHash(config);
   if (!hash) throw Error("Nao foi possivel obter hash da configuracao do Gateway; nada foi alterado.");
   const payload = { raw: JSON.stringify(patch), baseHash: hash, note: "Marina: reparar memoria e isolar atendimentos WhatsApp" };
-  cmd(["gateway", "call", "config.patch", "--params", JSON.stringify(payload), "--json"], 45000);
-  report("Configuracao atualizada", true, "patch validado pelo Gateway");
+  let avisoRpc = false;
+  try {
+    cmd(["gateway", "call", "config.patch", "--params", JSON.stringify(payload), "--json"], 45000);
+  } catch {
+    // Alguns servidores reabrem o Gateway ao publicar configuracao e cortam
+    // a conexao do CLI. Verificar a configuracao salva antes de declarar erro.
+    avisoRpc = true;
+  }
 
   const scopeAfter = getter("session.dmScope");
   const viewAfter = getter("tools.sessions.visibility");
@@ -114,8 +120,9 @@ try {
       !Array.isArray(sourcesAfter) || !sourcesAfter.includes("sessions")) {
     throw Error("A configuracao salva nao passou na verificacao. Consulte suporte antes de tentar novamente.");
   }
+  report("Configuracao atualizada", true, avisoRpc ? "Gateway reconectou; valores confirmados" : "patch validado e valores confirmados");
   report("Privacidade por hospede", true);
-  report("Memoria de sessoes", true, "ativa; historico de outros clientes nao fica pesquisavel");
+  report("Memoria de sessoes", true, "ativa; visibilidade de busca limitada a sessao atual");
   report("Relembrar clientes diferentes", true, "desabilitado");
 
   try {
