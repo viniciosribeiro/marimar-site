@@ -254,7 +254,7 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
           <div className="flex h-full items-center justify-center text-3xl sm:text-5xl" aria-label="Sem foto disponível">🏨</div>
         )}
         {r.alertaEstoque && (
-          <span className="absolute bottom-2 left-2 right-2 w-fit max-w-[calc(100%-1rem)] rounded-md bg-amber-500/95 px-2 py-1 text-[10px] font-bold leading-tight text-white shadow sm:bottom-auto sm:top-3 sm:left-3 sm:right-auto sm:rounded-full sm:px-3 sm:text-xs">
+          <span className="absolute bottom-2 left-2 right-2 w-fit max-w-[90%] rounded-md bg-amber-500/95 px-2 py-1 text-[10px] font-bold leading-tight text-white shadow sm:bottom-auto sm:top-3 sm:left-3 sm:right-auto sm:rounded-full sm:px-3 sm:text-xs">
             {r.alertaEstoque}
           </span>
         )}
