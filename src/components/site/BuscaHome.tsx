@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Icone } from "./Icone";
 import { SeletorDatas } from "./SeletorDatas";
+import { FormularioBuscaDisponibilidade } from "./FormularioBuscaDisponibilidade";
 import { POLITICAS, CAFE_DA_MANHA } from "@/lib/conteudo-pousada";
 
 type Pacote = { slug: string; nome: string; resumo: string | null };
@@ -66,7 +67,7 @@ export function BuscaHome({ pacotes = [], criancas = null }: { pacotes?: Pacote[
       <div className="p-3 sm:p-4">
         {aba === "datas" && (
           <>
-            <form action="/reservar" className={`grid grid-cols-2 gap-2 ${criancas ? "sm:grid-cols-6" : "sm:grid-cols-5"}`}>
+            <FormularioBuscaDisponibilidade action="/reservar" variante="home" className={`grid grid-cols-2 gap-2 ${criancas ? "sm:grid-cols-6" : "sm:grid-cols-5"}`}>
               {/* Entrada e saída num calendário só (SeletorDatas): manda os
                   mesmos check_in e check_out de antes. */}
               <SeletorDatas variante="home" />
@@ -93,12 +94,7 @@ export function BuscaHome({ pacotes = [], criancas = null }: { pacotes?: Pacote[
                   </select>
                 </label>
               )}
-              <button type="submit"
-                className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 bg-marca hover:bg-marca-hover text-marca-texto px-4 py-2.5 rounded-lg font-semibold transition-marca text-sm self-end">
-                <Icone nome="check" tamanho={16} />
-                Ver disponibilidade
-              </button>
-            </form>
+            </FormularioBuscaDisponibilidade>
 
             {/* Factual, não promessa: a reserva é feita no sistema da própria
                 pousada. "Melhor preço garantido" seria uma garantia que a

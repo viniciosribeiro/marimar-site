@@ -1,4 +1,11 @@
 # Changelog — Marimar Site
+## 2026-10-26 — Busca de suítes: indicador e rolagem automática aos resultados
+**Autor:** ChatGPT, solicitado pelo proprietário. **Migration:** nenhuma.
+- Busca da home e de `/reservar` preserva os parâmetros de disponibilidade e exibe estado de carregamento enquanto o Desbravador é consultado; não faz chamadas extras.
+- Após resposta (com vagas, sem vagas ou erro), a página rola de modo suave até os resultados. Respeita `prefers-reduced-motion` e a configuração de animação do site.
+- Cards disponíveis têm cabeçalho de resultado com contagem real de tipos de suíte.
+- Sem alterações em preço, banco, motor, Worker, regras de ocupação ou reservas.
+
 
 ## 2026-10-26 — /reservas: central privada com mapa visual
 **Autor:** ChatGPT a pedido do proprietário. **Migration:** nenhuma.
