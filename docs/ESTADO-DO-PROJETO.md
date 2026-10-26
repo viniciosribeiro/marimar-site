@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **Atualização /saude V2 (26/10/2026):** reorganização da interface com Marina SVG expressiva (olhos/cabeça/braços/pernas), navegação e sondas reais de leitura em src/app/api/saude/status/route.ts. Nenhuma correção automática. OpenClaw/WhatsApp, ElevenLabs, Blob, DNS/TLS e tabelas têm verificações específicas; alertas externos e webhooks permanecem não verificados por dependerem de envios. Histórico do navegador, não uptime 30 dias. Ver docs/saude-marina.md.
+
+
 > **/saude — 26/10/2026:** nova página pública *isolada* com escritório 2.5D da Marina, inventário de serviços, sondas somente de leitura, navegação, simulação de incidentes e aprovações que não alteram nada. Não é um agente corretivo real; monitoria autenticada do OpenClaw/WhatsApp e persistência de histórico ainda não foram feitas. Detalhes para Claude em `docs/saude-marina.md`.
 
 

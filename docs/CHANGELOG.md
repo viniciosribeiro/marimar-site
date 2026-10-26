@@ -1,5 +1,14 @@
 # Changelog — Marimar Site
 
+## 2026-10-26 — /saude V2: organização e sondagem real de serviços
+**Autor:** ChatGPT, a pedido do proprietário. **Migration:** nenhuma.
+- Revisada a tela existente /saude (não criada imagem): novo SaudeV2.tsx e CSS isolado, navegação direta, grade de módulos, detalhe por serviço, status sem estimativas fictícias.
+- Marina agora tem expressão animada, olhos, cabeça, braços e pernas independentes, ronda em CSS/SVG e reações a serviços em atenção; sem agente com permissão de escrever.
+- API de monitoramento estendida com consultas somente de leitura: OpenClaw channels.status, canal WhatsApp, ElevenLabs, Vercel Blob, Neon, regras/mídias/conhecimento, site, login público, DNS, TLS, OpenFreeMap, Worker e Desbravador.
+- Indicadores calculados do backend; histórico apenas da aba, sem SLA falso. O que não pode ser testado sem envio ou autorização fica como não verificado.
+- Roteiro e limites em docs/saude-marina.md. Escopo restrito à área /saude, sua API e documentação; não altera reservas ou configurações Vercel.
+
+
 ## 2026-10-26 — /saude: Escritório visual da Marina (isolado)
 **Autor:** ChatGPT, a pedido do proprietário.
 **Migration:** nenhuma. **Deploy:** Vercel, branch isolada até validação.
