@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **Correção de TTS da Marina (26/10/2026):** áudios extensos estavam soletrando URLs de reservas no WhatsApp e consumindo créditos da ElevenLabs. O caminho do chat do site e Meta Oficial foi protegido antes da API de síntese; links completos permanecem clicáveis na mensagem visível e a fala com link é limitada a 235 caracteres, com registro correto de consumo. Skill do OpenClaw/WhatsApp QR ajustada para falar somente um resumo e enviar URL por texto. **Pendente:** reinstalação da skill na Hostinger e teste real do WhatsApp; mudar apenas repositório Vercel não reconfigura automaticamente a narração do OpenClaw.
+
+
 > **Memória da Marina no WhatsApp — 26/10/2026:** o atendimento perdeu contexto de uma suíte apresentada por imagem e exibiu diagnóstico interno sobre `memory.search.experimental.sessionMemory`. A skill `marimar-pousada` recebeu regras de contexto da conversa atual e de sigilo dos erros técnicos. O script `agente/scripts/corrigir-memoria-marina.mjs` prepara correção da configuração OpenClaw da Hostinger com backup + `config.patch`, isolamento de DMs por canal/remetente, visibilidade de sessão `self`, indexação de sessões e desativação de recordação entre hóspedes. **PENDENTE:** executar na Hostinger através de login/terminal autorizado, reinstalar skill e testar com WhatsApp real. Nenhum efeito na produção até esse passo.
 
 

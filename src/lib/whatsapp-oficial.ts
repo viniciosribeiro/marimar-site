@@ -2,6 +2,7 @@ import { comSql, type Sql } from "./db-conexao";
 import { CONTEXTO_MENSAGENS, LIMITE_AUDIO_BYTES, LIMITE_VOZ_CARACTERES, MODELO_TRANSCRICAO, URL_TRANSCRICAO, cabecalhosGateway, gatewayConfigurado, urlGateway } from "./chat";
 import { montarTreinamento, pareceSemResposta, registrarLacuna } from "./marina";
 import { chaveDoProvedor, falarComAVozGravada } from "./voz";
+import { prepararFalaDaMarina } from "./voz-fala";
 import { abrirChamado, lerConfigEscalonamento, responderChamado, talvezProcessarPrazos, vinculoDaAbertura } from "./escalonamento";
 import type { ConfigEscalonamento } from "./escalonamento-base";
 import { registrarUso } from "./aprendizado";
@@ -86,7 +87,7 @@ async function transcrever(sql: Sql, idMidia: string): Promise<string | null> {
 
 /** Quem mandou áudio ouve a resposta também (como o `tts.auto: "inbound"` do WhatsApp Web). */
 async function responderEmAudio(sql: Sql, para: string, resposta: string) {
-  const falar = resposta.replace(/^\s*!\[[^\]]*\]\([^)]*\)\s*$/gm, "").replace(/https?:\/\/\S+/g, "").replace(/[*_#>`]/g, "").trim();
+  const falar = prepararFalaDaMarina(resposta);
   if (!falar || falar.length > LIMITE_VOZ_CARACTERES) return;
   /* A mesma voz do site e do WhatsApp Web (src/lib/voz.ts). */
   const r = await falarComAVozGravada(sql, falar);

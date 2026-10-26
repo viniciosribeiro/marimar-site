@@ -1,6 +1,7 @@
 import type { Sql } from "./db-conexao";
 import { lerConfig } from "./marina";
 import { cifrar, decifrar, finalDaChave } from "./cifra-chaves";
+import { prepararFalaDaMarina } from "./voz-fala";
 import { corrigirConfig, lerConfigOpenClaw } from "./openclaw-config";
 import {
   PROVEDOR, PROVEDORES_VOZ, doProvedor, oProvedor, diferencas, normalizarOpcoes, openaiAceitaInstrucoes, openaiAceitaVelocidade, patchDaVoz, pcmParaWav, textoGoogle, vozDoWhatsapp,
@@ -154,6 +155,10 @@ export type Audio = { ok: true; audio: ArrayBuffer; tipo: string } | { ok: false
  * OpenAI; WAV no Google (o Gemini só devolve PCM).
  */
 export async function sintetizar(o: OpcoesVoz, fala: string, chave: string): Promise<Audio> {
+  // Segunda barreira: nenhum chamador pode gastar TTS narrando URLs enormes.
+  // A mensagem original e seus links nao sao alterados, apenas o audio.
+  const falaSegura = prepararFalaDaMarina(fala);
+  if (!falaSegura) return { ok: false, erro: "Não há texto para áudio.", status: 400 };
   const p = o.provedor;
   try {
     if (p === "elevenlabs") {
@@ -163,7 +168,7 @@ export async function sintetizar(o: OpcoesVoz, fala: string, chave: string): Pro
         method: "POST",
         headers: { "content-type": "application/json", accept: "audio/mpeg", "xi-api-key": chave },
         body: JSON.stringify({
-          text: fala, model_id: e.modelo, language_code: "pt",
+          text: falaSegura, model_id: e.modelo, language_code: "pt",
           // Sem isto ela lê "26/09" como dígito solto em vez de data.
           apply_text_normalization: "on",
           voice_settings: { stability: e.estabilidade / 100, similarity_boost: e.semelhanca / 100, style: 0, use_speaker_boost: true, speed: e.velocidade / 100 },
@@ -180,7 +185,7 @@ export async function sintetizar(o: OpcoesVoz, fala: string, chave: string): Pro
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${chave}` },
         body: JSON.stringify({
-          model: a.modelo, voice: a.voz, input: fala, response_format: "mp3",
+          model: a.modelo, voice: a.voz, input: falaSegura, response_format: "mp3",
           ...(openaiAceitaInstrucoes(a.modelo) && a.instrucoes ? { instructions: a.instrucoes } : {}),
           ...(openaiAceitaVelocidade(a.modelo) && a.velocidade !== 100 ? { speed: a.velocidade / 100 } : {}),
         }),
@@ -195,7 +200,7 @@ export async function sintetizar(o: OpcoesVoz, fala: string, chave: string): Pro
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": chave },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: textoGoogle(g.estilo, fala) }] }],
+        contents: [{ role: "user", parts: [{ text: textoGoogle(g.estilo, falaSegura) }] }],
         generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: g.voz } } } },
       }),
       signal: AbortSignal.timeout(45_000),

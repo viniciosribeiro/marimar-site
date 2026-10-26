@@ -4,6 +4,7 @@ import {
   hashIp, ipDaRequisicao,
 } from "@/lib/chat";
 import { falarComAVozGravada } from "@/lib/voz";
+import { prepararFalaDaMarina } from "@/lib/voz-fala";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,7 +66,14 @@ export async function POST(req: Request) {
       return Response.json({ erro: "Muitos áudios seguidos. Tente mais tarde." }, { status: 429 });
     }
 
-    const falado = await falarComAVozGravada(sql, texto);
+    // A fala e menor que a mensagem do chat: links continuam clicaveis no
+    // texto original, mas nao seguem para a API de voz (custo por caractere).
+    const fala = prepararFalaDaMarina(texto);
+    if (!fala) {
+      await sql.end();
+      return Response.json({ erro: "Não há conteúdo para narrar." }, { status: 400 });
+    }
+    const falado = await falarComAVozGravada(sql, fala);
     if (!falado.ok) {
       if (falado.status !== 503) console.error("[voz]", falado.erro);
       await sql.end();
@@ -76,7 +84,7 @@ export async function POST(req: Request) {
     // falhou puniria o visitante por um problema nosso.
     await sql`
       INSERT INTO chat_voz (sessao, ip_hash, tipo, caracteres)
-      VALUES (${sessao}, ${ip}, 'tts', ${texto.length})`;
+      VALUES (${sessao}, ${ip}, 'tts', ${fala.length})`;
     await sql.end();
 
     return new Response(falado.audio, {
