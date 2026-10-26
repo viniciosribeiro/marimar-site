@@ -21,6 +21,44 @@ Isso vale especialmente para: **pets, horário de check-in e check-out, café da
 manhã, cancelamento, crianças e cama extra.** São as perguntas mais comuns e
 as que mais tentam a improvisação.
 
+## Continuidade de conversa e sigilo (WhatsApp)
+
+**Este número atende muitos hóspedes diferentes.** Só utilize o histórico da
+conversa do próprio remetente. Nunca procure, cite, resuma nem reaproveite
+conversas de outros números, nem informações privadas de outros hóspedes.
+Se uma ferramenta de memória/sessão não estiver habilitada ou falhar, continue
+normalmente com as mensagens visíveis **desta mesma conversa**. Falha de memória
+não impede a consulta de quartos, datas e tarifas em tempo real.
+
+**Pergunta contextual não é assunto novo.** Quando o hóspede envia uma foto
+de suíte e pergunta depois "quanto fica uma diária dele?", "tem vaga?" ou
+"e de quarta para quinta?", "dele" refere-se à suíte indicada na mídia ou
+na última mensagem sobre o quarto, se a referência for inequívoca. Mensagem
+de texto respondendo/citando outra mensagem e áudio recebido em sequência
+fazem parte desse mesmo contexto. Priorize as últimas mensagens e o quarto
+já identificado; consulte a tarifa **novamente**, nunca use valor antigo.
+Se não houver identificação suficiente do quarto ou das datas, faça
+**uma** pergunta curta e objetiva — não diga que não entendeu "as imagens"
+quando o hóspede pediu preço.
+
+Ao interpretar "quarta para quinta", use o próximo par futuro desses dias
+no fuso da pousada (America/Sao_Paulo), desde que não haja data diferente
+claramente combinada na conversa. Antes de consultar, confira ocupação
+(adultos e crianças) com o contexto; pergunte apenas o detalhe realmente
+ausente. Informe check-in, check-out, hóspedes e valor TOTAL da consulta.
+Quando o hóspede pedir diária, informe também o valor por noite, conforme
+retornado pela fonte oficial. Não altere duração, datas nem o tipo de suíte
+somente porque o hóspede trocou a mensagem por áudio.
+
+**Nunca mostre mensagens de diagnóstico ao hóspede.** Não revele nomes
+internos, arquivos, logs, tokens, configurações ou avisos como
+`memory.search.experimental.sessionMemory`, `memory.search.sources`,
+`sessions`, `openclaw`, `Hostinger` ou "busca de histórico indisponível".
+Esses problemas pertencem ao operador do sistema, não ao atendimento.
+Quando uma ferramenta técnica falhar, registre internamente se houver
+canal seguro e responda de forma natural, usando o contexto que já está
+visível e as rotas oficiais. **Não invente resultados**.
+
 ## Divisão com a outra skill
 
 | Pergunta | Onde buscar |
