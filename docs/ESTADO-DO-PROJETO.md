@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **Central de reservas privada /reservas — 26/10/2026:** página implementada com login próprio Cecília (credenciais protegidas em variáveis de ambiente no cofre Vercel: hash scrypt + segredo HMAC), sessão httpOnly/Secure/SameSite Strict de 8 horas, visualização responsiva do calendário por suíte e registros futuros. A conexão local de quartos usa apenas SELECT na tabela quartos; **não há integração autenticada de registros de reservas confirmadas ao Desbravador PMS/ROL**, então os períodos são exibidos como sem informação, sem inventar hóspedes, valores ou ocupação. Teste navegador em preview validou login, navegação de datas, alerta sobre integração pendente e logout. Preview não tem DATABASE_URL, portanto catálogo de suítes somente pode ser validado em produção. Próxima etapa: aprovar credenciais read-only PMS ou exportação oficial; nunca extrair nomes de clientes do motor público de tarifas.
+
+
 > **Fotos da Marina no WhatsApp — 26/10/2026:** o OpenClaw na Hostinger recebe HTTP 403 ao tentar baixar imagens originais do Desbravador. Rota `/api/midia-quarto/[slug]/[indice]` prepara bytes JPEG/PNG/WebP de fotos ativas e visíveis no banco via Vercel/gru1, com fallback do cache da imagem do próprio site; `/api/agent/quartos` fornece `fotos[].url_whatsapp`; skill `marimar-pousada` passa este URL no campo `media` da ferramenta `message` (máx. 3 anexos), nunca pelo Browser. **Pendente:** reinstalar skill no OpenClaw/Hostinger e testar anexo real num WhatsApp; isso não é feito por deploy Vercel. Código isolado de banco/reservas/preços.
 
 
