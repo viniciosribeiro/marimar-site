@@ -1,5 +1,12 @@
 # Changelog — Marimar Site
 
+## 2026-10-27 — Correção adicional de toque no iPhone (primeiro check-in)
+- **Relato real de produção (usuário com iPhone + Chrome iOS):** ao tocar em `Escolher data`, às vezes nada acontece; recarregar pode resolver momentaneamente, mas fechar e reabrir reproduz a falha. O Android do proprietário funciona; testes automatizados anteriores em Chromium desktop não reproduziram. A PR #49 tratava outro bug (troca de check-in/check-out) e **não resolveu este relato**.
+- **Riscos concretos detectados no código:** `.abertura` é uma camada `position: fixed; inset: 0; z-index: 200`, superior ao formulário, e seu desaparecimento depende de animação CSS; um problema de composição de tela/hit-test no iOS pode manter a área interceptando toques. Além disso, `useCelular` registrava `MediaQueryList.addEventListener("change")` sem fallback para `addListener`, que não existe em WebKit antigo, arriscando falha na hidratação. **Ambas são hipóteses técnicas plausíveis; nenhuma teve causa única comprovada por um iPhone conectado remotamente.**
+- **Mitigações implementadas:** `pointer-events: none` na camada visual de abertura (não muda sua aparência ou animação); fallback seguro de `MediaQueryList` para `addListener/removeListener` ao invés de deixar renderização falhar no WebKit sem EventTarget. Datas, consulta de disponibilidade e Marina inalteradas.
+- **Regressão adicionada:** `testes/e2e-calendario-ios.mjs` testa abertura/fechamento 4x após carregamentos sucessivos, Home e `/reservar`, usando WebKit móvel e Chromium móvel/desktop do Playwright. **A presença do teste não significa que foi executado ou aprovado**; o teste físico Chrome/Safari no iPhone continua necessário.
+- **Situação do relato:** pendente de reteste real pelo usuário após publicação; não declarar resolvido com base em um teste anterior de desktop.
+
 ## 2026-10-27 — Calendário de check-in/check-out: abertura estável
 - **Entrega publicada:** PR #49 mesclado na `main`, commit `f0cffe9`. Vercel `dpl_8zaq37MN5gyk7Fc2254xjxmUqZNZ` confirmou `READY` no ambiente `production` em 27/10.
 - **Navegação real no domínio público:** teste automatizado visual no desktop em `/reservar` concluiu com êxito: check-in abriu a janela, troca de seleção dentro do diálogo não a fechou, 28/10/2026 a 02/11/2026 (5 noites) foram selecionados e apresentados nos dois campos ao confirmar. Nenhuma reserva foi feita. Execução: `https://agent.tinyfish.ai/runs/55f446f0-4dc9-4b25-b717-7d733c9074bd`.
