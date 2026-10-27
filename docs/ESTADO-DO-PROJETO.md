@@ -1,6 +1,8 @@
 # Estado do projeto — Marimar Site
 
-> **2026-10-27 — Seletor de datas (Home e /reservar):** corrigida a alternância entre check-in e check-out que fechava inesperadamente o calendário já aberto. Ambos os campos agora sempre abrem/focam o seletor; reabertura e fechamento por Confirmar/Escape mantidos. Teste E2E de celular/desktop criado em `testes/e2e-calendario-abertura.mjs`. Revisar execução do teste, estado da Vercel e confirmação visual antes de classificar como homologado; sem mudança de preços, motor ou OpenClaw.
+> **2026-10-27 — Seletor de datas (Home e /reservar):** PR #49 mesclado na main (`f0cffe9`), Vercel produção `READY`. Teste visual do domínio público em `/reservar` no desktop aprovou abertura, seleção de intervalo e confirmação (28/10–02/11, 5 noites; sem enviar consulta). **Teste físico mobile e execução do E2E ainda pendentes.** Detalhes no changelog/handoff.
+>
+> **2026-10-27 — Implementação:** corrigida a alternância entre check-in e check-out que fechava inesperadamente o calendário já aberto. Ambos os campos agora sempre abrem/focam o seletor; reabertura e fechamento por Confirmar/Escape mantidos. Teste E2E de celular/desktop criado em `testes/e2e-calendario-abertura.mjs`. Revisar execução do teste, estado da Vercel e confirmação visual antes de classificar como homologado; sem mudança de preços, motor ou OpenClaw.
 
 
 > **CONTINUIDADE / FONTE MAIS RECENTE — 26/10/2026:** por pedido do proprietário, todas as entregas e validações precisam ficar registradas para Claude em `docs/HANDOFF-PROXIMO-AGENTE.md`, `docs/CHANGELOG.md` e `AGENTS.md`. O `CLAUDE.md` importa esses arquivos. Os blocos históricos mais abaixo podem citar tarefas que já foram resolvidas: **considerar este bloco e o handoff atual como prioridade**.

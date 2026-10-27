@@ -1,6 +1,9 @@
 # Changelog — Marimar Site
 
 ## 2026-10-27 — Calendário de check-in/check-out: abertura estável
+- **Entrega publicada:** PR #49 mesclado na `main`, commit `f0cffe9`. Vercel `dpl_8zaq37MN5gyk7Fc2254xjxmUqZNZ` confirmou `READY` no ambiente `production` em 27/10.
+- **Navegação real no domínio público:** teste automatizado visual no desktop em `/reservar` concluiu com êxito: check-in abriu a janela, troca de seleção dentro do diálogo não a fechou, 28/10/2026 a 02/11/2026 (5 noites) foram selecionados e apresentados nos dois campos ao confirmar. Nenhuma reserva foi feita. Execução: `https://agent.tinyfish.ai/runs/55f446f0-4dc9-4b25-b717-7d733c9074bd`.
+- **Limites honestos:** teste visual de navegador foi no desktop e não representa homologação em aparelho celular físico. O arquivo E2E `testes/e2e-calendario-abertura.mjs` cobre os dois breakpoints, mas ainda não há registro de execução dele em CI.
 - **Causa confirmada no código:** em `src/components/site/SeletorDatas.tsx`, um clique em qualquer campo enquanto a janela estava aberta executava `fechar(false)`; alternar entre entrada e saída fazia o calendário sumir sem selecionar a data.
 - **Correção:** check-in e check-out agora chamam `abrir(qual)`, inclusive com o calendário aberto; a janela permanece visível e atualiza campo ativo, mês e posição. O fechamento continua disponível pelo botão Confirmar, Escape e clique externo/véu.
 - **Abrangência:** mesmo componente na página inicial e em `/reservar`; CSS, consulta de disponibilidade, preço, datas enviadas (`check_in`, `check_out`) e fluxos da Marina não foram alterados.

@@ -31,6 +31,7 @@ handoff atualizado em cada entrega. Não confundir **commit/deploy** com
 
 ### Entregas recentes e evidências
 
+- **27/10 — RESULTADO DA CORREÇÃO DO CALENDÁRIO:** PR #49 mesclado na `main` (`f0cffe9`); deploy Vercel de produção `dpl_8zaq37MN5gyk7Fc2254xjxmUqZNZ` reportou READY. Teste de navegador no endereço público `/reservar` em desktop passou: abriu calendário, selecionou 28/10 a 02/11, confirmou 5 noites e exibiu datas corretas (sem buscar nem reservar). Evidência: `https://agent.tinyfish.ai/runs/55f446f0-4dc9-4b25-b717-7d733c9074bd`. **Mobile físico e execução automática do E2E em CI ainda não foram comprovados.**
 - **27/10 — BUG calendário do site (mobile e desktop):** `SeletorDatas.tsx` fechava o modal se o usuário clicasse em check-in ou check-out enquanto estava aberto, em vez de trocar o foco. Corrigido para chamar `abrir(qual)` sempre; a mesma UI aparece na Home e em `/reservar`. O arquivo `testes/e2e-calendario-abertura.mjs` cobre troca de campo, datas e fechamento em ambas as telas e aparelhos. **Distinguir código implementado, teste efetivamente executado, CI, Vercel publicada e aprovação humana.** Nenhuma alteração de motor de reserva, link de reserva, preços ou skill OpenClaw.
 
 
