@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **2026-10-27 — Seletor de datas (Home e /reservar):** corrigida a alternância entre check-in e check-out que fechava inesperadamente o calendário já aberto. Ambos os campos agora sempre abrem/focam o seletor; reabertura e fechamento por Confirmar/Escape mantidos. Teste E2E de celular/desktop criado em `testes/e2e-calendario-abertura.mjs`. Revisar execução do teste, estado da Vercel e confirmação visual antes de classificar como homologado; sem mudança de preços, motor ou OpenClaw.
+
+
 > **CONTINUIDADE / FONTE MAIS RECENTE — 26/10/2026:** por pedido do proprietário, todas as entregas e validações precisam ficar registradas para Claude em `docs/HANDOFF-PROXIMO-AGENTE.md`, `docs/CHANGELOG.md` e `AGENTS.md`. O `CLAUDE.md` importa esses arquivos. Os blocos históricos mais abaixo podem citar tarefas que já foram resolvidas: **considerar este bloco e o handoff atual como prioridade**.
 >
 > **Marina/WhatsApp QR — voz curta aprovada:** a correção anti-narração de links (PR #47, commit `a682f21`) foi implantada na Vercel e a skill `marimar-pousada` reinstalada via OpenClaw CLI na Hostinger em 26/10. O proprietário realizou teste real e confirmou **“ficou perfeito”**. Considerar esse comportamento **funcional e aprovado**, embora não haja métrica auditada de economia de créditos ElevenLabs. Preservar links completos no texto e apenas fala curta no áudio; não reverter.

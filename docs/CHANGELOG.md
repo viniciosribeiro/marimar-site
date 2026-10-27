@@ -1,5 +1,13 @@
 # Changelog — Marimar Site
 
+## 2026-10-27 — Calendário de check-in/check-out: abertura estável
+- **Causa confirmada no código:** em `src/components/site/SeletorDatas.tsx`, um clique em qualquer campo enquanto a janela estava aberta executava `fechar(false)`; alternar entre entrada e saída fazia o calendário sumir sem selecionar a data.
+- **Correção:** check-in e check-out agora chamam `abrir(qual)`, inclusive com o calendário aberto; a janela permanece visível e atualiza campo ativo, mês e posição. O fechamento continua disponível pelo botão Confirmar, Escape e clique externo/véu.
+- **Abrangência:** mesmo componente na página inicial e em `/reservar`; CSS, consulta de disponibilidade, preço, datas enviadas (`check_in`, `check_out`) e fluxos da Marina não foram alterados.
+- **Teste preparado:** `testes/e2e-calendario-abertura.mjs` verifica abertura, troca de campo, escolha das datas e fechamento em desktop e celular nas duas páginas. Rodar `SITE_URL=http://localhost:3000 node testes/e2e-calendario-abertura.mjs` com Playwright/Chromium; sem interação com motor de reservas.
+- **Verificações:** alteração do código disponível no branch `fix/calendario-abertura-campos-20261027`; validar CI/compilação e navegadores reais antes de considerar aprovado pelo usuário. Não exige reinstalar skill na Hostinger.
+
+
 ## 2026-10-26 — Continuidade documental obrigatória (ChatGPT → Claude)
 **Autor:** ChatGPT, pedido explícito do proprietário. **Migration:** nenhuma. **Código de produção:** não alterado.
 - Atualizado o handoff `docs/HANDOFF-PROXIMO-AGENTE.md` com estado verificado, PRs, testes, confirmação humana, pendências e limites dos recursos da Marina (tarifas, fotos, TTS, memória), busca de suítes, cards, `/reservas` e `/saude`.
