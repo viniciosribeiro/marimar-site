@@ -1,5 +1,7 @@
 # Estado do projeto — Marimar Site
 
+> **27/10 — Homologação links de suíte:** PR #53 mesclado na main (squash `641a253`), Vercel produção `dpl_44LMS39KEb7jLX8PFbhxwzNHCnpd` **READY** com o domínio oficial. Auditoria do site público com 10–12/11/2026, 2 adultos, comprovou 6 botões "Reservar" distintos: códigos `MRFAM`, `FAM`, `KING`, `QUEEN`, `KGTR`, `HIDRO`, todos com `roomCode`, `rateCode=`, datas e hóspedes corretos. Evidência: https://agent.tinyfish.ai/runs/5785c5b7-db03-4ebb-96dd-bc78a2935ef7 . Usuário confirmou o redirecionamento pós-CAPTCHA da QUEEN em iPhone; outros códigos foram verificados na origem, **não** após o CAPTCHA. **Marina WhatsApp:** skills alteradas no GitHub, instalação na Hostinger **PENDENTE** e sem teste real. `npm test` escrito, execução em CI não comprovada; build Vercel aprovado.
+
 > **27/10 — Link por suíte no Desbravador (Issue #52):** proprietário testou e confirmou no iPhone a URL com `roomCode=QUEEN&rateCode=` para Suíte Queen. Branch de implementação adiciona `roomCode` nos cards /reservar, página de detalhe, API pública e API da Marina, mantendo link geral sem seleção. Script consulta-desbravador produz link individual por suíte e as skills explicam quando usar. **Pendente:** confirmar PR/CI/deploy e realizar teste pós-deploy para todas as suítes, incluindo iPhone e Android; reinstalar skills OpenClaw na Hostinger e testar WhatsApp. Preservar correção do calendário, preços reais e voz curta.
 
 
