@@ -52,7 +52,11 @@ test('precos e disponibilidade usam apenas a API autenticada do site, com ocupac
   assert.equal(d.regra_criancas, 'Crianca paga como adulto.');
   assert.equal(d.valor_bebes, 40);
   assert.equal(d.esgotados.length, 1);
-  assert.equal(d.link_reserva, 'https://reservas.desbravador.com.br/reservar-x');
+  const link = new URL(d.link_reserva);
+  assert.equal(link.origin + link.pathname, 'https://reservas.desbravador.com.br/reservar-x');
+  assert.equal(link.searchParams.get('roomCode'), 'KING');
+  assert.equal(link.searchParams.get('rateCode'), '');
+  assert.equal(d.quartos[0].link_reserva, d.link_reserva);
 });
 
 test('401 nao e confundido com falta de quartos', async () => {
@@ -80,4 +84,28 @@ test('periodo impossivel nao dispara consulta', async () => {
   const d = await testarComServidor((_req, res) => { acionado = true; res.end('{}'); }, ['2026-02-30', '2026-03-02', '2']);
   assert.equal(acionado, false);
   assert.equal(d.ok, false);
+});
+
+test('varias suítes recebem links próprios, com link geral sem roomCode', async () => {
+  const d = await testarComServidor((_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({
+      ok: true, ocupacao: { adultosMotor: 2, criancasMotor: 0 },
+      dados: [
+        { id: 'QUEEN', nome: 'Suite Queen', disponivel: true, total: 900, diaria: 450, ocupacao_max: 2 },
+        { id: 'HIDRO', nome: 'Suite Lua de Mel', disponivel: true, total: 1400, diaria: 700, ocupacao_max: 2 },
+      ],
+    }));
+  }, ['2026-11-10', '2026-11-12', '2', '0', '0']);
+  assert.equal(d.ok, true);
+  assert.equal(d.quartos.length, 2);
+  assert.equal(new URL(d.link_reserva).searchParams.has('roomCode'), false);
+  for (const q of d.quartos) {
+    const u = new URL(q.link_reserva);
+    assert.equal(u.searchParams.get('roomCode'), q.codigo);
+    assert.equal(u.searchParams.get('rateCode'), '');
+    assert.equal(u.searchParams.get('checkin'), '2026-11-10');
+    assert.equal(u.searchParams.get('checkout'), '2026-11-12');
+    assert.equal(u.searchParams.get('adults'), '2');
+  }
 });

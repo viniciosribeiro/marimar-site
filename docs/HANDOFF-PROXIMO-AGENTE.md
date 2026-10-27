@@ -7,6 +7,13 @@
 
 ## ESTADO ATUAL — 27/10/2026 (ChatGPT → Claude e outros agentes)
 
+### 27/10 — Reserva direcionada à suíte escolhida (Issue #52)
+- **Solicitação:** ao clicar em Reservar no card de uma suíte, o hóspede caía no Desbravador com todas as acomodações. Os links antigos tinham apenas datas/hóspedes, não `roomCode`. **Confirmação humana:** proprietário validou em iPhone após anti-robô um link experimental `roomCode=QUEEN&rateCode=` e disse que funcionou. Automação foi bloqueada com 403 pelo WAF; não comprova falha para clientes.
+- **Mudanças:** `src/lib/deeplink.ts` aceita `quartoId` (opcional); `/reservar`, `/quartos/[slug]`, `/api/disponibilidade` e `/api/agent/disponibilidade` passam código do tipo (`r.id`/`desbravador_room_id`). Sem tipo, link genérico inalterado. Script de consulta da Marina fornece `quartos[].link_reserva` para que opção escolhida mantenha o mesmo tipo. Se há várias opções, link global é genérico. Skills orientam envio do link por suíte e **não narrar URL no áudio**.
+- **Validar:** conferir PR, CI, Vercel produção READY; em navegador real conferir QUEEN e HIDRO depois do anti-robô, datas e hóspedes corretos, sem fazer compra. `npm test` cobre links e script com várias opções. Não confundir criação dos testes com execução.
+- **Hostinger separada:** merge Vercel NÃO instala skills. Executar `git pull` no checkout correto e depois `openclaw skills install ./agente/skills/consulta-desbravador --force` e `openclaw skills install ./agente/skills/marimar-pousada --force` em ambiente autorizado; testar WhatsApp real e confirmar instalação antes de dizer que foi publicado no canal. Não alterar TTS, tarifas, pagamentos, datas ou regras de hóspedes.
+
+
 **Preferência explícita do proprietário:** toda mudança, correção, descoberta,
 teste, decisão, impedimento e validação humana deve permanecer registrada no
 repositório para qualquer agente posterior recuperar **sem depender do histórico

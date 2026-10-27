@@ -58,3 +58,27 @@ test("buildDeepLink: abre a tela de reserva do motor com datas ISO e hóspedes",
   assert.equal(u.searchParams.get("child1"), "1");
   assert.equal(new URL(buildDeepLink({ checkIn: "2026-11-20", checkOut: "2026-11-22", adultos: 2 })).searchParams.get("child1"), "0");
 });
+
+test("buildDeepLink: cada suíte usa seu roomCode e rateCode vazio com dados iguais", () => {
+  const p = { checkIn: "2026-11-10", checkOut: "2026-11-12", adultos: 2, criancas: 0 };
+  const queen = new URL(buildDeepLink({ ...p, quartoId: "QUEEN" }));
+  const hidro = new URL(buildDeepLink({ ...p, quartoId: "HIDRO" }));
+  for (const u of [queen, hidro]) {
+    assert.equal(u.searchParams.get("checkin"), p.checkIn);
+    assert.equal(u.searchParams.get("checkout"), p.checkOut);
+    assert.equal(u.searchParams.get("adults"), "2");
+    assert.equal(u.searchParams.get("child1"), "0");
+    assert.equal(u.searchParams.has("rateCode"), true);
+    assert.equal(u.searchParams.get("rateCode"), "");
+  }
+  assert.equal(queen.searchParams.get("roomCode"), "QUEEN");
+  assert.equal(hidro.searchParams.get("roomCode"), "HIDRO");
+  assert.notEqual(queen.toString(), hidro.toString());
+  assert.match(queen.toString(), /roomCode=QUEEN&rateCode=$/);
+});
+
+test("buildDeepLink: link geral continua sem roomCode nem rateCode", () => {
+  const u = new URL(buildDeepLink({ checkIn: "2026-11-10", checkOut: "2026-11-12", adultos: 2 }));
+  assert.equal(u.searchParams.has("roomCode"), false);
+  assert.equal(u.searchParams.has("rateCode"), false);
+});

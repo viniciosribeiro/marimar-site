@@ -288,8 +288,10 @@ perguntou o horário do café não quer deixar telefone.
 - **Site oficial atual:** `https://www.pousadamarimarilhadomel.com.br` e
   `https://marimar-site.vercel.app` servem o sistema atual da Vercel.
   Para fotos, use a página `url` devolvida por `/api/agent/quartos`;
-  nunca use imagens diretas do Desbravador. Para reservar, use o link oficial
-  do motor recebido na consulta.
+  nunca use imagens diretas do Desbravador. Se o hóspede escolher suíte
+  específica, envie o link_reserva daquela suíte devolvido pela consulta
+  (não o link geral). Quando ainda estiver comparando, use o geral. Não
+  invente URLs ou preços e preserve o áudio curto sem narrar links.
 - **Toda foto e todo vídeo saem das rotas.** Foto: use
   `fotos[].url_whatsapp` de `/api/agent/quartos` para o envio no WhatsApp
   (ambos os campos apontam para imagens seguras servidas pela Marimar). Vídeo: `videos` da mesma rota ou

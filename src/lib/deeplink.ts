@@ -1,6 +1,8 @@
 /**
  * Link do botão "Reservar no site oficial": abre o motor do Desbravador já
- * com as datas e os hóspedes da busca.
+ * com as datas e os hóspedes da busca. Quando a suíte é conhecida, inclui
+ * roomCode e rateCode vazio. O proprietário validou QUEEN no iPhone em 27/10.
+ * Sem suíte escolhida, preserva o link genérico.
  *
  * Formato do motor novo (hotel-app), o mesmo que a Marina manda no WhatsApp
  * (agente/skills/consulta-desbravador/scripts/consultar-api.mjs):
@@ -13,6 +15,7 @@ const MOTOR = "https://reservas.desbravador.com.br/hotel-app/pousada-ilha-do-mel
 
 export function buildDeepLink(params: {
   checkIn: string; checkOut: string; adultos: number; criancas?: number;
+  quartoId?: string | null;
 }): string {
   const qs = new URLSearchParams({
     checkin: params.checkIn,
@@ -20,5 +23,10 @@ export function buildDeepLink(params: {
     adults: String(Math.max(1, params.adultos)),
     child1: String(Math.max(0, params.criancas ?? 0)),
   });
+  const codigo = params.quartoId?.trim();
+  if (codigo) {
+    qs.set("roomCode", codigo);
+    qs.set("rateCode", "");
+  }
   return `${MOTOR}/reservation?${qs.toString()}`;
 }
