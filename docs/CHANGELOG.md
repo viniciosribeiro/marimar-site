@@ -1,5 +1,8 @@
 # Changelog — Marimar Site
 
+## 2026-10-27 — Homologação pós-publicação, PR #53
+- **27/10 — Homologação links de suíte:** PR #53 mesclado na main (squash `641a253`), Vercel produção `dpl_44LMS39KEb7jLX8PFbhxwzNHCnpd` **READY** com o domínio oficial. Auditoria do site público com 10–12/11/2026, 2 adultos, comprovou 6 botões "Reservar" distintos: códigos `MRFAM`, `FAM`, `KING`, `QUEEN`, `KGTR`, `HIDRO`, todos com `roomCode`, `rateCode=`, datas e hóspedes corretos. Evidência: https://agent.tinyfish.ai/runs/5785c5b7-db03-4ebb-96dd-bc78a2935ef7 . Usuário confirmou o redirecionamento pós-CAPTCHA da QUEEN em iPhone; outros códigos foram verificados na origem, **não** após o CAPTCHA. **Marina WhatsApp:** skills alteradas no GitHub, instalação na Hostinger **PENDENTE** e sem teste real. `npm test` escrito, execução em CI não comprovada; build Vercel aprovado.
+
 ## 2026-10-27 — Link direto para a suíte escolhida no Desbravador (Issue #52)
 - **Teste real do proprietário:** confirmou no iPhone, depois da verificação anti-robô, que o link experimental da Suíte QUEEN com `roomCode=QUEEN&rateCode=` funcionou (10 a 12/11, 2 adultos). Os navegadores automatizados foram bloqueados por HTTP 403 do Desbravador; validação humana específica para QUEEN, não para todos os códigos.
 - **Mudanças no código:** `src/lib/deeplink.ts` ganhou `quartoId` opcional que acrescenta `roomCode` e `rateCode` vazio. Sem código mantém link genérico. `/reservar`, detalhe `/quartos/[slug]`, `/api/disponibilidade` e `/api/agent/disponibilidade` passam o código correspondente retornado pelo motor (`r.id` / `desbravador_room_id`).
