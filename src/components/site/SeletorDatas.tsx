@@ -326,7 +326,6 @@ export function SeletorDatas({ entradaInicial, saidaInicial, variante }: Props) 
             <button ref={qual === "entrada" ? btEntrada : btSaida} type="button" className={e.campo}
               aria-haspopup="dialog" aria-expanded={aberto} aria-labelledby={`rotulo-${variante}-${qual}`}
               aria-describedby={`valor-${variante}-${qual}`}
-              // Um toque em qualquer campo sempre abre ou muda o foco; nao alterna para fechado.
               onClick={() => abrir(qual)}>
               <span id={`valor-${variante}-${qual}`} className={v ? "" : "text-tinta-suave/60"}>{v ?? "Escolher data"}</span>
             </button>
