@@ -1,11 +1,11 @@
 # Handoff — continuar de onde paramos
 
-> **Atualização operacional: 26/10/2026 — leia esta seção PRIMEIRO.**
+> **Atualização operacional: 27/10/2026 — leia esta seção PRIMEIRO.**
 > O histórico abaixo, datado de **30/09/2026**, é mantido para auditoria,
 > **não** é a lista atual de pendências. Algumas tarefas antigas já foram
 > realizadas; verifique o estado real antes de executá-las novamente.
 
-## ESTADO ATUAL — 26/10/2026 (ChatGPT → Claude e outros agentes)
+## ESTADO ATUAL — 27/10/2026 (ChatGPT → Claude e outros agentes)
 
 **Preferência explícita do proprietário:** toda mudança, correção, descoberta,
 teste, decisão, impedimento e validação humana deve permanecer registrada no
@@ -30,6 +30,10 @@ handoff atualizado em cada entrega. Não confundir **commit/deploy** com
   de API, transcrições pessoais ou dados de pagamento.
 
 ### Entregas recentes e evidências
+
+- **27/10 — BUG calendário do site (mobile e desktop):** `SeletorDatas.tsx` fechava o modal se o usuário clicasse em check-in ou check-out enquanto estava aberto, em vez de trocar o foco. Corrigido para chamar `abrir(qual)` sempre; a mesma UI aparece na Home e em `/reservar`. O arquivo `testes/e2e-calendario-abertura.mjs` cobre troca de campo, datas e fechamento em ambas as telas e aparelhos. **Distinguir código implementado, teste efetivamente executado, CI, Vercel publicada e aprovação humana.** Nenhuma alteração de motor de reserva, link de reserva, preços ou skill OpenClaw.
+
+
 
 | Área | Entregue e verificado | Limites / pendência |
 |---|---|---|
