@@ -38,7 +38,8 @@ Se houver erro 401, confira a chave no servidor — não informe preço sem cons
 Retorna: quartos (disponíveis), esgotados, noites, estadia_minima,
 aviso_crianca, regra_criancas, valor_bebes, link_reserva.
 
-Cada quarto disponível tem: quarto (nome), capacidade, total e diaria_media.
+Cada quarto disponível tem: quarto (nome), capacidade, total, diaria_media e
+**link_reserva próprio da suíte** (roomCode).
 A API do agente ainda não devolve quantidade de unidades, fotos, comodidades
 nem estadia mínima nesta rota; os campos correspondentes vêm `null` ou vazios.
 Não deduza quantidade de quartos restantes nem use esse resultado para mandar fotos.
@@ -66,8 +67,11 @@ Não deduza quantidade de quartos restantes nem use esse resultado para mandar f
   HTTP 401 indica falha na chave da Hostinger; HTTP 5xx indica erro na API.
   Não volte a consultar o Worker diretamente.
 
-Máximo 3 quartos por mensagem. Sempre ofereça o link_reserva ao final para
-concluir a reserva.
+Máximo 3 quartos por mensagem. Quando o hóspede escolher uma suíte
+específica, envie **quartos[].link_reserva daquela suíte**, sem montar a URL
+manualmente nem enviar link de outra acomodação. Se estiver comparando várias,
+envie o link_reserva geral; com apenas uma opção, o geral já é específico.
+URLs completas ficam no texto clicável, nunca narradas no áudio.
 
 ## Regra de ouro do valor
 Só informe um número em reais se ele veio no campo total da skill AGORA.
