@@ -135,7 +135,7 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
                   )}
                   <div className="flex flex-col gap-2 mt-4">
                     <a
-                      href={buildDeepLink({ checkIn: exemplo.checkIn, checkOut: exemplo.checkOut, adultos: 2 })}
+                      href={buildDeepLink({ checkIn: exemplo.checkIn, checkOut: exemplo.checkOut, adultos: 2, quartoId: q.desbravador_room_id })}
                       target="_blank"
                       className="block text-center bg-marca text-marca-texto py-3 rounded-marca font-medium hover:bg-marca-hover transition-colors"
                     >
