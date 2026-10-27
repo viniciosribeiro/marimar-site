@@ -97,6 +97,8 @@ export function SeletorDatas({ entradaInicial, saidaInicial, variante }: Props) 
     setPosicao({ top: Math.max(a.bottom, b.bottom) + window.scrollY + 10, left: left + window.scrollX, largura });
   }, []);
 
+  // Chamado pelos dois campos, mesmo com o calendario aberto. Reabrir muda
+  // o foco sem desmontar o popup (antes o segundo toque o fechava).
   function abrir(campo: "entrada" | "saida") {
     const h = hojeIso();
     const mh = mesDe(h);
@@ -324,7 +326,8 @@ export function SeletorDatas({ entradaInicial, saidaInicial, variante }: Props) 
             <button ref={qual === "entrada" ? btEntrada : btSaida} type="button" className={e.campo}
               aria-haspopup="dialog" aria-expanded={aberto} aria-labelledby={`rotulo-${variante}-${qual}`}
               aria-describedby={`valor-${variante}-${qual}`}
-              onClick={() => (aberto ? fechar(false) : abrir(qual))}>
+              // Um toque em qualquer campo sempre abre ou muda o foco; nao alterna para fechado.
+              onClick={() => abrir(qual)}>
               <span id={`valor-${variante}-${qual}`} className={v ? "" : "text-tinta-suave/60"}>{v ?? "Escolher data"}</span>
             </button>
           </div>
