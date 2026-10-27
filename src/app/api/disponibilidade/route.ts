@@ -48,8 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     const localMap = new Map(locais.map((l) => [l.desbravador_room_id, l]));
-    // O link de reserva depende so da consulta, nao do quarto.
-    const deepLink = buildDeepLink({ checkIn, checkOut, adultos, criancas });
+    // Cada suíte informa seu código específico ao motor no link de reserva.
 
     const merged = todos.map(r => {
       const local = localMap.get(r.id);
@@ -76,7 +75,7 @@ export async function GET(request: NextRequest) {
         fotos: r.fotos || [],
         cama: local?.cama ?? null,
         metragem: local?.metragem ?? null,
-        deep_link: deepLink,
+        deep_link: buildDeepLink({ checkIn, checkOut, adultos, criancas, quartoId: r.id }),
       };
     });
 
