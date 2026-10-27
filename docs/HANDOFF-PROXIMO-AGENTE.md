@@ -29,6 +29,9 @@ handoff atualizado em cada entrega. Não confundir **commit/deploy** com
   Não registrar neste repositório senha, token, telefone de hóspede, segredo
   de API, transcrições pessoais ou dados de pagamento.
 
+### ALERTA de prioridade — primeiro toque no calendário do iPhone (27/10)
+O proprietário confirmou falha **real** ao abrir o calendário pelo botão `Escolher data` no Google Chrome de um iPhone. É intermitente, muitas vezes obriga atualizar; **a correção PR #49 era apenas para o caso de o diálogo fechar na troca dos campos e não deve ser dada como solução desta falha.** No Android dele funciona; automação Chromium desktop não reproduziu. Dois pontos de risco no código motivaram uma segunda correção: (1) `.abertura` com z-index 200 sobre todo o site e sem `pointer-events: none`, possivelmente invisível mas interceptando toque após animação WebKit; (2) ausência de fallback `MediaQueryList.addListener` em `useCelular` para navegadores WebKit antigos. Mitigações implementadas no branch `fix/ios-toque-calendario-overlay-20261027`. O script `testes/e2e-calendario-ios.mjs` exercita 4 recarregamentos por rota em WebKit e Chromium móveis/desktop, mas não substitui teste em iPhone físico. **Validar deploy de produção e solicitar reteste específico de fechar/reabrir a aba no iPhone**; não declarar êxito antes da confirmação. Nenhuma alteração na Marina, preços ou consulta de reservas.
+
 ### Entregas recentes e evidências
 
 - **27/10 — RESULTADO DA CORREÇÃO DO CALENDÁRIO:** PR #49 mesclado na `main` (`f0cffe9`); deploy Vercel de produção `dpl_8zaq37MN5gyk7Fc2254xjxmUqZNZ` reportou READY. Teste de navegador no endereço público `/reservar` em desktop passou: abriu calendário, selecionou 28/10 a 02/11, confirmou 5 noites e exibiu datas corretas (sem buscar nem reservar). Evidência: `https://agent.tinyfish.ai/runs/55f446f0-4dc9-4b25-b717-7d733c9074bd`. **Mobile físico e execução automática do E2E em CI ainda não foram comprovados.**
