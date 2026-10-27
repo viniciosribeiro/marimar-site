@@ -516,6 +516,8 @@ html[data-mov-decor="on"] .gaivotas, html[data-mov-decor="on"] .sol-raios { disp
    termina sozinha mesmo sem JavaScript. Uma vez por visita (data-abertura). */
 .abertura {
   position: fixed; inset: 0; z-index: 200;
+  /* Camada apenas visual: iOS/WebKit pode manter o hit-test mesmo apos a animacao. */
+  pointer-events: none;
   display: grid; place-items: center;
   background:
     radial-gradient(60vmax 50vmax at 50% 42%, color-mix(in oklab, var(--marca) 9%, var(--fundo)) 0%, transparent 70%),
