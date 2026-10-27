@@ -47,12 +47,26 @@ const criancaMotor = Number.isInteger(oc.criancasMotor) ? oc.criancasMotor : cri
 const linkFallback = 'https://reservas.desbravador.com.br/hotel-app/' + SLUG + '/reservation?' + new URLSearchParams({
   checkin, checkout, adults: String(adultoMotor), child1: String(criancaMotor),
 });
-const link = d.dados.find((q) => typeof q.deep_link === 'string' && q.deep_link.startsWith('https://reservas.desbravador.com.br/'))?.deep_link || linkFallback;
+// Preferir o deep_link individual da API; com versões antigas, a sigla
+// da suíte ainda permite completar a URL sem alterar preços e ocupação.
+const linkDaSuite = (q) => {
+  const base = typeof q.deep_link === 'string' && q.deep_link.startsWith('https://reservas.desbravador.com.br/')
+    ? q.deep_link : linkFallback;
+  const url = new URL(base);
+  if (typeof q.id === 'string' && q.id.trim()) {
+    url.searchParams.set('roomCode', q.id.trim());
+    url.searchParams.set('rateCode', '');
+  }
+  return url.toString();
+};
 const numero = (v) => typeof v === 'number' && Number.isFinite(v) ? v : null;
 const disponiveis = d.dados.filter((q) => q.disponivel === true);
+// Sem escolha entre várias suítes, conservar a pesquisa geral.
+const link = disponiveis.length === 1 ? linkDaSuite(disponiveis[0]) : linkFallback;
 const indisponiveis = d.dados.filter((q) => q.disponivel === false);
 const quartos = disponiveis.map((q) => ({
   codigo: q.id, quarto: q.nome, capacidade: q.ocupacao_max,
+  link_reserva: linkDaSuite(q),
   total: numero(q.total), diaria_media: numero(q.diaria),
   // A rota do agente ainda nao devolve estoque unitario nem imagens.
   // Nunca deduzir que e a ultima unidade.
