@@ -49,8 +49,18 @@ const ESTILO = {
 
 function useCelular() {
   return useSyncExternalStore(
-    (avisar) => { const m = matchMedia(CELULAR); m.addEventListener("change", avisar); return () => m.removeEventListener("change", avisar); },
-    () => matchMedia(CELULAR).matches,
+    (avisar) => {
+      const media = window.matchMedia(CELULAR);
+      // iPhones com WebKit antigo so implementam addListener/removeListener.
+      // Falhar na inscricao pode impedir a hidratacao e deixar os botoes mudos.
+      if (typeof media.addEventListener === "function") {
+        media.addEventListener("change", avisar);
+        return () => media.removeEventListener("change", avisar);
+      }
+      media.addListener(avisar);
+      return () => media.removeListener(avisar);
+    },
+    () => window.matchMedia(CELULAR).matches,
     () => false,
   );
 }
