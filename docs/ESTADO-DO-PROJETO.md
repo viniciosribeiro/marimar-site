@@ -1,5 +1,7 @@
 # Estado do projeto — Marimar Site
 
+> **ATENÇÃO 27/10 — IPhone: problema de primeiro toque ainda reproduzido em aparelho real antes da segunda correção.** Usuário informa que `Escolher data` às vezes não abre no Chrome iOS, mesmo após atualizar; Android funciona. Foram implementadas duas mitigações: camada decorativa `.abertura` não capta toques e fallback `MediaQueryList.addListener` para WebKit antigo. Código e teste `testes/e2e-calendario-ios.mjs`; exigir confirmação de deploy, de comportamento no iPhone físico e documentar resultados. Não confundir correção de alternância entre campos (PR #49, já publicada) com essa falha de primeiro toque.
+>
 > **2026-10-27 — Seletor de datas (Home e /reservar):** PR #49 mesclado na main (`f0cffe9`), Vercel produção `READY`. Teste visual do domínio público em `/reservar` no desktop aprovou abertura, seleção de intervalo e confirmação (28/10–02/11, 5 noites; sem enviar consulta). **Teste físico mobile e execução do E2E ainda pendentes.** Detalhes no changelog/handoff.
 >
 > **2026-10-27 — Implementação:** corrigida a alternância entre check-in e check-out que fechava inesperadamente o calendário já aberto. Ambos os campos agora sempre abrem/focam o seletor; reabertura e fechamento por Confirmar/Escape mantidos. Teste E2E de celular/desktop criado em `testes/e2e-calendario-abertura.mjs`. Revisar execução do teste, estado da Vercel e confirmação visual antes de classificar como homologado; sem mudança de preços, motor ou OpenClaw.
