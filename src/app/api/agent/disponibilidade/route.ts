@@ -51,7 +51,6 @@ export async function GET(request: NextRequest) {
           SELECT desbravador_room_id, nome FROM quartos WHERE desbravador_room_id = ANY(${ids})`)
       : [];
     const map = new Map(locais.map((l) => [l.desbravador_room_id, l]));
-    const deepLink = buildDeepLink({ checkIn: ci, checkOut: co, adultos: oc.adultosMotor, criancas: oc.criancasMotor });
 
     const merged = todos.map((r) => {
       const l = map.get(r.id);
@@ -61,7 +60,7 @@ export async function GET(request: NextRequest) {
         total: totalMotor + (oc.valorBebes ?? 0),
         total_motor: totalMotor, valor_bebes: oc.valorBebes,
         ocupacao_max: r.ocupacao_max, disponivel: r.disponivel,
-        valor_adulto: r.valor_adulto, valor_crianca: r.valor_crianca, pacote: r.pacote, deep_link: deepLink,
+        valor_adulto: r.valor_adulto, valor_crianca: r.valor_crianca, pacote: r.pacote, deep_link: buildDeepLink({ checkIn: ci, checkOut: co, adultos: oc.adultosMotor, criancas: oc.criancasMotor, quartoId: r.id }),
       };
     });
 
