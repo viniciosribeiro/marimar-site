@@ -90,7 +90,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           alertaEstoque: r.disponivel ? escassez(r.unidades_disponiveis) : null,
           totalFinal: (r.total_geral ?? r.total) + (oc.valorBebes ?? 0),
           valorBebes: oc.valorBebes ?? 0,
-          deepLink: buildDeepLink({ checkIn: ci, checkOut: co, adultos: oc.adultosMotor, criancas: oc.criancasMotor }),
+          deepLink: buildDeepLink({ checkIn: ci, checkOut: co, adultos: oc.adultosMotor, criancas: oc.criancasMotor, quartoId: r.id }),
           whatsappUrl: whatsapp
             ? `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Olá! Gostaria de reservar:\n\n*Quarto:* ${nomeExibido}\n*Check-in:* ${dataBR(ci)}\n*Check-out:* ${dataBR(co)}\n*Noites:* ${noites}\n*Adultos:* ${adultos}${criancas > 0 ? `\n*Crianças:* ${criancas}` : ""}${bebes > 0 ? `\n*Bebês de colo:* ${bebes}` : ""}\n*Valor total:* ${brl((r.total_geral ?? r.total) + (oc.valorBebes ?? 0))}\n\nPodem verificar a disponibilidade?`)}`
             : null,
