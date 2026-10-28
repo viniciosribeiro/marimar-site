@@ -1,5 +1,11 @@
 # Estado do projeto — Marimar Site
 
+> **28/10/2026 — confirmado pelo proprietário em produção** (detalhes no handoff, ESTADO ATUAL 28/10):
+> preço real da Marina no WhatsApp; fotos chegando como anexo no WhatsApp; calendário abrindo no
+> iPhone; Reservar do site abrindo a suíte escolhida no Desbravador. Sem reinstalar skill nesta data.
+> **Ainda pendente:** link por suíte enviado pela Marina no WhatsApp (instalação da skill de 27/10 na
+> Hostinger não confirmada), busca semântica da memória (crédito da API OpenAI esgotado), teste em Android.
+
 > **27/10 — Link por suíte no Desbravador (Issue #52):** proprietário testou e confirmou no iPhone a URL com `roomCode=QUEEN&rateCode=` para Suíte Queen. Branch de implementação adiciona `roomCode` nos cards /reservar, página de detalhe, API pública e API da Marina, mantendo link geral sem seleção. Script consulta-desbravador produz link individual por suíte e as skills explicam quando usar. **Pendente:** confirmar PR/CI/deploy e realizar teste pós-deploy para todas as suítes, incluindo iPhone e Android; reinstalar skills OpenClaw na Hostinger e testar WhatsApp. Preservar correção do calendário, preços reais e voz curta.
 
 

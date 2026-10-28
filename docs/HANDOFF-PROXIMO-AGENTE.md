@@ -5,6 +5,17 @@
 > **não** é a lista atual de pendências. Algumas tarefas antigas já foram
 > realizadas; verifique o estado real antes de executá-las novamente.
 
+## ESTADO ATUAL — 28/10/2026 (confirmado pelo proprietário)
+
+Teste do Vinicios em produção, em 28/10, depois da revisão do Claude sobre as entregas de 24–27/10 (`main` em `641a253`, `tsc` limpo, `npm test` 114/114):
+- **Preço no WhatsApp:** a Marina respondeu com preço real a "10 a 12 de novembro, 2 adultos". Não foi preciso reinstalar skill na Hostinger nesta data.
+- **Fotos no WhatsApp:** pedidas à Marina, chegaram como imagem (anexo), não como link.
+- **Calendário no iPhone:** "Escolher data" abriu o calendário (falha de primeiro toque de 27/10 não reapareceu no teste do proprietário).
+- **Reservar abre a suíte escolhida:** no site, pelo iPhone, o botão Reservar abriu o Desbravador já na suíte do card.
+- **Não coberto por este teste:** o link por suíte enviado pela Marina no WhatsApp (mudança de 27/10 na skill; instalação na Hostinger não confirmada), a busca semântica da memória (crédito da API OpenAI esgotado) e o calendário num Android.
+
+Próximo agente: tratar esses quatro itens como **confirmados**; não refazer nem "corrigir" o que funciona. As pendências reais seguem na seção de 27/10 abaixo (link por suíte no WhatsApp, memória, Android).
+
 ## ESTADO ATUAL — 27/10/2026 (ChatGPT → Claude e outros agentes)
 
 ### 27/10 — Reserva direcionada à suíte escolhida (Issue #52)
@@ -36,7 +47,7 @@ handoff atualizado em cada entrega. Não confundir **commit/deploy** com
   Não registrar neste repositório senha, token, telefone de hóspede, segredo
   de API, transcrições pessoais ou dados de pagamento.
 
-### ALERTA de prioridade — primeiro toque no calendário do iPhone (27/10)
+### ALERTA de prioridade — primeiro toque no calendário do iPhone (27/10) — **resolvido para o proprietário em 28/10** (abriu no iPhone dele; ver ESTADO ATUAL 28/10)
 O proprietário confirmou falha **real** ao abrir o calendário pelo botão `Escolher data` no Google Chrome de um iPhone. É intermitente, muitas vezes obriga atualizar; **a correção PR #49 era apenas para o caso de o diálogo fechar na troca dos campos e não deve ser dada como solução desta falha.** No Android dele funciona; automação Chromium desktop não reproduziu. Dois pontos de risco no código motivaram uma segunda correção: (1) `.abertura` com z-index 200 sobre todo o site e sem `pointer-events: none`, possivelmente invisível mas interceptando toque após animação WebKit; (2) ausência de fallback `MediaQueryList.addListener` em `useCelular` para navegadores WebKit antigos. Mitigações implementadas no branch `fix/ios-toque-calendario-overlay-20261027`. O script `testes/e2e-calendario-ios.mjs` exercita 4 recarregamentos por rota em WebKit e Chromium móveis/desktop, mas não substitui teste em iPhone físico. **Validar deploy de produção e solicitar reteste específico de fechar/reabrir a aba no iPhone**; não declarar êxito antes da confirmação. Nenhuma alteração na Marina, preços ou consulta de reservas.
 
 ### Entregas recentes e evidências
@@ -48,8 +59,8 @@ O proprietário confirmou falha **real** ao abrir o calendário pelo botão `Esc
 
 | Área | Entregue e verificado | Limites / pendência |
 |---|---|---|
-| **Tarifas Marina** | OpenClaw passou a consultar o proxy autenticado `/api/agent/disponibilidade` via Vercel/GRU1, evitando Worker diretamente da Hostinger (HTTP 502). PR #37; consulta pública ao motor validada com preços reais. | Validar sempre a chamada autenticada e preço na conversa real; nunca inventar valor. |
-| **Fotos da Marina** | Rota `/api/midia-quarto/[slug]/[indice]`, URLs `url_whatsapp` e instrução de anexar mídia pelo `message`; PRs #38/#40. | Não declarar entrega real de foto confirmada sem observar anexo no WhatsApp. |
+| **Tarifas Marina** | OpenClaw passou a consultar o proxy autenticado `/api/agent/disponibilidade` via Vercel/GRU1, evitando Worker diretamente da Hostinger (HTTP 502). PR #37; consulta pública ao motor validada com preços reais. **Confirmado pelo proprietário em 28/10:** preço real numa conversa de WhatsApp. Nunca inventar valor. |
+| **Fotos da Marina** | Rota `/api/midia-quarto/[slug]/[indice]`, URLs `url_whatsapp` e instrução de anexar mídia pelo `message`; PRs #38/#40. **Confirmado pelo proprietário em 28/10:** fotos chegaram como anexo no WhatsApp. |
 | **/reservas privada** | Painel protegido para Cecília, sessão segura, mapa visual, navegação e logout (PR #42). | **Não há fonte autenticada das reservas confirmadas do PMS/ROL Desbravador.** Calendário desconhecido ≠ livre; não inventar hóspedes/dados. |
 | **Busca pública /reservar** | Loading com mensagem **“Buscando suas suítes”**, transição GET confiável, rolagem automática suave às suítes e mensagem com quantidade disponível (PRs #43/#44). | **Preservar rigorosamente** carregamento, mensagem, movimento, consulta e preços quando editar UI. |
 | **Cards das suítes** | Interface moderna e compacta; **2 colunas no celular**, 3/4 em telas maiores (PR #45). Testado em viewport móvel com 6 suítes reais, valores, links e sem overflow. | Ajustes visuais somente na apresentação dos cards, sem mudar busca, motor, datas e animação. |

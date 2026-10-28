@@ -1,5 +1,15 @@
 # Changelog — Marimar Site
 
+## 2026-10-28 — Confirmação do proprietário em produção (sem mudança de código)
+**Autor:** Claude (Claude Code), registrando o teste feito pelo Vinicios. **Migration:** nenhuma. **Código:** não alterado.
+
+Antes, o Claude leu todas as entregas de 24 a 27/10 (PRs #33 a #53, feitas com o ChatGPT durante o incidente do Desbravador): `main` em `641a253` compila (`tsc` limpo) e `npm test` passa 114/114. Depois o proprietário testou em produção e respondeu "todos estão funcionando":
+- **Preço no WhatsApp:** a Marina respondeu com preço real a "10 a 12 de novembro, 2 adultos". Não foi preciso reinstalar skill na Hostinger nesta data.
+- **Fotos no WhatsApp:** pedidas à Marina, chegaram como imagem (anexo), não como link.
+- **Calendário no iPhone:** "Escolher data" abriu o calendário (falha de primeiro toque de 27/10 não reapareceu no teste do proprietário).
+- **Reservar abre a suíte escolhida:** no site, pelo iPhone, o botão Reservar abriu o Desbravador já na suíte do card.
+- **Não coberto por este teste:** o link por suíte enviado pela Marina no WhatsApp (mudança de 27/10 na skill; instalação na Hostinger não confirmada), a busca semântica da memória (crédito da API OpenAI esgotado) e o calendário num Android.
+
 ## 2026-10-27 — Link direto para a suíte escolhida no Desbravador (Issue #52)
 - **Teste real do proprietário:** confirmou no iPhone, depois da verificação anti-robô, que o link experimental da Suíte QUEEN com `roomCode=QUEEN&rateCode=` funcionou (10 a 12/11, 2 adultos). Os navegadores automatizados foram bloqueados por HTTP 403 do Desbravador; validação humana específica para QUEEN, não para todos os códigos.
 - **Mudanças no código:** `src/lib/deeplink.ts` ganhou `quartoId` opcional que acrescenta `roomCode` e `rateCode` vazio. Sem código mantém link genérico. `/reservar`, detalhe `/quartos/[slug]`, `/api/disponibilidade` e `/api/agent/disponibilidade` passam o código correspondente retornado pelo motor (`r.id` / `desbravador_room_id`).
