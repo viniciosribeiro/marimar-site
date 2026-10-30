@@ -180,9 +180,13 @@ as folhagens e ondas decorativas, que usam a cor principal.
 - **Ondas em movimento:** as ondas entre as seções.
 - **Elementos decorativos:** folhas balançando, gaivotas e o sol no topo.
 - **Revelar ao rolar:** as seções surgem ao descer a página.
-- **Abertura com a logo:** ao abrir o site, a logo aparece animada no centro
-  da tela, com um texto embaixo (padrão: "Pousada"), e a tela se abre para o
-  site. Aparece uma vez por visita. O texto se troca logo abaixo do botão.
+- **Abertura do site:** cobre a tela por alguns segundos ao abrir o site e se
+  abre para ele. Aparece uma vez por visita. Em **Estilo da abertura**:
+  - **Vídeo do pôr do sol com a logo** (padrão desde 30/10/2026): os 5
+    segundos do vídeo. No computador ocupa a tela toda; no celular em pé, o
+    vídeo fica no meio, com o céu e o mar completando em cima e embaixo.
+  - **Logo animada com texto:** a abertura antiga — a logo no centro e um
+    texto embaixo (padrão: "Pousada"), que se troca no campo que aparece.
 
 **Ícone do site** (aba do navegador, atalho na tela do celular): sai sozinho
 da **logo**. Para um ícone diferente, envie um **Favicon** (PNG quadrado) em

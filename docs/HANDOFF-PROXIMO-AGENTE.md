@@ -5,6 +5,16 @@
 > **não** é a lista atual de pendências. Algumas tarefas antigas já foram
 > realizadas; verifique o estado real antes de executá-las novamente.
 
+## ESTADO ATUAL — 30/10/2026 (abertura em vídeo)
+
+- **O que é:** o vídeo do pôr do sol com a logo e um brilho passando (5 s, enviado pelo Vinicios) virou a abertura do site, no lugar da logo animada. **Decisões do proprietário:** o vídeo inteiro (5 s, não 3,5 s) e manter a escolha no painel para voltar à logo antiga.
+- **Arquivos:** `public/abertura/por-do-sol.mp4` (H.264, 446 KB, o que todo celular toca), `por-do-sol.webm` (VP9, 425 KB, reserva para navegador sem H.264) e `por-do-sol.jpg` (capa, 47 KB). `src/components/site/Abertura.tsx` (estilo "video" | "logo"), CSS em `src/app/globals.css` (`.abertura--video`), `src/lib/tema.ts` (`movimento.aberturaEstilo`, padrão "video"; tema sem o campo passa a mostrar o vídeo), `src/components/admin/ThemeEditor.tsx` (Identidade visual → Forma → **Estilo da abertura**), `src/app/(site)/layout.tsx`.
+- **Responsivo:** tela mais larga que 4:3 → o vídeo cobre a tela (corta só céu e mar). Mais estreita (celular em pé, tablet) → vídeo a 140% da largura, centralizado, bordas esfumadas sobre a capa desfocada esticada (céu em cima, mar embaixo). A logo fica entre 19–78% da largura e 43–67% da altura do vídeo; os cortes nunca chegam nela. `max-width: none` é necessário (o Tailwind limita todo `<video>` a 100%).
+- **Mantido:** uma vez por visita (sessionStorage), some sozinha aos ~5,5 s só com CSS, `pointer-events: none` (correção do iPhone de 27/10), escondida para "reduzir movimento". O vídeo só recebe endereço (e só é baixado) quando a abertura vai aparecer: não na segunda página da visita, não com menos movimento, não com economia de dados. Se o celular bloquear vídeo automático (iPhone em economia de bateria), fica a capa parada. Sem som.
+- **Testes:** `npm test` 118/118 (4 novos em `testes/unit/abertura.test.ts`). `testes/e2e-abertura.mjs` 17/17 em Chromium (Playwright): computador, monitor 21:9, tablet, iPhone 13 em pé e deitado, iPhone SE — logo inteira na tela e sem rolagem lateral; vídeo toca sem som; some sozinha; não volta nem baixa na segunda página; menos movimento; "Escolher data" abre o calendário com a abertura na frente; painel com a escolha. `tsc` limpo; nenhum erro novo de lint.
+- **Não testado:** Safari e Chrome num iPhone físico, Android físico (o ambiente não tem WebKit). Para trocar o vídeo no futuro, usar **nome de arquivo novo** (a Vercel guarda os arquivos de `public/` em cache).
+- **Situação:** implementado, testado localmente e publicado na Vercel com o merge (ver CHANGELOG); **pendente a confirmação do proprietário num celular de verdade.** Não envolve Hostinger nem skills. Não mexer na abertura sem pedido: o proprietário escolheu o vídeo inteiro.
+
 ## ESTADO ATUAL — 28/10/2026 (confirmado pelo proprietário)
 
 Teste do Vinicios em produção, em 28/10, depois da revisão do Claude sobre as entregas de 24–27/10 (`main` em `641a253`, `tsc` limpo, `npm test` 114/114):
