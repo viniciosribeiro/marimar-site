@@ -327,9 +327,14 @@ export function ThemeEditor({ initial, blobOk }: { initial: any; blobOk: boolean
                   ligado={tema.movimento.decoracao} aoMudar={(v) => set("movimento", { ...tema.movimento, decoracao: v })} />
                 <Interruptor rotulo="Revelar ao rolar" descricao="As seções surgem suavemente conforme a pessoa desce a página."
                   ligado={tema.movimento.revelar} aoMudar={(v) => set("movimento", { ...tema.movimento, revelar: v })} />
-                <Interruptor rotulo="Abertura com a logo" descricao="Ao abrir o site, a logo aparece animada no centro da tela, com o texto abaixo, e a tela se abre para o site. Uma vez por visita."
+                <Interruptor rotulo="Abertura do site" descricao="Ao abrir o site, uma abertura cobre a tela por alguns segundos e se abre para o site. Uma vez por visita."
                   ligado={tema.movimento.abertura} aoMudar={(v) => set("movimento", { ...tema.movimento, abertura: v })} />
                 {tema.movimento.abertura && (
+                  <Selecao rotulo="Estilo da abertura" valor={tema.movimento.aberturaEstilo}
+                    aoMudar={(v) => set("movimento", { ...tema.movimento, aberturaEstilo: v as Tema["movimento"]["aberturaEstilo"] })}
+                    opcoes={[["video", "Vídeo do pôr do sol com a logo (5 segundos)"], ["logo", "Logo animada com texto (3 segundos)"]]} />
+                )}
+                {tema.movimento.abertura && tema.movimento.aberturaEstilo === "logo" && (
                   <label className="block mb-2">
                     <span className="block text-xs font-medium text-tinta-suave mb-1">Texto abaixo da logo na abertura</span>
                     <input value={tema.movimento.aberturaTexto} maxLength={40} placeholder="Pousada"

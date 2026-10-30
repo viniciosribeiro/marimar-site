@@ -1,5 +1,11 @@
 # Estado do projeto — Marimar Site
 
+> **30/10/2026 — abertura em vídeo:** o pôr do sol com a logo (5 s) virou a abertura do site,
+> responsiva (computador, ultralargo, tablet, celular em pé e deitado), uma vez por visita, sem
+> pegar toque e sem baixar o vídeo à toa. Identidade visual → Forma → **Estilo da abertura**
+> volta para a logo animada quando quiser. Testado em Chromium; **pendente conferir num iPhone e
+> num Android de verdade.** Detalhes no handoff (ESTADO ATUAL 30/10).
+
 > **28/10/2026 — confirmado pelo proprietário em produção** (detalhes no handoff, ESTADO ATUAL 28/10):
 > preço real da Marina no WhatsApp; fotos chegando como anexo no WhatsApp; calendário abrindo no
 > iPhone; Reservar do site abrindo a suíte escolhida no Desbravador. Sem reinstalar skill nesta data.

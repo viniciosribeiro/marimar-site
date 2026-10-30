@@ -110,7 +110,13 @@ export type Tema = {
      * se abre para o site. Uma vez por visita (aba). src/components/site/Abertura.tsx
      */
     abertura: boolean;
-    /** O texto embaixo da logo na abertura. */
+    /**
+     * Como é a abertura. "video": o pôr do sol no mar com a logo e um brilho
+     * passando (5 s; pedido do Vinicios em 30/10/2026, que escolheu o vídeo
+     * inteiro). "logo": a logo animada de 19/10, com o texto embaixo.
+     */
+    aberturaEstilo: "video" | "logo";
+    /** O texto embaixo da logo na abertura (só no estilo "logo"). */
     aberturaTexto: string;
   };
 };
@@ -140,7 +146,7 @@ export const TEMA_PADRAO: Tema = {
   },
   alinhamento: { topo: "esquerda", titulos: "esquerda", hero: "esquerda", justificado: false },
   banner: { ativo: false, texto: null, subtexto: null, animado: true },
-  movimento: { intensidade: "media", ondas: true, logo: "flutuar", decoracao: true, revelar: true, abertura: true, aberturaTexto: "Pousada" },
+  movimento: { intensidade: "media", ondas: true, logo: "flutuar", decoracao: true, revelar: true, abertura: true, aberturaEstilo: "video", aberturaTexto: "Pousada" },
 };
 
 /** Junta o que veio do banco com o padrao, tolerando campo faltando. */
@@ -182,6 +188,7 @@ function lerMovimento(m: unknown): Tema["movimento"] {
     decoracao: sim(v.decoracao, p.decoracao),
     revelar: sim(v.revelar, p.revelar),
     abertura: sim(v.abertura, p.abertura),
+    aberturaEstilo: um(v.aberturaEstilo, ["video", "logo"] as const, p.aberturaEstilo),
     aberturaTexto: typeof v.aberturaTexto === "string" ? v.aberturaTexto.trim().slice(0, 40) : p.aberturaTexto,
   };
 }

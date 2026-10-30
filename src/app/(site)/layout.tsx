@@ -46,9 +46,9 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="min-h-screen flex flex-col bg-fundo">
-      {/* Abertura com a logo (Identidade visual → Forma → Movimento). */}
+      {/* Abertura: vídeo do pôr do sol ou logo animada (Identidade visual → Forma → Movimento). */}
       {tema.animacoes && tema.movimento.abertura && (
-        <Abertura logoUrl={p?.logo_url ?? null} texto={tema.movimento.aberturaTexto} />
+        <Abertura estilo={tema.movimento.aberturaEstilo} logoUrl={p?.logo_url ?? null} texto={tema.movimento.aberturaTexto} />
       )}
       {mostrarBanner && (
         <div className="bg-acento text-acento-texto text-center text-sm px-4 py-2.5">
