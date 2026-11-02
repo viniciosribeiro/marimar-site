@@ -55,9 +55,10 @@ export function Lightbox({
   return (
     <div
       role="dialog"
+      data-lightbox="true"
       aria-modal="true"
       aria-label={titulo ? `Fotos: ${titulo}` : "Foto ampliada"}
-      className="fixed inset-0 z-[90] bg-black/95 flex flex-col select-none"
+      className="fixed inset-0 z-[140] bg-black/95 flex flex-col select-none"
       onTouchStart={(e) => { toque.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
       onTouchEnd={(e) => {
         if (!toque.current) return;
