@@ -2,5 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": [
     "gru1"
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/sincronizar-fotos",
+      "schedule": "0 12 * * *"
+    }
   ]
 }
