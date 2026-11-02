@@ -109,3 +109,49 @@ test('varias suítes recebem links próprios, com link geral sem roomCode', asyn
     assert.equal(u.searchParams.get('adults'), '2');
   }
 });
+
+
+function responderDuasSuites(_req, res) {
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({
+    ok: true, ocupacao: { adultosMotor: 2, criancasMotor: 0 },
+    dados: [
+      { id: 'QUEEN', nome: 'Suite Queen', disponivel: true, total: 900, diaria: 450, ocupacao_max: 2 },
+      { id: 'HIDRO', nome: 'Suíte Lua de Mel', disponivel: true, total: 1400, diaria: 700, ocupacao_max: 2 },
+      { id: 'KING', nome: 'Suite King', disponivel: false, total: 0, diaria: 0, ocupacao_max: 2 },
+    ],
+  }));
+}
+
+test('suite escolhida pelo roomCode: link principal sempre abre a suite exata', async () => {
+  const d = await testarComServidor(responderDuasSuites,
+    ['2026-11-10', '2026-11-12', '2', '0', '0', 'HIDRO']);
+  assert.equal(d.ok, true);
+  assert.equal(d.quarto_selecionado.codigo, 'HIDRO');
+  assert.deepEqual(d.quartos.map((q) => q.codigo), ['HIDRO']);
+  assert.equal(new URL(d.link_reserva).searchParams.get('roomCode'), 'HIDRO');
+  assert.equal(new URL(d.link_reserva).searchParams.get('rateCode'), '');
+  assert.equal(d.link_reserva, d.quartos[0].link_reserva);
+});
+
+test('suite escolhida pelo nome com acento: mantem datas ocupacao e codigo', async () => {
+  const d = await testarComServidor(responderDuasSuites,
+    ['2026-11-10', '2026-11-12', '2', '0', '0', 'lua de mel']);
+  assert.equal(d.ok, true);
+  assert.equal(d.quarto_selecionado.codigo, 'HIDRO');
+  const url = new URL(d.link_reserva);
+  assert.equal(url.searchParams.get('roomCode'), 'HIDRO');
+  assert.equal(url.searchParams.get('checkin'), '2026-11-10');
+  assert.equal(url.searchParams.get('checkout'), '2026-11-12');
+  assert.equal(url.searchParams.get('adults'), '2');
+});
+
+test('suite indisponivel ou inexistente nunca vira link generico', async () => {
+  for (const escolha of ['KING', 'INVENTADA']) {
+    const d = await testarComServidor(responderDuasSuites,
+      ['2026-11-10', '2026-11-12', '2', '0', '0', escolha]);
+    assert.equal(d.ok, false);
+    assert.match(d.erro, /Nao envie link geral/);
+    assert.equal(d.link_reserva, undefined);
+  }
+});
