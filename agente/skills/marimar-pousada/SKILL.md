@@ -289,9 +289,12 @@ perguntou o horário do café não quer deixar telefone.
   `https://marimar-site.vercel.app` servem o sistema atual da Vercel.
   Para fotos, use a página `url` devolvida por `/api/agent/quartos`;
   nunca use imagens diretas do Desbravador. Se o hóspede escolher suíte
-  específica, envie o link_reserva daquela suíte devolvido pela consulta
-  (não o link geral). Quando ainda estiver comparando, use o geral. Não
-  invente URLs ou preços e preserve o áudio curto sem narrar links.
+  específica, chame a skill `consulta-desbravador` com o código real da
+  suíte (6º argumento opcional do script) e envie seu `link_reserva`.
+  Confira `quarto_selecionado.codigo` e o parâmetro `roomCode` da URL.
+  **Nunca envie link geral nem de outra suíte depois de uma escolha.**
+  Quando ainda estiver comparando várias opções, use o link geral.
+  Não invente URLs ou preços e preserve o áudio curto sem narrar links.
 - **Toda foto e todo vídeo saem das rotas.** Foto: use
   `fotos[].url_whatsapp` de `/api/agent/quartos` para o envio no WhatsApp
   (ambos os campos apontam para imagens seguras servidas pela Marimar). Vídeo: `videos` da mesma rota ou
@@ -316,15 +319,20 @@ conta de voz da pousada e piora a experiência do hóspede.
   "Encontrei opções para essas datas. Enviei o link da reserva aqui na
   conversa, é só tocar nele." Pode falar datas, nome do quarto e preços
   confirmados, mas **nunca** pronunciar o link.
-- Para o OpenClaw com Auto-TTS, prefira delimitar a fala com o bloco
-  \`[[tts:text]]\` seguido da frase curta e \`[[/tts:text]]\`. A URL fica
-  **fora** desse bloco, no texto visível. Esse formato é suportado pelas
-  diretivas nativas de TTS; não mude a voz nem seu provedor.
-- Se esse recurso não funcionar na versão instalada, envie o link como
-  mensagem textual separada pela ferramenta \`message\`, sem anexar áudio a
-  essa mensagem, e deixe a resposta falada **sem URL**. A mensagem de
-  áudio/final deve conter exclusivamente a frase curta, não o link.
-  Nunca gere o mesmo áudio duas vezes.
+- **WhatsApp Web/QR com `tts.auto=inbound`: nunca inclua uma URL na resposta
+  final que será convertida em áudio.** Primeiro envie o link COMPLETO como
+  mensagem textual separada usando a ferramenta `message`, com
+  `action: "send"`, `channel: "whatsapp"`, `target` = remetente da conversa,
+  `message` = link e explicação curta, `bestEffort: false`, sem anexo de áudio.
+  Verifique o retorno real de envio. Depois a resposta final para o áudio
+  terá somente uma frase curta, de preferência com menos de 180 caracteres,
+  sem URL, parâmetro, código técnico ou qualquer endereço.
+- A diretiva `[[tts:text]]frase curta[[/tts:text]]` é permitida quando o
+  gateway tiver suporte confirmado, mas **não é a única proteção** enquanto
+  `tts.auto=inbound`: a URL jamais deve entrar no texto a ser sintetizado.
+- Se o envio pela ferramenta falhar, não diga que enviou o link. Responda
+  com uma frase sem URL informando a falha e ofereça contato humano.
+  Nunca produza áudio com URL como fallback e nunca gere o áudio duas vezes.
 - Para pedido que chegou por TEXTO, responda em texto como hoje; não
   force áudio apenas porque houve link.
 - Não silencie toda a resposta só por ter URL. Não invente um endereço
