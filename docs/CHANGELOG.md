@@ -1,5 +1,15 @@
 # Changelog — Marimar Site
 
+## 2026-11-02 — Marina: reserva na suíte escolhida e voz econômica no WhatsApp QR (PR pendente)
+**Solicitação do proprietário:** o link da Marina voltou a abrir a lista geral de quartos após a escolha da suíte, e o áudio voltou a narrar URLs longas.
+- **Causa confirmada no código:** `consulta-desbravador` produzia `quartos[].link_reserva` com `roomCode`, mas o `link_reserva` de topo continuava genérico quando havia várias suítes. O agente podia enviar o de topo mesmo após a escolha.
+- **Correção preparada no branch `fix/marina-deeplink-voz-20261102`:** script aceita agora 6º argumento opcional com código real do quarto ou nome; selecionando uma suíte, `link_reserva` de topo e `quartos[0].link_reserva` são idênticos e contêm `roomCode`; sem correspondência, ambiguidades e indisponibilidade retornam `ok:false` (sem fallback silencioso para lista geral). Sem suíte escolhida, o link geral de comparação permanece. Skill exige nova consulta com identificação da suíte.
+- **Áudio:** skill `marimar-pousada` passa a exigir envio da URL em mensagem de texto SEPARADA via `message` antes da resposta final curta ao áudio, para `tts.auto=inbound` não receber URL. Não muda voz/provedor/chave nem configuração TTS da Hostinger.
+- **Regressão:** casos de suíte por código, nome acentuado, inexistente e indisponível adicionados a `testes/unit/consulta-desbravador.test.mjs`. Testes em ambiente real e WhatsApp ainda não executados; Desbravador pode exigir anti-robô.
+- **Instalação pendente:** após merge, `git pull` e `openclaw skills install ./agente/skills/consulta-desbravador --force` e `openclaw skills install ./agente/skills/marimar-pousada --force` na Hostinger. GitHub/Vercel não atualizam automaticamente essas skills. Validar uma consulta QUEEN e HIDRO no WhatsApp de teste (sem fechar reserva), conferir áudio e link após anti-robô.
+- **Sem alterações:** preços, consulta real à Vercel/gru1, banco, dados de hóspedes, quartos do site e checkout. O botão Reservar do site foi confirmado em iPhone em 28/10, não refazer.
+
+
 ## 2026-10-30 — Abertura do site com o vídeo do pôr do sol
 **Autor:** Claude (Claude Code), a pedido do Vinicios ("no lugar da logo, mas claro algo adotado e responsivo"). **Migration:** nenhuma (o tema é JSON em `pousada.tema`).
 - **O que é:** o vídeo do pôr do sol com a logo e um brilho passando (5 s, enviado pelo Vinicios) virou a abertura do site, no lugar da logo animada. **Decisões do proprietário:** o vídeo inteiro (5 s, não 3,5 s) e manter a escolha no painel para voltar à logo antiga.
