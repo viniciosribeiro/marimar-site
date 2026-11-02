@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Lightbox } from "./Lightbox";
 
@@ -89,8 +90,9 @@ export function Gallery({ images, titulo }: { images: { url: string; alt: string
         </ul>
       )}
 
-      {ampliada && (
-        <Lightbox fotos={fotos} indice={selected} titulo={titulo} aoMudar={setSelected} aoFechar={() => setAmpliada(false)} />
+      {ampliada && createPortal(
+        <Lightbox fotos={fotos} indice={selected} titulo={titulo} aoMudar={setSelected} aoFechar={() => setAmpliada(false)} />,
+        document.body
       )}
     </div>
   );

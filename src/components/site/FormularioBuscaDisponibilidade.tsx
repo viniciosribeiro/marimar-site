@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { flushSync } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { LoaderCircle, Search } from "lucide-react";
 
 /**
@@ -63,7 +63,7 @@ export function FormularioBuscaDisponibilidade({
         </button>
       </form>
 
-      {consultando && (
+      {consultando && createPortal(
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#0d2637]/45 px-5 backdrop-blur-[3px]"
           role="status" aria-live="polite" aria-label="Consultando disponibilidade de quartos">
           <div className="flex w-full max-w-sm flex-col items-center rounded-[1.5rem] bg-white px-7 py-9 text-center shadow-2xl">
@@ -76,7 +76,8 @@ export function FormularioBuscaDisponibilidade({
             </p>
             <p className="mt-3 text-xs text-tinta-suave">A consulta pode levar alguns instantes.</p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

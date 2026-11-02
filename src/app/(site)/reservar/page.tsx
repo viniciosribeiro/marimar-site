@@ -3,6 +3,7 @@ import { buildDeepLink } from "@/lib/deeplink";
 import { SeletorDatas } from "@/components/site/SeletorDatas";
 import { FormularioBuscaDisponibilidade } from "@/components/site/FormularioBuscaDisponibilidade";
 import { RolarParaResultados } from "@/components/site/RolarParaResultados";
+import { CardQuartoModal, type DadosDetalhesSuite } from "@/components/site/CardQuartoModal";
 import { tituloQuarto, resumir, brl, pluralizar, escassez, dataBR } from "@/lib/format";
 import Link from "next/link";
 import Image from "next/image";
@@ -76,6 +77,18 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       const fotosMap = new Map<string, any[]>();
       for (const f of fotos) { if (!fotosMap.has(f.quarto_id)) fotosMap.set(f.quarto_id, []); fotosMap.get(f.quarto_id)!.push(f); }
 
+      // Comodidades em lote. Se a consulta acessoria falhar, a busca continua.
+      const itensComodidades = quartoIds.length > 0
+        ? await sql`SELECT qc.quarto_id, cm.nome
+          FROM quarto_comodidades qc JOIN comodidades cm ON cm.id = qc.comodidade_id
+          WHERE qc.quarto_id = ANY(${quartoIds}) ORDER BY cm.nome`.catch(() => [])
+        : [];
+      const comodidadesMap = new Map<string, string[]>();
+      for (const item of itensComodidades) {
+        if (!comodidadesMap.has(item.quarto_id)) comodidadesMap.set(item.quarto_id, []);
+        comodidadesMap.get(item.quarto_id)!.push(item.nome);
+      }
+
       resultados = [...data.quartos, ...data.indisponiveis].map(r => {
         const l = map.get(r.id);
         const qFotos = l ? (fotosMap.get(l.id) || []) : [];
@@ -85,7 +98,13 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
         return {
           ...r, nomeLocal: nomeExibido, slugLocal: l?.slug || "",
           descricaoLocal: l?.descricao_motor || r.categoria || "", catNome: l?.cat_nome,
-          cama: l?.cama, metragem: l?.metragem, fotoCapa,
+          descricaoCompleta: l?.descricao || null,
+          descricaoMotor: l?.descricao_motor || r.categoria || null,
+          comodidadesLocal: l ? (comodidadesMap.get(l.id) || []) : [],
+          fotosGaleria: qFotos.length > 0
+            ? qFotos.map((f: any) => ({ url: String(f.url), alt: f.alt || nomeExibido }))
+            : (r.fotos || []).filter((url: string) => !!url).map((url: string) => ({ url, alt: nomeExibido })),
+          cama: l?.cama, metragem: l?.metragem, vista: l?.vista, fotoCapa,
           avisoEstadia: r.estadia_minima > noites ? r.estadia_minima : null,
           alertaEstoque: r.disponivel ? escassez(r.unidades_disponiveis) : null,
           totalFinal: (r.total_geral ?? r.total) + (oc.valorBebes ?? 0),
@@ -188,7 +207,11 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
             <>
               {disponiveis.length > 0 && (
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6 mb-10">
-                  {disponiveis.map((r: any) => <CardQuarto key={r.id} r={r} noites={noites} />)}
+                  {disponiveis.map((r: any) => (
+                     <CardQuartoModal key={r.id} dados={dadosModal(r, noites)}>
+                       <CardQuarto r={r} noites={noites} />
+                     </CardQuartoModal>
+                   ))}
                 </div>
               )}
 
@@ -198,7 +221,11 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
                     Sem disponibilidade nessas datas
                   </h2>
                   <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
-                    {esgotados.map((r: any) => <CardQuarto key={r.id} r={r} noites={noites} />)}
+                    {esgotados.map((r: any) => (
+                       <CardQuartoModal key={r.id} dados={dadosModal(r, noites)}>
+                         <CardQuarto r={r} noites={noites} />
+                       </CardQuartoModal>
+                     ))}
                   </div>
                 </div>
               )}
@@ -238,6 +265,29 @@ function Adicionais({ itens, destacarBebe }: { itens: Adicional[]; destacarBebe:
   );
 }
 
+function dadosModal(r: any, noites: number): DadosDetalhesSuite {
+  return {
+    nome: r.nomeLocal,
+    categoria: r.catNome,
+    descricao: r.descricaoCompleta,
+    descricaoMotor: r.descricaoMotor,
+    fotos: r.fotosGaleria || [],
+    comodidades: r.comodidadesLocal || [],
+    cama: r.cama,
+    metragem: r.metragem,
+    vista: r.vista,
+    ocupacao: Number(r.ocupacao_max) || 0,
+    disponivel: Boolean(r.disponivel),
+    diaria: Number(r.diaria) || 0,
+    total: Number(r.totalFinal) || 0,
+    noites,
+    reservaUrl: r.deepLink,
+    whatsappUrl: r.whatsappUrl,
+    avisoEstadia: r.avisoEstadia,
+    motivoIndisponivel: r.motivo_indisponivel,
+  };
+}
+
 function CardQuarto({ r, noites }: { r: any; noites: number }) {
   return (
     <article className={`group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-linha/60 bg-white shadow-[0_5px_20px_-12px_rgba(13,49,55,0.35)] transition-shadow duration-200 hover:shadow-[0_12px_28px_-14px_rgba(13,49,55,0.30)] ${!r.disponivel ? "opacity-75" : ""}`}>
@@ -253,8 +303,13 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
         ) : (
           <div className="flex h-full items-center justify-center text-3xl sm:text-5xl" aria-label="Sem foto disponível">🏨</div>
         )}
+        {r.slugLocal && (
+          <Link href={`/quartos/${r.slugLocal}`}
+            className="absolute inset-0 z-10 focus-visible:outline-4 focus-visible:outline-marca"
+            aria-label={`Ver fotos e detalhes de ${r.nomeLocal}`} />
+        )}
         {r.alertaEstoque && (
-          <span className="absolute bottom-2 left-2 right-2 w-fit max-w-[90%] rounded-md bg-amber-500/95 px-2 py-1 text-[10px] font-bold leading-tight text-white shadow sm:bottom-auto sm:top-3 sm:left-3 sm:right-auto sm:rounded-full sm:px-3 sm:text-xs">
+          <span className="pointer-events-none absolute z-10 bottom-2 left-2 right-2 w-fit max-w-[90%] rounded-md bg-amber-500/95 px-2 py-1 text-[10px] font-bold leading-tight text-white shadow sm:bottom-auto sm:top-3 sm:left-3 sm:right-auto sm:rounded-full sm:px-3 sm:text-xs">
             {r.alertaEstoque}
           </span>
         )}
@@ -262,7 +317,9 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
 
       <div className="flex flex-1 flex-col p-2.5 sm:p-4">
         <div className="min-w-0">
-          <h3 className="min-h-[2.5em] line-clamp-2 font-titulo text-[0.96rem] font-bold leading-[1.25] text-tinta sm:min-h-0 sm:text-xl">{r.nomeLocal}</h3>
+          <h3 className="min-h-[2.5em] line-clamp-2 font-titulo text-[0.96rem] font-bold leading-[1.25] text-tinta sm:min-h-0 sm:text-xl">
+            {r.slugLocal ? <Link href={`/quartos/${r.slugLocal}`} className="hover:text-marca focus-visible:underline">{r.nomeLocal}</Link> : r.nomeLocal}
+          </h3>
           {r.catNome && (
             <span className="mt-1.5 inline-flex max-w-full truncate rounded-full bg-marca-sutil px-2 py-0.5 text-[10px] font-semibold text-marca-ativa sm:text-xs">
               {tituloQuarto(r.catNome)}
