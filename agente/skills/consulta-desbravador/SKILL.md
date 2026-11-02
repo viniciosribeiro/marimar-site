@@ -23,7 +23,13 @@ quantos bebês de colo. A idade que separa um do outro está no treinamento
 não configurou a regra, pergunte só "quantas crianças" e passe bebês = 0.
 
 ## Como chamar
-    node {baseDir}/scripts/consultar-api.mjs <checkin> <checkout> <adultos> <criancas> <bebes>
+    node {baseDir}/scripts/consultar-api.mjs <checkin> <checkout> <adultos> <criancas> <bebes> [codigo_ou_nome_da_suite]
+
+**Obrigatorio quando ja houver quarto escolhido:** passe o sexto argumento
+opcional, por exemplo `HIDRO`, `QUEEN` ou `"Suíte Lua de Mel"`.
+A saida tera `quarto_selecionado`, somente a suite solicitada em `quartos`,
+e `link_reserva` da propria suite. Sem o argumento, a busca por varias
+suites continua oferecendo o link geral para comparacao.
 
 `criancas` = crianças que NÃO são de colo; `bebes` = bebês de colo. Passe
 os números como o hóspede informou — o script aplica a regra da pousada
@@ -67,11 +73,22 @@ Não deduza quantidade de quartos restantes nem use esse resultado para mandar f
   HTTP 401 indica falha na chave da Hostinger; HTTP 5xx indica erro na API.
   Não volte a consultar o Worker diretamente.
 
-Máximo 3 quartos por mensagem. Quando o hóspede escolher uma suíte
-específica, envie **quartos[].link_reserva daquela suíte**, sem montar a URL
-manualmente nem enviar link de outra acomodação. Se estiver comparando várias,
-envie o link_reserva geral; com apenas uma opção, o geral já é específico.
-URLs completas ficam no texto clicável, nunca narradas no áudio.
+Máximo 3 quartos por mensagem. **Depois que o hospede mencionar ou escolher
+uma suite concreta, jamais use o link geral.** Execute novamente a consulta
+com o sexto argumento indicando seu codigo real (`roomCode`, ex. `QUEEN`,
+`HIDRO`) ou nome. Confira se `quarto_selecionado.codigo` e o esperado e
+se a URL de `link_reserva` contem `roomCode=CODIGO` e as mesmas datas e
+ocupacao da consulta. Envie somente essa URL, que e igual a
+`quartos[0].link_reserva`. Nao troque o codigo por um slug, ID do banco
+local, nome arbitrario ou outro quarto. O parametro `rateCode` vazio deve
+ser mantido; foi validado com QUEEN no iPhone.
+
+Se o script retornar `ok:false` por identificacao ambigua ou falta de vaga,
+nao substitua silenciosamente por link de pesquisa geral. Diga que nao conseguiu
+confirmar a suite solicitada e ofereca alternativas reais da nova consulta.
+**O link geral so serve antes de haver quarto escolhido**, durante uma
+comparacao de varias opcoes. URLs completas ficam no texto clicavel,
+nunca narradas no audio.
 
 ## Regra de ouro do valor
 Só informe um número em reais se ele veio no campo total da skill AGORA.
