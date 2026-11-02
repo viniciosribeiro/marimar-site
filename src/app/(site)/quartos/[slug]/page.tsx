@@ -86,10 +86,10 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
                             )}
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">{q.nome}</h1>
               {q.descricao_motor && (
-                <p className="mt-2 text-gray-500 text-sm leading-relaxed line-clamp-3">{q.descricao_motor}</p>
+                <p className="mt-2 text-gray-500 text-sm leading-relaxed whitespace-pre-line break-words">{q.descricao_motor}</p>
               )}
               {q.descricao && (
-                <p className="mt-2 text-gray-600 text-sm">{q.descricao}</p>
+                <p className="mt-2 whitespace-pre-line break-words text-gray-600 text-sm leading-relaxed">{q.descricao}</p>
               )}
             </div>
 
