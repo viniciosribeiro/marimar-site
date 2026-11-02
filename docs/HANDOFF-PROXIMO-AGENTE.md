@@ -1,5 +1,14 @@
 # Handoff — continuar de onde paramos
 
+## ESTADO ATUAL — 02/11/2026 (Marina WhatsApp: link de suíte e TTS)
+- **Relato novo do proprietário:** no WhatsApp o link da suíte indicada voltou a abrir lista geral, e o áudio volta a soletrar links, gastando ElevenLabs. Não invalida o teste do botão Reservar do SITE no iPhone (28/10).
+- **Código alterado:** `agente/skills/consulta-desbravador/scripts/consultar-api.mjs` aceita argumento 6 `codigo_ou_nome_da_suite` depois dos 5 argumentos usuais (entrada, saída, adultos, crianças, bebês). Quando informado, `quarto_selecionado`, `quartos` filtrados e `link_reserva` de topo apontam para o `roomCode` correto. Sem escolha, consulta padrão idêntica. Código inexistente/esgotado/ambíguo retorna erro, nunca link genérico. `agente/skills/consulta-desbravador/SKILL.md` e `agente/skills/marimar-pousada/SKILL.md` deixam a regra explícita.
+- **TTS QR:** `tts.auto=inbound` do OpenClaw pode narrar a resposta final inteira, mesmo que a skill peça para não ler URL. Agora a skill manda link por ferramenta `message` (texto separado, sem áudio) e deixa resposta final curta sem URL. Provedor e voz não alterados. Necessária validação de entrega com `bestEffort:false` e de um áudio real.
+- **Teste:** adicionado em `testes/unit/consulta-desbravador.test.mjs` (código, nome, erro seguro); execução em produção e no OpenClaw/Hostinger PENDENTE. Não afirmar que está corrigido no canal até instalar/retestar.
+- **Aplicação:** após merge, no terminal da Hostinger, `cd ~/marimar-site && git pull --ff-only && openclaw skills install ./agente/skills/consulta-desbravador --force && openclaw skills install ./agente/skills/marimar-pousada --force`. Testar com uma escolha de QUEEN (código confirmado antes no iPhone) e depois HIDRO; abrir o link após eventual anti-robô e conferir URL `roomCode`, datas, hóspedes; áudio não pode ler endereço. Não mexer em banco, tarifas nem TTS por configuração sem teste.
+- **Privacidade:** apenas sessão do remetente; não registrar chaves, números ou conversas reais.
+
+
 > **Atualização operacional: 27/10/2026 — leia esta seção PRIMEIRO.**
 > O histórico abaixo, datado de **30/09/2026**, é mantido para auditoria,
 > **não** é a lista atual de pendências. Algumas tarefas antigas já foram

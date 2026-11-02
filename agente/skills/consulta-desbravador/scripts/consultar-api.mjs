@@ -10,7 +10,7 @@
 const SITE = (process.env.MARIMAR_SITE_URL || 'https://www.pousadamarimarilhadomel.com.br').replace(/\/+$/, '');
 const CHAVE = process.env.MARIMAR_API_KEY || '';
 const SLUG = 'pousada-ilha-do-mel-marimar';
-const [, , checkin, checkout, adArg = '2', chArg = '0', bbArg = '0'] = process.argv;
+const [, , checkin, checkout, adArg = '2', chArg = '0', bbArg = '0', quartoArg = ''] = process.argv;
 const inteiro = (s, minimo, maximo) => {
   const n = Number(s);
   return Number.isInteger(n) ? Math.min(maximo, Math.max(minimo, n)) : minimo;
@@ -62,9 +62,29 @@ const linkDaSuite = (q) => {
 const numero = (v) => typeof v === 'number' && Number.isFinite(v) ? v : null;
 const disponiveis = d.dados.filter((q) => q.disponivel === true);
 // Sem escolha entre várias suítes, conservar a pesquisa geral.
-const link = disponiveis.length === 1 ? linkDaSuite(disponiveis[0]) : linkFallback;
+// A Marina pode solicitar uma suite pelo ID real (QUEEN, HIDRO...) ou pelo nome.
+// Assim o link principal NUNCA volta a ser generico depois de uma escolha.
+// Falha fechado se a suite nao existe, esta esgotada ou o nome e ambiguo.
+const normalizar = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+  .replace(/[^A-Z0-9]+/g, ' ').trim();
+const selecao = normalizar(quartoArg);
+let escolhida = null;
+if (selecao) {
+  const porCodigo = d.dados.filter((q) => normalizar(q.id) === selecao);
+  const porNomeExato = d.dados.filter((q) => normalizar(q.nome) === selecao);
+  const porNomeParcial = selecao.length >= 3
+    ? d.dados.filter((q) => normalizar(q.nome).includes(selecao)) : [];
+  const candidatas = porCodigo.length ? porCodigo : porNomeExato.length ? porNomeExato : porNomeParcial;
+  if (candidatas.length !== 1 || candidatas[0].disponivel !== true ||
+      typeof candidatas[0].id !== 'string' || !candidatas[0].id.trim()) {
+    out({ ok: false, erro: 'A suite solicitada nao foi identificada de forma unica ou esta indisponivel nessas datas. Nao envie link geral como se fosse o quarto escolhido.', quarto_solicitado: quartoArg });
+  }
+  escolhida = candidatas[0];
+}
+const quartosFiltrados = escolhida ? [escolhida] : disponiveis;
+const link = escolhida ? linkDaSuite(escolhida) : (disponiveis.length === 1 ? linkDaSuite(disponiveis[0]) : linkFallback);
 const indisponiveis = d.dados.filter((q) => q.disponivel === false);
-const quartos = disponiveis.map((q) => ({
+const quartos = quartosFiltrados.map((q) => ({
   codigo: q.id, quarto: q.nome, capacidade: q.ocupacao_max,
   link_reserva: linkDaSuite(q),
   total: numero(q.total), diaria_media: numero(q.diaria),
@@ -77,6 +97,7 @@ const noites = Math.round((Date.parse(checkout) - Date.parse(checkin)) / 8640000
 out({
   ok: true, pousada: 'Pousada Marimar', checkin, checkout, adultos, criancas, bebes, noites,
   tem_disponibilidade: quartos.length > 0,
+  quarto_selecionado: escolhida ? { codigo: escolhida.id, quarto: escolhida.nome } : null,
   quartos,
   esgotados: indisponiveis.map((q) => ({ quarto: q.nome, motivo: 'Indisponivel no periodo consultado' })),
   estadia_minima: null, aviso_crianca: oc.regraAplicada ? null : (criancas || bebes ? 'Confirme a regra de criancas com a recepcao.' : null),
