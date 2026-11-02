@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **02/11/2026 — novo relato WhatsApp:** a Marina voltou a ler links longos no áudio e o link de reserva após escolher uma suíte volta a apresentar vários quartos. No código existente, `quartos[].link_reserva` já continha `roomCode`, mas o `link_reserva` geral podia ser enviado por engano. Branch `fix/marina-deeplink-voz-20261102` exige seleção explícita por código/nome e texto com URL separado da fala do OpenClaw QR. **Ainda não homologado em WhatsApp real nem instalado na Hostinger**; não confundir com o botão Reservar do site, confirmado no iPhone em 28/10. Veja handoff e changelog.
+
+
 > **30/10/2026 — abertura em vídeo:** o pôr do sol com a logo (5 s) virou a abertura do site,
 > responsiva (computador, ultralargo, tablet, celular em pé e deitado), uma vez por visita, sem
 > pegar toque e sem baixar o vídeo à toa. Identidade visual → Forma → **Estilo da abertura**
