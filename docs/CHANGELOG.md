@@ -1,5 +1,13 @@
 # Changelog — Marimar Site
 
+## 03/11/2026 — Correção isolada do 404 nos cards de busca (/reservar, PR #61)
+- **Relato e causa:** ao pesquisar diversas datas, tocar na foto, título ou Detalhes de um quarto às vezes navegava para `/quartos/[slug]`, que retorna 404 para um cadastro local desativado, embora a suíte conste no resultado real do motor Desbravador. No PR #59 a janela modal existia, mas os links herdados continuaram dentro do card; o manipulador de clique concorria com a navegação do Next.
+- **Correção:** `src/app/(site)/reservar/page.tsx`: nos cards da busca, a foto e o título agora são botões, e Detalhes é botão em todos os quartos disponíveis; `CardQuartoModal` já trata o clique para abrir a janela. Nada toca na rota de catálogo `/quartos/[slug]` em si, no banco, em fotos ou em tarifas. O modal contém fotos locais/Desbravador e descrições como antes. Reservar continua a abrir `r.deepLink` com `roomCode`, datas e hóspedes; WhatsApp externo continua `r.whatsappUrl`.
+- **Testes criados:** `testes/unit/card-reserva.test.mjs` (proteção contra links antigos e preservação de contratos) e `testes/e2e-cards-reserva.mjs` (somente leitura, dois períodos e desktop/celular, nunca clica em Reservar/WhatsApp).
+- **Evidência:** 12 verificações de código passaram; build Next/TypeScript da Vercel Preview `READY`. Busca oficial respondeu com 9 opções para 09–12/12/2026 (2 adultos). **Limite:** Preview não possui acesso ao Postgres (`ECONNREFUSED 127.0.0.1:5432`), impedindo E2E real dos cards nesse ambiente; não reutilizar credenciais de produção no Preview por conveniência. Validar em produção após o deploy e reverter em caso de falha.
+- **Publicação:** aguardando gate de integração PR #61; atualizar depois com SHA e evidência de publicação. Confirmação manual do proprietário pendente.
+
+
 ## 2026-11-02 — Marina: reserva na suíte escolhida e voz econômica no WhatsApp QR (PR pendente)
 **Solicitação do proprietário:** o link da Marina voltou a abrir a lista geral de quartos após a escolha da suíte, e o áudio voltou a narrar URLs longas.
 - **Causa confirmada no código:** `consulta-desbravador` produzia `quartos[].link_reserva` com `roomCode`, mas o `link_reserva` de topo continuava genérico quando havia várias suítes. O agente podia enviar o de topo mesmo após a escolha.
