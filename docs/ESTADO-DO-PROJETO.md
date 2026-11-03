@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **03/11/2026 — BUG 404 NOS CARDS /reservar (PR #61):** problema transversal a várias datas, não ao motor. Links herdados da foto/título/Detalhes navegavam para `/quartos/[slug]`; essa rota só aceita `q.ativo=true` e retorna 404 mesmo quando o motor devolve a suíte. Correção em branch `fix/cards-reserva-modal-sem-404-20261103` substitui links internos dos cards por botões que abrem `CardQuartoModal`; **não modifica o botão Reservar, roomCode, tarifas, banco, mídia, sincronização, Marina ou OpenClaw**. 12 verificações estáticas passaram; Vercel Preview compilou, mas a Preview falha ao conectar Postgres em `127.0.0.1:5432`; portanto E2E em ambiente com dados ainda PENDENTE. PR #61, verificar publicação antes de dar como feito. Documentado também em CHANGELOG e HANDOFF.
+
+
 > **02/11/2026 — novo relato WhatsApp:** a Marina voltou a ler links longos no áudio e o link de reserva após escolher uma suíte volta a apresentar vários quartos. No código existente, `quartos[].link_reserva` já continha `roomCode`, mas o `link_reserva` geral podia ser enviado por engano. Branch `fix/marina-deeplink-voz-20261102` exige seleção explícita por código/nome e texto com URL separado da fala do OpenClaw QR. **Ainda não homologado em WhatsApp real nem instalado na Hostinger**; não confundir com o botão Reservar do site, confirmado no iPhone em 28/10. Veja handoff e changelog.
 
 
