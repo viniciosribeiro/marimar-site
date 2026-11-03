@@ -1,5 +1,8 @@
 # Estado do projeto — Marimar Site
 
+> **03/11/2026 — PR #61 PUBLICADO EM PRODUÇÃO:** corrigidos links antigos que levavam ao 404 em cards da busca de suítes, mantendo foto/nome/Detalhes dentro do modal; merge `faa3f397` e deploy Vercel `dpl_BSeERqnhDCnpKKzaUwq5cKeUTGYn` READY. Quatro períodos verificados em produção para 2 adultos: 09–12/12 (9 suítes), 10–12/11 (6), 20–23/12 (5), 10–13/01/2027 (6); sem falhas da busca nem links antigos na extração; logs sem erro/fatal no intervalo consultado. **E2E real de clique e validação em iPhone/Android/desktop físicos PENDENTES**, não confundir com build READY e teste de GET. Preview usa DATABASE_URL localhost indevido; não copiar credenciais reais para contornar. Preços, mídias, Marina, WhatsApp, roomCode e regras do Desbravador não foram alterados; continuam pendências OpenClaw separadas no PR #60. Veja CHANGELOG/HANDOFF.
+
+
 > **03/11/2026 — BUG 404 NOS CARDS /reservar (PR #61):** problema transversal a várias datas, não ao motor. Links herdados da foto/título/Detalhes navegavam para `/quartos/[slug]`; essa rota só aceita `q.ativo=true` e retorna 404 mesmo quando o motor devolve a suíte. Correção em branch `fix/cards-reserva-modal-sem-404-20261103` substitui links internos dos cards por botões que abrem `CardQuartoModal`; **não modifica o botão Reservar, roomCode, tarifas, banco, mídia, sincronização, Marina ou OpenClaw**. 12 verificações estáticas passaram; Vercel Preview compilou, mas a Preview falha ao conectar Postgres em `127.0.0.1:5432`; portanto E2E em ambiente com dados ainda PENDENTE. PR #61, verificar publicação antes de dar como feito. Documentado também em CHANGELOG e HANDOFF.
 
 
