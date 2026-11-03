@@ -1,5 +1,12 @@
 # Changelog — Marimar Site
 
+## 03/11/2026 — confirmação de publicação do fix 404 da busca
+- **PR:** #61, squash `faa3f39756e59839f2955c626b4af9c68142ee0b`, Vercel produção `dpl_BSeERqnhDCnpKKzaUwq5cKeUTGYn`, READY e associado aos domínios oficiais.
+- **Testes externos somente leitura no site oficial:** 09–12/12/2026 (2 adultos, 9 suítes), 10–12/11/2026 (6 suítes), 20–23/12/2026 (5 suítes), 10–13/01/2027 (6 suítes); todos retornaram busca sem erro e **zero links antigos** de card para `/quartos/[slug]` na extração. Logs de erro/fatal do deploy: nenhum encontrado na janela consultada.
+- **Limite da prova:** não foi possível testar gesto de toque/abertura modal em navegador real ou automação E2E: Preview sem Postgres (ECONNREFUSED localhost:5432) e sem browser de interação acessível nessa execução. O teste está preparado em `testes/e2e-cards-reserva.mjs`. Confirmação humana mobile/desktop continua pendente. Não descrever como E2E aprovado.
+- **Nenhuma mudança nas integrações:** tarifas/ocupação Desbravador, mídias, sincronizador automático, botão Reservar, chat da Marina e canal WhatsApp continuam como antes; apenas links de exploração dos cards foram substituídos por botões que abrem o modal. Isso não conclui eventuais correções pendentes no OpenClaw/Hostinger do PR #60.
+
+
 ## 03/11/2026 — Correção isolada do 404 nos cards de busca (/reservar, PR #61)
 - **Relato e causa:** ao pesquisar diversas datas, tocar na foto, título ou Detalhes de um quarto às vezes navegava para `/quartos/[slug]`, que retorna 404 para um cadastro local desativado, embora a suíte conste no resultado real do motor Desbravador. No PR #59 a janela modal existia, mas os links herdados continuaram dentro do card; o manipulador de clique concorria com a navegação do Next.
 - **Correção:** `src/app/(site)/reservar/page.tsx`: nos cards da busca, a foto e o título agora são botões, e Detalhes é botão em todos os quartos disponíveis; `CardQuartoModal` já trata o clique para abrir a janela. Nada toca na rota de catálogo `/quartos/[slug]` em si, no banco, em fotos ou em tarifas. O modal contém fotos locais/Desbravador e descrições como antes. Reservar continua a abrir `r.deepLink` com `roomCode`, datas e hóspedes; WhatsApp externo continua `r.whatsappUrl`.

@@ -1,5 +1,13 @@
 # Handoff — continuar de onde paramos
 
+## ESTADO ATUAL — 03/11/2026: PR #61 integrado e disponível nos domínios oficiais
+- **Correção do 404 dos cards de busca:** PR #61, SHA de merge `faa3f39756e59839f2955c626b4af9c68142ee0b`, deployment Vercel produção `dpl_BSeERqnhDCnpKKzaUwq5cKeUTGYn` READY. No `src/app/(site)/reservar/page.tsx` foto, título e Detalhes agora são botões que abrem o modal já existente, removendo a navegação antiga para quartos locais inativos.
+- **Provas de produção:** 09–12/12/2026 (9 suítes), 10–12/11/2026 (6), 20–23/12/2026 (5), 10–13/01/2027 (6), sempre 2 adultos; todas retornaram suítes sem mensagem de erro e sem links herdados para `/quartos/[slug]` na extração; logs de erro/fatal da nova implantação vazios na janela inspecionada. Build Next.js/TypeScript da Preview aprovado e checagem estática de 12 contratos OK.
+- **Não confirmado:** E2E com clique e toque na janela (Chrome/Safari iPhone, Android, desktop) e abertura/fechamento da galeria em dispositivo. Script somente leitura `testes/e2e-cards-reserva.mjs` disponível. Preview sem banco Postgres (conexão recusada 127.0.0.1:5432), NÃO transportar segredos ou banco de produção para Preview.
+- **Preservação:** botão Reservar mantém `roomCode`, datas, ocupação; link WhatsApp externo mantém destino; motor Desbravador, API da Marina, dados de mídias, sincronizador e Hostinger OpenClaw não foram alterados. Confirmação do usuário ainda pendente.
+- **Se houver regressão em produção:** rollback Vercel para deployment anterior `dpl_G4eoSDB57qx4Rc4vkEHrrxE5pW4y` e reavaliar os eventos. A instalação de skills do OpenClaw PR #60 continua pendente, independente deste incidente.
+
+
 ## ESTADO ATUAL — 03/11/2026: correção 404 nos cards da disponibilidade (PR #61)
 - **Incidente:** busca exibia quartos reais de diferentes datas; tocar em foto, nome ou Detalhes de alguns cards desviava para `/quartos/[slug]` que podia retornar 404 se o cadastro local estivesse inativo. O link interno concorria com `CardQuartoModal` lançado no PR #59. Isto é navegação de interface, não a busca de tarifas/estoque.
 - **Patch:** `src/app/(site)/reservar/page.tsx` troca 3 `<Link>` internos do card por 3 `<button type="button">`, permitindo ao modal abrir sem redirecionamento. Nenhuma alteração em APIs, filtros do banco, sincronização de fotos, metadados, serviços da Marina, WhatsApp, Hostinger ou geração de deeplink/roomCode. O botão Reservar e o link externo WhatsApp permanecem ancoras normais.
