@@ -5,7 +5,6 @@ import { FormularioBuscaDisponibilidade } from "@/components/site/FormularioBusc
 import { RolarParaResultados } from "@/components/site/RolarParaResultados";
 import { CardQuartoModal, type DadosDetalhesSuite } from "@/components/site/CardQuartoModal";
 import { tituloQuarto, resumir, brl, pluralizar, escassez, dataBR } from "@/lib/format";
-import Link from "next/link";
 import Image from "next/image";
 import postgres from "postgres";
 import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
@@ -303,11 +302,9 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
         ) : (
           <div className="flex h-full items-center justify-center text-3xl sm:text-5xl" aria-label="Sem foto disponível">🏨</div>
         )}
-        {r.slugLocal && (
-          <Link href={`/quartos/${r.slugLocal}`}
-            className="absolute inset-0 z-10 focus-visible:outline-4 focus-visible:outline-marca"
-            aria-label={`Ver fotos e detalhes de ${r.nomeLocal}`} />
-        )}
+        <button type="button"
+          className="absolute inset-0 z-10 cursor-pointer focus-visible:outline-4 focus-visible:outline-marca"
+          aria-label={`Ver fotos e detalhes de ${r.nomeLocal}`} />
         {r.alertaEstoque && (
           <span className="pointer-events-none absolute z-10 bottom-2 left-2 right-2 w-fit max-w-[90%] rounded-md bg-amber-500/95 px-2 py-1 text-[10px] font-bold leading-tight text-white shadow sm:bottom-auto sm:top-3 sm:left-3 sm:right-auto sm:rounded-full sm:px-3 sm:text-xs">
             {r.alertaEstoque}
@@ -318,7 +315,7 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
       <div className="flex flex-1 flex-col p-2.5 sm:p-4">
         <div className="min-w-0">
           <h3 className="min-h-[2.5em] line-clamp-2 font-titulo text-[0.96rem] font-bold leading-[1.25] text-tinta sm:min-h-0 sm:text-xl">
-            {r.slugLocal ? <Link href={`/quartos/${r.slugLocal}`} className="hover:text-marca focus-visible:underline">{r.nomeLocal}</Link> : r.nomeLocal}
+            <button type="button" className="text-left hover:text-marca focus-visible:underline">{r.nomeLocal}</button>
           </h3>
           {r.catNome && (
             <span className="mt-1.5 inline-flex max-w-full truncate rounded-full bg-marca-sutil px-2 py-0.5 text-[10px] font-semibold text-marca-ativa sm:text-xs">
@@ -376,12 +373,10 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
                     WhatsApp
                   </a>
                 ) : <span />}
-                {r.slugLocal ? (
-                  <Link href={`/quartos/${r.slugLocal}`} aria-label={`Ver detalhes do quarto ${r.nomeLocal}`}
-                    className="flex min-h-9 items-center justify-center rounded-lg border border-marca/30 px-1 text-center text-[10px] font-semibold leading-none text-marca transition-colors hover:bg-marca-sutil sm:min-h-10 sm:text-xs">
-                    Detalhes
-                  </Link>
-                ) : <span />}
+                <button type="button" aria-label={`Ver detalhes do quarto ${r.nomeLocal}`}
+                  className="flex min-h-9 items-center justify-center rounded-lg border border-marca/30 px-1 text-center text-[10px] font-semibold leading-none text-marca transition-colors hover:bg-marca-sutil sm:min-h-10 sm:text-xs">
+                  Detalhes
+                </button>
               </div>
             </>
           )}

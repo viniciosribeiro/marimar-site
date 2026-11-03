@@ -1,5 +1,13 @@
 # Handoff — continuar de onde paramos
 
+## ESTADO ATUAL — 03/11/2026: correção 404 nos cards da disponibilidade (PR #61)
+- **Incidente:** busca exibia quartos reais de diferentes datas; tocar em foto, nome ou Detalhes de alguns cards desviava para `/quartos/[slug]` que podia retornar 404 se o cadastro local estivesse inativo. O link interno concorria com `CardQuartoModal` lançado no PR #59. Isto é navegação de interface, não a busca de tarifas/estoque.
+- **Patch:** `src/app/(site)/reservar/page.tsx` troca 3 `<Link>` internos do card por 3 `<button type="button">`, permitindo ao modal abrir sem redirecionamento. Nenhuma alteração em APIs, filtros do banco, sincronização de fotos, metadados, serviços da Marina, WhatsApp, Hostinger ou geração de deeplink/roomCode. O botão Reservar e o link externo WhatsApp permanecem ancoras normais.
+- **Regressão:** `testes/unit/card-reserva.test.mjs` e `testes/e2e-cards-reserva.mjs` (read-only, Nov/Dez, desktop/celular; não clicam Reservar/WhatsApp). Conferência estática de 12 contratos OK e compilação Vercel Preview READY. **E2E de interação ainda não executado**, pois a Preview recebe `ECONNREFUSED 127.0.0.1:5432`; não usar banco de produção no ambiente Preview sem aprovação explícita. Produção atual responde com 9 suítes em 09–12/12/2026 (2 adultos).
+- **Próximo passo obrigatório:** confirmar merge PR #61 e deploy da Vercel; executar teste de clique de foto/título/Detalhes em /reservar em diversos períodos, desktop e iPhone/Android reais, sem efetivar reserva, confirmar roomCode e datas dos links, fotos e descrição. Se falha no site oficial, rollback para deploy anterior `dpl_G4eoSDB57qx4Rc4vkEHrrxE5pW4y` e investigar. Registrar observações e aprovação do proprietário.
+- **Nota:** a configuração do OpenClaw/Hostinger do PR #60 exige instalação própria das skills; o PR #61 não mexe nesse canal.
+
+
 ## ESTADO ATUAL — 02/11/2026 (Marina WhatsApp: link de suíte e TTS)
 - **Relato novo do proprietário:** no WhatsApp o link da suíte indicada voltou a abrir lista geral, e o áudio volta a soletrar links, gastando ElevenLabs. Não invalida o teste do botão Reservar do SITE no iPhone (28/10).
 - **Código alterado:** `agente/skills/consulta-desbravador/scripts/consultar-api.mjs` aceita argumento 6 `codigo_ou_nome_da_suite` depois dos 5 argumentos usuais (entrada, saída, adultos, crianças, bebês). Quando informado, `quarto_selecionado`, `quartos` filtrados e `link_reserva` de topo apontam para o `roomCode` correto. Sem escolha, consulta padrão idêntica. Código inexistente/esgotado/ambíguo retorna erro, nunca link genérico. `agente/skills/consulta-desbravador/SKILL.md` e `agente/skills/marimar-pousada/SKILL.md` deixam a regra explícita.
