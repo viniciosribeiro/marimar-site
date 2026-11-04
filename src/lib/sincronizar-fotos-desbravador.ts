@@ -83,8 +83,10 @@ export type DetalheSuite = {
   nota?: string;
 };
 
-/** Tempo da rodada reservado ao espelho (a Function da Vercel tem 60 s no total). */
-const ORCAMENTO_ESPELHO_MS = 25_000;
+/** Tempo total da rodada (contado antes da consulta ao motor) dentro do qual
+ *  ainda vale copiar foto para o Blob: a Function da Vercel tem 60 s no total
+ *  e uma rodada morta no meio não grava nem resumo nem erro. */
+const ORCAMENTO_RODADA_MS = 40_000;
 /** Fotos antigas (já no banco, ainda no Desbravador) copiadas por rodada. */
 const ESPELHO_ATRASADO_POR_RODADA = 6;
 
@@ -98,7 +100,7 @@ type LinhaMidia = { id: string; url: string; url_origem: string | null; origem: 
 async function espelharNoBlob(url: string, caminho: string): Promise<{ url: string; pathname: string; bytes: number } | null> {
   if (!blobConfigurado()) return null;
   try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(20_000), headers: { accept: "image/*" } });
+    const r = await fetch(url, { signal: AbortSignal.timeout(8_000), headers: { accept: "image/*" } });
     if (!r.ok) return null;
     const tipo = (r.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
     if (!["image/jpeg", "image/png", "image/webp"].includes(tipo)) return null;
@@ -127,8 +129,14 @@ async function apagarDoBlob(pathnames: string[]) {
 /* ── a sincronização em si ──────────────────────────────────────── */
 
 export async function sincronizarFotosDoMotor(opcoes: { espelhar?: boolean } = {}): Promise<ResumoSincronizacao> {
+  const inicio = Date.now();
+  /* Marca de "começou": se a Function for encerrada no meio (tempo), a marca
+     fica e o Diagnóstico mostra que a rodada não terminou, em vez de silêncio. */
+  await comSql((sql) => sql`
+    INSERT INTO integracoes (chave, valor, atualizado_em) VALUES ('fotos_sync_erro', ${JSON.stringify({ em: new Date(inicio).toISOString(), erro: "A rodada começou e não registrou conclusão: provavelmente o tempo da função acabou antes do fim. A próxima rodada continua de onde parou." })}, now())
+    ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor, atualizado_em = now()`).catch(() => {});
   try {
-    const resumo = await sincronizar(opcoes);
+    const resumo = await sincronizar(opcoes, inicio);
     await comSql((sql) => sql`DELETE FROM integracoes WHERE chave = 'fotos_sync_erro'`).catch(() => {});
     return resumo;
   } catch (e) {
@@ -142,10 +150,10 @@ export async function sincronizarFotosDoMotor(opcoes: { espelhar?: boolean } = {
   }
 }
 
-async function sincronizar(opcoes: { espelhar?: boolean }): Promise<ResumoSincronizacao> {
+async function sincronizar(opcoes: { espelhar?: boolean }, inicio: number): Promise<ResumoSincronizacao> {
   const espelhar = opcoes.espelhar ?? true;
   const { checkIn, checkOut } = datasExemplo(7, 2);
-  const resposta = await fetchTarifas(checkIn, checkOut, 2, 0, { timeoutMs: 35_000 });
+  const resposta = await fetchTarifas(checkIn, checkOut, 2, 0, { timeoutMs: 25_000 });
   const motor: WorkerQuarto[] = [...resposta.quartos, ...resposta.indisponiveis];
   if (!motor.length) throw new Error("O motor não devolveu suítes; nenhuma foto foi alterada.");
 
@@ -156,7 +164,7 @@ async function sincronizar(opcoes: { espelhar?: boolean }): Promise<ResumoSincro
     const [trava] = await sql<{ livre: boolean }[]>`SELECT pg_try_advisory_lock(20261102) AS livre`;
     if (!trava?.livre) throw new Error("Já há uma sincronização de fotos em andamento.");
     try {
-      return await rodar(sql, motor, { checkIn, checkOut }, espelhar);
+      return await rodar(sql, motor, { checkIn, checkOut }, espelhar, inicio);
     } finally {
       await sql`SELECT pg_advisory_unlock(20261102)`.catch(() => {});
     }
@@ -169,8 +177,7 @@ export async function ultimoErroSincronizacao(sql: Sql): Promise<{ em: string; e
   try { return JSON.parse(l.valor); } catch { return null; }
 }
 
-async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string; checkOut: string }, espelhar: boolean): Promise<ResumoSincronizacao> {
-  const inicio = Date.now();
+async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string; checkOut: string }, espelhar: boolean, inicio: number): Promise<ResumoSincronizacao> {
   const resumo: ResumoSincronizacao = {
     consultado_em: new Date().toISOString(),
     periodo_consulta: { check_in: periodo.checkIn, check_out: periodo.checkOut },
@@ -180,7 +187,7 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
   };
   /* O espelho tem um orçamento de tempo: estourou, a foto entra apontando
      para o Desbravador e é copiada numa rodada seguinte (espelho atrasado). */
-  const podeEspelhar = () => espelhar && resumo.espelho === "blob" && Date.now() - inicio < ORCAMENTO_ESPELHO_MS;
+  const podeEspelhar = () => espelhar && resumo.espelho === "blob" && Date.now() - inicio < ORCAMENTO_RODADA_MS;
 
   const locais = await sql<{ id: string; nome: string; slug: string; desbravador_room_id: string | null; ativo: boolean }[]>`
     SELECT id, nome, slug, desbravador_room_id, ativo FROM quartos`;
