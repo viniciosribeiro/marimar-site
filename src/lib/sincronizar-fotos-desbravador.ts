@@ -68,6 +68,8 @@ export type ResumoSincronizacao = {
   fotos_novas: number;
   fotos_espelhadas: number;
   fotos_removidas: number;
+  /** Fotos que sumiram do motor nesta rodada e ficam no site até a ausência se confirmar. */
+  fotos_aguardando_remocao: number;
   fotos_ja_presentes: number;
   suites_sem_fotos_validas: number;
   espelho: "blob" | "sem_blob";
@@ -81,7 +83,7 @@ export type ResumoSincronizacao = {
 export type DetalheSuite = {
   codigo: string; nome: string; slug: string | null; ativo: boolean | null;
   motor: number; site_antes: number; site_depois: number;
-  novas: number; removidas: number; espelhadas: number;
+  novas: number; removidas: number; espelhadas: number; aguardando_remocao: number;
   nota?: string;
 };
 
@@ -91,6 +93,14 @@ export type DetalheSuite = {
 const ORCAMENTO_RODADA_MS = 40_000;
 /** Fotos antigas (já no banco, ainda no Desbravador) copiadas por rodada. */
 const ESPELHO_ATRASADO_POR_RODADA = 6;
+/**
+ * Carência antes de tirar do site uma foto que sumiu do motor. Em 04/11/2026
+ * o motor devolveu, para a STANDARD FAMILIA, ora 4 fotos novas, ora só a
+ * antiga, em rodadas seguidas — e o site apagava e recriava a cada vez. Uma
+ * foto só sai depois de ficar ausente em rodadas que somem mais do que isto.
+ * (Nos testes, FOTOS_CARENCIA_REMOCAO_MS encurta a espera.)
+ */
+const CARENCIA_REMOCAO_MS = Number(process.env.FOTOS_CARENCIA_REMOCAO_MS ?? 30 * 60_000);
 
 type LinhaMidia = { id: string; url: string; url_origem: string | null; origem: string; ordem: number; pathname: string | null };
 
@@ -186,7 +196,7 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
     consultado_em: new Date().toISOString(),
     periodo_consulta: { check_in: periodo.checkIn, check_out: periodo.checkOut },
     suites_motor: 0, suites_criadas: [], suites_ativadas: [], suites_desativadas: [], fotos_novas: 0, fotos_espelhadas: 0, fotos_removidas: 0,
-    fotos_ja_presentes: 0, suites_sem_fotos_validas: 0, espelho: espelhar && blobConfigurado() ? "blob" : "sem_blob",
+    fotos_aguardando_remocao: 0, fotos_ja_presentes: 0, suites_sem_fotos_validas: 0, espelho: espelhar && blobConfigurado() ? "blob" : "sem_blob",
     espelho_pendentes: 0, suites: [], avisos: [],
   };
   /* O espelho tem um orçamento de tempo: estourou, a foto entra apontando
@@ -206,6 +216,9 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
   const slugsUsados = new Set(locais.map((q) => q.slug));
   const vistos = new Set<string>();
   const paraApagarDoBlob: string[] = [];
+  /* Desde quando cada foto do motor está ausente (URL → ISO). */
+  const ausentes = await lerAusentes(sql);
+  const agoraIso = new Date().toISOString();
 
   for (const quarto of motor) {
     const codigo = codigoQuartoMotor(quarto.id);
@@ -216,7 +229,7 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
     const doMotor = selecionarFotosDoMotor(quarto.fotos);
     const detalhe: DetalheSuite = {
       codigo, nome: quarto.nome, slug: null, ativo: null, motor: doMotor.length,
-      site_antes: 0, site_depois: 0, novas: 0, removidas: 0, espelhadas: 0,
+      site_antes: 0, site_depois: 0, novas: 0, removidas: 0, espelhadas: 0, aguardando_remocao: 0,
     };
     resumo.suites.push(detalhe);
     let local = porCodigo.get(codigo);
@@ -279,20 +292,33 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
       }
     }
 
-    /* Foto do motor que não veio mais: sai do site. As do painel ficam. */
+    /* Foto do motor que não veio mais: sai do site — mas só depois da
+       carência, para o motor "piscando" não apagar e recriar fotos. As do
+       painel ficam sempre. */
     const atuais = new Set(doMotor);
     for (const m of anteriores) {
       if (m.origem !== "desbravador") continue;
       const chave = m.url_origem ?? m.url;
-      if (atuais.has(chave)) continue;
+      if (atuais.has(chave)) { delete ausentes[chave]; continue; }
+      const desde = ausentes[chave];
+      if (!desde || Date.now() - Date.parse(desde) < CARENCIA_REMOCAO_MS) {
+        if (!desde) ausentes[chave] = agoraIso;
+        resumo.fotos_aguardando_remocao++; detalhe.aguardando_remocao++;
+        continue;
+      }
       await sql`DELETE FROM midias WHERE id = ${m.id} AND origem = 'desbravador'`;
+      delete ausentes[chave];
       resumo.fotos_removidas++; detalhe.removidas++;
       if (m.pathname) paraApagarDoBlob.push(m.pathname);
+    }
+    if (detalhe.aguardando_remocao) {
+      detalhe.nota = (detalhe.nota ? detalhe.nota + "; " : "") + `${detalhe.aguardando_remocao} foto(s) sumiram do motor; saem se continuarem ausentes`;
     }
     detalhe.site_depois = detalhe.site_antes + detalhe.novas - detalhe.removidas;
   }
 
   await apagarDoBlob(paraApagarDoBlob);
+  await gravarAusentes(sql, ausentes);
 
   /* Suíte com código do motor que o motor não devolveu nesta rodada sai do
      site (volta sozinha quando o motor voltar a vendê-la). Só quando a
@@ -338,6 +364,9 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
   if (resumo.espelho === "sem_blob" && resumo.fotos_novas) {
     resumo.avisos.push("Sem BLOB_READ_WRITE_TOKEN na Vercel, as fotos ficam apontando para o servidor do Desbravador.");
   }
+  if (resumo.fotos_aguardando_remocao) {
+    resumo.avisos.push(`${resumo.fotos_aguardando_remocao} foto(s) sumiram do motor nesta rodada; ficam no site até a ausência se confirmar (carência de ${Math.max(1, Math.round(CARENCIA_REMOCAO_MS / 60_000))} min).`);
+  }
   if (resumo.espelho === "blob" && resumo.espelho_pendentes > 0) {
     resumo.avisos.push(`${resumo.espelho_pendentes} foto(s) ainda apontam para o Desbravador; o espelho copia algumas a cada rodada.`);
   }
@@ -346,6 +375,23 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
     INSERT INTO integracoes (chave, valor, atualizado_em) VALUES ('fotos_sync', ${JSON.stringify(resumo)}, now())
     ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor, atualizado_em = now()`.catch(() => {});
   return resumo;
+}
+
+/* ── fotos ausentes do motor, com a hora em que sumiram ─────────── */
+
+async function lerAusentes(sql: Sql): Promise<Record<string, string>> {
+  const [l] = await sql<{ valor: string }[]>`SELECT valor FROM integracoes WHERE chave = 'fotos_sync_ausentes'`.catch(() => []);
+  if (!l) return {};
+  try {
+    const v = JSON.parse(l.valor);
+    return v && typeof v === "object" ? (v as Record<string, string>) : {};
+  } catch { return {}; }
+}
+
+async function gravarAusentes(sql: Sql, ausentes: Record<string, string>): Promise<void> {
+  await sql`
+    INSERT INTO integracoes (chave, valor, atualizado_em) VALUES ('fotos_sync_ausentes', ${JSON.stringify(ausentes)}, now())
+    ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor, atualizado_em = now()`.catch(() => {});
 }
 
 /* ── a última rodada, para o painel ─────────────────────────────── */

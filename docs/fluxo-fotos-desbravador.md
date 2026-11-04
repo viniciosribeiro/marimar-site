@@ -44,8 +44,12 @@ Uma rodada (`sincronizarFotosDoMotor()`):
      servidor do Desbravador, e a Marina (que recebe 403 dele na Hostinger)
      passa a ter a foto no nosso domínio. Sem o token, `url` aponta para o
      Desbravador (`espelho: "sem_blob"`, com aviso).
-   - **Foto que sumiu do motor** → `DELETE ... WHERE origem = 'desbravador'`
-     (e `del` no Blob). Fotos com `origem = 'painel'` **nunca** são tocadas.
+   - **Foto que sumiu do motor** → fica em carência: só `DELETE ... WHERE
+     origem = 'desbravador'` (e `del` no Blob) quando a ausência durar mais
+     de 30 min entre rodadas (`FOTOS_CARENCIA_REMOCAO_MS`; mapa
+     `integracoes.fotos_sync_ausentes`). Em 04/11 o motor devolveu a mesma
+     suíte ora com 4 fotos novas, ora só com a antiga, em rodadas seguidas.
+     Fotos com `origem = 'painel'` **nunca** são tocadas.
 4. Grava o resumo em `integracoes.fotos_sync` (lido pelo Diagnóstico).
 
 Quando roda:
