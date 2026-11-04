@@ -39,11 +39,11 @@ export const CONFIG_PADRAO: ConfigModelo = { modelo: "classico", ceuPorHora: tru
  * se uma página voltar para "em construção", o site volta sozinho ao Clássico
  * em vez de mostrar dois visuais misturados.
  */
-export function lerConfigModelo(p: Record<string, unknown> | null | undefined): ConfigModelo {
+export function lerConfigModelo(p: Record<string, unknown> | null | undefined, completo = todasProntas()): ConfigModelo {
   const c = p?.modelo_site as Record<string, unknown> | null | undefined;
   if (!c || typeof c !== "object") return CONFIG_PADRAO;
   return {
-    modelo: c.modelo === "novo" && todasProntas() ? "novo" : "classico",
+    modelo: c.modelo === "novo" && completo ? "novo" : "classico",
     ceuPorHora: c.ceu_por_hora !== false,
     alteradoEm: typeof c.alterado_em === "string" ? c.alterado_em : null,
     alteradoPor: typeof c.alterado_por === "string" ? c.alterado_por : null,

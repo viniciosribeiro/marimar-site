@@ -1,13 +1,18 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { AVALIACOES } from "@/lib/conteudo-pousada";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { AvaliacoesNovo } from "@/components/site-novo/paginas/AvaliacoesNovo";
 
 export const metadata: Metadata = {
   title: "Avaliações — Pousada Marimar, Ilha do Mel",
   description: "Notas reais da Pousada Marimar no Google, Booking, Expedia, KAYAK e TripAdvisor, com data de consulta.",
 };
 
-export default function AvaliacoesPage() {
+export default async function AvaliacoesPage() {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/avaliacoes")) return <AvaliacoesNovo />;
   const totalAvaliacoes = AVALIACOES.plataformas.reduce((s, p) => s + p.total, 0);
 
   return (

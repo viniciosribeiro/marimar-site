@@ -4,6 +4,9 @@ import { ATUALIZADO_EM } from "@/lib/conteudo-pousada";
 import { lerConteudo } from "@/lib/conteudo-editavel";
 import { comSql } from "@/lib/db-conexao";
 import { brl } from "@/lib/format";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { IlhaNovo } from "@/components/site-novo/paginas/IlhaNovo";
 
 export const metadata: Metadata = {
   title: "Ilha do Mel e Encantadas — guia da Pousada Marimar",
@@ -11,6 +14,8 @@ export const metadata: Metadata = {
 };
 
 export default async function IlhaDoMelPage() {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/ilha-do-mel")) return <IlhaNovo />;
   // Editável em Admin → Textos da ilha e chegada; sem nada salvo, vale o padrão do código.
   const { ATRACOES, AVISO_DISTANCIAS, CUIDADOS_AMBIENTAIS, SOBRE_A_ILHA, TRAVESSIA } = await comSql(lerConteudo);
   return (

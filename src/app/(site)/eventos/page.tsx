@@ -3,6 +3,9 @@ import { lerContato } from "@/lib/pousada";
 import { COMPLEXO } from "@/lib/conteudo-pousada";
 import { lerConteudo } from "@/lib/conteudo-editavel";
 import { comSql } from "@/lib/db-conexao";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { EventosNovo } from "@/components/site-novo/paginas/EventosNovo";
 
 export const metadata: Metadata = {
   title: "Eventos e Casamentos — Pousada Marimar, Ilha do Mel",
@@ -10,6 +13,8 @@ export const metadata: Metadata = {
 };
 
 export default async function EventosPage() {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/eventos")) return <EventosNovo />;
   // Editável em Admin → Textos da ilha e chegada; sem nada salvo, vale o padrão do código.
   const { EVENTOS } = await comSql(lerConteudo);
   // WhatsApp salvo em Admin → Dados da pousada (com o número confirmado como reserva).

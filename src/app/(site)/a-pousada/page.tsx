@@ -6,6 +6,9 @@ import {
   COMPLEXO, DIFERENCIAIS, COMODIDADES_CONFIRMADAS, NAO_DISPONIVEL,
   RESTAURANTE, ENDERECO, AVALIACOES,
 } from "@/lib/conteudo-pousada";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { APousadaNovo } from "@/components/site-novo/paginas/APousadaNovo";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +18,8 @@ export const metadata: Metadata = {
 };
 
 export default async function APousadaPage() {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/a-pousada")) return <APousadaNovo />;
   // Ja lida pelo layout nesta requisicao (lib/pousada.ts); null se o banco cair.
   const p = await lerPousada();
 
