@@ -2,6 +2,7 @@
 
 ## ESTADO ATUAL — 04/11/2026: fotos sincronizadas com o Desbravador, fotos do café, bloco de fala, agendadores
 - **O que foi feito (código, testado localmente, PR [#63](https://github.com/viniciosribeiro/marimar-site/pull/63) da branch `claude/sleepy-mccarthy-62jmwj`):** ver entrada de 04/11 no CHANGELOG e `docs/fluxo-fotos-desbravador.md`. Em uma frase: as fotos das suítes passam a vir do Desbravador sozinhas (botão, carona 1×/hora, Vercel 1×/dia), com espelho no Blob e remoção do que sumiu lá; a Marina tem rota de fotos por seção; a skill exige bloco de fala curto; o Diagnóstico mostra os agendadores.
+- **Publicado na Vercel:** PR #63 mesclado (squash `21615bf2`) e deploy de produção `Fqh5fqi5H3AjPMvjAA6E1FHMqqfv` com **success** em 04/11 14:58 UTC. O código está no ar; **a migration 0022, a `CRON_SECRET`, as skills e o `tts.json` não** — ver passo a passo abaixo. Nenhum teste em produção foi feito daqui (sem rede).
 - **Evidência local:** `npm test` 136/136; `testes/e2e-fotos-sync.mjs` 42/42; `testes/e2e-cards-reserva.mjs` 4/4; `tsc`/`build` limpos. **Nada disso prova produção**: o ambiente não alcança Vercel, Desbravador nem Hostinger.
 - **Diferenciar:** *versionado no GitHub* (tudo acima) ≠ *publicado na Vercel* (após merge: conferir deploy READY) ≠ *instalado na Hostinger* (skills e `tts.json`: só com os comandos abaixo) ≠ *confirmado pelo proprietário* (WhatsApp real, celulares).
 
