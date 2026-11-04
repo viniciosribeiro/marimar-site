@@ -13,7 +13,7 @@ import { acharNoMotor, tarifasDeReferencia, temDiaria } from "../tarifas";
 import { CartaoSuiteNovo } from "./CartaoSuiteNovo";
 import { GaleriaSuite } from "./GaleriaSuite";
 import { BarraReserva, type AcaoBarra } from "./BarraReserva";
-import { estadoDoPreco, hospedes, iconeDaComodidade, linhaCapacidade, periodo, type EstadoPreco } from "./preco";
+import { estadoDoPreco, hospedes, iconeDaComodidade, linhaCapacidade, paramsDaConsulta, periodo, type EstadoPreco } from "./preco";
 import { lerSuite, type Foto, type SuiteCompleta } from "./dados";
 
 /**
@@ -360,8 +360,3 @@ const numero = (s: string | undefined) => {
   return Number.isFinite(n) ? n : undefined;
 };
 
-function paramsDaConsulta(c: Consulta, comBebes: boolean): string {
-  const p = new URLSearchParams({ check_in: c.checkIn, check_out: c.checkOut, adultos: String(c.adultos), criancas: String(c.criancas) });
-  if (comBebes) p.set("bebes", String(c.bebes));
-  return p.toString();
-}

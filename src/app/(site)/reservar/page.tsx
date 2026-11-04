@@ -15,13 +15,18 @@ import {
   lerRegras, lerAdicionais, calcularOcupacao, regraAtiva, precoAdicional, rotuloCriancas, rotuloBebes,
   REGRAS_PADRAO, type Adicional,
 } from "@/lib/regras-hospedagem";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { ReservarNovo } from "@/components/site-novo/reservar/ReservarNovo";
 
 export const dynamic = "force-dynamic";
 /* O motor demora em datas concorridas: a busca espera até 45 s (TIMEOUT_BUSCA). */
 export const maxDuration = 60;
 
-export default async function ReservarPage({ searchParams }: { searchParams: Promise<{ check_in?: string; check_out?: string; adultos?: string; criancas?: string; bebes?: string; ver_resultados?: string }> }) {
+export default async function ReservarPage({ searchParams }: { searchParams: Promise<{ check_in?: string; check_out?: string; adultos?: string; criancas?: string; bebes?: string; ver_resultados?: string; ordem?: string }> }) {
   const sp = await searchParams;
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/reservar")) return <ReservarNovo sp={sp} />;
   const ci = sp.check_in; const co = sp.check_out;
   // Datas e hospedes passam pela mesma validacao das rotas de API: antes,
   // "adultos=abc" virava NaN e check-out antes do check-in ia ao motor.

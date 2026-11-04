@@ -98,3 +98,10 @@ export function periodo(ci: string, co: string, anoAtual = new Date().getFullYea
   if (a1 === a2 && m1 === m2) return `${d1} a ${d2} de ${MESES[m2 - 1]}${ano(a2)}`;
   return `${d1} de ${MESES[m1 - 1]}${a1 !== a2 ? ` de ${a1}` : ""} a ${d2} de ${MESES[m2 - 1]}${ano(a2)}`;
 }
+
+/** A busca no endereço (`check_in=…&check_out=…&adultos=…&criancas=…[&bebes=…]`), igual em toda página do Novo. */
+export function paramsDaConsulta(c: Pick<Consulta, "checkIn" | "checkOut" | "adultos" | "criancas" | "bebes">, comBebes: boolean): string {
+  const p = new URLSearchParams({ check_in: c.checkIn, check_out: c.checkOut, adultos: String(c.adultos), criancas: String(c.criancas) });
+  if (comBebes) p.set("bebes", String(c.bebes));
+  return p.toString();
+}
