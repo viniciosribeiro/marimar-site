@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> **04/11/2026 (parte 11) — SITE NOVO, FASE 5: AS 15 PÁGINAS PRONTAS.** Como chegar, Ilha do Mel, A pousada, Eventos, Avaliações, Perguntas, Políticas, Contato e Pacotes no Novo. **O botão "Ligar o Novo para todos" passa a aparecer em Site → Modelo do site (perfil Administração); ligar é decisão do proprietário.** Visitantes continuam no Clássico até ele apertar. Falta a fase 6 (acabamento). Ver CHANGELOG/HANDOFF (parte 11) para o status de produção.
+> **04/11/2026 (parte 11) — SITE NOVO, FASE 5: AS 15 PÁGINAS PRONTAS.** Como chegar, Ilha do Mel, A pousada, Eventos, Avaliações, Perguntas, Políticas, Contato e Pacotes no Novo. **O botão "Ligar o Novo para todos" passa a aparecer em Site → Modelo do site (perfil Administração); ligar é decisão do proprietário.** Visitantes continuam no Clássico até ele apertar. Falta a fase 6 (acabamento). **Publicado (PR #87, deploy `7pkFot1KaKLf5o4fEckEnPxC8ju4` success) e conferido: as 15 páginas no ar e visitantes no Clássico.**
 
 > **04/11/2026 (parte 10) — SITE NOVO, FASE 4:** galeria em capítulos curtos e restaurante com o cardápio do painel no Novo (6 de 15 páginas prontas). **Publicado (PR #85, deploy `DVq5XgBk4bfTRNGNvKKQJkhKgrcT` success) e conferido: visitantes continuam no Clássico.**
 
