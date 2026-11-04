@@ -3,7 +3,7 @@
 ## ESTADO ATUAL — 04/11/2026 (parte 10): site novo, fase 4 (galeria e restaurante) construída
 - **O que entrou:** `/galeria` (capítulos curtos, `src/components/site-novo/galeria/`) e `/restaurante` (`src/components/site-novo/restaurante/`) no Novo, `pronta: true` (6 de 15). Visitantes continuam no Clássico.
 - **Detalhes:** a galeria usa a mesma consulta do Clássico e `montarCapitulos` (unitário em `testes/unit/galeria-novo.test.ts`); o mosaico mostra no máximo 5 fotos por capítulo (`NO_MOSAICO`) — mudar esse número exige rever as classes de `celula()`. O restaurante reaproveita o `Cardapio` do Clássico; a regra `.sn .sn-cardapio .sticky` (fora da camada, com `!important`) acerta a barra de categorias abaixo do topo do Novo.
-- **Situação de produção:** ver o fim desta seção (preenchido depois do merge e do deploy).
+- **Situação de produção:** PR #85 (squash `27363e8`), deploy de produção `DVq5XgBk4bfTRNGNvKKQJkhKgrcT` success às 20:27 UTC. Pelo domínio público às ~20:28 UTC: `/galeria`, `/restaurante`, `/`, `/quartos` e `/reservar` 200 e no **Clássico** para visitantes. **Não conferido daqui:** a prévia em produção (painel em `admin.`).
 - **Próximo passo (Fase 5):** como chegar/mapa, Ilha do Mel, a pousada, eventos, avaliações, perguntas, políticas, contato e pacotes. Aceite do plano: mapa e rota funcionando (4G de verdade), formulário de contato enviando. Os componentes do mapa (`src/components/site/rota/*`) e o envio do contato (`enviarContato`) devem ser reaproveitados como estão.
 
 ## ESTADO ATUAL — 04/11/2026 (parte 9): site novo, fase 3 (a busca) construída
