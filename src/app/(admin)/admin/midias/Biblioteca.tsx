@@ -8,7 +8,7 @@ import {
 import { SortableContext, rectSortingStrategy, useSortable, arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  Search, Star, Play, GripVertical, Check, Images, Film, Trash2, FolderInput, X, Upload, MessageCircleHeart, Globe, Info,
+  Search, Star, Play, GripVertical, Check, Images, Film, Trash2, FolderInput, X, Upload, MessageCircleHeart, Globe, Info, RefreshCw,
 } from "lucide-react";
 import type { Album, MidiaBiblioteca } from "@/lib/biblioteca";
 import { formatarBytes, formatarDuracao } from "@/lib/midia-cliente";
@@ -16,7 +16,7 @@ import { tituloQuarto } from "@/lib/format";
 import { EnviarMidia } from "@/components/admin/EnviarMidia";
 import { Aviso, Rotulo, Selo, Vazio, botao, campo, cn } from "@/components/admin/ui";
 import { Gaveta, Girando, useAcao, useConfirmar, avisar } from "@/components/admin/ui-cliente";
-import { editarMidia, definirCapa, reordenar, moverLote, excluirLote } from "./actions";
+import { editarMidia, definirCapa, reordenar, moverLote, excluirLote, sincronizarComDesbravador } from "./actions";
 
 type Filtro = "tudo" | "foto" | "video" | "sem-uso" | "sem-legenda";
 
@@ -114,11 +114,14 @@ export function Biblioteca({ midias, albuns, albumInicial, blobOk }: {
             <h2 className="truncate text-lg font-semibold text-tinta">{albumAtual ? nomeAlbum(albumAtual) : "Todas as mídias"}</h2>
             <p className="text-xs text-tinta-suave">{albumAtual?.descricao ?? "Escolha um álbum para enviar e ordenar."}</p>
           </div>
-          {album !== "todas" && (
-            <button onClick={() => setEnviando((v) => !v)} className={botao(enviando ? "secundario" : "primario", "md", "shrink-0")}>
-              {enviando ? <><X className="h-4 w-4" /> Fechar envio</> : <><Upload className="h-4 w-4" /> Enviar fotos e vídeos</>}
-            </button>
-          )}
+          <div className="flex shrink-0 flex-wrap gap-2">
+            {(album === "todas" || album.startsWith("quarto:")) && <BotaoSincronizar />}
+            {album !== "todas" && (
+              <button onClick={() => setEnviando((v) => !v)} className={botao(enviando ? "secundario" : "primario", "md", "shrink-0")}>
+                {enviando ? <><X className="h-4 w-4" /> Fechar envio</> : <><Upload className="h-4 w-4" /> Enviar fotos e vídeos</>}
+              </button>
+            )}
+          </div>
         </div>
 
         {album !== "todas" && enviando && (
@@ -274,6 +277,8 @@ function Cartao({ m, selecionada, alternar, abrir, alca, refNo, estilo, arrastan
         <span className={cn("absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent pb-2 pl-2.5 pt-8 text-left", alca ? "pr-14" : "pr-2.5")}>
           <span className="block truncate text-xs font-medium text-white">{m.titulo || m.descricao || m.alt}</span>
           {m.tipo === "video" && m.duracao_seg ? <span className="text-[11px] text-white/80">{formatarDuracao(m.duracao_seg)}</span> : null}
+          {/* De onde veio: a foto do motor some daqui se sumir de lá; a do painel fica. */}
+          {m.origem === "desbravador" && <span className="text-[11px] text-white/80">Do Desbravador</span>}
         </span>
       </button>
 
@@ -295,6 +300,17 @@ function Cartao({ m, selecionada, alternar, abrir, alca, refNo, estilo, arrastan
       )}
       {alca && <span className="absolute bottom-2 right-2">{alca}</span>}
     </li>
+  );
+}
+
+/** Traz as fotos do Desbravador agora, sem esperar o agendador. */
+function BotaoSincronizar() {
+  const { executar, pendente } = useAcao();
+  return (
+    <button type="button" disabled={pendente} onClick={() => executar(() => sincronizarComDesbravador(), new FormData())}
+      className={botao("secundario", "md", "shrink-0")} title="Traz as fotos novas das suítes do motor de reservas e tira as que sumiram de lá; não mexe nas fotos enviadas aqui">
+      <RefreshCw className={cn("h-4 w-4", pendente && "animate-spin")} /> {pendente ? "Sincronizando…" : "Sincronizar com o Desbravador"}
+    </button>
   );
 }
 
@@ -336,7 +352,9 @@ function Detalhe({ m, albuns, fechar }: { m: MidiaBiblioteca; albuns: Album[]; f
       rodape={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
           <button className={botao("fantasma", "md", "text-red-700 hover:bg-red-50")} onClick={async () => {
-            if (await confirmar({ titulo: "Excluir esta mídia?", texto: "Some do site e a Marina deixa de enviar. O arquivo é apagado e não dá para desfazer.", confirmar: "Excluir", perigo: true })) {
+            if (await confirmar({ titulo: "Excluir esta mídia?", texto: m.origem === "desbravador"
+                ? "Some do site e a Marina deixa de enviar. Como veio do Desbravador, a próxima sincronização traz de volta se ela ainda estiver lá; para tirar de vez, apague no Desbravador."
+                : "Some do site e a Marina deixa de enviar. O arquivo é apagado e não dá para desfazer.", confirmar: "Excluir", perigo: true })) {
               const r = await executar(() => excluirLote([m.id]), new FormData());
               if (r.ok) fechar();
             }
@@ -360,6 +378,7 @@ function Detalhe({ m, albuns, fechar }: { m: MidiaBiblioteca; albuns: Album[]; f
           {m.duracao_seg ? <Selo>{formatarDuracao(m.duracao_seg)}</Selo> : null}
           {m.bytes ? <Selo>{formatarBytes(m.bytes)}</Selo> : null}
           {m.destaque && <Selo tom="aviso">Capa</Selo>}
+          {m.origem === "desbravador" && <Selo tom="info" title="Veio do motor de reservas pela sincronização; some daqui se sumir de lá">Do Desbravador</Selo>}
           {m.tipo === "video" && (cabeNoZap
             ? <Selo tom="sucesso" title="A Marina consegue enviar este vídeo no WhatsApp">WhatsApp ok{m.bytes_whatsapp ? ` (${formatarBytes(m.bytes_whatsapp)})` : ""}</Selo>
             : <Selo tom="aviso" title="Sem versão até 16 MB: a Marina manda o link da página">WhatsApp: vai como link</Selo>)}

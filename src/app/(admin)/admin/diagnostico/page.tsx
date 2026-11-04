@@ -8,6 +8,9 @@ import { lerLeituras, type Leitura } from "@/lib/marina";
 import { gatewayConfigurado } from "@/lib/chat";
 import { chaveDoProvedor, lerOpcoesVoz } from "@/lib/voz";
 import { PROVEDOR, type Provedor } from "@/lib/voz-base";
+import { ultimaSincronizacao, type ResumoSincronizacao } from "@/lib/sincronizar-fotos-desbravador";
+import { lerMemoria } from "@/lib/whatsapp-vigia";
+import { MEMORIA_VAZIA, type MemoriaVigia } from "@/lib/whatsapp-saude";
 import { Pagina, Cabecalho, Cartao, Indicador, Aviso, Selo, quandoFoi } from "@/components/admin/ui";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +25,46 @@ async function testarMotor() {
   } catch (e) {
     return { ok: false as const, ms: 0, data: null, erro: (e as Error).message };
   }
+}
+
+/* Os agendadores: o que roda sozinho e quando rodou pela última vez.
+   A Vercel (plano Hobby) chama o agendador uma vez por dia com a
+   CRON_SECRET; sem ela, a chamada diária é recusada e só a sincronização
+   "de carona" (nas buscas de /reservar) e o botão do painel funcionam.
+   Fora do componente porque lê o relógio. */
+function listarAgendadores(fotos: { em: Date; resumo: ResumoSincronizacao } | null, vigia: MemoriaVigia) {
+  const cronSecret = process.env.CRON_SECRET ?? "";
+  const cronOk = cronSecret.length >= 16;
+  const diaMs = 24 * 3600_000;
+  const agora = Date.now();
+  const fotosHa = fotos ? agora - fotos.em.getTime() : null;
+  const vigiaHa = vigia.ultimaVez > 0 ? agora - vigia.ultimaVez : null;
+  return [
+    {
+      nome: "Agendador da Vercel (CRON_SECRET)",
+      tom: cronOk ? "sucesso" : "aviso",
+      valor: cronOk ? "configurado" : "sem chave",
+      ajuda: cronOk
+        ? "a Vercel chama /api/cron/sincronizar-fotos todo dia às 12:00 UTC (9h de Brasília)"
+        : "crie CRON_SECRET (16+ caracteres) na Vercel e faça Redeploy — até lá a rodada diária é recusada; o botão em Mídias e a carona nas buscas continuam funcionando",
+    },
+    {
+      nome: "Fotos das suítes sincronizadas com o Desbravador",
+      tom: fotosHa === null ? "aviso" : fotosHa < 2 * diaMs ? "sucesso" : "aviso",
+      valor: fotos ? quandoFoi(fotos.em) : "nunca",
+      ajuda: fotos
+        ? `${fotos.resumo.suites_motor} suítes no motor · ${fotos.resumo.fotos_novas} novas · ${fotos.resumo.fotos_removidas} removidas · espelho ${fotos.resumo.espelho === "blob" ? "no Blob" : "desligado (sem BLOB_READ_WRITE_TOKEN)"}${fotos.resumo.suites_criadas.length ? ` · suítes criadas: ${fotos.resumo.suites_criadas.join(", ")}` : ""}${fotos.resumo.avisos.length ? ` · ${fotos.resumo.avisos.length} aviso(s)` : ""}`
+        : "ainda não rodou — use o botão “Sincronizar com o Desbravador” em Mídias, ou faça uma busca em /reservar",
+    },
+    {
+      nome: "Vigia do WhatsApp",
+      tom: vigiaHa === null ? "aviso" : vigiaHa < diaMs ? "sucesso" : "aviso",
+      valor: vigiaHa === null ? "nunca" : quandoFoi(new Date(vigia.ultimaVez)),
+      ajuda: vigiaHa === null
+        ? "roda em /api/cron/chamados (agendador externo a cada 5 min) e de carona no chat do site"
+        : `estado ${vigia.estado}; roda em /api/cron/chamados e de carona no chat do site`,
+    },
+  ] as const;
 }
 
 /**
@@ -41,6 +84,8 @@ export default async function DiagnosticoPage() {
   let leituras: Record<string, Leitura> = {};
   let banco = true;
   let voz: { provedor: Provedor; pronta: boolean; transcricao: boolean } = { provedor: "elevenlabs", pronta: false, transcricao: false };
+  let fotos: { em: Date; resumo: ResumoSincronizacao } | null = null;
+  let vigia: MemoriaVigia = MEMORIA_VAZIA;
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false, connect_timeout: 5 });
     antigas = await contarDominioAntigo(sql);
@@ -51,6 +96,8 @@ export default async function DiagnosticoPage() {
       pronta: Boolean((await chaveDoProvedor(sql, o.provedor)).chave),
       transcricao: Boolean((await chaveDoProvedor(sql, "elevenlabs")).chave),
     };
+    fotos = await ultimaSincronizacao(sql).catch(() => null);
+    vigia = await lerMemoria(sql).catch(() => MEMORIA_VAZIA);
     await sql.end();
   } catch { banco = false; }
 
@@ -62,6 +109,8 @@ export default async function DiagnosticoPage() {
     { nome: "Ouvir áudio do cliente (ElevenLabs)", ok: voz.transcricao, ajuda: "ElevenLabs conectada em Marina → Voz, ou ELEVENLABS_API_KEY — transcreve os áudios" },
     { nome: "Motor de reservas", ok: Boolean(process.env.WORKER_BASE_URL), ajuda: "WORKER_BASE_URL e WORKER_SLUG" },
   ];
+
+  const agendadores = listarAgendadores(fotos, vigia);
 
   return (
     <Pagina larga>
@@ -97,6 +146,25 @@ export default async function DiagnosticoPage() {
               </li>
             ))}
           </ul>
+        </Cartao>
+
+        <Cartao titulo="Agendadores" descricao="O que roda sozinho e quando rodou pela última vez.">
+          <ul className="divide-y divide-linha/60">
+            {agendadores.map((a) => (
+              <li key={a.nome} className="flex items-start justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-tinta">{a.nome}</p>
+                  <p className="text-xs text-tinta-suave">{a.ajuda}</p>
+                </div>
+                <Selo tom={a.tom} ponto>{a.valor}</Selo>
+              </li>
+            ))}
+          </ul>
+          {fotos?.resumo.avisos.length ? (
+            <Aviso tom="aviso" titulo="Avisos da última sincronização de fotos" className="mt-3">
+              <ul className="list-disc space-y-0.5 pl-4 text-xs">{fotos.resumo.avisos.slice(0, 6).map((a, i) => <li key={i}>{a}</li>)}</ul>
+            </Aviso>
+          ) : null}
         </Cartao>
 
         <Cartao titulo="Imagens no servidor antigo">

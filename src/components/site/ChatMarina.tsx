@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Icone } from "./Icone";
 import { Marcacao } from "./Marcacao";
 import { SUGESTOES, SAUDACAO, INDISPONIVEL, LIMITE_AUDIO_SEGUNDOS } from "@/lib/chat";
+import { textoSemBlocoDeFala } from "@/lib/voz-fala";
 
 type Fala = { de: "visitante" | "marina"; texto: string };
 
@@ -431,8 +432,9 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
             {falas.map((f, i) => (
               <div key={i}>
                 <Balao de={f.de}>
+                  {/* O bloco [[tts:text]] é só para o áudio: a pessoa nunca o lê. */}
                   {f.texto
-                    ? (f.de === "marina" ? <Marcacao texto={f.texto} /> : f.texto)
+                    ? (f.de === "marina" ? <Marcacao texto={textoSemBlocoDeFala(f.texto)} /> : f.texto)
                     : (f.de === "marina" ? <Pontinhos /> : "")}
                 </Balao>
 

@@ -24,6 +24,8 @@ export type MidiaBiblioteca = {
   thumb_url: string | null; duracao_seg: number | null; bytes: number | null; formato: string | null;
   largura: number | null; altura: number | null;
   url_whatsapp: string | null; bytes_whatsapp: number | null; visivel_marina: boolean;
+  /** 'painel' ou 'desbravador' (migration 0022). */
+  origem: string;
   criado_em: string; usos: Uso[];
 };
 
@@ -38,14 +40,14 @@ export async function lerBiblioteca(sql: Sql) {
     linhas = await sql<Omit<MidiaBiblioteca, "usos">[]>`
       SELECT id, url, tipo, alt, titulo, descricao, secao, quarto_id, destaque, ordem,
              thumb_url, duracao_seg, bytes, formato, largura, altura,
-             url_whatsapp, bytes_whatsapp, visivel_marina, criado_em
+             url_whatsapp, bytes_whatsapp, visivel_marina, origem, criado_em
       FROM midias ORDER BY ordem ASC, criado_em ASC`;
   } catch {
     linhas = (await sql<Omit<MidiaBiblioteca, "usos">[]>`
       SELECT id, url, tipo, alt, secao, quarto_id, destaque, ordem, largura, altura, criado_em
       FROM midias ORDER BY ordem ASC, criado_em ASC`).map((l) => ({
         ...l, titulo: null, descricao: null, thumb_url: null, duracao_seg: null, bytes: null, formato: null,
-        url_whatsapp: null, bytes_whatsapp: null, visivel_marina: true,
+        url_whatsapp: null, bytes_whatsapp: null, visivel_marina: true, origem: "painel",
       }));
   }
 

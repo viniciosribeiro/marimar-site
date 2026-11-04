@@ -6,6 +6,7 @@ import { comSql, type Sql } from "@/lib/db-conexao";
 import { secaoValida } from "@/lib/fotos";
 import { urlDoNossoBlob } from "@/lib/blob";
 import { SECAO_ORIENTACAO } from "@/lib/biblioteca";
+import { sincronizarFotosDoMotor } from "@/lib/sincronizar-fotos-desbravador";
 
 /**
  * Ações da biblioteca de mídia (fotos e vídeos).
@@ -201,4 +202,28 @@ export async function adicionarPorUrl(fd: FormData): Promise<Resultado> {
   });
   refrescar();
   return { ok: true, mensagem: "Foto adicionada." };
+}
+
+/**
+ * "Sincronizar com o Desbravador": traz as fotos novas do motor, tira as que
+ * sumiram de lá e cria (desativada) suíte que o site ainda não tinha. Não
+ * toca em foto enviada pelo painel. docs/fluxo-fotos-desbravador.md
+ */
+export async function sincronizarComDesbravador(): Promise<Resultado> {
+  await exigirSessao();
+  try {
+    const r = await sincronizarFotosDoMotor();
+    refrescar();
+    revalidatePath("/quartos", "layout"); revalidatePath("/reservar");
+    const partes = [
+      `${r.fotos_novas} ${r.fotos_novas === 1 ? "foto nova" : "fotos novas"}`,
+      r.fotos_espelhadas ? `${r.fotos_espelhadas} copiada(s) para o nosso armazenamento` : null,
+      `${r.fotos_removidas} ${r.fotos_removidas === 1 ? "removida" : "removidas"}`,
+      `${r.fotos_ja_presentes} já estavam`,
+      r.suites_criadas.length ? `${r.suites_criadas.length} suíte(s) nova(s) desativada(s) para revisar` : null,
+    ].filter(Boolean);
+    return { ok: true, mensagem: `Sincronizado com o Desbravador (${r.suites_motor} suítes no motor): ${partes.join(", ")}.${r.avisos.length ? " " + r.avisos.join(" ") : ""}` };
+  } catch (e) {
+    return { ok: false, mensagem: `Não consegui sincronizar: ${(e as Error).message}` };
+  }
 }

@@ -19,6 +19,7 @@ Authorization: Bearer <AGENT_API_KEY>
 |---|---|---|
 | `GET /api/agent/pousada` | Dados da pousada, contatos, politicas | `curl -H "Authorization: Bearer ..." /api/agent/pousada` |
 | `GET /api/agent/quartos` | Catálogo completo de quartos | Lista com nomes, descrições, ocupação |
+| `GET /api/agent/fotos[?secao=cafe]` | Fotos que não são de quarto, por seção (pousada, restaurante, cafe, praia, eventos), com `url_whatsapp` | Anexar pela ferramenta `message`; `/api/midia-secao/<secao>/<indice>` serve os bytes |
 | `GET /api/agent/disponibilidade?check_in=...&check_out=...&adultos=2` | Disponibilidade em tempo real | Retorna preços do motor Desbravador |
 | `GET /api/agent/pacotes` | Pacotes ativos | Lista de pacotes vigentes |
 | `GET /api/agent/faq` | FAQ visível para o agente | Perguntas marcadas "visivel_agente=true" |

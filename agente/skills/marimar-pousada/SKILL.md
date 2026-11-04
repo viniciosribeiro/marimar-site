@@ -220,6 +220,7 @@ pode consultar não fica calado: improvisa. Já aconteceu aqui.
 | `/api/agent/roteiros` | **Roteiros de orientação com vídeo** (como chegar, onde pegar o barco…). `?busca=<frase da pessoa>` devolve o roteiro que casa com as palavras-chave, ou nenhum; `?id=<id>` um só. Também já vêm no texto de `/api/agent/conhecimento` |
 | `/api/agent/chegar` | Como chegar: etapas, travessia, terminais, preços do barco, estacionamento, bagagem |
 | `/api/agent/restaurante` | O restaurante, o **cardápio com preços** e o café da manhã |
+| `/api/agent/fotos` | **Fotos da pousada que não são de quarto**, por seção: `?secao=cafe` (café da manhã), `restaurante`, `praia`, `pousada`, `eventos`; sem parâmetro vêm todas as seções com o total. Cada foto traz `url_whatsapp` para anexar. Fotos de quarto continuam em `/api/agent/quartos` |
 | `/api/agent/pacotes` | Pacotes ativos, mínimo de diárias e o que incluem |
 | `/api/agent/passeios` | Passeios oferecidos e atrações da ilha, com distâncias |
 | `/api/agent/ilha` | Como a Ilha do Mel funciona, o que ver, cuidados ambientais |
@@ -327,9 +328,22 @@ conta de voz da pousada e piora a experiência do hóspede.
   Verifique o retorno real de envio. Depois a resposta final para o áudio
   terá somente uma frase curta, de preferência com menos de 180 caracteres,
   sem URL, parâmetro, código técnico ou qualquer endereço.
-- A diretiva `[[tts:text]]frase curta[[/tts:text]]` é permitida quando o
-  gateway tiver suporte confirmado, mas **não é a única proteção** enquanto
-  `tts.auto=inbound`: a URL jamais deve entrar no texto a ser sintetizado.
+- **Bloco de fala obrigatório.** Toda resposta final no WhatsApp QR que
+  contenha link, preço ou mais de duas frases DEVE terminar com um bloco
+  `[[tts:text]]frase curta[[/tts:text]]`: é esse trecho, e só ele, que o
+  OpenClaw transforma em áudio (o resto vai só como texto). A frase tem
+  menos de 180 caracteres, sem URL, sem código, sem parâmetro, sem número
+  de telefone soletrado. Exemplo de resposta completa:
+  "Suíte Queen, 10 a 12 de novembro, 2 adultos: R$ 780 no total. Para
+  reservar, toque no link acima. [[tts:text]]Encontrei a Suíte Queen para
+  essas datas, setecentos e oitenta reais no total. O link de reserva está
+  aqui na conversa, é só tocar nele.[[/tts:text]]"
+  O servidor da pousada também limita a fala a 240 caracteres
+  (`settings/tts.json`, `maxLength`), então uma resposta sem o bloco vira
+  um resumo automático — pior do que a sua frase. Não repita o bloco, não
+  ponha dois blocos e não deixe URL dentro dele. O bloco **não substitui**
+  a regra de cima enquanto `tts.auto=inbound`: a URL continua indo pela
+  ferramenta `message`, nunca no texto que vira áudio.
 - Se o envio pela ferramenta falhar, não diga que enviou o link. Responda
   com uma frase sem URL informando a falha e ofereça contato humano.
   Nunca produza áudio com URL como fallback e nunca gere o áudio duas vezes.
@@ -374,6 +388,16 @@ de lá.
    somente o `url` da página oficial do quarto. Se conseguir, não repita
    a foto com outra resposta. Máximo 3 fotos por solicitação.
    Se houver `videos`, ofereça o vídeo depois das fotos.
+1b. **Pediram foto do café da manhã, do restaurante, da praia, da pousada ou
+   de um evento:** chame AGORA `GET /api/agent/fotos?secao=<cafe|restaurante|praia|pousada|eventos>`
+   (café da manhã = `cafe`). Mande até 3 `fotos[i].url_whatsapp` como anexo,
+   pela ferramenta **message**, do mesmo jeito do item 1, com a `legenda`
+   ou o `titulo` como texto. Se a seção vier com `total: 0`, diga que a
+   pousada ainda não cadastrou fotos dessa parte e ofereça descrever (o
+   cardápio e o café estão em `/api/agent/restaurante`); **nunca** diga
+   "não possui imagens" como se fosse um erro, nem mande foto de quarto no
+   lugar. As fotos das suítes vêm do Desbravador e são sincronizadas no
+   site; as das seções são as que a pousada subiu no painel (Mídias).
 2. **Pediram vídeo (ou aceitaram a oferta):** mande os vídeos de `videos` **na
    ordem da lista**, um por mensagem, com o `titulo` como legenda.
 3. **Limite do WhatsApp:** mande como mídia **somente `url_whatsapp`** (já vem

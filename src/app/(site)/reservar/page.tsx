@@ -9,6 +9,8 @@ import Image from "next/image";
 import postgres from "postgres";
 import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 import { comSql } from "@/lib/db-conexao";
+import { after } from "next/server";
+import { talvezSincronizarFotos } from "@/lib/sincronizar-fotos-desbravador";
 import {
   lerRegras, lerAdicionais, calcularOcupacao, regraAtiva, precoAdicional,
   REGRAS_PADRAO, type Adicional,
@@ -43,6 +45,10 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
   const bebes = oc.bebes;
   let resultados: any[] = []; let erro = ""; let noites = 0; let whatsapp = "";
   let avisoCrianca = "";
+
+  /* Cada busca também confere, depois da resposta, se as fotos das suítes
+     estão em dia com o Desbravador (no máximo 1 vez por hora). */
+  if (v?.ok) after(() => comSql((sql) => talvezSincronizarFotos(sql)).catch(() => {}));
 
   // O motor e a parte lenta: a consulta comeca antes do banco, em paralelo.
   const tarifas = v?.ok

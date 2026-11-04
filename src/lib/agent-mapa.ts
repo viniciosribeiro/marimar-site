@@ -83,6 +83,15 @@ export const AREAS: AreaDeConhecimento[] = [
     contar: conta((sql) => sql`SELECT COUNT(*)::int AS n FROM cardapio_itens WHERE ativo = true`),
   },
   {
+    chave: "fotos",
+    titulo: "Fotos da pousada por seção (café, restaurante, praia, eventos)",
+    rota: "/api/agent/fotos",
+    responde: ["Tem foto do café da manhã?", "Como é o restaurante?", "Me mostra a praia", "Fotos da pousada"],
+    origem: "banco",
+    editarEm: "/admin/midias",
+    contar: conta((sql) => sql`SELECT COUNT(*)::int AS n FROM midias WHERE quarto_id IS NULL AND tipo = 'foto' AND visivel_marina = true AND secao IN ('pousada', 'restaurante', 'cafe', 'praia', 'eventos')`),
+  },
+  {
     chave: "pacotes",
     titulo: "Pacotes",
     rota: "/api/agent/pacotes",

@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { textoSemBlocoDeFala } from "@/lib/voz-fala";
 import {
   LIMITE_POR_HORA, LIMITE_CARACTERES, CONTEXTO_MENSAGENS,
   hashIp, ipDaRequisicao, gatewayConfigurado, urlGateway, cabecalhosGateway,
@@ -176,12 +177,14 @@ export async function POST(req: Request) {
               /* "Não sei" vira sugestão de treino no painel, com a
                  pergunta que o provocou. */
               const semResposta = pareceSemResposta(completa);
+              /* A revisão do painel lê o que a pessoa leu: sem o bloco de fala. */
+              const gravar = textoSemBlocoDeFala(completa) || completa.trim();
               await conexao`
                 INSERT INTO chat_mensagens (sessao, ip_hash, papel, conteudo, sem_resposta)
-                VALUES (${sessao}, ${ip}, 'marina', ${completa.trim()}, ${semResposta})`
+                VALUES (${sessao}, ${ip}, 'marina', ${gravar}, ${semResposta})`
                 .catch(() => conexao`
                   INSERT INTO chat_mensagens (sessao, ip_hash, papel, conteudo)
-                  VALUES (${sessao}, ${ip}, 'marina', ${completa.trim()})`);
+                  VALUES (${sessao}, ${ip}, 'marina', ${gravar})`);
               if (semResposta && escalonamento.ativo) {
                 /* O contexto são as perguntas anteriores do visitante (sem
                    dado pessoal — abrirChamado anonimiza), para a equipe

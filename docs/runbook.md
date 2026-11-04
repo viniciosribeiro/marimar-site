@@ -53,7 +53,8 @@ Vercel (Production + Preview). Faltar variavel na Vercel e a causa mais comum de
 | `WORKER_TIMEOUT_BUSCA_MS` | — | default 45000 — busca do hóspede (`/reservar` e rotas de disponibilidade) |
 | `TARIFAS_CACHE_TTL` | — | TTL do cache de tarifas |
 | `AGENT_API_KEY` | ✅ | **min. 16 chars.** Sem ela as rotas do agente retornam 401 (fail-closed) |
-| `CRON_SECRET` | — | min. 16 chars. Chave do agendador de `/api/cron/chamados` (prazos dos chamados). Sem ela, o agendador usa a `AGENT_API_KEY` |
+| `CRON_SECRET` | ⚠️ | min. 16 chars. A Vercel manda `Authorization: Bearer <CRON_SECRET>` nos crons de `vercel.json` (hoje: `/api/cron/sincronizar-fotos`, 12:00 UTC, fotos das suítes do Desbravador). **Sem ela a rodada diária é recusada** (o botão em Mídias e a carona nas buscas funcionam). Também vale em `/api/cron/chamados`; agendador externo pode usar a `AGENT_API_KEY` no lugar |
+| `BLOB_READ_WRITE_TOKEN` | ✅ | Vercel Blob (biblioteca de mídias). Desde 04/11 também espelha as fotos do Desbravador; sem ele, as fotos ficam apontando para o servidor do Desbravador |
 | `OPENCLAW_ENVIO` | — | como o site manda WhatsApp: `auto` (padrão: ferramenta `message` do gateway; a Marina só entra se a ferramenta não existir, e precisa devolver o id da mensagem), `ferramenta`, `agente` ou `rpc:<método>`. Ver `docs/fluxo-escalonamento.md` e "Liberar a ferramenta de mensagens" abaixo |
 
 Sincronizar da Vercel para local:
@@ -140,6 +141,62 @@ npm run db:studio      # Drizzle Studio
 - [ ] `curl -H "Authorization: Bearer <chave>" .../api/agent/pousada` → 200
 - [ ] `curl .../api/agent/pousada` (sem header) → **401** (nunca 200)
 
+
+## Fotos das suítes não atualizam (Desbravador → site)
+
+Desde 04/11/2026 (`docs/fluxo-fotos-desbravador.md`). Ordem de verificação:
+
+1. Admin → Diagnóstico → **Agendadores**: "Fotos das suítes sincronizadas…"
+   diz quando rodou e o resumo. "nunca" ou mais de 2 dias → passo 2.
+2. Admin → Mídias → **Sincronizar com o Desbravador**. A mensagem diz o que
+   entrou/saiu ou o erro (motor fora, migration 0022 faltando: "coluna
+   origem não existe" → `npm run db:migrate`).
+3. "Agendador da Vercel (CRON_SECRET): sem chave" → criar `CRON_SECRET` na
+   Vercel (Production) e Redeploy. Até lá só o botão e a carona rodam.
+4. Pela linha de comando (qualquer agendador):
+   ```bash
+   curl -H "Authorization: Bearer <CRON_SECRET ou AGENT_API_KEY>" \
+     https://www.pousadamarimarilhadomel.com.br/api/cron/sincronizar-fotos
+   ```
+   Resposta: `{ ok, suites_motor, suites_criadas, suites_inativas, fotos_novas,
+   fotos_removidas, fotos_ja_presentes, espelho, avisos }`. `espelho:
+   "sem_blob"` = sem `BLOB_READ_WRITE_TOKEN`.
+5. Suíte que o motor devolve e não aparece no site: Hospedagem → Quartos →
+   ela está **desativada** (o aviso da sincronização lista quais) → Editar →
+   Ativo. Suíte criada pela sincronização entra desativada de propósito.
+
+## Fala curta no WhatsApp QR (tts.json)
+
+O OpenClaw na Hostinger fala a resposta final inteira (`tts.auto: inbound`),
+até **1500 caracteres** por padrão, e só resume acima disso. Desde 04/11 a
+skill termina as respostas com link por `[[tts:text]]frase curta[[/tts:text]]`
+(o OpenClaw fala só o bloco). O limite do servidor é a rede de segurança:
+
+```bash
+# no terminal do OpenClaw (Hostinger). O arquivo pode não existir ainda.
+cat /data/.openclaw/settings/tts.json 2>/dev/null || echo "(não existe)"
+mkdir -p /data/.openclaw/settings
+node -e '
+const fs = require("fs"), p = "/data/.openclaw/settings/tts.json";
+let j = {}; try { j = JSON.parse(fs.readFileSync(p, "utf8")); } catch {}
+j.tts = { ...(j.tts ?? {}), maxLength: 240, summarize: true };
+fs.writeFileSync(p, JSON.stringify(j, null, 2) + "\n");
+console.log(fs.readFileSync(p, "utf8"));'
+openclaw gateway restart
+```
+
+- `maxLength: 240`: acima disso o OpenClaw resume a fala (com o próprio
+  modelo) em vez de ler tudo; a frase da skill tem menos de 180.
+- `summarize: true`: é o padrão; `false` cortaria a fala no meio.
+- Se `/data/.openclaw` não for a pasta do OpenClaw (`OPENCLAW_STATE_DIR`),
+  usar a pasta que `openclaw config get` mostra como estado; o arquivo é
+  sempre `settings/tts.json` dentro dela.
+- Alternativa pelo chat (se o seu número tiver permissão de comando):
+  mandar à Marina `/tts status`, `/tts limit 240`, `/tts summary on`.
+- Não mexer em `tts.auto`, provedor, voz ou chaves: a voz aprovada em 26/10
+  continua a mesma (`docs/voz-marina.md`).
+- Validar com um áudio real: o retorno deve ter texto com o link e áudio
+  curto sem o endereço.
 
 ## Liberar a ferramenta de mensagens (WhatsApp da equipe)
 

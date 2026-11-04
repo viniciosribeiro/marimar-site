@@ -1,5 +1,33 @@
 # Handoff — continuar de onde paramos
 
+## ESTADO ATUAL — 04/11/2026: fotos sincronizadas com o Desbravador, fotos do café, bloco de fala, agendadores
+- **O que foi feito (código, testado localmente, PR na branch `claude/sleepy-mccarthy-62jmwj`):** ver entrada de 04/11 no CHANGELOG e `docs/fluxo-fotos-desbravador.md`. Em uma frase: as fotos das suítes passam a vir do Desbravador sozinhas (botão, carona 1×/hora, Vercel 1×/dia), com espelho no Blob e remoção do que sumiu lá; a Marina tem rota de fotos por seção; a skill exige bloco de fala curto; o Diagnóstico mostra os agendadores.
+- **Evidência local:** `npm test` 136/136; `testes/e2e-fotos-sync.mjs` 42/42; `testes/e2e-cards-reserva.mjs` 4/4; `tsc`/`build` limpos. **Nada disso prova produção**: o ambiente não alcança Vercel, Desbravador nem Hostinger.
+- **Diferenciar:** *versionado no GitHub* (tudo acima) ≠ *publicado na Vercel* (após merge: conferir deploy READY) ≠ *instalado na Hostinger* (skills e `tts.json`: só com os comandos abaixo) ≠ *confirmado pelo proprietário* (WhatsApp real, celulares).
+
+### Passo a passo manual (ordem recomendada)
+1. **Migration 0022** (adiciona 2 colunas em `midias`, não apaga nada): na pasta do projeto, com `.env.local` apontando para produção, `npm run db:migrate`. Sem ela o botão "Sincronizar com o Desbravador" falha com erro de coluna `origem`.
+2. **Vercel → Settings → Environment Variables:** criar `CRON_SECRET` (Production) com 16+ caracteres aleatórios (ex.: `node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"`); conferir que `BLOB_READ_WRITE_TOKEN` existe (ele já é usado pela biblioteca de mídias). Depois **Redeploy**. Sem `CRON_SECRET`, a rodada diária é recusada (o botão e a carona funcionam mesmo assim).
+3. **Primeira sincronização:** Admin → Mídias → **Sincronizar com o Desbravador**. Ler a mensagem: quantas fotos entraram, se foram copiadas para o Blob, quais suítes estão desativadas. Conferir em Admin → Diagnóstico → Agendadores. Depois abrir `/quartos/suite-queen` (e outras) e `/galeria`.
+4. **Suítes desativadas:** Hospedagem → Quartos → as que o aviso listou → Editar → **Ativo**, se a pousada quer vendê-las pelo site (as fotos já estarão lá). Não é obrigatório.
+5. **Fotos do café da manhã e do restaurante:** Admin → Mídias → álbum **Café da manhã** (e **Restaurante**) → Enviar fotos; deixar "A Marina pode enviar" ligado. Sem isso a Marina diz, corretamente, que a pousada ainda não cadastrou fotos dessa parte.
+6. **Hostinger (terminal do OpenClaw), reinstalar as skills:**
+   ```
+   cd ~/marimar-site && git pull --ff-only
+   openclaw skills install ./agente/skills/consulta-desbravador --force
+   openclaw skills install ./agente/skills/marimar-pousada --force
+   ```
+7. **Hostinger, fala curta:** seguir `docs/runbook.md` → "Fala curta no WhatsApp QR (tts.json)": grava `maxLength: 240` e `summarize: true` em `settings/tts.json` do OpenClaw e reinicia o gateway. Antes, `cat /data/.openclaw/settings/tts.json` (pode não existir — é normal) e anotar no CHANGELOG o que havia.
+8. **Teste real no WhatsApp de testes (sem fechar reserva):** (a) áudio perguntando "tem vaga 10 a 12 de novembro para 2 adultos, Suíte Queen?" → espera-se texto com preço e link `roomCode=QUEEN` + **áudio de uma ou duas frases sem o endereço**; (b) "manda foto do café da manhã" → anexos (ou a frase de que ainda não há fotos cadastradas); (c) "fotos da Suíte Queen" → anexos iguais aos do Desbravador. Registrar o resultado (inclusive falhas) no CHANGELOG.
+9. **Se algo quebrar em produção:** Vercel → Deployments → *Promote* o deployment anterior; a sincronização não apaga foto do painel, e as fotos do Desbravador voltam na próxima rodada.
+
+### O que NÃO mudou (não "corrigir" de novo)
+Preços/consulta ao motor, botão Reservar com `roomCode` (confirmado no iPhone em 28/10), rolagem suave e "Buscando suas suítes", voz curta aprovada em 26/10, memória do OpenClaw, API oficial da Meta, abertura em vídeo.
+
+### Se o próximo agente for continuar
+- Rodar `npm test` e, com banco local + `testes/motor-simulado.mjs` + `testes/gateway-simulado.mjs`, `testes/e2e-fotos-sync.mjs` (cabeçalho do arquivo explica).
+- Melhorias possíveis, só com pedido: ativar automaticamente suíte que o motor devolve (hoje é decisão da pousada); limitar o espelho por rodada se a Function de 60 s estourar com Blob; mostrar no cartão da suíte do painel que ela existe no motor.
+
 ## ESTADO ATUAL — 03/11/2026: PR #61 integrado e disponível nos domínios oficiais
 - **Correção do 404 dos cards de busca:** PR #61, SHA de merge `faa3f39756e59839f2955c626b4af9c68142ee0b`, deployment Vercel produção `dpl_BSeERqnhDCnpKKzaUwq5cKeUTGYn` READY. No `src/app/(site)/reservar/page.tsx` foto, título e Detalhes agora são botões que abrem o modal já existente, removendo a navegação antiga para quartos locais inativos.
 - **Provas de produção:** 09–12/12/2026 (9 suítes), 10–12/11/2026 (6), 20–23/12/2026 (5), 10–13/01/2027 (6), sempre 2 adultos; todas retornaram suítes sem mensagem de erro e sem links herdados para `/quartos/[slug]` na extração; logs de erro/fatal da nova implantação vazios na janela inspecionada. Build Next.js/TypeScript da Preview aprovado e checagem estática de 12 contratos OK.

@@ -50,6 +50,16 @@ export async function GET(request: Request) {
       responses: { "200": { description: "OK" }, "404": { description: "Documento não encontrado" } },
     },
   };
+  paths["/api/agent/fotos"] = {
+    get: {
+      summary: "Fotos da pousada que não são de quarto, por seção",
+      description: "Sem parâmetro: todas as seções (pousada, restaurante, cafe, praia, eventos) com total e as 6 primeiras fotos. ?secao=cafe: só uma. Cada foto traz url_whatsapp (imagem servida pelo site) para anexar com a ferramenta message; fotos de quarto continuam em /api/agent/quartos.",
+      parameters: [
+        { name: "secao", in: "query", schema: { type: "string", enum: ["pousada", "restaurante", "cafe", "praia", "eventos"] } },
+      ],
+      responses: { "200": { description: "OK" }, "400": { description: "Seção desconhecida" } },
+    },
+  };
   paths["/api/agent/roteiros"] = {
     get: {
       summary: "Roteiros de orientação com vídeo e foto, etapa por etapa",

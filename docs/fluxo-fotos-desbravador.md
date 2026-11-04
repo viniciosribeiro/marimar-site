@@ -1,0 +1,121 @@
+# Fotos das suítes: sincronização com o Desbravador (04/11/2026)
+
+> Para quem opera: a pousada sobe as fotos das suítes **no Desbravador**, como
+> sempre fez. O site copia de lá sozinho; o que a pousada sobe **no painel do
+> site** fica intacto. Botão para não esperar: Admin → Mídias →
+> **Sincronizar com o Desbravador**.
+
+## O problema que existia (até 03/11/2026)
+
+- O motor devolve, para cada tipo de suíte, a lista de fotos (`fotos[]`,
+  endereços em `reservas.desbravador.com.br/reservas/images/hoteis/...`).
+- O sincronizador anterior (`/api/cron/sincronizar-fotos`, do PR de 26/10)
+  só rodava pela Vercel com uma `CRON_SECRET` que **nunca foi criada**; o
+  plano Hobby chama uma vez por dia; e ele só **acrescentava** fotos — a
+  foto trocada no Desbravador ficava no site para sempre, e a página da
+  suíte ignorava as fotos do motor quando a biblioteca estava vazia.
+- O `seed` original marcou `ativo = disponivel` no dia em que rodou: por
+  isso 3 dos 10 tipos do motor ficaram **desativados** no site (a página
+  `/quartos/[slug]` deles dá 404 e a home não os lista). Isso é cadastro,
+  não bug do motor.
+
+## O que faz agora (`src/lib/sincronizar-fotos-desbravador.ts`)
+
+Uma rodada (`sincronizarFotosDoMotor()`):
+
+1. Consulta o motor para daqui a 7 dias, 2 noites, 2 adultos
+   (`datasExemplo(7, 2)`), e junta `quartos` + `indisponiveis`: a foto não
+   depende de ter vaga.
+2. Trava `pg_try_advisory_lock(20261102)`: o botão e o agendador nunca rodam
+   ao mesmo tempo.
+3. Para cada tipo do motor (`id` = código, ex. `QUEEN`):
+   - **Não existe no site** → cria a suíte **desativada**, `ordem 100+`, slug
+     limpo (`slugDe`), com nome, categoria e ocupação do motor. A pousada
+     revisa em Hospedagem → Quartos e ativa quando quiser. (`ON CONFLICT
+     (desbravador_room_id) DO NOTHING`, então nunca duplica.)
+   - **Existe, mas desativada** → as fotos entram mesmo assim e a suíte vai
+     para `suites_inativas` + um aviso dizendo onde ativar.
+   - **Fotos novas** → `INSERT` em `midias` com `origem = 'desbravador'`,
+     `url_origem` = endereço no Desbravador, `secao = 'quarto'`. Com
+     `BLOB_READ_WRITE_TOKEN` na Vercel, a imagem é **copiada para o Vercel
+     Blob** (`fotos/desbravador/<slug>/<n>`): o site não depende mais do
+     servidor do Desbravador, e a Marina (que recebe 403 dele na Hostinger)
+     passa a ter a foto no nosso domínio. Sem o token, `url` aponta para o
+     Desbravador (`espelho: "sem_blob"`, com aviso).
+   - **Foto que sumiu do motor** → `DELETE ... WHERE origem = 'desbravador'`
+     (e `del` no Blob). Fotos com `origem = 'painel'` **nunca** são tocadas.
+4. Grava o resumo em `integracoes.fotos_sync` (lido pelo Diagnóstico).
+
+Quando roda:
+
+| Gatilho | Onde | Quem autoriza |
+|---|---|---|
+| Botão **Sincronizar com o Desbravador** | Admin → Mídias (em "Todas" e nos álbuns de suíte) | sessão do painel (`exigirSessao`) |
+| De carona nas buscas de `/reservar` | `after()` no `page.tsx`, **no máximo 1×/hora** (`talvezSincronizarFotos`) | ninguém: só se a última rodada tem mais de 1 h |
+| Vercel Cron diário (`vercel.json`, 12:00 UTC) | `GET /api/cron/sincronizar-fotos` | `Authorization: Bearer <CRON_SECRET>` (16+ chars) **ou** `AGENT_API_KEY` |
+
+Sem `CRON_SECRET` na Vercel a rodada diária é recusada (401) — o botão e a
+carona continuam funcionando. O Diagnóstico mostra "sem chave" nesse caso.
+
+## Migration 0022 (`drizzle/0022_midias_origem.sql`, só acrescenta)
+
+- `midias.origem text NOT NULL DEFAULT 'painel'` + índice; as fotos já
+  importadas do Desbravador (URL `reservas.desbravador.com.br/.../hoteis/`)
+  são marcadas `'desbravador'` no próprio script.
+- `midias.url_origem text` (endereço no Desbravador, para reconhecer a foto
+  depois de espelhada).
+
+O código antigo continua funcionando sobre a tabela sem a migration? **Não
+para a sincronização** (ela lê `origem`): rodar `npm run db:migrate` antes
+de usar o botão. O resto do site não depende das colunas novas.
+
+## O que o site e a Marina mostram
+
+- `/quartos/[slug]`: fotos da biblioteca; se não houver nenhuma, as do motor
+  ao vivo (`preco.fotos`), em vez do quadrado vazio.
+- `/reservar` (cards e modal), `/galeria`, home e `/quartos`: só suítes
+  ativas; nenhum link leva a `/quartos/<inativa>` (sem 404).
+- Painel → Mídias: selo **"Do Desbravador"** no cartão e no detalhe; o aviso
+  de exclusão explica que ela volta na próxima sincronização se continuar lá.
+- Marina: `/api/agent/quartos` segue devolvendo `fotos[].url_whatsapp`
+  (bytes pelo nosso domínio, `/api/midia-quarto/[slug]/[indice]`).
+
+## Fotos que não são de suíte (café da manhã, restaurante, praia…)
+
+A Marina respondia "não possui imagens" porque **não existia rota** para as
+seções da biblioteca. Agora:
+
+- `GET /api/agent/fotos` (chave da Marina): todas as seções com total e até
+  6 fotos; `?secao=cafe|restaurante|praia|pousada|eventos` traz uma. Cada
+  foto tem `url_whatsapp` → `/api/midia-secao/<secao>/<indice>`, que serve os
+  bytes (mesma validação de origem, tipo e tamanho das fotos de quarto —
+  `src/lib/foto-whatsapp.ts`). Só fotos com "A Marina pode enviar" ligado.
+- `/api/agent/restaurante` aponta para `?secao=cafe` e `?secao=restaurante`.
+- A skill `marimar-pousada` ("Fotos e vídeos: como mandar", item 1b) manda
+  anexar até 3 pela ferramenta `message`, e dizer "a pousada ainda não
+  cadastrou fotos dessa parte" quando `total: 0` — nunca "não possui imagens".
+- Para ter foto do café: Admin → Mídias → álbum **Café da manhã** → Enviar.
+
+## Testes
+
+- `npm test`: `testes/unit/sincronizar-fotos.test.ts` (seleção de fotos,
+  código, slug), `testes/unit/voz-fala.test.ts` (bloco de fala),
+  `testes/unit/skill-marina.test.mjs` (a skill continua com as regras).
+- `testes/e2e-fotos-sync.mjs` (42 verificações, Chromium): agendador 401/200,
+  suíte nova desativada, suíte inativa avisada, 8 fotos marcadas, segunda
+  rodada sem duplicar, página/galeria/home/busca sem 404, rotas de seção,
+  troca de foto no Desbravador (`SIM_FOTOS_V2=1` em `testes/motor-simulado.mjs`),
+  fotos do painel intactas, botão e selo no painel, Diagnóstico, chat do site
+  sem o bloco de fala. Como rodar está no cabeçalho do arquivo.
+
+## Limites conhecidos
+
+- O espelho no Blob só foi testado **sem** o token (ambiente sem rede para
+  o Desbravador). Em produção, a primeira rodada com token copia todas as
+  fotos (≈10 suítes × até 6 fotos); conferir o Diagnóstico depois.
+- A rodada de carona acontece **depois** da resposta ao hóspede (`after()`),
+  mas usa a mesma função: numa Vercel Function de 60 s, com Blob, pode não
+  concluir na primeira vez — a próxima rodada continua de onde parou (cada
+  foto é inserida individualmente).
+- O motor é consultado com uma data exemplo; um tipo que o motor só devolve
+  em outra época do ano entra quando ela chegar.

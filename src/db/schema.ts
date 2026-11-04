@@ -129,6 +129,10 @@ export const midias = pgTable("midias", {
   duracao_seg: real("duracao_seg"),
   bytes: bigint("bytes", { mode: "number" }),
   formato: text("formato"),
+  /** 'painel' (enviada pela pousada) ou 'desbravador' (trazida do motor; migration 0022). */
+  origem: text("origem").default("painel").notNull(),
+  /** URL original no Desbravador, quando `url` é a cópia no nosso storage (migration 0022). */
+  url_origem: text("url_origem"),
   /** MP4 H.264/AAC ≤ 16 MB para o WhatsApp (nula se o principal já cabe). */
   url_whatsapp: text("url_whatsapp"),
   pathname_whatsapp: text("pathname_whatsapp"),
