@@ -1,5 +1,12 @@
 # Handoff — continuar de onde paramos
 
+## ESTADO ATUAL — 04/11/2026 (parte 9): site novo, fase 3 (a busca) construída
+- **O que entrou:** `/reservar` no Novo (`src/components/site-novo/reservar/`), `pronta: true` (4 de 15). Visitantes continuam no Clássico.
+- **Para não quebrar:** a busca do Novo repete a do Clássico de propósito (consulta, regra de crianças, sincronização de carona com `after()`, `RolarParaResultados`, "Buscando suas suítes" do `FormularioBuscaDisponibilidade`). Os cartões vêm de `montarResultados` (puro, `reservar/resultados.ts`). O teste `testes/e2e-site-novo-reservar.mjs` compara com o Clássico suíte por suíte (nomes, diária, total, link) em 3 períodos — rode-o em qualquer mudança. Ele segura a sincronização de carona durante o teste (atualiza `integracoes.fotos_sync.atualizado_em` e devolve no fim).
+- **"Ver a suíte"** só aparece para suíte ativa com cadastro (`paginaSuite`); sem cadastro, o cartão abre a janela de detalhes de sempre (`CardQuartoModal`) — a causa do 404 de 03/11 não volta.
+- **Situação de produção:** ver o fim desta seção (preenchido depois do merge e do deploy).
+- **Próximo passo (Fase 4):** galeria e restaurante/cardápio no Novo. Aceite do plano: tela cheia com teclado e deslize (o `Lightbox` já faz), cardápio vazio explicado. Depois Fase 5 (como chegar e páginas de conteúdo) e 6 (acabamento: SEO por página, JSON-LD, fontes no seletor do painel, iPhone/Android físicos).
+
 ## ESTADO ATUAL — 04/11/2026 (parte 8): site novo, fase 2 (suítes) construída
 - **O que entrou:** `/quartos` e `/quartos/[slug]` no Novo (`src/components/site-novo/quartos/`), marcadas `pronta: true` em `src/lib/site-novo/paginas.ts` (3 de 15). Visitantes continuam no Clássico; só a prévia vê.
 - **O ponto mais importante para não quebrar:** a página da suíte calcula o preço com a MESMA conta do `/reservar` (`calcularOcupacao` + `fetchTarifas` com `oc.adultosMotor/oc.criancasMotor`, total = `total_geral ?? total` + bebês) e monta o link com `buildDeepLink(..., quartoId)`. O teste `testes/e2e-site-novo-suites.mjs` compara diária, total e link com o cartão do `/reservar` — rode-o em qualquer mudança nessas contas. A lógica de estados está pura em `quartos/preco.ts` (unitários em `testes/unit/suite-novo.test.ts`).
