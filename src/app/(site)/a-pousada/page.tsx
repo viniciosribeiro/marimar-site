@@ -1,5 +1,6 @@
 import { lerPousada } from "@/lib/pousada";
 import Link from "next/link";
+import { IconeCirculo } from "@/components/site/Icone";
 import type { Metadata } from "next";
 import {
   COMPLEXO, DIFERENCIAIS, COMODIDADES_CONFIRMADAS, NAO_DISPONIVEL,
@@ -79,7 +80,7 @@ export default async function APousadaPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {DIFERENCIAIS.map((d) => (
             <div key={d.titulo} className="bg-white rounded-marca p-5 border border-gray-100 shadow-marca flex gap-4">
-              <span className="text-2xl shrink-0">{d.icone}</span>
+              <IconeCirculo nome={d.icone} cor={d.cor} tamanho={40} />
               <div>
                 <h3 className="font-semibold text-gray-900 text-sm mb-1">{d.titulo}</h3>
                 <p className="text-xs text-gray-500 leading-relaxed">{d.texto}</p>

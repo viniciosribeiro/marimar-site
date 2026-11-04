@@ -6,6 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   calcularOcupacao, textoCriancas, textoRegrasMarina, precoAdicional, REGRAS_PADRAO, type Regras,
+  rotuloCriancas, rotuloBebes,
 } from "../../src/lib/regras-hospedagem-base";
 
 const regra: Regras = { idadeColoMax: 2, criancaPagaComoAdulto: true, bebeCobranca: "gratis", bebeValor: null, observacao: null };
@@ -52,4 +53,20 @@ test("textos da regra e dos adicionais", () => {
   assert.match(t, /Berço — sob consulta \(pedir com antecedência\)/);
   assert.doesNotMatch(t, /Oculto/);
   assert.match(precoAdicional({ preco: 35.5, cobranca: "por_noite" }), /R\$\s?35,50 por noite/);
+});
+
+test("idades escritas como se fala: bebê de colo até 0 anos = menores de 1 ano (04/11/2026)", () => {
+  const zero: Regras = { ...regra, idadeColoMax: 0 };
+  assert.equal(textoCriancas(zero), "Crianças a partir de 1 ano pagam como adulto, sem desconto. Bebês de colo (menores de 1 ano) não pagam.");
+  assert.doesNotMatch(textoCriancas(zero)!, /1 anos|até 0/);
+  assert.equal(rotuloCriancas(zero), "Crianças (1 ano ou mais)");
+  assert.equal(rotuloBebes(zero), "Bebês (menos de 1 ano)");
+  const o = calcularOcupacao({ adultos: 2, criancas: 1, bebes: 0, noites: 1 }, zero);
+  assert.match(o.explicacao!, /1 criança a partir de 1 ano paga como adulto/);
+  assert.match(textoRegrasMarina(zero, []), /crianças a partir de 1 ano e quantos bebês/);
+
+  const um: Regras = { ...regra, idadeColoMax: 1 };
+  assert.equal(textoCriancas(um), "Crianças a partir de 2 anos pagam como adulto, sem desconto. Bebês de colo (até 1 ano) não pagam.");
+  assert.equal(rotuloBebes(um), "Bebês (até 1 ano)");
+  assert.equal(rotuloCriancas(regra), "Crianças (3 anos ou mais)");
 });

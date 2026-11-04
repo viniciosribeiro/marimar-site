@@ -1,5 +1,16 @@
 # Changelog — Marimar Site
 
+## 04/11/2026 (parte 6) — Os 4 erros visíveis do site Clássico corrigidos
+**Autor:** Claude (Claude Code). Pedido do Vinicios ao aprovar a proposta do site novo: "Corrigir já no Clássico".
+
+- **A Pousada:** a grade "O que oferecemos" imprimia o nome do ícone ("talheres", "caminhar", "cafe", "ar", "wifi", "familia", "festa", "folha") no lugar do desenho. Agora usa `IconeCirculo` com a cor de cada item (`src/app/(site)/a-pousada/page.tsx`).
+- **Idades das crianças:** com bebê de colo até 0 anos, o site dizia "Crianças a partir de 1 anos" e "Bebês de colo (até 0 anos)"; a busca mostrava "Bebês (até 0)" e "Crianças (1+ anos)". Novos auxiliares em `src/lib/regras-hospedagem-base.ts` (`idadeCrianca`, `faixaBebe`, `rotuloCriancas`, `rotuloBebes`): "a partir de 1 ano", "menores de 1 ano", "Crianças (1 ano ou mais)", "Bebês (menos de 1 ano)". Vale para Políticas, busca da home, `/reservar`, a explicação da ocupação e o texto de treinamento da Marina (só a gramática mudou; a regra e a conta são as mesmas).
+- **"R$ 0":** quando o motor devolve a suíte sem tarifa (diária 0, como fez em 04/11 ~17:55 UTC por alguns minutos), os cards de `/reservar` mostram "Sem tarifa publicada para estas datas.", a janela de detalhes não mostra preço e a página da suíte cai no "Consulte a disponibilidade". Com tarifa, nada muda.
+- **Pacotes:** sem pacote ativo, a página explica ("No momento não há pacotes publicados…") e oferece "Consultar disponibilidade" e "Perguntar no WhatsApp".
+- **Testes:** `testes/unit/regras.test.ts` (+1 caso, idades 0 e 1); `testes/e2e-erros-classico.mjs` (21 verificações, banco LOCAL + motor simulado com o novo modo `/__modo?sem_tarifa=1` em `testes/motor-simulado.mjs`): 21/21. `npm test` 141/141; `testes/e2e-cards-reserva.mjs` 4/4; `tsc` limpo em export `git archive`; build limpo.
+- **Não muda:** preços, consulta ao motor, `roomCode`, rolagem suave, janela de detalhes (só o bloco de preço quando a diária é 0), Marina (só a gramática do texto da regra).
+- **Pendente:** conferir em produção depois do deploy (A Pousada, Políticas, Pacotes; o "R$ 0" só aparece se o motor voltar a devolver sem tarifa).
+
 ## 04/11/2026 (parte 5) — Análise completa do site e proposta do site novo (`/site-novo`), para aprovação
 **Autor:** Claude (Claude Code), a pedido do Vinicios: "análise completa da página inicial e de todas as subpáginas… deixar esse site muito mais bonito, muito mais responsivo, sem quebrar nada… antes de eu aprovar, você me fale tudo aquilo que será criado… /site novo… caso eu não aprove, essa página deve ser destruída… pesquise as melhores skills para redesign e instale o que precisar".
 

@@ -12,7 +12,7 @@ import { comSql } from "@/lib/db-conexao";
 import { after } from "next/server";
 import { talvezSincronizarFotos } from "@/lib/sincronizar-fotos-desbravador";
 import {
-  lerRegras, lerAdicionais, calcularOcupacao, regraAtiva, precoAdicional,
+  lerRegras, lerAdicionais, calcularOcupacao, regraAtiva, precoAdicional, rotuloCriancas, rotuloBebes,
   REGRAS_PADRAO, type Adicional,
 } from "@/lib/regras-hospedagem";
 
@@ -150,12 +150,12 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           <select name="adultos" defaultValue={adultos} className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none"><option>1</option><option>2</option><option>3</option><option>4</option></select>
         </label>
         <label className="min-w-0">
-          <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">{temRegra ? `Crianças (${regras.idadeColoMax! + 1}+ anos)` : "Crianças"}</span>
+          <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">{temRegra ? rotuloCriancas(regras) : "Crianças"}</span>
           <select name="criancas" defaultValue={criancas} className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none"><option>0</option><option>1</option><option>2</option><option>3</option></select>
         </label>
         {temRegra && (
           <label className="min-w-0">
-            <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">Bebês (até {regras.idadeColoMax} {regras.idadeColoMax === 1 ? "ano" : "anos"})</span>
+            <span className="block text-xs font-medium text-tinta-suave mb-1 px-1">{rotuloBebes(regras)}</span>
             <select name="bebes" defaultValue={bebes} className="w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white focus:ring-2 focus:ring-marca outline-none"><option>0</option><option>1</option><option>2</option></select>
           </label>
         )}
@@ -337,6 +337,12 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
         </div>
 
         <div className="mt-auto pt-3">
+          {/* O motor às vezes devolve a suíte sem tarifa (diária 0): nunca
+              mostrar "R$ 0" — visto em 04/11/2026, com as 10 suítes assim
+              por alguns minutos. */}
+          {!(Number(r.diaria) > 0) ? (
+            <p className="border-t border-linha/70 pt-2.5 text-[11px] leading-snug text-tinta-suave sm:pt-3 sm:text-sm">Sem tarifa publicada para estas datas.</p>
+          ) : (
           <div className="grid grid-cols-2 gap-1 border-t border-linha/70 pt-2.5 sm:gap-3 sm:pt-3">
             <div className="min-w-0">
               <p className="text-[10px] leading-tight text-tinta-suave sm:text-xs">Diária</p>
@@ -347,6 +353,7 @@ function CardQuarto({ r, noites }: { r: any; noites: number }) {
               <p className="mt-0.5 whitespace-nowrap text-[clamp(0.78rem,2.75vw,1.25rem)] font-extrabold leading-tight tracking-tight text-tinta">{brl(r.totalFinal)}</p>
             </div>
           </div>
+          )}
           {r.valor_adulto > 0 && <p className="mt-1.5 text-[10px] leading-snug text-tinta-suave sm:text-xs">Adulto: {brl(r.valor_adulto)}/noite</p>}
           {r.valorBebes > 0 && <p className="mt-1 text-[10px] leading-snug text-tinta-suave sm:text-xs">Bebê de colo: {brl(r.valorBebes)} (à parte na pousada)</p>}
           {r.total_criancas > 0 && (

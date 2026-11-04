@@ -9,9 +9,18 @@
 import http from "node:http";
 
 const PORTA = Number(process.env.PORTA ?? 4011);
+/* SIM_SEM_TARIFA=1 (ou GET /__modo?sem_tarifa=1 com o simulador rodando): o
+   motor devolve todas as suítes indisponíveis e com diária 0, como fez de
+   verdade em 04/11/2026 por alguns minutos ("sem tarifa publicada"). */
+let semTarifa = !!process.env.SIM_SEM_TARIFA;
 
 http.createServer((req, res) => {
   const u = new URL(req.url, "http://x");
+  if (u.pathname === "/__modo") {
+    if (u.searchParams.has("sem_tarifa")) semTarifa = u.searchParams.get("sem_tarifa") === "1";
+    res.writeHead(200, { "content-type": "application/json" });
+    return res.end(JSON.stringify({ semTarifa }));
+  }
   if (u.pathname !== "/tarifas") { res.writeHead(404); return res.end(); }
   const adultos = Number(u.searchParams.get("adultos") ?? 2);
   const criancas = Number(u.searchParams.get("criancas") ?? 0);
@@ -23,6 +32,14 @@ http.createServer((req, res) => {
     ? [`https://reservas.desbravador.com.br/reservas/images/hoteis/img719501/gt_${id}_1.jpg`, `https://reservas.desbravador.com.br/reservas/images/hoteis/img719501/gt_${id}_3.jpg`]
     : [`https://reservas.desbravador.com.br/reservas/images/hoteis/img719501/gt_${id}_1.jpg`, `https://reservas.desbravador.com.br/reservas/images/hoteis/img719501/gt_${id}_2.jpg`];
   const quarto = (id, nome, max) => {
+    if (semTarifa) {
+      return {
+        id, nome, categoria: "Familia", diaria: 0, total: 0, total_criancas: 0, total_geral: 0, valor_adulto: 0, valor_crianca: 0,
+        ocupacao_max: max, estadia_minima: 1, disponivel: false, unidades_disponiveis: 0,
+        motivo_indisponivel: "esgotado no período; sem tarifa publicada para o período",
+        pacote: null, comodidades: [], fotos: fotosDe(id),
+      };
+    }
     const cabe = adultos + criancas <= max;
     const total = 275 * adultos * noites;
     const totalCriancas = 150 * criancas * noites;

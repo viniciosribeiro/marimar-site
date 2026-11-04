@@ -30,7 +30,8 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
   const data = await tarifas;
   if (data) {
     const found = [...data.quartos, ...data.indisponiveis].find((r: any) => r.id === q.desbravador_room_id);
-    if (found) preco = found;
+    /* Sem tarifa publicada o motor manda diária 0: aí vale o "consulte a disponibilidade". */
+    if (found && Number(found.diaria) > 0) preco = found;
   }
 
   /* Sem foto própria, as do motor (mesma regra dos cards da busca); a
