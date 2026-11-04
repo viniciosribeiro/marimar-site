@@ -128,6 +128,85 @@ try {
   await pg.waitForURL(/\/quartos$/);
   conferir("celular: o caminho \"Suítes\" leva à lista de suítes", pg.url().endsWith("/quartos"));
   await ctx.close();
+
+  console.log("4. \"Falar com a Marina\": a folha (conversar aqui, WhatsApp, ligar)");
+  const [pous] = await sql`SELECT chat_ativo, telefone FROM pousada LIMIT 1`;
+  const cookiesNovo = [{ name: "marimar_previa", value: PREVIA, url: BASE }, { name: "marimar_ver", value: "novo", url: BASE }];
+  const abrirNovo = async (opts) => {
+    const c = await nav.newContext(opts);
+    await c.addCookies(cookiesNovo);
+    await c.addInitScript(() => { try { sessionStorage.setItem("marimar:abertura", "1"); } catch {} });
+    const pg2 = await c.newPage();
+    await pg2.goto(`${BASE}/galeria`, { waitUntil: "domcontentloaded" });
+    await pg2.waitForTimeout(500);
+    return { c, pg2 };
+  };
+  try {
+    await sql`UPDATE pousada SET chat_ativo = true`;
+    let { c, pg2 } = await abrirNovo({ ...devices["iPhone 13"] });
+    const botaoF = pg2.locator("button[data-marina-flutuante]");
+    conferir("celular: um só botão, \"Falar com a Marina\"", (await botaoF.count()) === 1 && (await botaoF.textContent())?.includes("Falar com a Marina"));
+    await botaoF.click();
+    const folha = pg2.getByRole("dialog", { name: "Falar com a pousada" });
+    await folha.waitFor({ timeout: 5000 });
+    await pg2.waitForTimeout(400); /* a folha termina de subir */
+    const opcoes = await folha.locator("[data-opcao]").allTextContents();
+    conferir("celular: folha com conversar, WhatsApp e ligar", opcoes.length === (pous.telefone ? 3 : 2) && /Conversar com a Marina/.test(opcoes[0]) && /WhatsApp/.test(opcoes[1]), JSON.stringify(opcoes));
+    const wa = await folha.locator('a[href^="https://wa.me/"]').getAttribute("href");
+    conferir("WhatsApp com a mensagem pronta", /^https:\/\/wa\.me\/\d{12,13}\?text=/.test(wa ?? ""), wa);
+    if (pous.telefone) conferir("ligar com o número do painel", (await folha.locator('a[href^="tel:"]').getAttribute("href")) === `tel:${pous.telefone.replace(/\D/g, "")}`);
+    const caixa = await folha.boundingBox();
+    const vp = pg2.viewportSize();
+    conferir("celular: a folha sobe do pé da tela, na largura toda", !!caixa && Math.abs(caixa.x) <= 1 && Math.abs(caixa.width - vp.width) <= 1 && Math.abs(caixa.y + caixa.height - vp.height) <= 1, JSON.stringify(caixa));
+    conferir("foco na primeira opção", await pg2.evaluate(() => document.activeElement?.hasAttribute("data-opcao")));
+    await pg2.keyboard.press("Escape");
+    await pg2.waitForTimeout(250);
+    conferir("Esc fecha e o foco volta ao botão", !(await folha.isVisible().catch(() => false)) && await pg2.evaluate(() => document.activeElement?.hasAttribute("data-marina-flutuante")));
+    await botaoF.click();
+    await folha.getByRole("button", { name: /Conversar com a Marina/ }).click();
+    const chatDlg = pg2.getByRole("dialog", { name: /^Atendimento/ });
+    await chatDlg.waitFor({ timeout: 5000 });
+    conferir("\"Conversar com a Marina\" abre o chat e fecha a folha", await chatDlg.isVisible() && !(await folha.isVisible().catch(() => false)));
+    conferir("com o chat aberto, o botão sai da frente", await botaoF.evaluate((b) => getComputedStyle(b).opacity === "0"));
+    await chatDlg.getByRole("button", { name: "Fechar atendimento" }).click();
+    await pg2.waitForTimeout(400);
+    conferir("chat fechado: o botão volta", await botaoF.evaluate((b) => getComputedStyle(b).opacity === "1"));
+    await c.close();
+
+    ({ c, pg2 } = await abrirNovo({ viewport: { width: 1366, height: 860 } }));
+    await pg2.locator("button[data-marina-flutuante]").click();
+    const folhaPc = pg2.getByRole("dialog", { name: "Falar com a pousada" });
+    await folhaPc.waitFor({ timeout: 5000 });
+    await pg2.waitForTimeout(300);
+    const cx = await folhaPc.boundingBox();
+    conferir("computador: cartão no canto do botão", !!cx && cx.width < 420 && 1366 - (cx.x + cx.width) <= 24 && 860 - (cx.y + cx.height) <= 24, JSON.stringify(cx));
+    await pg2.mouse.click(300, 300);
+    await pg2.waitForTimeout(250);
+    conferir("computador: clicar fora fecha", !(await folhaPc.isVisible().catch(() => false)));
+    await c.close();
+
+    await sql`UPDATE pousada SET chat_ativo = false`;
+    ({ c, pg2 } = await abrirNovo({ ...devices["iPhone 13"] }));
+    const b2 = pg2.locator("button[data-marina-flutuante]");
+    conferir("chat desligado: o botão vira \"Falar com a pousada\"", (await b2.textContent())?.includes("Falar com a pousada"));
+    await b2.click();
+    const f2 = pg2.getByRole("dialog", { name: "Falar com a pousada" });
+    await f2.waitFor({ timeout: 5000 });
+    conferir("chat desligado: folha só com WhatsApp e telefone", (await f2.getByText("Conversar com a Marina").count()) === 0 && (await f2.locator('a[href^="https://wa.me/"]').count()) === 1);
+    await c.close();
+
+    await sql`UPDATE pousada SET chat_ativo = true`;
+    const cc = await nav.newContext({ viewport: { width: 1366, height: 860 } });
+    const pc2 = await cc.newPage();
+    await pc2.goto(`${BASE}/galeria`, { waitUntil: "domcontentloaded" });
+    await pc2.waitForTimeout(500);
+    conferir("Clássico: o botão de sempre (\"Abrir atendimento\") e nada da folha", (await pc2.getByRole("button", { name: "Abrir atendimento" }).count()) === 1 && (await pc2.locator("button[data-marina-flutuante]").count()) === 0);
+    await pc2.getByRole("button", { name: "Abrir atendimento" }).click();
+    conferir("Clássico: abre o chat direto, como antes", await pc2.getByRole("dialog", { name: /^Atendimento/ }).isVisible());
+    await cc.close();
+  } finally {
+    await sql`UPDATE pousada SET chat_ativo = ${pous.chat_ativo}`;
+  }
 } finally {
   await nav.close();
   await sql.end();

@@ -115,8 +115,6 @@ export const LIMITE_VOZ_CARACTERES = 900;
 /** Teto de transcricoes por IP, por hora. */
 export const LIMITE_AUDIO_POR_HORA = 20;
 
-/** Um minuto e meio. Acima disso nao e pergunta, e outra coisa. */
-export const LIMITE_AUDIO_SEGUNDOS = 90;
 
 /** Teto de tamanho do arquivo, como segunda linha de defesa. */
 export const LIMITE_AUDIO_BYTES = 4 * 1024 * 1024;
@@ -125,23 +123,7 @@ export const LIMITE_AUDIO_BYTES = 4 * 1024 * 1024;
 export const URL_TRANSCRICAO = "https://api.elevenlabs.io/v1/speech-to-text";
 export const MODELO_TRANSCRICAO = "scribe_v2";
 
-/**
- * Perguntas sugeridas no primeiro contato.
- *
- * Não são enfeite: um campo de texto vazio faz a pessoa não saber o que
- * perguntar, e as três primeiras mensagens de um chat decidem se ela
- * continua. Todas levam a algo que a Marina responde bem.
- */
-export const SUGESTOES = [
-  "Tem vaga para o próximo fim de semana?",
-  "Como chego na pousada?",
-  "O café da manhã está incluso?",
-  "Posso levar meu cachorro?",
-];
-
-export const SAUDACAO =
-  "Oi! Sou a Marina, da Pousada Marimar. Posso ajudar com datas, acomodações, o restaurante e como chegar na ilha.";
-
-/** Mensagem quando a Marina não puder responder — sempre com saída humana. */
-export const INDISPONIVEL =
-  "Não consegui responder agora. Você pode falar direto com a pousada no WhatsApp — a resposta é rápida.";
+/* Textos e limites que o widget do chat (navegador) também usa: ficam em
+   chat-textos.ts, sem nada de servidor, para o navegador não baixar o
+   "crypto" que este arquivo usa (eram ~100 KB a mais em toda página). */
+export { LIMITE_AUDIO_SEGUNDOS, SUGESTOES, SAUDACAO, INDISPONIVEL } from "./chat-textos";
