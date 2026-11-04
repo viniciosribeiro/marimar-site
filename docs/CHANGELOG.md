@@ -11,6 +11,7 @@
 - **Espelho atrasado:** fotos do motor que já estavam no banco apontando para o Desbravador são copiadas para o Blob aos poucos (6 por rodada, dentro de um orçamento de 25 s por rodada); `espelho_pendentes` diz quantas faltam. Novas fotos continuam sendo espelhadas na inserção enquanto há orçamento; fora dele entram apontando para o Desbravador e são copiadas depois.
 - Dois cadastros com o mesmo código no banco (ex. `FAM` e `fam`): a sincronização prefere o ativo (antes ficava o último lido).
 - Diagnóstico: aviso vermelho com o erro da última tentativa e tabela "Fotos por suíte na última rodada".
+- **Rodada morta pelo tempo da Function:** as rodadas de ~16:50 e ~17:20 UTC não registraram nada (nem resumo, nem erro) — a Function de 60 s foi encerrada no meio (consulta ao motor + cópias para o Blob). Agora: marca "começou e não concluiu" gravada antes de tudo (vira o `ultimo_erro` se a rodada morrer), orçamento de 40 s para a rodada inteira contado antes da consulta ao motor (timeout 25 s), 8 s por foto copiada; o que não couber fica para a próxima rodada.
 - **Testes:** `npm test` 139/139; `testes/e2e-fotos-sync.mjs` **54/54** (novos: resumo público por suíte, motor fora do ar → 503 + erro visível sem chave, rodada seguinte limpa o erro, cada suíte termina com as fotos do motor).
 
 ## 04/11/2026 (parte 2) — Nada manual: migration aplicada pelo site, agendador sem CRON_SECRET e regras do WhatsApp lidas do site

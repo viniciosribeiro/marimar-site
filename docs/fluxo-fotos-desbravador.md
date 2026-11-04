@@ -145,3 +145,9 @@ quando uma conclui). O Diagnóstico mostra o mesmo. O **espelho atrasado**
 copia para o Blob, 6 por rodada, as fotos que já estavam no banco apontando
 para o Desbravador (`espelho_pendentes` diz quantas faltam); o orçamento é
 25 s por rodada para caber na Function de 60 s.
+
+Rodada morta no meio (tempo da Function): a marca "começou e não registrou
+conclusão" fica em `fotos_sync_erro` e aparece no Diagnóstico e em
+`ultimo_erro`; a rodada seguinte continua de onde parou (cada foto é
+inserida sozinha). Orçamento: 40 s por rodada contados antes da consulta ao
+motor (25 s de timeout), 8 s por foto copiada.
