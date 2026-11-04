@@ -57,16 +57,12 @@ try {
   /* 1. Sem chave (como a Vercel chama sem CRON_SECRET), o agendador roda em
      segundo plano, uma vez por hora — igual a uma busca no site. */
   const semChave = await json("/api/cron/sincronizar-fotos", {});
-  ok(semChave.status === 202 && semChave.corpo?.modo === "carona" && semChave.corpo?.ultima_em === null, "agendador sem chave: 202, rodada em segundo plano", JSON.stringify(semChave.corpo));
-  let gravado = null;
-  for (let i = 0; i < 60 && !gravado; i++) {
-    await new Promise((r) => setTimeout(r, 1000));
-    [gravado] = await sql`SELECT valor FROM integracoes WHERE chave = 'fotos_sync'`;
-  }
-  ok(Boolean(gravado), "a rodada em segundo plano concluiu e ficou registrada");
-  const r1 = { status: 200, corpo: gravado ? { ok: true, ...JSON.parse(gravado.valor) } : null };
+  ok(semChave.status === 200 && semChave.corpo?.modo === "carona-agora" && semChave.corpo?.ok === true, "agendador sem chave com rodada devida: roda na hora e devolve o resumo", JSON.stringify({ ...semChave.corpo, suites: undefined }));
+  const [gravado] = await sql`SELECT valor FROM integracoes WHERE chave = 'fotos_sync'`;
+  ok(Boolean(gravado), "a rodada ficou registrada no banco");
+  const r1 = semChave;
   const publico = await json("/api/cron/sincronizar-fotos", {});
-  ok(publico.corpo?.ultima_em !== null, "sem chave de novo: só informa a hora da última rodada (e não roda antes de 1 h)");
+  ok(publico.status === 202 && publico.corpo?.ultima_em !== null, "sem chave de novo: 202, só informa a última rodada (não roda antes de 1 h)", String(publico.status));
   const porSuite = Object.fromEntries((publico.corpo?.ultimo_resumo?.suites ?? []).map((d) => [d.codigo, d]));
   ok(porSuite.FAM?.motor === 2 && porSuite.FAM?.site_depois === 2 && porSuite.FAM?.novas === 2 && porSuite.FAM?.ativo === true, "resumo público diz, por suíte, quantas fotos o motor tem e quantas o site tem (FAM)", JSON.stringify(porSuite.FAM));
   ok(porSuite.SR?.nota === "desativada no site" && porSuite.NOVAMOTOR?.nota === "cadastro criado desativado", "resumo público marca a suíte desativada e a criada", JSON.stringify([porSuite.SR, porSuite.NOVAMOTOR]));

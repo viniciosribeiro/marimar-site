@@ -55,10 +55,12 @@ Quando roda:
 | Vercel Cron diário (`vercel.json`, 12:00 UTC) | `GET /api/cron/sincronizar-fotos` | `Authorization: Bearer <CRON_SECRET>` (16+ chars) **ou** `AGENT_API_KEY` |
 
 **Sem `CRON_SECRET` a rodada diária roda mesmo assim** (desde 04/11, parte 2):
-a chamada sem chave agenda a rodada em segundo plano, no máximo 1×/hora pela
-hora gravada no banco, e devolve 202 `{modo:"carona", ultima_em}`. Com a chave
-(ou a `AGENT_API_KEY`) roda na hora e devolve o resumo. O Diagnóstico mostra
-a chave como "opcional".
+a chamada sem chave roda a sincronização **antes de responder** quando a
+última tem mais de 1 h (200 com o resumo; 503 com o erro) e, fora disso,
+devolve 202 `{modo:"carona", ultima_em, ultimo_resumo, ultimo_erro}`. Com a
+chave (ou a `AGENT_API_KEY`) roda sempre. Não usa `after()`: em 04/11 o
+trabalho em segundo plano não executava de forma confiável na Vercel. O
+Diagnóstico mostra a chave como "opcional".
 
 ## Migration 0022 (`drizzle/0022_midias_origem.sql`, só acrescenta)
 
