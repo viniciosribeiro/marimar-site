@@ -8,7 +8,7 @@ import type { Visita } from "@/lib/modelo-site";
 import { TopoNovo } from "./TopoNovo";
 import { RodapeNovo } from "./RodapeNovo";
 import { BarraPrevia } from "./BarraPrevia";
-import { PilulaWhatsApp } from "./PilulaWhatsApp";
+import { FolhaFalar } from "./FolhaFalar";
 import "./novo.css";
 
 /* As duas letras do site novo, servidas pelo próprio site (next/font).
@@ -60,13 +60,10 @@ export function LayoutNovo({ p, tema, visita, children }: {
       <main id="conteudo" className="flex-1">{children}</main>
       <RodapeNovo nome={nome} logoUrl={p?.logo_url ?? null} whatsapp={p?.whatsapp || CONTATO.whatsapp} whatsappDigitos={wa}
         telefone={p?.telefone ?? null} email={p?.email ?? null} endereco={p?.endereco ?? null} />
-      {/* Uma só porta para falar com a pousada: o chat da Marina (que tem o
-          WhatsApp lá dentro) ou, com o chat desligado no painel, o WhatsApp. */}
-      {p?.chat_ativo ? (
-        <ChatMarina whatsapp={wa} nome={nome} estilo="novo" />
-      ) : (
-        <PilulaWhatsApp digitos={wa} />
-      )}
+      {/* Uma só porta para falar com a pousada: o botão abre a folha com o
+          chat da Marina (se ligado em Integrações), o WhatsApp e o telefone. */}
+      {p?.chat_ativo && <ChatMarina whatsapp={wa} nome={nome} estilo="novo" />}
+      <FolhaFalar comChat={!!p?.chat_ativo} whatsappDigitos={wa} whatsapp={p?.whatsapp || CONTATO.whatsapp} telefone={p?.telefone ?? null} />
     </div>
   );
 }

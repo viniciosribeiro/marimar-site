@@ -222,7 +222,7 @@ src/lib/modelo-site.ts                    # lerConfigModelo, prévia assinada, m
 src/app/(admin)/admin/modelo-site/        # a tela (page.tsx) e as Server Actions (actions.ts)
 src/app/api/modelo-site/previa/route.ts   # link do painel → cookie de prévia (30 dias) → "/"
 src/app/api/modelo-site/ver/route.ts      # barrinha: Ver o Clássico / Ver o Novo / Sair da prévia (POST)
-src/components/site-novo/**               # LayoutNovo, TopoNovo, RodapeNovo, BarraPrevia, BuscaNovo, PilulaWhatsApp, useSemFlutuante, novo.css, home/HomeNovo
+src/components/site-novo/**               # LayoutNovo, TopoNovo, RodapeNovo, BarraPrevia, BuscaNovo, FolhaFalar, useSemFlutuante, novo.css, home/HomeNovo
 ```
 
 **Quem vê o quê (`modeloDaVisita()`):**
@@ -288,7 +288,7 @@ celular e em duas larguras de computador).
 | 3 | `/reservar` | mesmos resultados do Clássico (ids, preços, totais) para 3 períodos; rolagem suave e "Buscando suas suítes" mantidas; janela sem 404; nunca R$ 0 | **feita (04/11)**: `e2e-site-novo-reservar` compara suíte por suíte com o Clássico |
 | 4 | galeria + restaurante/cardápio | lightbox com teclado e deslize; cardápio vazio explicado | **feita (04/11)**: `e2e-site-novo-galeria-restaurante` |
 | 5 | como chegar/mapa, ilha, a pousada, eventos, avaliações, faq, políticas, contato, pacotes | mapa e rota funcionando (4G de verdade); formulário de contato enviando | **feita (04/11)**: `e2e-site-novo-conteudo` (o mapa com 4G real fica para o proprietário) |
-| 6 | acabamento: performance, a11y, SEO/JSON-LD, iPhone/Android físicos | metas do §5; relatório antes/depois | **parte 1 feita (04/11)**: títulos por página e suíte, canônico, prévia do link, JSON-LD, "não encontrada" nova, letras no painel (`e2e-site-novo-acabamento`); **parte 2 a fazer**: folha da Marina, desempenho, relatório |
+| 6 | acabamento: performance, a11y, SEO/JSON-LD, iPhone/Android físicos | metas do §5; relatório antes/depois | **feita (04/11)**: títulos por página e suíte, canônico, prévia do link, JSON-LD, "não encontrada" nova, letras no painel, folha "Falar com a pousada", chat 400 KB mais leve (`e2e-site-novo-acabamento`); desempenho Novo 79–94 × Clássico 61–81, acessibilidade 100; **meta 85 só sem a abertura em vídeo na maioria das páginas — decisão do proprietário**; iPhone/Android físicos com o proprietário |
 | 7 | o proprietário liga o Novo para todos (ou não) | deploy de produção verificado; docs | dele |
 
 Em cada PR: `npm test`, `tsc` limpo em export `git archive`, `npm run build`,

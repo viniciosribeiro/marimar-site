@@ -146,7 +146,21 @@
   }
   .sn .sn-barra-reserva { transition: transform .22s ease; }
 
-  @media (prefers-reduced-motion: reduce) { .sn .sn-mais, .sn .sn-topo, .sn .sn-botao, .sn .sn-botao-linha, .sn .sn-barra-reserva { transition: none; } }
+  /* A folha "Falar com a pousada" (FolhaFalar): sobe do pé da tela no celular; no computador, cartão no canto do botão. */
+  .sn .sn-opcao {
+    display: flex; width: 100%; min-height: 4.25rem; align-items: center; gap: 0.875rem;
+    border-radius: 14px; padding: 0.625rem 0.75rem; text-align: left; transition: background-color .15s ease;
+  }
+  .sn .sn-opcao:hover { background: color-mix(in oklab, var(--color-sn-areia), transparent 35%); }
+  .sn .sn-folha { animation: sn-folha-sobe .24s cubic-bezier(.2,.8,.2,1); }
+  .sn .sn-folha-fundo { animation: sn-folha-fundo .2s ease-out; }
+  @media (min-width: 640px) {
+    .sn .sn-folha { animation-name: sn-folha-surge; }
+  }
+  @keyframes sn-folha-sobe { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes sn-folha-surge { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes sn-folha-fundo { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .sn .sn-mais, .sn .sn-topo, .sn .sn-botao, .sn .sn-botao-linha, .sn .sn-barra-reserva, .sn .sn-opcao { transition: none; } .sn .sn-folha, .sn .sn-folha-fundo { animation: none; } }
 }
 
 @keyframes sn-desenhar { to { stroke-dashoffset: 0; } }
