@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> **04/11/2026 (parte 9) — SITE NOVO, FASE 3:** a busca `/reservar` no Novo (4 de 15 páginas prontas): mesma consulta, mesmos preços, totais e links do Clássico (testado suíte por suíte em 3 períodos), "Buscando suas suítes" e rolagem mantidas. Visitantes continuam no Clássico. Ver CHANGELOG/HANDOFF (parte 9) para o status de produção.
+> **04/11/2026 (parte 9) — SITE NOVO, FASE 3:** a busca `/reservar` no Novo (4 de 15 páginas prontas): mesma consulta, mesmos preços, totais e links do Clássico (testado suíte por suíte em 3 períodos), "Buscando suas suítes" e rolagem mantidas. **Publicado (PR #83, deploy `HW8G846zEzKeGLVRd8wfebxMUHeA` success) e conferido: visitantes continuam no Clássico.**
 
 > **04/11/2026 (parte 8) — SITE NOVO, FASE 2:** lista de suítes e página de cada suíte no Novo (3 de 15 páginas prontas). Na página da suíte, o preço das datas da pessoa com a mesma conta e o mesmo link de reserva do `/reservar` (testado lado a lado). **Publicado (PR #81, deploy `AuEC4NA3cSDQiZDAhrHEvcz9NeHR` success) e conferido: visitantes continuam no Clássico.**
 
