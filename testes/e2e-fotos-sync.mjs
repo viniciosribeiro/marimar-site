@@ -3,7 +3,8 @@
  * (docs/fluxo-fotos-desbravador.md), com o motor simulado.
  *
  *   servidor local (npm run build && npm start) com banco LOCAL,
- *     WORKER_BASE_URL=http://localhost:4011, OPENCLAW_GATEWAY_URL=http://localhost:4010
+ *     WORKER_BASE_URL=http://localhost:4011, OPENCLAW_GATEWAY_URL=http://localhost:4010,
+ *     FOTOS_CARENCIA_REMOCAO_MS=3000 (a carência de 30 min encurtada para o teste)
  *   node testes/gateway-simulado.mjs            # porta 4010
  *   DATABASE_URL=<banco LOCAL> AGENT_API_KEY=... SENHA=... node testes/e2e-fotos-sync.mjs
  *
@@ -45,7 +46,7 @@ try {
      e uma foto do café subida "pelo painel" (que a sincronização não pode tocar). */
   await sql`DELETE FROM midias WHERE origem = 'desbravador'`;
   await sql`DELETE FROM quartos WHERE desbravador_room_id = 'NOVAMOTOR'`;
-  await sql`DELETE FROM integracoes WHERE chave IN ('fotos_sync', 'fotos_sync_erro', 'openclaw_audio_curto')`;
+  await sql`DELETE FROM integracoes WHERE chave IN ('fotos_sync', 'fotos_sync_erro', 'fotos_sync_ausentes', 'openclaw_audio_curto')`;
   /* Como em produção em 04/11: SR desligada no site embora o motor venda; CASAL ligada. */
   await sql`UPDATE quartos SET ativo = false WHERE desbravador_room_id = 'SR'`;
   await sql`UPDATE quartos SET ativo = true WHERE desbravador_room_id = 'CASAL'`;
@@ -148,23 +149,38 @@ try {
         E o motor deixa de vender a CASAL: ela sai do site sozinha. */
   await ligarMotor({ SIM_FOTOS_V2: "1", SIM_SEM_CASAL: "1" });
   const r3 = await json("/api/cron/sincronizar-fotos");
-  ok(r3.corpo?.fotos_novas === 3 && r3.corpo?.fotos_removidas === 3, "foto trocada no Desbravador (3 suítes à venda): 3 saem, 3 entram", JSON.stringify({ ...r3.corpo, suites: undefined }));
+  ok(r3.corpo?.fotos_novas === 3 && r3.corpo?.fotos_removidas === 0 && r3.corpo?.fotos_aguardando_remocao === 3, "foto trocada no Desbravador (3 suítes à venda): 3 entram; as 3 que sumiram ficam em carência", JSON.stringify({ ...r3.corpo, suites: undefined }));
+  ok(r3.corpo?.avisos?.some((a) => /sumiram do motor nesta rodada/.test(a)), "aviso explica a carência");
   ok(r3.corpo?.suites_desativadas?.includes("CASAL STANDARD"), "suíte que o motor parou de vender é desligada do site", JSON.stringify(r3.corpo?.suites_desativadas));
   ok((await fetch(`${BASE}/quartos/casal-standard`)).status === 404, "a suíte desligada sai do site");
   ok((await json("/api/cron/sincronizar-fotos", {})).corpo?.ultimo_erro === null, "rodada que concluiu limpa o erro anterior");
+  /* Motor "piscando": a foto antiga volta antes da carência → nada é apagado. */
+  await ligarMotor({ SIM_SEM_CASAL: "1" });
+  const r3p = await json("/api/cron/sincronizar-fotos");
+  ok(r3p.corpo?.fotos_removidas === 0 && r3p.corpo?.fotos_aguardando_remocao === 3 && r3p.corpo?.fotos_novas === 0, "motor piscou de volta: nada apagado, nada duplicado; agora as novas é que ficam em carência", JSON.stringify({ ...r3p.corpo, suites: undefined }));
+  /* A piscada zera o relógio da ausência: só depois de duas rodadas ausentes
+     separadas por mais do que a carência a foto antiga sai. */
+  await ligarMotor({ SIM_FOTOS_V2: "1", SIM_SEM_CASAL: "1" });
+  const r3b = await json("/api/cron/sincronizar-fotos");
+  ok(r3b.corpo?.fotos_removidas === 0 && r3b.corpo?.fotos_aguardando_remocao === 3, "a piscada zerou o relógio: as antigas voltam à carência, nada sai ainda", JSON.stringify({ ...r3b.corpo, suites: undefined }));
+  await new Promise((r) => setTimeout(r, 3500));
+  const r3c = await json("/api/cron/sincronizar-fotos");
+  ok(r3c.corpo?.fotos_removidas === 3 && r3c.corpo?.fotos_novas === 0 && r3c.corpo?.fotos_aguardando_remocao === 0, "ausência confirmada depois da carência: as 3 fotos antigas saem", JSON.stringify({ ...r3c.corpo, suites: undefined }));
   /* O motor volta a vender a CASAL: ela volta sozinha, com a foto trocada. */
   await ligarMotor({ SIM_FOTOS_V2: "1" });
   const r4 = await json("/api/cron/sincronizar-fotos");
-  ok(r4.corpo?.suites_ativadas?.includes("CASAL STANDARD") && r4.corpo?.fotos_novas === 1 && r4.corpo?.fotos_removidas === 1, "o motor voltou a vender a CASAL: religada e com a foto trocada", JSON.stringify({ ...r4.corpo, suites: undefined }));
+  ok(r4.corpo?.suites_ativadas?.includes("CASAL STANDARD") && r4.corpo?.fotos_novas === 1 && r4.corpo?.fotos_aguardando_remocao === 1, "o motor voltou a vender a CASAL: religada, foto nova entra, a antiga fica em carência", JSON.stringify({ ...r4.corpo, suites: undefined }));
   ok((await fetch(`${BASE}/quartos/casal-standard`)).status === 200, "a suíte religada volta ao site");
-  ok(r4.corpo?.suites?.every((d) => d.site_depois === d.motor), "depois da troca, cada suíte tem no site exatamente as fotos do motor", JSON.stringify(r4.corpo?.suites?.map((d) => [d.codigo, d.motor, d.site_depois])));
+  await new Promise((r) => setTimeout(r, 3500));
+  const r4b = await json("/api/cron/sincronizar-fotos");
+  ok(r4b.corpo?.fotos_removidas === 1 && r4b.corpo?.suites?.every((d) => d.site_depois === d.motor), "depois da carência, cada suíte tem no site exatamente as fotos do motor", JSON.stringify(r4b.corpo?.suites?.map((d) => [d.codigo, d.motor, d.site_depois])));
   const [{ n: v2 }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador'`;
   const [{ n: antigas }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador' AND url LIKE '%\\_2.jpg'`;
   ok(v2 === 8 && antigas === 0, "continuam 8 fotos do Desbravador, nenhuma das que sumiram lá", `${v2}/${antigas}`);
   const [{ n: doPainelDepois }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'painel'`;
   ok(doPainelDepois === doPainelAntes, "as fotos subidas pelo painel não foram tocadas", `${doPainelAntes} → ${doPainelDepois}`);
   const [sync] = await sql`SELECT valor FROM integracoes WHERE chave = 'fotos_sync'`;
-  ok(sync && JSON.parse(sync.valor).consultado_em === r4.corpo?.consultado_em, "a última rodada fica registrada para o painel");
+  ok(sync && JSON.parse(sync.valor).consultado_em === r4b.corpo?.consultado_em, "a última rodada fica registrada para o painel");
 
   /* 6. Painel: botão em Mídias, selo, Diagnóstico com os agendadores; chat sem o bloco de fala. */
   const nav = await chromium.launch();
