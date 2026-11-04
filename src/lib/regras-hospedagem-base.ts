@@ -71,6 +71,20 @@ export const COBRANCAS_ADICIONAL: Record<CobrancaAdicional, string> = {
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const plural = (n: number, s: string, p = s + "s") => `${n} ${n === 1 ? s : p}`;
 
+/**
+ * As idades da regra, escritas do jeito que se fala. Antes o texto era
+ * montado com `${colo + 1} anos` e `até ${colo} anos`: com bebê de colo
+ * até 0 anos (menores de 1 ano), o site dizia "a partir de 1 anos" e
+ * "até 0 anos" (visto em /politicas em 04/11/2026).
+ */
+export const idadeCrianca = (r: Pick<Regras, "idadeColoMax">) => plural(r.idadeColoMax! + 1, "ano");
+export const faixaBebe = (r: Pick<Regras, "idadeColoMax">) =>
+  r.idadeColoMax === 0 ? "menores de 1 ano" : `até ${plural(r.idadeColoMax!, "ano")}`;
+/** Rótulos curtos dos campos de busca. */
+export const rotuloCriancas = (r: Pick<Regras, "idadeColoMax">) => `Crianças (${idadeCrianca(r)} ou mais)`;
+export const rotuloBebes = (r: Pick<Regras, "idadeColoMax">) =>
+  r.idadeColoMax === 0 ? "Bebês (menos de 1 ano)" : `Bebês (até ${plural(r.idadeColoMax!, "ano")})`;
+
 /* ── a conta ─────────────────────────────────────────────────────── */
 
 export type Ocupacao = {
@@ -116,7 +130,7 @@ export function calcularOcupacao(
 
   const partes: string[] = [];
   if (p.criancas > 0 && comoAdulto) {
-    partes.push(`${plural(p.criancas, "criança")} a partir de ${r.idadeColoMax! + 1} anos ${p.criancas === 1 ? "paga" : "pagam"} como adulto`);
+    partes.push(`${plural(p.criancas, "criança")} a partir de ${idadeCrianca(r)} ${p.criancas === 1 ? "paga" : "pagam"} como adulto`);
   }
   if (bebes > 0) {
     partes.push(valorBebes > 0
@@ -139,13 +153,12 @@ export function calcularOcupacao(
 /** A regra de criança numa frase, para o site e para a Marina. Nulo sem regra. */
 export function textoCriancas(r: Regras): string | null {
   if (!regraAtiva(r)) return null;
-  const colo = r.idadeColoMax!;
   const bebe = r.bebeCobranca === "gratis" || !r.bebeValor
-    ? `Bebês de colo (até ${plural(colo, "ano")}) não pagam.`
-    : `Bebês de colo (até ${plural(colo, "ano")}) pagam ${brl(r.bebeValor)} ${r.bebeCobranca === "por_noite" ? "por noite" : "por estadia"}.`;
+    ? `Bebês de colo (${faixaBebe(r)}) não pagam.`
+    : `Bebês de colo (${faixaBebe(r)}) pagam ${brl(r.bebeValor)} ${r.bebeCobranca === "por_noite" ? "por noite" : "por estadia"}.`;
   const crianca = r.criancaPagaComoAdulto
-    ? `Crianças a partir de ${colo + 1} anos pagam como adulto, sem desconto.`
-    : `Crianças a partir de ${colo + 1} anos pagam a tarifa de criança do sistema de reservas.`;
+    ? `Crianças a partir de ${idadeCrianca(r)} pagam como adulto, sem desconto.`
+    : `Crianças a partir de ${idadeCrianca(r)} pagam a tarifa de criança do sistema de reservas.`;
   return [crianca, bebe, r.observacao?.trim()].filter(Boolean).join(" ");
 }
 
@@ -162,11 +175,11 @@ export function textoRegrasMarina(r: Regras, adicionais: Adicional[]): string {
       "REGRA DE CRIANÇAS (configurada pela pousada — vale sobre qualquer outro texto):\n" +
       criancas + "\n" +
       "Ao consultar preço e vaga: NÃO peça a idade exata. Pergunte só quantos adultos, quantas crianças " +
-      `a partir de ${r.idadeColoMax! + 1} anos e quantos bebês de colo. ` +
+      `a partir de ${idadeCrianca(r)} e quantos bebês de colo. ` +
       "Na consulta de disponibilidade, envie os três separados (`adultos`, `criancas`, `bebes`) — " +
       "a rota aplica a regra sozinha e o total que ela devolve já é o final." +
       (r.criancaPagaComoAdulto
-        ? ` Se consultar o sistema de reservas por outra ferramenta, conte as crianças a partir de ${r.idadeColoMax! + 1} anos como adultos e não informe os bebês.`
+        ? ` Se consultar o sistema de reservas por outra ferramenta, conte as crianças a partir de ${idadeCrianca(r)} como adultos e não informe os bebês.`
         : ""),
     );
   }

@@ -6,6 +6,7 @@ import { Icone } from "./Icone";
 import { SeletorDatas } from "./SeletorDatas";
 import { FormularioBuscaDisponibilidade } from "./FormularioBuscaDisponibilidade";
 import { POLITICAS, CAFE_DA_MANHA } from "@/lib/conteudo-pousada";
+import { rotuloBebes } from "@/lib/regras-hospedagem-base";
 
 type Pacote = { slug: string; nome: string; resumo: string | null };
 /** Regra de crianças da pousada (Marina → Regras e adicionais). Nula = não configurada. */
@@ -87,7 +88,7 @@ export function BuscaHome({ pacotes = [], criancas = null }: { pacotes?: Pacote[
               </label>
               {criancas && (
                 <label>
-                  <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">Bebês (até {criancas.idadeColoMax})</span>
+                  <span className="block text-[11px] font-medium text-tinta-suave px-1 mb-1">{rotuloBebes(criancas)}</span>
                   <select name="bebes" defaultValue="0"
                     className="w-full px-3 py-2.5 rounded-lg border border-linha bg-white sm:border-white/80 sm:bg-white/80 text-tinta text-sm focus:ring-2 focus:ring-marca outline-none">
                     <option>0</option><option>1</option><option>2</option>

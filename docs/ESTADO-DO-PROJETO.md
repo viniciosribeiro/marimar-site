@@ -1,5 +1,7 @@
 # Estado do projeto — Marimar Site
 
+> **04/11/2026 (parte 6) — 4 ERROS DO CLÁSSICO CORRIGIDOS:** ícones como palavras em A Pousada, "1 anos"/"até 0 anos" nas regras de crianças, "R$ 0" quando o motor não publica tarifa e Pacotes vazio sem aviso. Testes locais 21/21; ver CHANGELOG (parte 6) para o status de produção.
+
 > **04/11/2026 (parte 5) — PROPOSTA DO SITE NOVO PUBLICADA, AGUARDANDO APROVAÇÃO:** análise completa do site (capturas, Lighthouse, código) e proposta de redesign "Chegando pelo mar" em `/site-novo` entregues ao proprietário (https://claude.ai/artifact/TpNqehNji4siweqz5U6Avc); plano para agentes em `docs/plano-site-novo.md`; skills de design em `.claude/skills/`. **Nenhum código do site novo foi escrito; o site no ar não mudou.** Pendente: resposta do proprietário (aprovar/ajustar/reprovar). Bugs visíveis encontrados no site atual (ícones como texto em A Pousada, "1 anos" em Políticas, "R$ 0" na busca sem tarifa, Pacotes vazio) ficam para correção só com pedido dele.
 
 > **04/11/2026 (parte 4) — ÁUDIO SÓ DA FRASE CURTA E SUÍTES PELO MOTOR — CONFIRMADO PELO PROPRIETÁRIO ("funcionou perfeitamente"):** o site grava sozinho `tts.auto: "tagged"` no OpenClaw (só o bloco `[[tts:text]]` vira áudio; o link nunca é lido; sem bloco, só texto) e a sincronização liga/desliga suítes conforme o Desbravador devolve (o campo Ativo do painel não manda mais). Ver HANDOFF (parte 4).

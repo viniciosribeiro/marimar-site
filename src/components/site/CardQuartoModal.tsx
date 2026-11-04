@@ -132,7 +132,7 @@ export function CardQuartoModal({ dados, children }: { dados: DadosDetalhesSuite
                   </section>
                 )}
                 <div className="rounded-2xl border border-marca-borda bg-marca-sutil p-4 sm:p-5">
-                  {dados.disponivel ? (
+                  {dados.disponivel && dados.diaria > 0 ? (
                     <>
                       <p className="text-xs text-tinta-suave">Diária para as datas escolhidas</p>
                       <p className="mt-1 text-2xl font-extrabold text-marca-ativa">{brl(dados.diaria)}</p>
@@ -149,7 +149,7 @@ export function CardQuartoModal({ dados, children }: { dados: DadosDetalhesSuite
                       )}
                     </>
                   ) : (
-                    <p className="text-sm text-tinta-suave">{dados.motivoIndisponivel || "Sem disponibilidade para as datas escolhidas."}</p>
+                    <p className="text-sm text-tinta-suave">{dados.motivoIndisponivel || (dados.disponivel ? "Sem tarifa publicada para estas datas." : "Sem disponibilidade para as datas escolhidas.")}</p>
                   )}
                   {dados.whatsappUrl && (
                     <a href={dados.whatsappUrl} target="_blank" rel="noopener noreferrer"
