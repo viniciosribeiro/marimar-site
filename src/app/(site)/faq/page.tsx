@@ -5,6 +5,9 @@ import type { Metadata } from "next";
 import { faqCanonico, COMPLEXO } from "@/lib/conteudo-pousada";
 import { lerConteudo } from "@/lib/conteudo-editavel";
 import { comSql } from "@/lib/db-conexao";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { FaqNovo } from "@/components/site-novo/paginas/FaqNovo";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +17,8 @@ export const metadata: Metadata = {
 };
 
 export default async function FaqPage() {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/faq")) return <FaqNovo />;
   // Respostas que citam travessia e eventos usam o que foi salvo no painel.
   const FAQ_CANONICO = faqCanonico(await comSql(lerConteudo));
   // WhatsApp salvo em Admin → Dados da pousada (com o número confirmado como reserva).

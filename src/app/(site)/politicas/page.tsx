@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import { POLITICAS, TRAVESSIA, NAO_DISPONIVEL } from "@/lib/conteudo-pousada";
 import { comSql } from "@/lib/db-conexao";
 import { lerRegras, textoCriancas, REGRAS_PADRAO } from "@/lib/regras-hospedagem";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { PoliticasNovo } from "@/components/site-novo/paginas/PoliticasNovo";
 
 export const metadata: Metadata = {
   title: "Políticas — Pousada Marimar, Ilha do Mel",
@@ -12,6 +15,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PoliticasPage() {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/politicas")) return <PoliticasNovo />;
   /* A regra de crianças configurada no painel vence o texto padrão: é a
      mesma que calcula o preço na busca e que a Marina usa. */
   const regraCriancas = textoCriancas(await comSql(lerRegras).catch(() => REGRAS_PADRAO));

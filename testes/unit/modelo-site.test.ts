@@ -42,7 +42,10 @@ test("modelo: coluna ausente ou estranha = Clássico; Novo só com tudo pronto",
   assert.equal(lerConfigModelo({}).modelo, "classico");
   assert.equal(lerConfigModelo({ modelo_site: "novo" }).modelo, "classico");
   const novo = lerConfigModelo({ modelo_site: { modelo: "novo", ceu_por_hora: false, alterado_por: "x@y" } });
-  assert.equal(novo.modelo, todasProntas() ? "novo" : "classico", "enquanto houver página em construção, os visitantes ficam no Clássico");
+  assert.equal(novo.modelo, todasProntas() ? "novo" : "classico");
+  const gravado = { modelo_site: { modelo: "novo" } };
+  assert.equal(lerConfigModelo(gravado, false).modelo, "classico", "enquanto houver página em construção, os visitantes ficam no Clássico");
+  assert.equal(lerConfigModelo(gravado, true).modelo, "novo", "com todas prontas, o Novo vale para todos");
   assert.equal(novo.ceuPorHora, false);
   assert.equal(novo.alteradoPor, "x@y");
   assert.equal(lerConfigModelo({ modelo_site: { modelo: "classico" } }).ceuPorHora, true, "céu ligado por padrão");

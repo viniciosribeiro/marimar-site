@@ -12,9 +12,9 @@
 > (o céu pode ser desligado na mesma tela).
 >
 > **Construído:** a chave e a prévia (§6), a **Fase 1** (base visual +
-> página inicial), a **Fase 2** (lista de suítes e página de cada suíte), a
-> **Fase 3** (a busca) e a **Fase 4** (galeria e restaurante). Fases 5–6
-> seguem a tabela do §7. **Ligar o Novo para todos
+> página inicial) e as **Fases 2 a 5**: as **15 páginas estão prontas** e o
+> botão "Ligar o Novo para todos" já aparece no painel para o perfil
+> Administração. Falta a Fase 6 (acabamento, §7). **Ligar o Novo para todos
 > é decisão do proprietário** — nenhum agente aperta esse botão.
 >
 > Proposta original (com capturas e rascunho): 
@@ -285,7 +285,7 @@ celular e em duas larguras de computador).
 | 2 | `/quartos` e `/quartos/[slug]` com preço por datas | preço igual ao de `/reservar` para as mesmas datas; Reservar com `roomCode` | **feita (04/11)**: `e2e-site-novo-suites` compara diária, total e link com o `/reservar` |
 | 3 | `/reservar` | mesmos resultados do Clássico (ids, preços, totais) para 3 períodos; rolagem suave e "Buscando suas suítes" mantidas; janela sem 404; nunca R$ 0 | **feita (04/11)**: `e2e-site-novo-reservar` compara suíte por suíte com o Clássico |
 | 4 | galeria + restaurante/cardápio | lightbox com teclado e deslize; cardápio vazio explicado | **feita (04/11)**: `e2e-site-novo-galeria-restaurante` |
-| 5 | como chegar/mapa, ilha, a pousada, eventos, avaliações, faq, políticas, contato, pacotes | mapa e rota funcionando (4G de verdade); formulário de contato enviando | a fazer |
+| 5 | como chegar/mapa, ilha, a pousada, eventos, avaliações, faq, políticas, contato, pacotes | mapa e rota funcionando (4G de verdade); formulário de contato enviando | **feita (04/11)**: `e2e-site-novo-conteudo` (o mapa com 4G real fica para o proprietário) |
 | 6 | acabamento: performance, a11y, SEO/JSON-LD, iPhone/Android físicos | metas do §5; relatório antes/depois | a fazer |
 | 7 | o proprietário liga o Novo para todos (ou não) | deploy de produção verificado; docs | dele |
 

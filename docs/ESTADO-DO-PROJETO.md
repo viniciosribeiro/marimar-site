@@ -1,5 +1,7 @@
 # Estado do projeto — Marimar Site
 
+> **04/11/2026 (parte 11) — SITE NOVO, FASE 5: AS 15 PÁGINAS PRONTAS.** Como chegar, Ilha do Mel, A pousada, Eventos, Avaliações, Perguntas, Políticas, Contato e Pacotes no Novo. **O botão "Ligar o Novo para todos" passa a aparecer em Site → Modelo do site (perfil Administração); ligar é decisão do proprietário.** Visitantes continuam no Clássico até ele apertar. Falta a fase 6 (acabamento). Ver CHANGELOG/HANDOFF (parte 11) para o status de produção.
+
 > **04/11/2026 (parte 10) — SITE NOVO, FASE 4:** galeria em capítulos curtos e restaurante com o cardápio do painel no Novo (6 de 15 páginas prontas). **Publicado (PR #85, deploy `DVq5XgBk4bfTRNGNvKKQJkhKgrcT` success) e conferido: visitantes continuam no Clássico.**
 
 > **04/11/2026 (parte 9) — SITE NOVO, FASE 3:** a busca `/reservar` no Novo (4 de 15 páginas prontas): mesma consulta, mesmos preços, totais e links do Clássico (testado suíte por suíte em 3 períodos), "Buscando suas suítes" e rolagem mantidas. **Publicado (PR #83, deploy `HW8G846zEzKeGLVRd8wfebxMUHeA` success) e conferido: visitantes continuam no Clássico.**
@@ -441,7 +443,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | 3 | **Hero sem foto.** Cadastrar em Admin → Mídias uma imagem com `destaque = true` e **sem quarto vinculado** | Vinicios |
 | 4 | Pendente da 1ª sessão: `AGENT_API_KEY` nova na Vercel + OpenClaw | Vinicios |
 | 5 | **04/11 (parte 2):** nada obrigatório — migration 0022, agendador e regras do WhatsApp passaram a ser automáticos. Recomendado (não bloqueia): `BLOB_READ_WRITE_TOKEN` existir na Vercel (espelho das fotos); reinstalar as 2 skills na Hostinger e `settings/tts.json` como rede de segurança; **observar** um áudio real no WhatsApp e o Diagnóstico | Vinicios (observar) |
-| 6 | **04/11 (partes 7–8) — site novo:** abrir Site → Modelo do site → "Ver o site novo neste aparelho" (ou o QR) e dar opinião sobre as páginas novas (início, suítes, busca, galeria, restaurante); fases 5–6 (como chegar e páginas de conteúdo, acabamento) a construir, uma por PR (`docs/plano-site-novo.md` §7). **Ligar o Novo para todos só pelo proprietário**, com 15/15 páginas prontas | Vinicios (opinião) / agentes (fases) |
+| 6 | **04/11 (partes 7–8) — site novo:** abrir Site → Modelo do site → "Ver o site novo neste aparelho" (ou o QR) e dar opinião sobre o site novo inteiro (15 de 15 páginas prontas); quando aprovar, ele mesmo aperta "Ligar o Novo para todos" (e "Voltar para o Clássico" desfaz na hora); conferir o mapa de Como chegar num celular com 4G; fase 6 (acabamento) a construir, uma por PR (`docs/plano-site-novo.md` §7). **Ligar o Novo para todos só pelo proprietário**, com 15/15 páginas prontas | Vinicios (opinião) / agentes (fases) |
 
 ### ✅ Verificado nesta sessão
 

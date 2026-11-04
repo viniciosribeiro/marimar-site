@@ -13,6 +13,7 @@ import { modeloDaVisita } from "@/lib/modelo-site";
 import { AVALIACOES, CAFE_DA_MANHA, CONTATO, DIFERENCIAIS, IDENTIDADE, RESTAURANTE } from "@/lib/conteudo-pousada";
 import { Icone } from "@/components/site/Icone";
 import { BuscaNovo } from "../BuscaNovo";
+import { LinhaTravessia } from "../LinhaTravessia";
 
 /**
  * Página inicial do site novo — "Chegando pelo mar" (docs/plano-site-novo.md).
@@ -223,36 +224,12 @@ export async function HomeNovo() {
                 e do trapiche se chega a pé.
               </p>
             </div>
-            <ol className="relative mt-12 grid gap-9 lg:mt-16 lg:grid-cols-4 lg:gap-x-0 lg:gap-y-6">
-              {/* Linha do computador: de uma parada à outra, com as ondas na travessia.
-                  Largura explícita (w-3/4): num <svg> absoluto o navegador ignora o
-                  "right" e usaria a largura própria do desenho (1000 px). */}
-              <svg aria-hidden className="sn-linha pointer-events-none absolute left-[12.5%] top-[11px] hidden h-6 w-3/4 lg:block" viewBox="0 0 1000 24" preserveAspectRatio="none">
-                <path pathLength={1} d="M0 12 H333 C370 12 380 3 410 3 S450 21 480 21 S520 3 550 3 S590 21 620 21 S650 12 667 12 H1000"
-                  fill="none" stroke="currentColor" strokeOpacity=".55" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-              </svg>
-              {[
-                { titulo: terminal?.nome ?? "Pontal do Sul", texto: "Onde saem os barcos. De Curitiba, pela BR-277 até o litoral." },
-                { titulo: "Travessia de barco", texto: `${T.operadora}, ${T.duracao}.`, onda: true },
-                { titulo: `Trapiche de ${T.destino}`, texto: T.avisoDestino },
-                { titulo: IDENTIDADE.nome, texto: "Um percurso curto, a pé. A entrada é pelo restaurante, de frente para o mar.", fim: true },
-              ].map((parada, i, todas) => (
-                <li key={parada.titulo} className="relative pl-12 lg:px-4 lg:pt-12 lg:text-center">
-                  {/* Linha do celular: um trecho até a próxima parada. */}
-                  {i < todas.length - 1 && (
-                    <svg aria-hidden className="sn-linha pointer-events-none absolute left-[11px] top-7 h-[calc(100%+0.75rem)] w-6 lg:hidden" viewBox="0 0 24 100" preserveAspectRatio="none">
-                      <path pathLength={1} d={parada.onda ? "M12 0 C12 10 3 15 3 25 S21 40 21 50 S3 65 3 75 S12 90 12 100" : "M12 0 V100"}
-                        fill="none" stroke="currentColor" strokeOpacity=".55" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-                    </svg>
-                  )}
-                  <span aria-hidden className={`sn-parada absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full lg:left-1/2 lg:-translate-x-1/2 ${parada.fim ? "bg-white ring-4 ring-white/20" : "border-2 border-white/80 bg-sn-mar"}`}>
-                    <span className={`h-2 w-2 rounded-full ${parada.fim ? "bg-sn-mar" : "bg-white/80"}`} />
-                  </span>
-                  <h3 className="sn-h3 text-white">{parada.titulo}</h3>
-                  <p className="mt-1.5 text-[0.97rem] leading-relaxed text-white/75 lg:mx-auto lg:max-w-[15rem]">{parada.texto}</p>
-                </li>
-              ))}
-            </ol>
+            <LinhaTravessia className="mt-12 lg:mt-16" paradas={[
+              { titulo: terminal?.nome ?? "Pontal do Sul", texto: "Onde saem os barcos. De Curitiba, pela BR-277 até o litoral." },
+              { titulo: "Travessia de barco", texto: `${T.operadora}, ${T.duracao}.`, onda: true },
+              { titulo: `Trapiche de ${T.destino}`, texto: T.avisoDestino },
+              { titulo: IDENTIDADE.nome, texto: "Um percurso curto, a pé. A entrada é pelo restaurante, de frente para o mar.", fim: true },
+            ]} />
             <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-4 lg:justify-center">
               <Link href="/como-chegar" className="sn-botao-linha text-white">Ver o passo a passo</Link>
               <Link href="/como-chegar#rota" className="sn-link">Traçar a rota de onde você está</Link>

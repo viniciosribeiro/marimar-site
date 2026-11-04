@@ -69,10 +69,14 @@ try {
   conferir("'Sair da prévia': Clássico sem barra", !ehNovo(html) && !html.includes("Prévia do site novo") && !html.includes("Você está vendo o site clássico"));
   conferir("cookie forjado não vale", !ehNovo(await pagina("/", "marimar_previa=v1.previa.9999999999999.forjado")));
 
-  console.log("4. Banco dizendo 'novo' com páginas em construção");
+  /* Com página em construção, "novo" no banco não vale (teste unitário de lerConfigModelo);
+     com as 15 prontas (04/11/2026, fase 5), vale para todos. */
+  console.log("4. Banco dizendo 'novo' com as 15 páginas prontas");
   await sql.unsafe(`ALTER TABLE "pousada" ADD COLUMN IF NOT EXISTS "modelo_site" jsonb`);
   await sql`UPDATE pousada SET modelo_site = ${sql.json({ modelo: "novo" })}`;
-  conferir("visitante continua no Clássico (o Novo só vai para todos completo)", !ehNovo(await pagina("/")));
+  conferir("visitante vê o Novo", ehNovo(await pagina("/")));
+  await sql`UPDATE pousada SET modelo_site = ${sql.json({ modelo: "classico" })}`;
+  conferir("'classico' no banco: visitante volta ao Clássico", !ehNovo(await pagina("/")));
   await sql`UPDATE pousada SET modelo_site = ${antes ? sql.json(antes) : null}`;
 
   console.log("5. Painel");
@@ -94,8 +98,7 @@ try {
       await p.waitForURL((u) => !u.pathname.endsWith("/login"), { timeout: 20000 });
       await p.goto(`${BASE}/admin/modelo-site`);
       const corpo = await p.locator("main").innerText();
-      conferir("mostra o progresso das páginas", /\d+ de \d+ páginas prontas/.test(corpo));
-      conferir("sem 'Ligar o Novo para todos' enquanto falta página", !/Ligar o Novo para todos/.test(corpo));
+      conferir("mostra o progresso das páginas (15 de 15)", /15 de 15 páginas prontas/.test(corpo));
       conferir("QR da prévia na tela", (await p.locator('[aria-label="Código QR com o link da prévia"] svg').count()) === 1);
       const sem = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
       conferir("sem rolagem lateral no celular", sem);
@@ -105,6 +108,18 @@ try {
       conferir("o céu foi gravado (coluna criada pelo próprio site)", linha?.modelo_site && typeof linha.modelo_site.ceu_por_hora === "boolean" && !!linha.modelo_site.alterado_por);
       await p.getByRole("button", { name: /^(Desligar|Ligar)$/ }).click();
       await p.waitForURL(/ok=/, { timeout: 15000 });
+      /* A troca de verdade, como o proprietário fará (perfil Administração = papel master). */
+      const papel = (await sql`SELECT papel FROM usuarios WHERE email = ${EMAIL}`)[0]?.papel;
+      if (papel === "master") {
+        await p.getByRole("button", { name: "Ligar o Novo para todos" }).click();
+        await p.getByRole("button", { name: "Ligar o Novo para todos" }).last().click();
+        await p.waitForURL(/ok=/, { timeout: 15000 });
+        conferir("'Ligar o Novo para todos': os visitantes veem o Novo", ehNovo(await pagina("/")) && ehNovo(await pagina("/", "")));
+        await p.getByRole("button", { name: "Voltar para o Clássico" }).click();
+        await p.getByRole("button", { name: "Voltar para o Clássico" }).last().click();
+        await p.waitForURL(/ok=/, { timeout: 15000 });
+        conferir("'Voltar para o Clássico': os visitantes voltam na hora", !ehNovo(await pagina("/")));
+      } else conferir("perfil sem Administração não vê o botão", !/Ligar o Novo para todos/.test(corpo));
       const link = await p.getByRole("link", { name: "Ver o site novo neste aparelho" }).getAttribute("href");
       await p.goto(link);
       conferir("o link do painel abre o Novo neste aparelho", await p.locator("#sn-titulo").count() === 1);

@@ -1,8 +1,13 @@
 import { resumir } from "@/lib/format";
 import postgres from "postgres"; import Link from "next/link";
 import { lerContato } from "@/lib/pousada";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { PacotesNovo } from "@/components/site-novo/paginas/PacotesNovo";
 export const dynamic = "force-dynamic";
 export default async function PacotesPage() {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/pacotes")) return <PacotesNovo />;
   const sql=postgres(process.env.DATABASE_URL!, {max:1, prepare: false }); const lista=await sql`SELECT * FROM pacotes WHERE ativo=true ORDER BY ordem`; await sql.end();
   /* Sem pacote ativo a página abria vazia, sem dizer nada (visto em 04/11/2026). */
   if (lista.length === 0) {

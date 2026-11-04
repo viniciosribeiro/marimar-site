@@ -233,9 +233,10 @@ tela. Página do Novo que ainda não ficou pronta aparece com o conteúdo do
 Clássico, e a barrinha avisa.
 
 **Ligar o Novo para todos:** o botão só aparece quando as 15 páginas
-estiverem prontas, e só para quem tem o perfil **Administração**. A troca
-vale na hora para todo mundo. **Voltar ao Clássico** funciona a qualquer
-momento, também na hora.
+estiverem prontas (desde 04/11/2026 estão), e só para quem tem o perfil
+**Administração**. Antes, a tela pede confirmação. A troca vale na hora para
+todo mundo. **Voltar para o Clássico** funciona a qualquer momento, também na
+hora, e também pede confirmação.
 
 **Céu que acompanha a hora:** no Novo, o tom do céu na foto do topo muda com
 a hora em Encantadas (amanhecer, dia, fim de tarde, noite). Desligue na

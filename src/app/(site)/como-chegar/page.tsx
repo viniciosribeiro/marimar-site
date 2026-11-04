@@ -7,6 +7,9 @@ import { comSql } from "@/lib/db-conexao";
 import { brl } from "@/lib/format";
 import { PlanejadorRota } from "@/components/site/rota/PlanejadorRota";
 import { lerRota } from "@/lib/rota";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { ComoChegarNovo } from "@/components/site-novo/paginas/ComoChegarNovo";
 import {
   Hero, Secao, Onda, TituloSecao, Subtexto, Manuscrita,
   Aviso, Cartao, Botao, Passo,
@@ -44,6 +47,8 @@ async function buscarFotos() {
 const ICONES = ["🚌", "⛴️", "🚶"];
 
 export default async function ComoChegarPage() {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/como-chegar")) return <ComoChegarNovo />;
   // Editável em Admin → Textos da ilha e chegada; sem nada salvo, vale o padrão do código.
   const { CHEGADA_ETAPAS, TRAVESSIA, SOBRE_A_ILHA } = await comSql(lerConteudo);
   /* Rota no próprio site: pontos, estilos e serviços em Admin → Rota e mapa. */

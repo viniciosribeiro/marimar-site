@@ -1,9 +1,14 @@
 import { enviarContato } from "./actions";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { ContatoNovo } from "@/components/site-novo/paginas/ContatoNovo";
 
 export default async function ContatoPage({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
   // Antes a pagina recebia ?ok= e ?erro= e nao mostrava nenhum dos dois:
   // quem enviava a mensagem nao tinha confirmacao de que ela tinha chegado.
   const { ok, erro } = await searchParams;
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/contato")) return <ContatoNovo ok={ok} erro={erro} />;
   return (
     <div className="max-w-lg mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-2">Contato</h1>
