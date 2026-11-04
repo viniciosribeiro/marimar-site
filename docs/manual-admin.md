@@ -410,6 +410,6 @@ acesso.
 O Diagnóstico tem o cartão **Agendadores**: se a Vercel tem a chave do
 agendador (`CRON_SECRET`), quando as fotos das suítes foram sincronizadas
 com o Desbravador pela última vez (e o resumo) e quando o vigia do WhatsApp
-rodou. "Sem chave" ali significa que a rodada diária automática está
-recusada — o botão em Mídias e a sincronização durante as buscas continuam
-funcionando; quem resolve é quem tem acesso à Vercel (`docs/runbook.md`).
+rodou. "Opcional" na chave do agendador é normal: a rodada diária roda sem
+ela. "Colunas das fotos: pendentes" também se resolve sozinho na primeira
+sincronização. Nada ali exige ação sua.

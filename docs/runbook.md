@@ -53,7 +53,7 @@ Vercel (Production + Preview). Faltar variavel na Vercel e a causa mais comum de
 | `WORKER_TIMEOUT_BUSCA_MS` | — | default 45000 — busca do hóspede (`/reservar` e rotas de disponibilidade) |
 | `TARIFAS_CACHE_TTL` | — | TTL do cache de tarifas |
 | `AGENT_API_KEY` | ✅ | **min. 16 chars.** Sem ela as rotas do agente retornam 401 (fail-closed) |
-| `CRON_SECRET` | ⚠️ | min. 16 chars. A Vercel manda `Authorization: Bearer <CRON_SECRET>` nos crons de `vercel.json` (hoje: `/api/cron/sincronizar-fotos`, 12:00 UTC, fotos das suítes do Desbravador). **Sem ela a rodada diária é recusada** (o botão em Mídias e a carona nas buscas funcionam). Também vale em `/api/cron/chamados`; agendador externo pode usar a `AGENT_API_KEY` no lugar |
+| `CRON_SECRET` | — | opcional, min. 16 chars. A Vercel manda `Authorization: Bearer <CRON_SECRET>` nos crons de `vercel.json` (hoje: `/api/cron/sincronizar-fotos`, 12:00 UTC). **Sem ela a rodada diária roda mesmo assim**, em segundo plano e no máximo 1×/hora (desde 04/11, parte 2); com ela, a resposta do agendador traz o resumo. Também vale em `/api/cron/chamados`; agendador externo pode usar a `AGENT_API_KEY` |
 | `BLOB_READ_WRITE_TOKEN` | ✅ | Vercel Blob (biblioteca de mídias). Desde 04/11 também espelha as fotos do Desbravador; sem ele, as fotos ficam apontando para o servidor do Desbravador |
 | `OPENCLAW_ENVIO` | — | como o site manda WhatsApp: `auto` (padrão: ferramenta `message` do gateway; a Marina só entra se a ferramenta não existir, e precisa devolver o id da mensagem), `ferramenta`, `agente` ou `rpc:<método>`. Ver `docs/fluxo-escalonamento.md` e "Liberar a ferramenta de mensagens" abaixo |
 
@@ -151,8 +151,9 @@ Desde 04/11/2026 (`docs/fluxo-fotos-desbravador.md`). Ordem de verificação:
 2. Admin → Mídias → **Sincronizar com o Desbravador**. A mensagem diz o que
    entrou/saiu ou o erro (motor fora, migration 0022 faltando: "coluna
    origem não existe" → `npm run db:migrate`).
-3. "Agendador da Vercel (CRON_SECRET): sem chave" → criar `CRON_SECRET` na
-   Vercel (Production) e Redeploy. Até lá só o botão e a carona rodam.
+3. "Agendador da Vercel (CRON_SECRET): opcional" é normal: a rodada diária
+   roda sem a chave. "Colunas das fotos (migration 0022): pendentes" também
+   se resolve sozinho na primeira sincronização (o site aplica a 0022).
 4. Pela linha de comando (qualquer agendador):
    ```bash
    curl -H "Authorization: Bearer <CRON_SECRET ou AGENT_API_KEY>" \

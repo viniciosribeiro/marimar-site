@@ -54,8 +54,11 @@ Quando roda:
 | De carona nas buscas de `/reservar` | `after()` no `page.tsx`, **no máximo 1×/hora** (`talvezSincronizarFotos`) | ninguém: só se a última rodada tem mais de 1 h |
 | Vercel Cron diário (`vercel.json`, 12:00 UTC) | `GET /api/cron/sincronizar-fotos` | `Authorization: Bearer <CRON_SECRET>` (16+ chars) **ou** `AGENT_API_KEY` |
 
-Sem `CRON_SECRET` na Vercel a rodada diária é recusada (401) — o botão e a
-carona continuam funcionando. O Diagnóstico mostra "sem chave" nesse caso.
+**Sem `CRON_SECRET` a rodada diária roda mesmo assim** (desde 04/11, parte 2):
+a chamada sem chave agenda a rodada em segundo plano, no máximo 1×/hora pela
+hora gravada no banco, e devolve 202 `{modo:"carona", ultima_em}`. Com a chave
+(ou a `AGENT_API_KEY`) roda na hora e devolve o resumo. O Diagnóstico mostra
+a chave como "opcional".
 
 ## Migration 0022 (`drizzle/0022_midias_origem.sql`, só acrescenta)
 
@@ -65,9 +68,12 @@ carona continuam funcionando. O Diagnóstico mostra "sem chave" nesse caso.
 - `midias.url_origem text` (endereço no Desbravador, para reconhecer a foto
   depois de espelhada).
 
-O código antigo continua funcionando sobre a tabela sem a migration? **Não
-para a sincronização** (ela lê `origem`): rodar `npm run db:migrate` antes
-de usar o botão. O resto do site não depende das colunas novas.
+**O site aplica a 0022 sozinho** (`src/lib/esquema-midias.ts`,
+`garantirEsquemaMidias`): antes de cada sincronização e ao abrir Mídias ele
+confere `information_schema` e, se faltar, roda o mesmo SQL (idempotente).
+`npm run db:migrate` continua válido e passa pela 0022 sem erro. Isso vale só
+para esta migration, que acrescenta; migration que altera dado continua
+exigindo decisão humana.
 
 ## O que o site e a Marina mostram
 
@@ -119,3 +125,13 @@ seções da biblioteca. Agora:
   foto é inserida individualmente).
 - O motor é consultado com uma data exemplo; um tipo que o motor só devolve
   em outra época do ano entra quando ela chegar.
+
+## As regras chegam à Marina sem reinstalar a skill (04/11, parte 2)
+
+`src/lib/marina-regras-canal.ts` (`REGRAS_CANAL_WHATSAPP`) entra no começo do
+texto de `/api/agent/conhecimento` para o canal `whatsapp`. A skill instalada
+na Hostinger já relê essa rota a cada conversa e a cada 15 minutos, então o
+bloco de fala `[[tts:text]]`, o link da suíte escolhida e as fotos por seção
+passam a valer no WhatsApp **sem** `openclaw skills install`. O chat do site
+não recebe esse bloco. Reinstalar a skill e ajustar `settings/tts.json`
+continuam recomendados como rede de segurança (`docs/runbook.md`).

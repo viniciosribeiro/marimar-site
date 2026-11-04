@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { REGRAS_CANAL_WHATSAPP } from "./marina-regras-canal";
 
 /**
  * O que a Cecília ensinou para a Marina.
@@ -273,6 +274,10 @@ export function ensinamentosEmTexto(
   const partes: string[] = [];
   const perguntas = e.perguntas ?? [];
   const escalar = e.escalar ?? [];
+
+  /* O WhatsApp lê as regras do canal daqui, sem depender de reinstalar a
+     habilidade na Hostinger (src/lib/marina-regras-canal.ts). */
+  if (opcoes.canal === "whatsapp") partes.push(REGRAS_CANAL_WHATSAPP);
 
   if (c.tom?.trim()) {
     partes.push("COMO FALAR:\n" + c.tom.trim());
