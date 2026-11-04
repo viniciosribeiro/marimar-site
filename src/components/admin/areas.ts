@@ -91,6 +91,7 @@ export const AREAS: Area[] = [
       { href: "/admin/faq", rotulo: "Perguntas frequentes", chaves: "faq pergunta duvida" },
       { href: "/admin/depoimentos", rotulo: "Depoimentos", chaves: "depoimento avaliacao comentario hospede" },
       { href: "/admin/identidade-visual", rotulo: "Aparência", chaves: "cor fonte letra logo visual identidade tema movimento seo google" },
+      { href: "/admin/modelo-site", rotulo: "Modelo do site", chaves: "modelo site novo classico redesenho trocar visual previa ligar voltar" },
     ],
   },
   {
@@ -114,6 +115,7 @@ export const TAREFAS: { rotulo: string; href: string; chaves: string; tecnico?: 
   { rotulo: "Adicionar um prato ao cardápio", href: "/admin/cardapio", chaves: "adicionar prato cardapio novo item preco" },
   { rotulo: "Mudar o WhatsApp do site", href: "/admin/pousada", chaves: "whatsapp numero telefone botao" },
   { rotulo: "Mudar cores e letras do site", href: "/admin/identidade-visual", chaves: "cor letra fonte visual logo" },
+  { rotulo: "Trocar entre o site clássico e o novo", href: "/admin/modelo-site", chaves: "site novo classico redesenho trocar ver previa ligar" },
   { rotulo: "Horário de check-in e check-out", href: "/admin/politicas", chaves: "horario checkin checkout entrada saida cafe" },
   { rotulo: "Escolher a quem a Marina pergunta", href: "/admin/equipe?aba=equipe", chaves: "quem responde equipe numero pergunta" },
   { rotulo: "Religar o WhatsApp da Marina", href: "/admin/whatsapp", chaves: "religar conectar qr whatsapp caiu marina fora do ar desconectar", tecnico: true },

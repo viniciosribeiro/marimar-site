@@ -28,7 +28,7 @@ type Props = {
   entradaInicial?: string | null;
   saidaInicial?: string | null;
   /** Visual dos dois campos: a caixa do topo da home ou a página Reservar. */
-  variante: "home" | "reservar";
+  variante: "home" | "reservar" | "novo";
 };
 
 const MESES_NO_CELULAR = 18;
@@ -39,11 +39,21 @@ const ESTILO = {
     caixa: "col-span-2 sm:col-span-1 min-w-0",
     rotulo: "block text-[11px] font-medium text-tinta-suave px-1 mb-1",
     campo: "w-full px-3 py-2.5 rounded-lg border border-linha bg-white sm:border-white/80 sm:bg-white/80 text-tinta text-sm text-left focus:ring-2 focus:ring-marca outline-none truncate",
+    vazio: "text-tinta-suave/60",
+  },
+  /* Site novo (docs/plano-site-novo.md): campos altos, cantos do desenho novo. */
+  novo: {
+    caixa: "min-w-0",
+    rotulo: "block text-[0.8rem] font-medium text-sn-texto-2 mb-1 px-0.5",
+    campo: "w-full h-12 rounded-xl border border-sn-linha bg-white px-3 text-left text-[0.97rem] text-sn-texto outline-none focus-visible:ring-2 focus-visible:ring-sn-mare-forte truncate",
+    /* "Escolher data" com contraste AA (o /60 do Clássico dá 2,6:1). */
+    vazio: "text-sn-texto-2",
   },
   reservar: {
     caixa: "col-span-2 sm:col-span-1 min-w-0",
     rotulo: "block text-xs font-medium text-tinta-suave mb-1 px-1",
     campo: "w-full h-12 border border-linha rounded-xl px-3 text-[0.95rem] text-tinta bg-white text-left focus:ring-2 focus:ring-marca outline-none truncate",
+    vazio: "text-tinta-suave/60",
   },
 };
 
@@ -330,14 +340,19 @@ export function SeletorDatas({ entradaInicial, saidaInicial, variante }: Props) 
     <>
       {(["entrada", "saida"] as const).map((qual) => {
         const v = valor(qual === "entrada" ? entrada : saida);
+        const rotulo = `rotulo-${variante}-${qual}`, texto = `valor-${variante}-${qual}`;
+        /* No Novo, o nome lido pelo leitor de tela inclui o texto visível
+           ("Check-in Escolher data"), como pede o controle por voz. O
+           Clássico fica como estava (comportamento aprovado). */
+        const novo = variante === "novo";
         return (
           <div key={qual} className={e.caixa}>
-            <span className={e.rotulo} id={`rotulo-${variante}-${qual}`}>{qual === "entrada" ? "Check-in" : "Check-out"}</span>
+            <span className={e.rotulo} id={rotulo}>{qual === "entrada" ? "Check-in" : "Check-out"}</span>
             <button ref={qual === "entrada" ? btEntrada : btSaida} type="button" className={e.campo}
-              aria-haspopup="dialog" aria-expanded={aberto} aria-labelledby={`rotulo-${variante}-${qual}`}
-              aria-describedby={`valor-${variante}-${qual}`}
+              aria-haspopup="dialog" aria-expanded={aberto} aria-labelledby={novo ? `${rotulo} ${texto}` : rotulo}
+              aria-describedby={novo ? undefined : texto}
               onClick={() => abrir(qual)}>
-              <span id={`valor-${variante}-${qual}`} className={v ? "" : "text-tinta-suave/60"}>{v ?? "Escolher data"}</span>
+              <span id={texto} className={v ? "" : e.vazio}>{v ?? "Escolher data"}</span>
             </button>
           </div>
         );

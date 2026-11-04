@@ -4,6 +4,8 @@ import "./globals.css";
 import { lerPousada } from "@/lib/pousada";
 import { textoIdeal } from "@/lib/contraste";
 import { versaoIcone } from "@/lib/icone";
+import { headers } from "next/headers";
+import { modeloDaVisita } from "@/lib/modelo-site";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -42,6 +44,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const p = await lerPousada();
   const tema = lerTema(p);
+  /* Site → Modelo do site: no Novo as letras vêm do próprio site (next/font,
+     em LayoutNovo) e as do Clássico não precisam ser baixadas. O painel
+     continua com as do tema. */
+  const ehPainel = ((await headers()).get("x-pathname") ?? "").startsWith("/admin");
+  const novo = !ehPainel && (await modeloDaVisita()).modelo === "novo";
 
   // So busca no Google Fonts o que o admin realmente escolheu
   const googleFonts = [tema.fonteTitulo, tema.fonteCorpo, tema.fonteManuscrita]
@@ -66,7 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="pt-BR" suppressHydrationWarning {...temaParaAtributos(tema)} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <head>
-        {googleHref && (
+        {googleHref && !novo && (
           <>
             <link rel="preconnect" href="https://fonts.googleapis.com" />
             <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

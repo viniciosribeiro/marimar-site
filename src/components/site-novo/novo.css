@@ -1,0 +1,120 @@
+/* ═══════════════════════════════════════════════════════════════
+   Site novo — "Chegando pelo mar" (docs/plano-site-novo.md)
+
+   Só vale dentro de `.sn` (o LayoutNovo). O Clássico não usa nada daqui.
+   Cores: classes `sn-*` registradas no @theme do globals.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Em `components`: as classes utilitárias do Tailwind (camada `utilities`)
+   continuam podendo sobrescrever o que está aqui — `text-white` num título
+   sobre foto ganha do `color: inherit` abaixo. */
+@layer components {
+  .sn {
+    --sn-topo: 64px;
+    background: #FBF8F3;
+    color: #17324A;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (min-width: 1024px) { .sn { --sn-topo: 76px; font-size: 1.0625rem; } }
+
+  .sn h1, .sn h2, .sn h3 {
+    font-family: var(--fonte-titulo);
+    font-weight: 500;
+    letter-spacing: -0.012em;
+    color: inherit;
+    text-wrap: balance;
+    font-variation-settings: "SOFT" 50;
+  }
+  .sn p { text-wrap: pretty; }
+
+  /* Título de página e do topo: Fraunces grande, com eixo óptico automático. */
+  .sn .sn-display {
+    font-size: clamp(2.45rem, 1.55rem + 4.2vw, 4.75rem);
+    line-height: 1.02;
+    letter-spacing: -0.022em;
+    font-variation-settings: "SOFT" 70;
+  }
+  .sn .sn-h2 { font-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.7rem); line-height: 1.08; }
+  .sn .sn-h3 { font-size: 1.3rem; line-height: 1.2; }
+
+  .sn :focus-visible { outline: 2.5px solid color-mix(in oklab, var(--marca), black 30%); outline-offset: 3px; border-radius: 6px; }
+  .sn .sobre-escuro :focus-visible { outline-color: #fff; }
+
+  /* Botões: o principal é a maré escurecida (texto branco passa no AA). */
+  .sn .sn-botao {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: 48px; padding-inline: 1.35rem; border-radius: 999px;
+    background: color-mix(in oklab, var(--marca), black 30%); color: #fff;
+    font-weight: 600; font-size: 1rem; line-height: 1.2; text-decoration: none;
+    transition: background-color .2s ease;
+  }
+  .sn .sn-botao:hover { background: color-mix(in oklab, var(--marca), black 42%); }
+  .sn .sn-botao-linha {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: 48px; padding-inline: 1.35rem; border-radius: 999px;
+    border: 1.5px solid currentColor; font-weight: 600; font-size: 1rem; line-height: 1.2; text-decoration: none;
+    transition: background-color .2s ease;
+  }
+  .sn .sn-botao-linha:hover { background: color-mix(in oklab, currentColor, transparent 92%); }
+  .sn .sn-link {
+    color: color-mix(in oklab, var(--marca), black 40%);
+    font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .22em;
+  }
+  .sn .sn-link:hover { text-decoration-thickness: 2px; }
+  .sn .sobre-escuro .sn-link { color: #fff; }
+
+  /* ── topo ─────────────────────────────────────────────────────── */
+  .sn .sn-topo { height: var(--sn-topo); transition: background-color .25s ease, box-shadow .25s ease, color .25s ease; }
+  .sn .sn-topo[data-solido="false"] { background: transparent; color: #fff; }
+  .sn .sn-topo[data-solido="true"] { background: color-mix(in oklab, #FBF8F3, transparent 6%); color: #17324A; box-shadow: 0 1px 0 #E3D7C3; backdrop-filter: saturate(1.4) blur(10px); -webkit-backdrop-filter: saturate(1.4) blur(10px); }
+  .sn .sn-topo[data-solido="false"] .sn-logo-img { filter: brightness(0) invert(1) drop-shadow(0 1px 8px rgb(0 0 0 / .25)); }
+  .sn .sn-topo[data-solido="false"] .sn-topo-texto { text-shadow: 0 1px 10px rgb(0 0 0 / .35); }
+
+  /* ── topo da home: a foto e o céu ─────────────────────────────── */
+  .sn .sn-hero-veu {
+    background:
+      linear-gradient(to bottom, rgb(10 30 45 / .42) 0%, rgb(10 30 45 / 0) 22%),
+      linear-gradient(to top, rgb(10 30 45 / .78) 0%, rgb(10 30 45 / .35) 38%, rgb(10 30 45 / 0) 62%);
+  }
+  /* O céu acompanha a hora na ilha (Site → Modelo do site → Céu). Tons
+     leves por cima da foto, só na metade de cima. */
+  .sn .sn-ceu { mix-blend-mode: soft-light; }
+  .sn .sn-ceu--amanhecer { background: linear-gradient(to bottom, rgb(255 176 140 / .55), rgb(255 176 140 / 0) 55%); }
+  .sn .sn-ceu--dia { background: linear-gradient(to bottom, rgb(150 205 235 / .35), rgb(150 205 235 / 0) 55%); }
+  .sn .sn-ceu--tarde { background: linear-gradient(to bottom, rgb(245 140 60 / .55), rgb(245 140 60 / 0) 60%); }
+  .sn .sn-ceu--noite { mix-blend-mode: multiply; background: linear-gradient(to bottom, rgb(20 40 80 / .55), rgb(20 40 80 / .1) 70%); }
+
+  /* ── a linha da travessia: o único movimento que acontece sozinho ─ */
+  .sn .sn-linha path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      html:not([data-mov="off"]) .sn .sn-linha path {
+        stroke-dashoffset: 1;
+        animation: sn-desenhar linear both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 45%;
+      }
+      html:not([data-mov="off"]) .sn .sn-parada {
+        animation: sn-acender linear both;
+        animation-timeline: view();
+        animation-range: entry 20% cover 40%;
+      }
+    }
+  }
+
+  /* Trilho de cartões que rola de lado no celular. */
+  .sn .sn-trilho { scrollbar-width: none; overscroll-behavior-x: contain; }
+  .sn .sn-trilho::-webkit-scrollbar { display: none; }
+
+  /* Perguntas: o sinal vira menos ao abrir. */
+  .sn details > summary { list-style: none; }
+  .sn details > summary::-webkit-details-marker { display: none; }
+  .sn details[open] .sn-mais { transform: rotate(45deg); }
+  .sn .sn-mais { transition: transform .2s ease; }
+  @media (prefers-reduced-motion: reduce) { .sn .sn-mais, .sn .sn-topo, .sn .sn-botao, .sn .sn-botao-linha { transition: none; } }
+}
+
+@keyframes sn-desenhar { to { stroke-dashoffset: 0; } }
+@keyframes sn-acender { from { opacity: .25; transform: scale(.6); } to { opacity: 1; transform: none; } }

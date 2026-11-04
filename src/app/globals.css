@@ -198,6 +198,23 @@
   --radius-marca: var(--raio);
   --shadow-marca: var(--sombra);
   --shadow-marca-forte: var(--sombra-forte);
+
+  /* Site novo, "Chegando pelo mar" (docs/plano-site-novo.md). Só os
+     componentes de src/components/site-novo usam estas cores; a marca e o
+     acento continuam vindo do painel (maré = marca, pôr do sol = acento). */
+  --color-sn-mar: #0E2A3E;
+  --color-sn-mar-2: #163C57;
+  --color-sn-espuma: #FBF8F3;
+  --color-sn-areia: #F1E6D4;
+  --color-sn-areia-2: #E7D7BD;
+  --color-sn-texto: #17324A;
+  --color-sn-texto-2: #4F6476;
+  --color-sn-linha: #E3D7C3;
+  --color-sn-mata: #3F6B4F;
+  /* A marca escurecida até o texto branco passar no contraste AA (botões)
+     e até o link passar sobre a espuma. */
+  --color-sn-mare-forte: color-mix(in oklab, var(--marca), black 30%);
+  --color-sn-mare-texto: color-mix(in oklab, var(--marca), black 40%);
 }
 
 body {

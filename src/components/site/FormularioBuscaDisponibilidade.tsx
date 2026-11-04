@@ -9,12 +9,14 @@ import { LoaderCircle, Search } from "lucide-react";
  * bebes, regras ou chamadas ao motor. O indicador aparece antes da navegacao.
  */
 export function FormularioBuscaDisponibilidade({
-  children, action, className, variante,
+  children, action, className, variante, rodape,
 }: {
   children: ReactNode;
   action?: string;
   className: string;
-  variante: "home" | "reservar";
+  variante: "home" | "reservar" | "novo";
+  /** Texto depois do botão (site novo). */
+  rodape?: ReactNode;
 }) {
   const [consultando, setConsultando] = useState(false);
 
@@ -48,6 +50,7 @@ export function FormularioBuscaDisponibilidade({
   }
 
   const home = variante === "home";
+  const novo = variante === "novo";
 
   return (
     <>
@@ -55,12 +58,15 @@ export function FormularioBuscaDisponibilidade({
         {children}
         <input type="hidden" name="ver_resultados" value="1" />
         <button type="submit" disabled={consultando}
-          className={home
+          className={novo
+            ? "sn-botao col-span-full w-full rounded-xl disabled:opacity-80"
+            : home
             ? "col-span-2 sm:col-span-1 flex items-center justify-center gap-2 bg-marca hover:bg-marca-hover text-marca-texto px-4 py-2.5 rounded-lg font-semibold transition-marca text-sm self-end disabled:opacity-80"
             : "col-span-2 sm:col-span-1 self-end h-12 rounded-full bg-marca text-marca-texto hover:bg-marca-hover font-semibold shadow-marca transition-marca flex items-center justify-center gap-2 disabled:opacity-80"}>
           {consultando ? <LoaderCircle aria-hidden="true" size={18} className="motion-safe:animate-spin" /> : home ? <Search aria-hidden="true" size={17} /> : null}
-          {consultando ? "Consultando..." : home ? "Ver disponibilidade" : "Buscar"}
+          {consultando ? (novo ? "Consultando…" : "Consultando...") : novo ? "Ver suítes e preços" : home ? "Ver disponibilidade" : "Buscar"}
         </button>
+        {rodape}
       </form>
 
       {consultando && createPortal(

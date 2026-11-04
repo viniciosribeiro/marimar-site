@@ -217,6 +217,36 @@ A prévia ao lado mostra o resultado antes de publicar. Quem pediu ao celular
 para "reduzir movimento" sempre vê o site parado; isso é de propósito, por
 acessibilidade.
 
+### Modelo do site (Site → Modelo do site, desde 04/11/2026)
+O site existe em dois desenhos, nos mesmos endereços:
+- **Clássico:** o site de hoje.
+- **Novo** ("Chegando pelo mar"): fotos grandes, busca "Quando você vem?" e
+  um único botão "Falar com a Marina". Está sendo construído página por
+  página; a tela mostra quantas das 15 já estão prontas.
+
+**Ver o Novo antes de ligar:** "Ver o site novo neste aparelho" (ou aponte a
+câmera do celular para o código QR da tela). Só aquele aparelho passa a ver o
+Novo, por 30 dias; os visitantes continuam no Clássico. No site aparece uma
+barrinha no alto com **Ver o Clássico** / **Ver o Novo** (para comparar) e
+**Sair da prévia**. O link da tela vale 15 minutos; se vencer, recarregue a
+tela. Página do Novo que ainda não ficou pronta aparece com o conteúdo do
+Clássico, e a barrinha avisa.
+
+**Ligar o Novo para todos:** o botão só aparece quando as 15 páginas
+estiverem prontas, e só para quem tem o perfil **Administração**. A troca
+vale na hora para todo mundo. **Voltar ao Clássico** funciona a qualquer
+momento, também na hora.
+
+**Céu que acompanha a hora:** no Novo, o tom do céu na foto do topo muda com
+a hora em Encantadas (amanhecer, dia, fim de tarde, noite). Desligue na
+mesma tela se preferir a foto sempre igual.
+
+**Foto do topo do Novo:** uma foto do álbum **Praia e ilha** em Fotos e
+vídeos (a marcada como capa; sem capa, a mais larga). Sem fotos de praia,
+vale a capa do álbum **A pousada** (ou a mais larga dele). Uma imagem posta
+no topo em Seções da página inicial passa na frente de todas. Use uma foto
+deitada e larga.
+
 ## Hóspedes e atendimento
 
 ### Contatos recebidos

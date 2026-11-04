@@ -8,6 +8,9 @@ import { Abertura } from "@/components/site/Abertura";
 import { COLUNAS_RODAPE } from "@/lib/navegacao";
 import { COMPLEXO, CONTATO, IDENTIDADE } from "@/lib/conteudo-pousada";
 import { lerTema } from "@/lib/tema";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { LayoutNovo } from "@/components/site-novo/LayoutNovo";
+import { BarraPrevia } from "@/components/site-novo/BarraPrevia";
 
 /**
  * Todo o site le conteudo editavel pelo admin, entao nada aqui pode ser
@@ -44,8 +47,16 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const banner = tema.banner;
   const mostrarBanner = banner.ativo && !!banner.texto;
 
+  /* Site → Modelo do site (04/11/2026): Clássico ou Novo. Visitante vê o
+     que está no ar; quem abriu a prévia pelo painel vê o Novo e compara. */
+  const visita = await modeloDaVisita();
+  if (visita.modelo === "novo") {
+    return <LayoutNovo p={p} tema={tema} visita={visita}>{children}</LayoutNovo>;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-fundo">
+      {visita.previa && <BarraPrevia modelo="classico" publico={visita.publico} />}
       {/* Abertura: vídeo do pôr do sol ou logo animada (Identidade visual → Forma → Movimento). */}
       {tema.animacoes && tema.movimento.abertura && (
         <Abertura estilo={tema.movimento.aberturaEstilo} logoUrl={p?.logo_url ?? null} texto={tema.movimento.aberturaTexto} />
