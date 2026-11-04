@@ -4,6 +4,9 @@ import { comSql } from "@/lib/db-conexao";
 import { SECOES_FOTO } from "@/lib/fotos";
 import { tituloQuarto } from "@/lib/format";
 import { GaleriaSecoes, type GrupoGaleria } from "@/components/site/GaleriaSecoes";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { GaleriaNovo } from "@/components/site-novo/galeria/GaleriaNovo";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +18,8 @@ export const metadata: Metadata = {
 type Linha = { url: string; alt: string; secao: string; quarto_id: string | null; quarto_nome: string | null; quarto_slug: string | null };
 
 export default async function GaleriaPage() {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/galeria")) return <GaleriaNovo />;
   let linhas: Linha[] = [];
   try {
     linhas = await comSql((sql) => sql<Linha[]>`

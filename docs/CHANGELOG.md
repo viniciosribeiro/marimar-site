@@ -1,5 +1,14 @@
 # Changelog — Marimar Site
 
+## 04/11/2026 (parte 10) — Site novo, fase 4: galeria e restaurante
+**Autor:** Claude (Claude Code), seguindo o plano aprovado (`docs/plano-site-novo.md` §7, fase 4). **Migration:** nenhuma. Visitantes continuam no Clássico; agora 6 de 15 páginas prontas no Novo.
+
+- **`/galeria` no Novo** (`src/components/site-novo/galeria/`): mesmas fotos e mesma separação do Clássico (cada foto na sua seção; cada suíte com as suas; sem repetir a mesma foto no grupo), em **capítulos curtos**: índice no topo, cada capítulo com até 5 fotos em mosaico (uma grande e quatro pequenas, sem buraco no celular e no computador) e "Ver as N fotos" abrindo todas em tela cheia; as suítes aparecem como capas, cada uma abrindo as suas fotos, com "Ver a suíte". A tela cheia é a de sempre (`Lightbox`: deslizar, setas, Esc). A galeria do Clássico tinha 12.777 px no celular; a nova, com os dados locais, 5.307 px.
+- **`/restaurante` no Novo** (`src/components/site-novo/restaurante/`): o Marimar Café Bistrô Bar com foto, "Ver o cardápio" e "Reservar mesa" (WhatsApp com a mensagem de sempre), café da manhã (horário, estilo e o que é servido, a nota do check-out), o **cardápio do painel na mesma vitrine do Clássico** (`Cardapio`, com busca, filtros e fotos dos pratos; a barra de categorias gruda logo abaixo do topo do Novo) e, sem cardápio publicado, a explicação com o WhatsApp. Sem foto do café no painel, a seção fica só com o texto (nada de caixa vazia).
+- **Despacho no Clássico:** uma linha no topo de `src/app/(site)/galeria/page.tsx` e de `src/app/(site)/restaurante/page.tsx` (corpos intocados).
+- **Testes (locais):** `npm test` com `testes/unit/galeria-novo.test.ts` (capítulos, suítes separadas, sem repetição); `testes/e2e-site-novo-galeria-restaurante.mjs` **23/23** (um capítulo por seção com foto, índice, 5 de 7 fotos no mosaico, "Ver as 7 fotos" abre as 7, setas e Esc, capas das suítes, "Ver a suíte" sem 404, galeria curta e sem rolagem lateral no celular, restaurante com título, "Reservar mesa", café com horário, cardápio vazio explicado e cardápio publicado com preço; cria e apaga fotos e um prato de teste). Demais e2e verdes (`e2e-modelo-site` 44/44, `e2e-site-novo-suites` 41/41, `e2e-site-novo-reservar` 28/28, Clássico intacto). Lighthouse celular local: `/galeria` 82/100/100/100, `/restaurante` 85/100/100/100.
+- **Não muda:** o que os visitantes veem, as fotos e o cardápio do painel, a tela cheia, o WhatsApp.
+
 ## 04/11/2026 (parte 9) — Site novo, fase 3: a busca (/reservar)
 **Autor:** Claude (Claude Code), seguindo o plano aprovado (`docs/plano-site-novo.md` §7, fase 3). **Migration:** nenhuma. Visitantes continuam no Clássico; agora 4 de 15 páginas prontas no Novo.
 
