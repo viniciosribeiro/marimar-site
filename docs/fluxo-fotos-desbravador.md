@@ -135,3 +135,13 @@ bloco de fala `[[tts:text]]`, o link da suíte escolhida e as fotos por seção
 passam a valer no WhatsApp **sem** `openclaw skills install`. O chat do site
 não recebe esse bloco. Reinstalar a skill e ajustar `settings/tts.json`
 continuam recomendados como rede de segurança (`docs/runbook.md`).
+
+## Ver o que aconteceu sem a chave e sem o painel (04/11, parte 3)
+
+`GET /api/cron/sincronizar-fotos` sem chave devolve, além de agendar a rodada,
+`ultimo_resumo` (com `suites[]`: por suíte, fotos no motor, no site, novas,
+removidas, nota) e `ultimo_erro` (motivo da última rodada que falhou; some
+quando uma conclui). O Diagnóstico mostra o mesmo. O **espelho atrasado**
+copia para o Blob, 6 por rodada, as fotos que já estavam no banco apontando
+para o Desbravador (`espelho_pendentes` diz quantas faltam); o orçamento é
+25 s por rodada para caber na Function de 60 s.

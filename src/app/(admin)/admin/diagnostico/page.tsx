@@ -8,7 +8,7 @@ import { lerLeituras, type Leitura } from "@/lib/marina";
 import { gatewayConfigurado } from "@/lib/chat";
 import { chaveDoProvedor, lerOpcoesVoz } from "@/lib/voz";
 import { PROVEDOR, type Provedor } from "@/lib/voz-base";
-import { ultimaSincronizacao, type ResumoSincronizacao } from "@/lib/sincronizar-fotos-desbravador";
+import { ultimaSincronizacao, ultimoErroSincronizacao, type ResumoSincronizacao } from "@/lib/sincronizar-fotos-desbravador";
 import { lerMemoria } from "@/lib/whatsapp-vigia";
 import { colunasDaMigration0022 } from "@/lib/esquema-midias";
 import { MEMORIA_VAZIA, type MemoriaVigia } from "@/lib/whatsapp-saude";
@@ -94,6 +94,7 @@ export default async function DiagnosticoPage() {
   let banco = true;
   let voz: { provedor: Provedor; pronta: boolean; transcricao: boolean } = { provedor: "elevenlabs", pronta: false, transcricao: false };
   let fotos: { em: Date; resumo: ResumoSincronizacao } | null = null;
+  let fotosErro: { em: string; erro: string } | null = null;
   let vigia: MemoriaVigia = MEMORIA_VAZIA;
   let colunas0022 = false;
   try {
@@ -107,6 +108,7 @@ export default async function DiagnosticoPage() {
       transcricao: Boolean((await chaveDoProvedor(sql, "elevenlabs")).chave),
     };
     fotos = await ultimaSincronizacao(sql).catch(() => null);
+    fotosErro = await ultimoErroSincronizacao(sql).catch(() => null);
     vigia = await lerMemoria(sql).catch(() => MEMORIA_VAZIA);
     colunas0022 = await colunasDaMigration0022(sql).catch(() => false);
     await sql.end();
@@ -171,10 +173,33 @@ export default async function DiagnosticoPage() {
               </li>
             ))}
           </ul>
+          {fotosErro ? (
+            <Aviso tom="erro" titulo={`A última tentativa de sincronizar as fotos falhou (${quandoFoi(fotosErro.em)})`} className="mt-3">
+              {fotosErro.erro}. A próxima busca em /reservar (ou o botão em Mídias) tenta de novo.
+            </Aviso>
+          ) : null}
           {fotos?.resumo.avisos.length ? (
             <Aviso tom="aviso" titulo="Avisos da última sincronização de fotos" className="mt-3">
               <ul className="list-disc space-y-0.5 pl-4 text-xs">{fotos.resumo.avisos.slice(0, 6).map((a, i) => <li key={i}>{a}</li>)}</ul>
             </Aviso>
+          ) : null}
+          {fotos?.resumo.suites?.length ? (
+            <details className="mt-3 rounded-xl border border-linha/60">
+              <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-tinta">Fotos por suíte na última rodada ({fotos.resumo.suites.length})</summary>
+              <table className="w-full text-xs">
+                <thead><tr className="text-left text-tinta-suave"><th className="px-3 py-1">Suíte</th><th className="px-1 py-1">No motor</th><th className="px-1 py-1">No site</th><th className="px-1 py-1">Novas</th><th className="px-1 py-1">Removidas</th><th className="px-3 py-1">Obs.</th></tr></thead>
+                <tbody>
+                  {fotos.resumo.suites.map((d) => (
+                    <tr key={d.codigo} className="border-t border-linha/40">
+                      <td className="px-3 py-1">{d.nome} <span className="font-mono text-tinta-suave">{d.codigo}</span></td>
+                      <td className="px-1 py-1">{d.motor}</td><td className="px-1 py-1">{d.site_depois}</td>
+                      <td className="px-1 py-1">{d.novas}</td><td className="px-1 py-1">{d.removidas}</td>
+                      <td className="px-3 py-1 text-tinta-suave">{d.nota ?? (d.motor === d.site_depois ? "em dia" : "diferente")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
           ) : null}
         </Cartao>
 

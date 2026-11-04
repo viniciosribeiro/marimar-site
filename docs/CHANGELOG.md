@@ -1,5 +1,18 @@
 # Changelog — Marimar Site
 
+## 04/11/2026 (parte 3) — Sincronização de fotos visível por suíte, erro registrado e espelho atrasado
+**Autor:** Claude (Claude Code), a pedido do Vinicios ("a Cecília atualizou as fotos essa semana; as novas já estão no site?"). **Migration:** nenhuma. **PR:** ver HANDOFF.
+
+**O que a verificação em produção mostrou (16:00–17:00 UTC, pela API pública e pelas páginas):** 6 das 7 suítes ativas têm no site exatamente as fotos que o motor devolve hoje (FAMILIA 1/1, SUITE KING 4/4, SUITE QUEEN 5/5, KING REDE 4/4, SUITE LUA DE MEL 4/4, CASAL STANDARD 4/4) e a Marina entrega todas por `/api/midia-quarto`. **STANDARD FAMILIA (FAM) não:** o motor tem 4 fotos novas (`gt_FAM_681038/220134/557259/638853.jpeg`) e o site continua com 1 antiga (`gt_FAM_538409.jpeg`, que já não existe no Desbravador — a Marina a entrega pelo cache do site). Nenhuma foto foi copiada para o Blob (as fotos já estavam no banco antes de hoje; o espelho só acontecia na inserção). Uma segunda rodada disparada às ~16:50 UTC não registrou conclusão — e não havia como ver o motivo: o erro da rodada de carona só ia para o log da Vercel. As 3 suítes desativadas (STANDARD TRIPLO, SUITE REDE, STANDARD QUADRUPLO) seguem sem página e sem foto para a Marina até a pousada ativá-las. Fotos de seção: café da manhã e praia ainda **sem foto no painel** (404); restaurante e pousada têm.
+
+**Mudanças (para enxergar e para corrigir sozinho):**
+- `ResumoSincronizacao.suites[]`: por suíte, código, nome, slug, ativo, fotos no motor, no site antes/depois, novas, removidas, espelhadas e uma nota ("desativada no site", "cadastro criado desativado", "o motor não trouxe foto válida").
+- Erro da rodada gravado em `integracoes.fotos_sync_erro` (apagado quando uma rodada conclui); aparece no Diagnóstico e na resposta sem chave de `/api/cron/sincronizar-fotos` (`ultimo_erro`), junto com `ultimo_resumo`. São dados públicos de propósito: só nomes de suíte e contagens, sem URL interna.
+- **Espelho atrasado:** fotos do motor que já estavam no banco apontando para o Desbravador são copiadas para o Blob aos poucos (6 por rodada, dentro de um orçamento de 25 s por rodada); `espelho_pendentes` diz quantas faltam. Novas fotos continuam sendo espelhadas na inserção enquanto há orçamento; fora dele entram apontando para o Desbravador e são copiadas depois.
+- Dois cadastros com o mesmo código no banco (ex. `FAM` e `fam`): a sincronização prefere o ativo (antes ficava o último lido).
+- Diagnóstico: aviso vermelho com o erro da última tentativa e tabela "Fotos por suíte na última rodada".
+- **Testes:** `npm test` 139/139; `testes/e2e-fotos-sync.mjs` **54/54** (novos: resumo público por suíte, motor fora do ar → 503 + erro visível sem chave, rodada seguinte limpa o erro, cada suíte termina com as fotos do motor).
+
 ## 04/11/2026 (parte 2) — Nada manual: migration aplicada pelo site, agendador sem CRON_SECRET e regras do WhatsApp lidas do site
 **Autor:** Claude (Claude Code), a pedido do Vinicios ("Eu não quero fazer nada manual… consegue fazer tudo no automático?"). **Migration:** nenhuma nova (a 0022 passa a ser aplicada pelo próprio site). **PR:** [#65](https://github.com/viniciosribeiro/marimar-site/pull/65), squash `5d0bb7d77cc154f9c2ecc2222dba95dfe99da339` na `main`; deploy de produção da Vercel `3375HnWJZXR7Q1yr3GYLcPMTeBgN` com status **success** em 04/11/2026 (status do commit no GitHub). **Publicado ≠ observado em produção**: a primeira sincronização e a leitura das regras pela Marina acontecem sozinhas, mas ninguém daqui as viu ainda.
 
