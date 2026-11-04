@@ -68,7 +68,10 @@ export async function GET(request: NextRequest) {
     );
   }
   try {
-    const resumo = await sincronizarFotosDoMotor();
+    /* `?forcar=1` (só com chave): a lista atual do motor vale, mesmo que o
+       histórico a considere antiga — o mesmo que o botão do painel faz. */
+    const forcar = request.nextUrl.searchParams.get("forcar") === "1";
+    const resumo = await sincronizarFotosDoMotor({ forcar });
     console.info("[cron/fotos] sincronização concluída", resumo);
     return Response.json({ ok: true, modo: "imediato", audio_whatsapp, ...resumo }, { headers: { "cache-control": "no-store" } });
   } catch (erro) {

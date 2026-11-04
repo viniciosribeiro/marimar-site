@@ -206,13 +206,16 @@ export async function adicionarPorUrl(fd: FormData): Promise<Resultado> {
 
 /**
  * "Sincronizar com o Desbravador": traz as fotos novas do motor, tira as que
- * sumiram de lá e cria (desativada) suíte que o site ainda não tinha. Não
- * toca em foto enviada pelo painel. docs/fluxo-fotos-desbravador.md
+ * sumiram de lá e cria suíte que o site ainda não tinha. Não toca em foto
+ * enviada pelo painel. FORÇA a lista atual do motor: as rodadas automáticas
+ * ignoram uma lista que o motor já mostrou antes (ele volta atrás às vezes);
+ * quem aperta o botão está dizendo que o Desbravador está certo agora.
+ * docs/fluxo-fotos-desbravador.md
  */
 export async function sincronizarComDesbravador(): Promise<Resultado> {
   await exigirSessao();
   try {
-    const r = await sincronizarFotosDoMotor();
+    const r = await sincronizarFotosDoMotor({ forcar: true });
     refrescar();
     revalidatePath("/quartos", "layout"); revalidatePath("/reservar");
     const partes = [
@@ -223,6 +226,7 @@ export async function sincronizarComDesbravador(): Promise<Resultado> {
       r.suites_criadas.length ? `${r.suites_criadas.length} suíte(s) nova(s) do motor já no site` : null,
       r.suites_ativadas.length ? `${r.suites_ativadas.length} suíte(s) religada(s) porque o motor vende` : null,
       r.suites_desativadas.length ? `${r.suites_desativadas.length} suíte(s) desligada(s) porque o motor não vende mais` : null,
+      r.fotos_trocadas ? `${r.fotos_trocadas} copiada(s) de novo porque mudaram no Desbravador` : null,
     ].filter(Boolean);
     return { ok: true, mensagem: `Sincronizado com o Desbravador (${r.suites_motor} suítes no motor): ${partes.join(", ")}.${r.avisos.length ? " " + r.avisos.join(" ") : ""}` };
   } catch (e) {

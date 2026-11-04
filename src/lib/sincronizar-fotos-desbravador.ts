@@ -4,6 +4,7 @@ import { fetchTarifas, type WorkerQuarto } from "@/lib/worker";
 import { datasExemplo } from "@/lib/format";
 import { origemFotoPermitida, assinaturaDeImagem } from "@/lib/foto-whatsapp";
 import { blobConfigurado } from "@/lib/blob";
+import { decidirLista, type Historico } from "@/lib/fotos-motor-historico";
 
 /**
  * Fotos das suítes sincronizadas com o Desbravador (docs/fluxo-fotos-desbravador.md).
@@ -16,6 +17,12 @@ import { blobConfigurado } from "@/lib/blob";
  *   enviou pelo painel (`origem = 'painel'`) NUNCA é tocada: nem removida,
  *   nem reordenada, nem perde a capa.
  * - Foto do motor que sumiu de lá some do site (só as de origem desbravador).
+ * - O motor às vezes VOLTA ATRÁS (04/11/2026: horas devolvendo a lista
+ *   antiga depois de ter mostrado a nova): uma lista que ele já tinha
+ *   mostrado antes da lista em vigor é ignorada (src/lib/fotos-motor-historico.ts);
+ *   o botão do painel força a lista atual do motor.
+ * - As cópias no Blob são reconferidas aos poucos (tamanho em bytes no
+ *   Desbravador): foto trocada lá com o mesmo nome é copiada de novo.
  * - Com o Vercel Blob configurado, cada foto nova é copiada para o nosso
  *   armazenamento: o site e a Marina deixam de depender do servidor do
  *   Desbravador (que bloqueia a Marina com 403). A URL original fica em
@@ -75,6 +82,13 @@ export type ResumoSincronizacao = {
   espelho: "blob" | "sem_blob";
   /** Fotos do Desbravador que ainda apontam para lá (o espelho copia aos poucos, por rodada). */
   espelho_pendentes: number;
+  /** Suítes para as quais o motor devolveu uma lista que já tinha mostrado antes da em vigor: ignorada. */
+  suites_lista_antiga: string[];
+  /** Cópias no Blob reconferidas contra o Desbravador nesta rodada, e quantas foram copiadas de novo por terem mudado lá. */
+  fotos_conferidas: number;
+  fotos_trocadas: number;
+  /** A rodada foi forçada (botão do painel): a lista atual do motor vale, mesmo que pareça antiga. */
+  forcada: boolean;
   /** O que aconteceu com cada suíte: é o que permite conferir "a foto nova da Cecília entrou?". */
   suites: DetalheSuite[];
   avisos: string[];
@@ -93,6 +107,8 @@ export type DetalheSuite = {
 const ORCAMENTO_RODADA_MS = 40_000;
 /** Fotos antigas (já no banco, ainda no Desbravador) copiadas por rodada. */
 const ESPELHO_ATRASADO_POR_RODADA = 6;
+/** Cópias reconferidas por rodada (uma consulta HEAD ao Desbravador cada; as menos conferidas primeiro). */
+const CONFERIR_POR_RODADA = 8;
 /**
  * Carência antes de tirar do site uma foto que sumiu do motor. Em 04/11/2026
  * o motor devolveu, para a STANDARD FAMILIA, ora 4 fotos novas, ora só a
@@ -142,7 +158,7 @@ async function apagarDoBlob(pathnames: string[]) {
 
 /* ── a sincronização em si ──────────────────────────────────────── */
 
-export async function sincronizarFotosDoMotor(opcoes: { espelhar?: boolean } = {}): Promise<ResumoSincronizacao> {
+export async function sincronizarFotosDoMotor(opcoes: { espelhar?: boolean; forcar?: boolean } = {}): Promise<ResumoSincronizacao> {
   const inicio = Date.now();
   /* Marca de "começou": se a Function for encerrada no meio (tempo), a marca
      fica e o Diagnóstico mostra que a rodada não terminou, em vez de silêncio. */
@@ -164,7 +180,7 @@ export async function sincronizarFotosDoMotor(opcoes: { espelhar?: boolean } = {
   }
 }
 
-async function sincronizar(opcoes: { espelhar?: boolean }, inicio: number): Promise<ResumoSincronizacao> {
+async function sincronizar(opcoes: { espelhar?: boolean; forcar?: boolean }, inicio: number): Promise<ResumoSincronizacao> {
   const espelhar = opcoes.espelhar ?? true;
   const { checkIn, checkOut } = datasExemplo(7, 2);
   const resposta = await fetchTarifas(checkIn, checkOut, 2, 0, { timeoutMs: 25_000 });
@@ -178,7 +194,7 @@ async function sincronizar(opcoes: { espelhar?: boolean }, inicio: number): Prom
     const [trava] = await sql<{ livre: boolean }[]>`SELECT pg_try_advisory_lock(20261102) AS livre`;
     if (!trava?.livre) throw new Error("Já há uma sincronização de fotos em andamento.");
     try {
-      return await rodar(sql, motor, { checkIn, checkOut }, espelhar, inicio);
+      return await rodar(sql, motor, { checkIn, checkOut }, espelhar, inicio, opcoes.forcar === true);
     } finally {
       await sql`SELECT pg_advisory_unlock(20261102)`.catch(() => {});
     }
@@ -191,13 +207,13 @@ export async function ultimoErroSincronizacao(sql: Sql): Promise<{ em: string; e
   try { return JSON.parse(l.valor); } catch { return null; }
 }
 
-async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string; checkOut: string }, espelhar: boolean, inicio: number): Promise<ResumoSincronizacao> {
+async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string; checkOut: string }, espelhar: boolean, inicio: number, forcar = false): Promise<ResumoSincronizacao> {
   const resumo: ResumoSincronizacao = {
     consultado_em: new Date().toISOString(),
     periodo_consulta: { check_in: periodo.checkIn, check_out: periodo.checkOut },
     suites_motor: 0, suites_criadas: [], suites_ativadas: [], suites_desativadas: [], fotos_novas: 0, fotos_espelhadas: 0, fotos_removidas: 0,
     fotos_aguardando_remocao: 0, fotos_ja_presentes: 0, suites_sem_fotos_validas: 0, espelho: espelhar && blobConfigurado() ? "blob" : "sem_blob",
-    espelho_pendentes: 0, suites: [], avisos: [],
+    espelho_pendentes: 0, suites_lista_antiga: [], fotos_conferidas: 0, fotos_trocadas: 0, forcada: forcar, suites: [], avisos: [],
   };
   /* O espelho tem um orçamento de tempo: estourou, a foto entra apontando
      para o Desbravador e é copiada numa rodada seguinte (espelho atrasado). */
@@ -218,6 +234,7 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
   const paraApagarDoBlob: string[] = [];
   /* Desde quando cada foto do motor está ausente (URL → ISO). */
   const ausentes = await lerAusentes(sql);
+  const historico = await lerHistorico(sql);
   const agoraIso = new Date().toISOString();
 
   for (const quarto of motor) {
@@ -269,12 +286,24 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
     const conhecidas = new Map<string, LinhaMidia>();
     for (const m of anteriores) { conhecidas.set(m.url, m); if (m.url_origem) conhecidas.set(m.url_origem, m); }
 
+    /* O motor voltou atrás? A lista que vale é a mais recente que ele já
+       mostrou, não a que veio por último (fotos-motor-historico.ts). */
+    const noSite = anteriores.filter((m) => m.origem === "desbravador").map((m) => m.url_origem ?? m.url);
+    const decisao = decidirLista(historico[codigo], doMotor, agoraIso, { forcar, noSite });
+    historico[codigo] = decisao.historico;
+    const efetiva = decisao.acao === "ignorar" ? decisao.vigente : doMotor;
+    if (decisao.acao === "ignorar") {
+      resumo.suites_lista_antiga.push(quarto.nome);
+      detalhe.nota = (detalhe.nota ? detalhe.nota + "; " : "") + decisao.motivo;
+    }
+
     if (!doMotor.length) {
       resumo.suites_sem_fotos_validas++;
-      detalhe.nota = (detalhe.nota ? detalhe.nota + "; " : "") + "o motor não trouxe foto válida";
-    } else {
+      if (decisao.acao !== "ignorar") detalhe.nota = (detalhe.nota ? detalhe.nota + "; " : "") + "o motor não trouxe foto válida";
+    }
+    if (efetiva.length) {
       let ordem = anteriores.reduce((n, f) => Math.max(n, f.ordem), -1) + 1;
-      for (const foto of doMotor) {
+      for (const foto of efetiva) {
         if (conhecidas.has(foto)) { resumo.fotos_ja_presentes++; continue; }
         const espelho = podeEspelhar() ? await espelharNoBlob(foto, `fotos/desbravador/${local.slug}/${ordem}`) : null;
         const [inserida] = await sql<{ id: string }[]>`
@@ -294,8 +323,8 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
 
     /* Foto do motor que não veio mais: sai do site — mas só depois da
        carência, para o motor "piscando" não apagar e recriar fotos. As do
-       painel ficam sempre. */
-    const atuais = new Set(doMotor);
+       painel ficam sempre. (Lista antiga ignorada: vale a lista em vigor.) */
+    const atuais = new Set(efetiva);
     for (const m of anteriores) {
       if (m.origem !== "desbravador") continue;
       const chave = m.url_origem ?? m.url;
@@ -319,6 +348,7 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
 
   await apagarDoBlob(paraApagarDoBlob);
   await gravarAusentes(sql, ausentes);
+  await gravarHistorico(sql, historico);
 
   /* Suíte com código do motor que o motor não devolveu nesta rodada sai do
      site (volta sozinha quando o motor voltar a vendê-la). Só quando a
@@ -352,6 +382,17 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
     resumo.espelho_pendentes--;
   }
 
+  /* Nunca derruba a rodada: o que importa (listas e remoções) já foi gravado. */
+  await conferirCopias(sql, resumo, podeEspelhar, inicio).catch((e) => {
+    resumo.avisos.push(`A conferência das cópias não terminou: ${(e as Error).message}`);
+  });
+
+  if (resumo.suites_lista_antiga.length) {
+    resumo.avisos.push(`O motor devolveu uma lista de fotos antiga para: ${resumo.suites_lista_antiga.join(", ")}. O site manteve a lista mais recente (o botão "Sincronizar com o Desbravador" em Mídias força a lista atual do motor).`);
+  }
+  if (resumo.fotos_trocadas) {
+    resumo.avisos.push(`${resumo.fotos_trocadas} foto(s) mudaram no Desbravador sem mudar de nome e foram copiadas de novo.`);
+  }
   if (resumo.suites_criadas.length) {
     resumo.avisos.push(`Suíte(s) nova(s) do motor cadastrada(s) e já no site: ${resumo.suites_criadas.join(", ")}. Revise descrição e detalhes em Hospedagem → Quartos.`);
   }
@@ -375,6 +416,66 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
     INSERT INTO integracoes (chave, valor, atualizado_em) VALUES ('fotos_sync', ${JSON.stringify(resumo)}, now())
     ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor, atualizado_em = now()`.catch(() => {});
   return resumo;
+}
+
+/* ── as cópias no Blob ainda batem com o Desbravador? ───────────── */
+
+/**
+ * Foto trocada no Desbravador COM O MESMO NOME de arquivo não aparece na
+ * lista do motor como nova — a cópia ficaria velha para sempre. Por rodada,
+ * algumas cópias (as há mais tempo sem conferir) são comparadas pelo
+ * tamanho em bytes com o original (uma consulta HEAD, só cabeçalhos); se
+ * mudou, a foto é copiada de novo. Nunca derruba a rodada.
+ */
+async function conferirCopias(sql: Sql, resumo: ResumoSincronizacao, podeEspelhar: () => boolean, inicio: number): Promise<void> {
+  if (resumo.espelho !== "blob") return;
+  type Copia = { id: string; url_origem: string; bytes: string | number | null; pathname: string; ordem: number; quarto_slug: string | null };
+  let copias: Copia[] = [];
+  try {
+    copias = [...await sql<Copia[]>`
+      SELECT m.id, m.url_origem, m.bytes, m.pathname, m.ordem, q.slug AS quarto_slug
+      FROM midias m LEFT JOIN quartos q ON q.id = m.quarto_id
+      WHERE m.origem = 'desbravador' AND m.tipo = 'foto' AND m.pathname IS NOT NULL AND m.bytes IS NOT NULL
+        AND m.url_origem LIKE 'https://reservas.desbravador.com.br/%'
+      ORDER BY m.atualizado_em ASC NULLS FIRST, m.criado_em ASC LIMIT ${CONFERIR_POR_RODADA}`];
+  } catch { return; }
+  for (const m of copias) {
+    if (Date.now() - inicio > ORCAMENTO_RODADA_MS) break;
+    let tamanho: number | null = null;
+    try {
+      const r = await fetch(m.url_origem, { method: "HEAD", signal: AbortSignal.timeout(4_000), headers: { accept: "image/*" } });
+      if (r.ok) { const n = Number(r.headers.get("content-length")); tamanho = Number.isFinite(n) && n > 0 ? n : null; }
+    } catch { /* sem resposta: fica para a próxima */ }
+    if (tamanho !== null) resumo.fotos_conferidas++;
+    if (tamanho !== null && tamanho !== Number(m.bytes)) {
+      const espelho = podeEspelhar() ? await espelharNoBlob(m.url_origem, `fotos/desbravador/${m.quarto_slug ?? "suite"}/${m.ordem}`) : null;
+      if (espelho) {
+        await sql`UPDATE midias SET url = ${espelho.url}, pathname = ${espelho.pathname}, bytes = ${espelho.bytes}, atualizado_em = now() WHERE id = ${m.id}`;
+        await apagarDoBlob([m.pathname]);
+        resumo.fotos_trocadas++;
+        continue;
+      }
+    }
+    /* Conferida: vai para o fim da fila. */
+    await sql`UPDATE midias SET atualizado_em = now() WHERE id = ${m.id}`.catch(() => {});
+  }
+}
+
+/* ── o que o motor já mostrou (fotos-motor-historico.ts) ─────────── */
+
+async function lerHistorico(sql: Sql): Promise<Historico> {
+  const [l] = await sql<{ valor: string }[]>`SELECT valor FROM integracoes WHERE chave = 'fotos_sync_historico'`.catch(() => []);
+  if (!l) return {};
+  try {
+    const v = JSON.parse(l.valor);
+    return v && typeof v === "object" && !Array.isArray(v) ? (v as Historico) : {};
+  } catch { return {}; }
+}
+
+async function gravarHistorico(sql: Sql, historico: Historico): Promise<void> {
+  await sql`
+    INSERT INTO integracoes (chave, valor, atualizado_em) VALUES ('fotos_sync_historico', ${JSON.stringify(historico)}, now())
+    ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor, atualizado_em = now()`.catch(() => {});
 }
 
 /* ── fotos ausentes do motor, com a hora em que sumiram ─────────── */

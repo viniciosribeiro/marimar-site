@@ -331,8 +331,10 @@ corrigidos já (PR #78).
 Em aberto:
 - Fotos faltando no painel: café da manhã e praia (hoje 404 em
   `/api/midia-secao/cafe/0` e `/praia/0`). A foto do topo do Novo
-  (`HomeNovo.tsx`): imagem do bloco "hero" da home → foto do álbum **Praia e
-  ilha** (capa, senão a mais larga) → do álbum **A pousada** (capa, senão a
-  mais larga) → banner → imagem de compartilhamento. Sem fotos de praia hoje,
-  produção usa A pousada; vale a pousada escolher uma foto bem larga.
+  (`HomeNovo.tsx`) segue, desde 04/11 (parte 14, pedido do proprietário), a
+  **mesma ordem do Clássico**: banner ativo de Site → Banners (o primeiro,
+  com o ponto focal) → imagem do bloco "hero" → foto em destaque da
+  biblioteca → imagem de compartilhamento; só sem nada disso, a capa do álbum
+  Praia e ilha/A pousada. O banner de produção tem 945 px de largura: vale a
+  pousada subir um banner mais largo para o topo de tela inteira.
 - Quando ligar o Novo para todos: decisão do proprietário depois da Fase 6.

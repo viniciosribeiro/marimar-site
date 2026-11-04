@@ -108,7 +108,10 @@ computador, na coluna da esquerda.
   hora em hora). Para não esperar, toque no botão **Sincronizar com o
   Desbravador** (em "Todas as mídias" ou no álbum de uma suíte): a mensagem
   diz quantas fotos entraram, quantas saíram e se alguma suíte está
-  desativada no site. Essas fotos levam o selo **"Do Desbravador"**: se você
+  desativada no site. O botão **manda valer o que o Desbravador mostra agora**:
+  as rodadas automáticas, ao contrário, ignoram uma lista de fotos que o
+  Desbravador já tinha mostrado antes (ele às vezes volta atrás por algumas
+  horas) e mantêm a mais recente — o Diagnóstico avisa quando isso acontece. Essas fotos levam o selo **"Do Desbravador"**: se você
   trocar a foto lá, ela troca aqui; se excluir aqui sem tirar de lá, ela volta
   na próxima sincronização. As fotos que você envia por aqui ficam como estão.
 - **Café da manhã, Restaurante, Praia, Eventos, A pousada:** essas fotos só
