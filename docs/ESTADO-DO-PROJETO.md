@@ -1,6 +1,8 @@
 # Estado do projeto — Marimar Site
 
-> **04/11/2026 (parte 4) — ÁUDIO SÓ DA FRASE CURTA E SUÍTES PELO MOTOR:** o site grava sozinho `tts.auto: "tagged"` no OpenClaw (só o bloco `[[tts:text]]` vira áudio; o link nunca é lido; sem bloco, só texto) e a sincronização liga/desliga suítes conforme o Desbravador devolve (o campo Ativo do painel não manda mais). Ver HANDOFF (parte 4).
+> **04/11/2026 (parte 5) — PROPOSTA DO SITE NOVO PUBLICADA, AGUARDANDO APROVAÇÃO:** análise completa do site (capturas, Lighthouse, código) e proposta de redesign "Chegando pelo mar" em `/site-novo` entregues ao proprietário (https://claude.ai/artifact/TpNqehNji4siweqz5U6Avc); plano para agentes em `docs/plano-site-novo.md`; skills de design em `.claude/skills/`. **Nenhum código do site novo foi escrito; o site no ar não mudou.** Pendente: resposta do proprietário (aprovar/ajustar/reprovar). Bugs visíveis encontrados no site atual (ícones como texto em A Pousada, "1 anos" em Políticas, "R$ 0" na busca sem tarifa, Pacotes vazio) ficam para correção só com pedido dele.
+
+> **04/11/2026 (parte 4) — ÁUDIO SÓ DA FRASE CURTA E SUÍTES PELO MOTOR — CONFIRMADO PELO PROPRIETÁRIO ("funcionou perfeitamente"):** o site grava sozinho `tts.auto: "tagged"` no OpenClaw (só o bloco `[[tts:text]]` vira áudio; o link nunca é lido; sem bloco, só texto) e a sincronização liga/desliga suítes conforme o Desbravador devolve (o campo Ativo do painel não manda mais). Ver HANDOFF (parte 4).
 
 > **04/11/2026 (parte 3) — FOTOS CONFERIDAS EM PRODUÇÃO:** rodada síncrona às 16:33 UTC: as 10 suítes do motor estão com as mesmas fotos no site (STANDARD FAMILIA atualizada de 1 antiga para 4 novas; as 3 desativadas com fotos no banco); espelho no Blob em andamento (8 copiadas, 31 pendentes, 6 por rodada). Resumo por suíte e último erro visíveis em `/api/cron/sincronizar-fotos` (sem chave) e no Diagnóstico (PRs #69–#71). Falta só o que é da pousada: ativar as 3 suítes se quiser vendê-las pelo site, subir fotos do café da manhã e da praia no painel, e testar o WhatsApp. Ver HANDOFF (parte 3).
 
@@ -397,6 +399,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 |---|---|
 | `docs/ESTADO-DO-PROJETO.md` | **este arquivo** — visao geral e ponto de entrada |
 | `docs/HANDOFF-PROXIMO-AGENTE.md` | prompt pronto para retomar o trabalho e fazer o deploy |
+| `docs/plano-site-novo.md` | análise de 04/11/2026 e plano completo do site novo (`/site-novo`): direção, módulos, prévia, fases |
 | `docs/CHANGELOG.md` | historico datado de mudancas |
 | `docs/CHANGELOG-IA.md` | revisao geral de 28/09/2026: o que foi corrigido e pendencias priorizadas |
 | `docs/contrato-api.md` | contrato completo do Worker PousadaHub (todos os campos) |
