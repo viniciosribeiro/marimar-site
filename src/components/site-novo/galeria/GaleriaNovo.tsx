@@ -3,6 +3,7 @@ import { comSql } from "@/lib/db-conexao";
 import { SECOES_FOTO } from "@/lib/fotos";
 import { tituloQuarto } from "@/lib/format";
 import { CapitulosGaleria, type Capitulo, type GrupoFotos } from "./CapitulosGaleria";
+import { Migalhas } from "../DadosEstruturados";
 
 type Linha = { url: string; alt: string; secao: string; quarto_id: string | null; quarto_nome: string | null; quarto_slug: string | null };
 
@@ -28,6 +29,7 @@ export async function GaleriaNovo() {
 
   return (
     <div className="pb-16 lg:pb-24">
+      <Migalhas trilha={[["Galeria", "/galeria"]]} />
       <div className="sn-margem mx-auto max-w-[1240px] pt-10 lg:pt-16">
         <h1 className="sn-titulo-pagina">Galeria</h1>
         <p className="mt-4 max-w-[38rem] text-[1.06rem] leading-relaxed text-sn-texto-2">

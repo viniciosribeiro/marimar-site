@@ -14,6 +14,7 @@ import { CardQuartoModal, type DadosDetalhesSuite } from "@/components/site/Card
 import { BuscaNovo } from "../BuscaNovo";
 import { hospedes, paramsDaConsulta, periodo } from "../quartos/preco";
 import { montarResultados, ordenar, textoMotivo, type FotoLocal, type QuartoLocal, type Resultado } from "./resultados";
+import { Migalhas } from "../DadosEstruturados";
 
 /**
  * /reservar no site novo. Por baixo é a MESMA busca do Clássico (o que foi
@@ -102,6 +103,7 @@ export async function ReservarNovo({ sp }: { sp: BuscaReservar }) {
 
   return (
     <div className="pb-16 lg:pb-24">
+      <Migalhas trilha={[["Reservar", "/reservar"]]} />
       <section className="sn-margem mx-auto grid max-w-[1240px] gap-8 pt-10 lg:grid-cols-[minmax(0,1fr)_27rem] lg:items-end lg:gap-16 lg:pt-16">
         <div className="max-w-[36rem]">
           <h1 className="sn-titulo-pagina">{consulta ? "Suítes para as suas datas" : "Datas e preços"}</h1>

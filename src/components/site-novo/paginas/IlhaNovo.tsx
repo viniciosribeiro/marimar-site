@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CabecalhoPagina, Fecho, Lista, Nota, Secao } from "./Partes";
 import { ValoresTravessia } from "./ValoresTravessia";
 import { conteudoDoPainel, fotoDaSecao } from "./dados";
+import { Migalhas } from "../DadosEstruturados";
 
 /** /ilha-do-mel no site novo: o que ver (com as âncoras de cada atração), a travessia e os cuidados na ilha. */
 export async function IlhaNovo() {
@@ -9,6 +10,7 @@ export async function IlhaNovo() {
   const T = c.TRAVESSIA;
   return (
     <div>
+      <Migalhas trilha={[["Ilha do Mel", "/ilha-do-mel"]]} />
       <CabecalhoPagina titulo="Ilha do Mel e Encantadas" foto={foto ? { url: foto.url, alt: foto.alt || "Ilha do Mel" } : null}>
         <p>{c.SOBRE_A_ILHA.acesso}</p>
       </CabecalhoPagina>

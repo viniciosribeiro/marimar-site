@@ -2,6 +2,7 @@ import { lerContato } from "@/lib/pousada";
 import { COMPLEXO } from "@/lib/conteudo-pousada";
 import { CabecalhoPagina, Fecho, Lista, Secao } from "./Partes";
 import { conteudoDoPainel, fotoDaSecao } from "./dados";
+import { Migalhas } from "../DadosEstruturados";
 
 /** /eventos no site novo: o que a pousada realiza, os espaços e o contato (valores e capacidade são sob consulta). */
 export async function EventosNovo() {
@@ -10,6 +11,7 @@ export async function EventosNovo() {
   const wa = contato.whatsappDigitos;
   return (
     <div>
+      <Migalhas trilha={[["Eventos", "/eventos"]]} />
       <CabecalhoPagina titulo="Eventos e casamentos" foto={foto ? { url: foto.url, alt: foto.alt || "Evento na Pousada Marimar" } : null}>
         <p>Celebrar em Encantadas é reunir as pessoas em um lugar onde não passa carro, o mar está na porta e ninguém tem pressa de ir embora.</p>
       </CabecalhoPagina>

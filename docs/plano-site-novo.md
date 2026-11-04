@@ -148,9 +148,11 @@ Tipografia: **Fraunces** (títulos, peso 500, eixos `opsz`/`SOFT`) +
 **Albert Sans** (texto, 17 px no celular, linha 1,55); números tabulares nos
 preços. Na Fase 1 as duas são **fixas** no Novo (`next/font` no
 `LayoutNovo`); o seletor de fontes do painel (Identidade visual) continua
-valendo para o Clássico. **Ainda não feito (Fase 6):** oferecer Fraunces e
-Albert Sans em `FONTES_TITULO`/`FONTES_CORPO` de `src/lib/tema.ts` e o Novo
-respeitar uma escolha diferente do painel.
+valendo para o Clássico. **Fase 6 (04/11):** Fraunces e Albert Sans entraram
+em `FONTES_TITULO`/`FONTES_CORPO` de `src/lib/tema.ts` (o Clássico e o painel
+podem usá-las). O Novo continua sempre com as duas, que foram aprovadas com o
+desenho; deixar o painel trocar as letras do Novo fica para quando o
+proprietário pedir (seria uma escolha em Site → Modelo do site).
 
 Layout: fotos em sangria; coluna de leitura 65–72 caracteres; no máximo uma
 caixa por tela; seções separadas por espaço (sem ondas/folhas); cards de
@@ -286,7 +288,7 @@ celular e em duas larguras de computador).
 | 3 | `/reservar` | mesmos resultados do Clássico (ids, preços, totais) para 3 períodos; rolagem suave e "Buscando suas suítes" mantidas; janela sem 404; nunca R$ 0 | **feita (04/11)**: `e2e-site-novo-reservar` compara suíte por suíte com o Clássico |
 | 4 | galeria + restaurante/cardápio | lightbox com teclado e deslize; cardápio vazio explicado | **feita (04/11)**: `e2e-site-novo-galeria-restaurante` |
 | 5 | como chegar/mapa, ilha, a pousada, eventos, avaliações, faq, políticas, contato, pacotes | mapa e rota funcionando (4G de verdade); formulário de contato enviando | **feita (04/11)**: `e2e-site-novo-conteudo` (o mapa com 4G real fica para o proprietário) |
-| 6 | acabamento: performance, a11y, SEO/JSON-LD, iPhone/Android físicos | metas do §5; relatório antes/depois | a fazer |
+| 6 | acabamento: performance, a11y, SEO/JSON-LD, iPhone/Android físicos | metas do §5; relatório antes/depois | **parte 1 feita (04/11)**: títulos por página e suíte, canônico, prévia do link, JSON-LD, "não encontrada" nova, letras no painel (`e2e-site-novo-acabamento`); **parte 2 a fazer**: folha da Marina, desempenho, relatório |
 | 7 | o proprietário liga o Novo para todos (ou não) | deploy de produção verificado; docs | dele |
 
 Em cada PR: `npm test`, `tsc` limpo em export `git archive`, `npm run build`,

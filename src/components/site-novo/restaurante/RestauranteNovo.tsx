@@ -5,6 +5,9 @@ import { lerContato } from "@/lib/pousada";
 import { Cardapio } from "@/components/site/Cardapio";
 import { CAFE_DA_MANHA, ENDERECO, POLITICAS, RESTAURANTE } from "@/lib/conteudo-pousada";
 import type { CategoriaCardapio } from "@/lib/cardapio";
+import { DadosEstruturados } from "../DadosEstruturados";
+import { noMigalhas, noRestaurante } from "@/lib/site-novo/dados-estruturados";
+import { urlDoSite } from "@/lib/seo";
 
 /**
  * /restaurante no site novo: o Marimar Café Bistrô Bar, o café da manhã e o
@@ -71,6 +74,7 @@ export async function RestauranteNovo() {
 
   return (
     <div>
+      <DadosEstruturados nos={[noRestaurante(urlDoSite(), { fotos: [d.capa?.url, d.cafe?.url] }), noMigalhas(urlDoSite(), [["Restaurante", "/restaurante"]])]} />
       {/* ── o restaurante ───────────────────────────────────────────── */}
       <section aria-labelledby="sn-restaurante" className="mx-auto grid max-w-[1240px] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16 lg:px-10 lg:pt-14">
         <div className="relative aspect-[4/3] overflow-hidden bg-sn-areia lg:order-2 lg:aspect-[5/4] lg:rounded-[18px]">

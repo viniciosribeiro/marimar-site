@@ -4,6 +4,7 @@ import { ENDERECO, IDENTIDADE } from "@/lib/conteudo-pousada";
 import { enviarContato } from "@/app/(site)/contato/actions";
 import { CabecalhoPagina } from "./Partes";
 import { BotaoCopiar } from "./BotaoCopiar";
+import { Migalhas } from "../DadosEstruturados";
 
 /**
  * /contato no site novo: os canais da pousada (com copiar) e o MESMO
@@ -23,6 +24,7 @@ export async function ContatoNovo({ ok, erro }: { ok?: string; erro?: string }) 
   const campo = "mt-1.5 w-full rounded-xl border border-sn-linha bg-white px-3.5 text-[1rem] outline-none focus-visible:ring-2 focus-visible:ring-sn-mare-forte";
   return (
     <div className="pb-16 lg:pb-24">
+      <Migalhas trilha={[["Contato", "/contato"]]} />
       <CabecalhoPagina titulo="Contato">
         <p>Fale direto com a pousada pelo WhatsApp, pelo telefone, por e-mail ou pelo formulário.</p>
       </CabecalhoPagina>

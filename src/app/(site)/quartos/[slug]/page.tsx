@@ -2,11 +2,18 @@ import { brl, datasExemplo } from "@/lib/format";
 import { modeloDaVisita } from "@/lib/modelo-site";
 import { paginaPronta } from "@/lib/site-novo/paginas";
 import { SuiteNovo, type BuscaSuite } from "@/components/site-novo/quartos/SuiteNovo";
+import { metadadosDaSuite } from "@/lib/seo";
+import type { Metadata } from "next";
 import postgres from "postgres"; import { notFound } from "next/navigation"; import Link from "next/link"; import { fetchTarifas } from "@/lib/worker"; import { buildDeepLink } from "@/lib/deeplink"; import { Gallery } from "@/components/site/Gallery"; import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 
 export const dynamic = "force-dynamic";
 /* No site novo a página consulta o motor com as datas da pessoa (até 45 s, como o /reservar). */
 export const maxDuration = 60;
+
+/* Título, descrição e foto próprios de cada suíte (buscadores e prévia do link no WhatsApp); valem nos dois modelos. */
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  return metadadosDaSuite((await params).slug);
+}
 
 export default async function QuartoDetailPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<BuscaSuite> }) {
   const { slug } = await params;

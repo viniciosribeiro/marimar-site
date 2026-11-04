@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { comSql } from "@/lib/db-conexao";
-import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
+import { lerContato, lerPousada, digitosWhatsApp } from "@/lib/pousada";
 import { lerBanner, type Banner } from "@/lib/banners";
 import { agruparItens, type ItemBloco } from "@/lib/blocos";
 import { lerConteudo, padroes, type Conteudo } from "@/lib/conteudo-editavel";
@@ -14,6 +14,9 @@ import { AVALIACOES, CAFE_DA_MANHA, CONTATO, DIFERENCIAIS, IDENTIDADE, RESTAURAN
 import { Icone } from "@/components/site/Icone";
 import { BuscaNovo } from "../BuscaNovo";
 import { LinhaTravessia } from "../LinhaTravessia";
+import { DadosEstruturados } from "../DadosEstruturados";
+import { noPousada, noSite } from "@/lib/site-novo/dados-estruturados";
+import { urlDoSite } from "@/lib/seo";
 
 /**
  * Página inicial do site novo — "Chegando pelo mar" (docs/plano-site-novo.md).
@@ -128,9 +131,18 @@ export async function HomeNovo() {
   const terminal = T.terminais.find((t) => t.principal) ?? T.terminais[0];
   const inclusos = (d.itens.diferenciais?.length ? d.itens.diferenciais : DIFERENCIAIS.map((x, i) => ({ id: String(i), icone: x.icone, titulo: x.titulo }))) as { id: string; icone: string | null; titulo: string }[];
   const fotoRestaurante = d.fotos.restaurante ?? d.fotos.cafe ?? null;
+  const contato = await lerContato(p);
+  const site = urlDoSite();
 
   return (
     <>
+      <DadosEstruturados nos={[
+        noPousada(site, {
+          telefone: contato.telefone || contato.whatsapp, email: contato.email, logo: p?.logo_url,
+          fotos: [foto, d.fotos.pousada?.url, fotoRestaurante?.url, ...d.suites.slice(0, 3).map((s) => s.foto)],
+        }),
+        noSite(site),
+      ]} />
       {/* ── topo: a foto, a frase e a busca ─────────────────────────── */}
       <section data-topo-imersivo aria-labelledby="sn-titulo" className="relative isolate text-white"
         style={{ marginTop: "calc(-1 * var(--sn-topo))" }}>

@@ -4,6 +4,7 @@ import { Icone } from "@/components/site/Icone";
 import { AVALIACOES, COMODIDADES_CONFIRMADAS, COMPLEXO, DIFERENCIAIS, NAO_DISPONIVEL, RESTAURANTE } from "@/lib/conteudo-pousada";
 import { CabecalhoPagina, Fecho, Lista, Nota, Secao } from "./Partes";
 import { fotoDaSecao } from "./dados";
+import { Migalhas } from "../DadosEstruturados";
 
 /** /a-pousada no site novo: quem somos, a pousada e o restaurante, a história (painel), o que oferecemos e o que não temos. */
 export async function APousadaNovo() {
@@ -15,6 +16,7 @@ export async function APousadaNovo() {
 
   return (
     <div>
+      <Migalhas trilha={[["A pousada", "/a-pousada"]]} />
       <CabecalhoPagina titulo="A Pousada Marimar" foto={foto ? { url: foto.url, alt: foto.alt || "Pousada Marimar" } : null}>
         <p>{COMPLEXO.fraseLonga}</p>
       </CabecalhoPagina>

@@ -4,6 +4,7 @@ import { NAO_DISPONIVEL, POLITICAS } from "@/lib/conteudo-pousada";
 import { lerRegras, textoCriancas, REGRAS_PADRAO } from "@/lib/regras-hospedagem";
 import { CabecalhoPagina, Fecho, Secao } from "./Partes";
 import { conteudoDoPainel } from "./dados";
+import { Migalhas } from "../DadosEstruturados";
 
 const SECOES = [
   { id: "chegada", titulo: "Horário de chegada" },
@@ -23,6 +24,7 @@ export async function PoliticasNovo() {
   const criancas = textoCriancas(regras);
   return (
     <div>
+      <Migalhas trilha={[["Políticas", "/politicas"]]} />
       <CabecalhoPagina titulo="Políticas">
         <p>As regras abaixo são as oficiais da pousada. Quando houver divergência com o que aparece em sites de reserva de terceiros, vale o que está aqui e o que consta na sua tarifa.</p>
       </CabecalhoPagina>

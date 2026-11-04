@@ -2,6 +2,12 @@ import { enviarContato } from "./actions";
 import { modeloDaVisita } from "@/lib/modelo-site";
 import { paginaPronta } from "@/lib/site-novo/paginas";
 import { ContatoNovo } from "@/components/site-novo/paginas/ContatoNovo";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Contato — Pousada Marimar, Ilha do Mel",
+  description: "Fale com a Pousada Marimar, em Encantadas, Ilha do Mel: WhatsApp, endereço e um formulário para mandar a sua mensagem.",
+};
 
 export default async function ContatoPage({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
   // Antes a pagina recebia ?ok= e ?erro= e nao mostrava nenhum dos dois:
