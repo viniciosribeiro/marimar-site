@@ -1,6 +1,7 @@
 # Handoff — continuar de onde paramos
 
 ## ESTADO ATUAL — 04/11/2026 (parte 2): tudo automático; o que resta é observar
+- **Publicado:** PR #65 (squash `5d0bb7d7`), deploy de produção `3375HnWJZXR7Q1yr3GYLcPMTeBgN` success em 04/11. Daqui para a frente o site faz tudo sozinho; falta só **observar** (abaixo).
 - **Pedido do proprietário:** "não quero fazer nada manual". Ele não achou a pasta do projeto no computador nem a tela de variáveis na Vercel. Resposta: tirar a necessidade de cada passo manual (ver CHANGELOG, parte 2).
 - **O que acontece sozinho depois do deploy:** (1) na primeira busca em `/reservar`, ou às 12:00 UTC pelo agendador da Vercel, o site aplica a migration 0022 se faltar e sincroniza as fotos das suítes com o Desbravador (com espelho no Blob se `BLOB_READ_WRITE_TOKEN` existir); (2) a Marina do WhatsApp, ao reler `/api/agent/conhecimento` (a cada conversa e a cada 15 min, como a skill instalada já manda), passa a seguir as regras novas: bloco `[[tts:text]]` curto, link da suíte escolhida, fotos do café por `/api/agent/fotos?secao=cafe`.
 - **Limites deste ambiente:** sem rede para `api.vercel.com`, `www.pousadamarimarilhadomel.com.br`, `marimar-site.vercel.app`, `reservas.desbravador.com.br` e Hostinger. Ter pago a Vercel não dá acesso ao Claude; o que dá é liberar esses hosts em **Network access** do ambiente (menu do ambiente na barra de título da sessão → Edit → Limited → Allowed domains). Sem isso, a verificação em produção é do proprietário.

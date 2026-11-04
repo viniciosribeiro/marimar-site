@@ -1,7 +1,7 @@
 # Changelog — Marimar Site
 
 ## 04/11/2026 (parte 2) — Nada manual: migration aplicada pelo site, agendador sem CRON_SECRET e regras do WhatsApp lidas do site
-**Autor:** Claude (Claude Code), a pedido do Vinicios ("Eu não quero fazer nada manual… consegue fazer tudo no automático?"). **Migration:** nenhuma nova (a 0022 passa a ser aplicada pelo próprio site). **PR:** ver HANDOFF.
+**Autor:** Claude (Claude Code), a pedido do Vinicios ("Eu não quero fazer nada manual… consegue fazer tudo no automático?"). **Migration:** nenhuma nova (a 0022 passa a ser aplicada pelo próprio site). **PR:** [#65](https://github.com/viniciosribeiro/marimar-site/pull/65), squash `5d0bb7d77cc154f9c2ecc2222dba95dfe99da339` na `main`; deploy de produção da Vercel `3375HnWJZXR7Q1yr3GYLcPMTeBgN` com status **success** em 04/11/2026 (status do commit no GitHub). **Publicado ≠ observado em produção**: a primeira sincronização e a leitura das regras pela Marina acontecem sozinhas, mas ninguém daqui as viu ainda.
 
 **Contexto:** a entrega da manhã (PR #63) deixou quatro passos manuais: `npm run db:migrate` (o proprietário não sabe onde está a pasta do projeto), `CRON_SECRET` na Vercel (ele não encontrou a tela), reinstalar as skills na Hostinger e editar `settings/tts.json`. Este ambiente **não alcança** Vercel, produção, Desbravador nem Hostinger (política de rede do ambiente; ter pago a Vercel não dá acesso ao Claude), então a saída foi tirar a necessidade de cada passo:
 
