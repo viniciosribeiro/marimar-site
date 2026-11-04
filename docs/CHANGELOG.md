@@ -1,7 +1,7 @@
 # Changelog — Marimar Site
 
 ## 04/11/2026 — Fotos das suítes sincronizadas de verdade, fotos do café para a Marina, bloco de fala e agendadores no Diagnóstico
-**Autor:** Claude (Claude Code), com aprovação do Vinicios ("faça tudo o que for preciso… o que for manual você me explica no final"). **Migration:** **0022** (`midias.origem`, `midias.url_origem` — só acrescenta). **Branch:** `claude/sleepy-mccarthy-62jmwj`. **PR:** ver HANDOFF (número preenchido na publicação).
+**Autor:** Claude (Claude Code), com aprovação do Vinicios ("faça tudo o que for preciso… o que for manual você me explica no final"). **Migration:** **0022** (`midias.origem`, `midias.url_origem` — só acrescenta). **Branch:** `claude/sleepy-mccarthy-62jmwj`. **PR:** [#63](https://github.com/viniciosribeiro/marimar-site/pull/63) (merge e deploy registrados no HANDOFF).
 
 **Por que:** auditoria dos 10 pontos do proprietário (04/11) e dos PRs #57–#61 do ChatGPT. Diagnóstico completo em `docs/fluxo-fotos-desbravador.md`. Em resumo: (a) o sincronizador de fotos de 26/10 nunca rodou — exigia uma `CRON_SECRET` que não existe na Vercel, só acrescentava fotos e a página da suíte ignorava as do motor; (b) 3 dos 10 tipos do motor estão **desativados** no site desde o seed (por isso "3 quartos faltando" e 404 em `/quartos/<slug>` deles); (c) não havia rota de fotos para café da manhã/restaurante/praia — a Marina dizia "não possui imagens"; (d) o OpenClaw QR fala a resposta inteira (até 1500 caracteres) porque a skill pedia "não ler o link" mas nada limitava a fala; (e) `CRON_SECRET` ausente também deixava o Diagnóstico mudo sobre agendadores.
 
