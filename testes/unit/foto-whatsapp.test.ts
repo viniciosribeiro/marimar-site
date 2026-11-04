@@ -51,3 +51,19 @@ test("URL do cache interno limita largura e qualidade", () => {
   assert.equal(destino.searchParams.get("w"), "1080");
   assert.equal(destino.searchParams.get("q"), "75");
 });
+
+/* ── assinatura dos bytes (04/11/2026, parte 3) ──────────────────────── */
+import { assinaturaDeImagem } from "../../src/lib/foto-whatsapp";
+
+test("assinatura: aceita jpeg/png/webp de verdade e recusa pagina de erro disfarcada", () => {
+  const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(16)]);
+  const png = Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), Buffer.alloc(16)]);
+  const webp = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WEBP"), Buffer.alloc(8)]);
+  const html = Buffer.from("<!doctype html><html><body>Access denied</body></html>");
+  assert.equal(assinaturaDeImagem(jpeg, "image/jpeg"), true);
+  assert.equal(assinaturaDeImagem(png, "image/png"), true);
+  assert.equal(assinaturaDeImagem(webp, "image/webp"), true);
+  assert.equal(assinaturaDeImagem(html, "image/jpeg"), false);
+  assert.equal(assinaturaDeImagem(jpeg, "image/png"), false, "tipo declarado precisa bater com os bytes");
+  assert.equal(assinaturaDeImagem(Buffer.alloc(4), "image/jpeg"), false);
+});

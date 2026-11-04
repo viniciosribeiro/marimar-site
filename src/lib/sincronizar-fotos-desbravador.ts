@@ -2,7 +2,7 @@ import { comSql, type Sql } from "@/lib/db-conexao";
 import { garantirEsquemaMidias } from "./esquema-midias";
 import { fetchTarifas, type WorkerQuarto } from "@/lib/worker";
 import { datasExemplo } from "@/lib/format";
-import { origemFotoPermitida } from "@/lib/foto-whatsapp";
+import { origemFotoPermitida, assinaturaDeImagem } from "@/lib/foto-whatsapp";
 import { blobConfigurado } from "@/lib/blob";
 
 /**
@@ -106,6 +106,8 @@ async function espelharNoBlob(url: string, caminho: string): Promise<{ url: stri
     if (!["image/jpeg", "image/png", "image/webp"].includes(tipo)) return null;
     const bytes = Buffer.from(await r.arrayBuffer());
     if (!bytes.length || bytes.length > 12 * 1024 * 1024) return null;
+    /* Página de erro com cabeçalho de imagem (WAF do Desbravador) não vira foto. */
+    if (!assinaturaDeImagem(bytes, tipo)) return null;
     const { put } = await import("@vercel/blob");
     const extensao = tipo === "image/png" ? "png" : tipo === "image/webp" ? "webp" : "jpg";
     const gravado = await put(`${caminho}.${extensao}`, bytes, { access: "public", contentType: tipo, addRandomSuffix: true });

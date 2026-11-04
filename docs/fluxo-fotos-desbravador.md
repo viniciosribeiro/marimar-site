@@ -58,9 +58,9 @@ Quando roda:
 a chamada sem chave roda a sincronização **antes de responder** quando a
 última tem mais de 1 h (200 com o resumo; 503 com o erro) e, fora disso,
 devolve 202 `{modo:"carona", ultima_em, ultimo_resumo, ultimo_erro}`. Com a
-chave (ou a `AGENT_API_KEY`) roda sempre. Não usa `after()`: em 04/11 o
-trabalho em segundo plano não executava de forma confiável na Vercel. O
-Diagnóstico mostra a chave como "opcional".
+chave (ou a `AGENT_API_KEY`) roda sempre. Não usa `after()` de propósito:
+quem chama vê o resultado na resposta. O Diagnóstico mostra a chave como
+"opcional".
 
 ## Migration 0022 (`drizzle/0022_midias_origem.sql`, só acrescenta)
 

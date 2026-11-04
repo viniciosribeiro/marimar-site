@@ -93,16 +93,26 @@ export async function lerBytesDaFoto(fonte: string): Promise<{ buffer: Buffer; t
       if (grande || total < 16) continue;
 
       const buffer = Buffer.concat(pedacos.map((p) => Buffer.from(p)), total);
-      const jpeg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
-      const png = buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-      const webp = buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP";
-      if ((tipo === "image/jpeg" && !jpeg) || (tipo === "image/png" && !png) || (tipo === "image/webp" && !webp)) continue;
+      if (!assinaturaDeImagem(buffer, tipo)) continue;
       return { buffer, tipo, fonteUsada };
     } catch (e) {
       console.warn("[foto-whatsapp] fonte indisponível:", fonteUsada, (e as Error).message);
     }
   }
   return null;
+}
+
+/**
+ * Os primeiros bytes batem com o tipo declarado? Um servidor que devolve uma
+ * página de erro com `content-type: image/jpeg` não pode virar "foto": nem
+ * no WhatsApp, nem copiada para o nosso storage.
+ */
+export function assinaturaDeImagem(buffer: Buffer, tipo: string): boolean {
+  if (buffer.length < 12) return false;
+  const jpeg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  const png = buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  const webp = buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP";
+  return (tipo === "image/jpeg" && jpeg) || (tipo === "image/png" && png) || (tipo === "image/webp" && webp);
 }
 
 /** A resposta HTTP de uma foto para o WhatsApp, com os cabeçalhos certos. */
