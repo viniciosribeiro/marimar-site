@@ -37,6 +37,32 @@
     font-variation-settings: "SOFT" 70;
   }
   .sn .sn-h2 { font-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.7rem); line-height: 1.08; }
+  /* Título das páginas internas (Suítes, a suíte, Galeria…): menor que o do topo da home. */
+  .sn .sn-titulo-pagina {
+    font-size: clamp(2.2rem, 1.55rem + 2.7vw, 3.6rem);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    font-variation-settings: "SOFT" 60;
+  }
+
+  /* Margem lateral das páginas: cresce com a tela e respeita o recorte do
+     celular deitado (safe-area). Vale só onde não há px-* (as utilitárias ganham). */
+  .sn .sn-margem {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+  @media (min-width: 640px) {
+    .sn .sn-margem {
+      padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+    }
+  }
+  @media (min-width: 1024px) {
+    .sn .sn-margem {
+      padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+      padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
+    }
+  }
   .sn .sn-h3 { font-size: 1.3rem; line-height: 1.2; }
 
   .sn :focus-visible { outline: 2.5px solid color-mix(in oklab, var(--marca), black 30%); outline-offset: 3px; border-radius: 6px; }
@@ -113,7 +139,14 @@
   .sn details > summary::-webkit-details-marker { display: none; }
   .sn details[open] .sn-mais { transform: rotate(45deg); }
   .sn .sn-mais { transition: transform .2s ease; }
-  @media (prefers-reduced-motion: reduce) { .sn .sn-mais, .sn .sn-topo, .sn .sn-botao, .sn .sn-botao-linha { transition: none; } }
+  /* Barra "Reservar" fixa no celular (página da suíte): o fim da página
+     ganha espaço para ela não cobrir o rodapé. */
+  @media (max-width: 1023.98px) {
+    .sn:has(.sn-barra-reserva) { padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); }
+  }
+  .sn .sn-barra-reserva { transition: transform .22s ease; }
+
+  @media (prefers-reduced-motion: reduce) { .sn .sn-mais, .sn .sn-topo, .sn .sn-botao, .sn .sn-botao-linha, .sn .sn-barra-reserva { transition: none; } }
 }
 
 @keyframes sn-desenhar { to { stroke-dashoffset: 0; } }

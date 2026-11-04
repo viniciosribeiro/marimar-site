@@ -9,7 +9,7 @@ import { LoaderCircle, Search } from "lucide-react";
  * bebes, regras ou chamadas ao motor. O indicador aparece antes da navegacao.
  */
 export function FormularioBuscaDisponibilidade({
-  children, action, className, variante, rodape,
+  children, action, className, variante, rodape, rotuloBotao, espera,
 }: {
   children: ReactNode;
   action?: string;
@@ -17,6 +17,9 @@ export function FormularioBuscaDisponibilidade({
   variante: "home" | "reservar" | "novo";
   /** Texto depois do botão (site novo). */
   rodape?: ReactNode;
+  /** Site novo: texto do botão e da espera quando a busca não é a de /reservar (página da suíte). */
+  rotuloBotao?: string;
+  espera?: { titulo: string; texto: string };
 }) {
   const [consultando, setConsultando] = useState(false);
 
@@ -64,7 +67,7 @@ export function FormularioBuscaDisponibilidade({
             ? "col-span-2 sm:col-span-1 flex items-center justify-center gap-2 bg-marca hover:bg-marca-hover text-marca-texto px-4 py-2.5 rounded-lg font-semibold transition-marca text-sm self-end disabled:opacity-80"
             : "col-span-2 sm:col-span-1 self-end h-12 rounded-full bg-marca text-marca-texto hover:bg-marca-hover font-semibold shadow-marca transition-marca flex items-center justify-center gap-2 disabled:opacity-80"}>
           {consultando ? <LoaderCircle aria-hidden="true" size={18} className="motion-safe:animate-spin" /> : home ? <Search aria-hidden="true" size={17} /> : null}
-          {consultando ? (novo ? "Consultando…" : "Consultando...") : novo ? "Ver suítes e preços" : home ? "Ver disponibilidade" : "Buscar"}
+          {consultando ? (novo ? "Consultando…" : "Consultando...") : novo ? (rotuloBotao ?? "Ver suítes e preços") : home ? "Ver disponibilidade" : "Buscar"}
         </button>
         {rodape}
       </form>
@@ -76,9 +79,9 @@ export function FormularioBuscaDisponibilidade({
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-marca-sutil text-marca">
               <LoaderCircle aria-hidden="true" size={35} className="motion-safe:animate-spin" />
             </div>
-            <p className="mt-5 font-titulo text-xl font-bold text-tinta">Buscando suas suítes</p>
+            <p className="mt-5 font-titulo text-xl font-bold text-tinta">{espera?.titulo ?? "Buscando suas suítes"}</p>
             <p className="mt-2 text-sm leading-relaxed text-tinta-suave">
-              Estamos conferindo os quartos e valores disponíveis para suas datas.
+              {espera?.texto ?? "Estamos conferindo os quartos e valores disponíveis para suas datas."}
             </p>
             <p className="mt-3 text-xs text-tinta-suave">A consulta pode levar alguns instantes.</p>
           </div>

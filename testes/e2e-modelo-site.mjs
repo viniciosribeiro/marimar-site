@@ -136,7 +136,7 @@ try {
       }
       if (nome === "celular") {
         /* Escondido, o botão sai também da árvore de acessibilidade (aria-hidden): localizar por CSS. */
-        const botao = p.locator('button[aria-label^="Abrir atendimento"]');
+        const botao = p.locator("button[data-marina-flutuante]");
         const escondido = await botao.evaluate((b) => getComputedStyle(b).opacity === "0").catch(() => null);
         conferir("celular: botão da Marina sai da frente da busca", escondido === true);
         await p.evaluate(() => window.scrollTo(0, 1600)); await p.waitForTimeout(500);
