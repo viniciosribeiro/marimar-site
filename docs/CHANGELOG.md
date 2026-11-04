@@ -1,7 +1,7 @@
 # Changelog — Marimar Site
 
 ## 04/11/2026 (parte 3) — Sincronização de fotos visível por suíte, erro registrado e espelho atrasado
-**Autor:** Claude (Claude Code), a pedido do Vinicios ("a Cecília atualizou as fotos essa semana; as novas já estão no site?"). **Migration:** nenhuma. **PR:** ver HANDOFF.
+**Autor:** Claude (Claude Code), a pedido do Vinicios ("a Cecília atualizou as fotos essa semana; as novas já estão no site?"). **Migration:** nenhuma. **PRs:** #69 (`149fc09`), #70 (`e1335e6`), #71 (`ebf75e8`), #72 (`195c230`), todos com deploy de produção **success** na Vercel em 04/11 (último: `7UcdhLVtbjxBC2aqYP6jsAcxaswE`).
 
 **O que a verificação em produção mostrou (16:00–17:00 UTC, pela API pública e pelas páginas):** 6 das 7 suítes ativas têm no site exatamente as fotos que o motor devolve hoje (FAMILIA 1/1, SUITE KING 4/4, SUITE QUEEN 5/5, KING REDE 4/4, SUITE LUA DE MEL 4/4, CASAL STANDARD 4/4) e a Marina entrega todas por `/api/midia-quarto`. **STANDARD FAMILIA (FAM) não:** o motor tem 4 fotos novas (`gt_FAM_681038/220134/557259/638853.jpeg`) e o site continua com 1 antiga (`gt_FAM_538409.jpeg`, que já não existe no Desbravador — a Marina a entrega pelo cache do site). Nenhuma foto foi copiada para o Blob (as fotos já estavam no banco antes de hoje; o espelho só acontecia na inserção). Uma segunda rodada disparada às ~16:50 UTC não registrou conclusão — e não havia como ver o motivo: o erro da rodada de carona só ia para o log da Vercel. As 3 suítes desativadas (STANDARD TRIPLO, SUITE REDE, STANDARD QUADRUPLO) seguem sem página e sem foto para a Marina até a pousada ativá-las. Fotos de seção: café da manhã e praia ainda **sem foto no painel** (404); restaurante e pousada têm.
 
