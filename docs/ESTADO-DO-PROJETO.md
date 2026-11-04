@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> **04/11/2026 (parte 10) — SITE NOVO, FASE 4:** galeria em capítulos curtos e restaurante com o cardápio do painel no Novo (6 de 15 páginas prontas). Visitantes continuam no Clássico. Ver CHANGELOG/HANDOFF (parte 10) para o status de produção.
+> **04/11/2026 (parte 10) — SITE NOVO, FASE 4:** galeria em capítulos curtos e restaurante com o cardápio do painel no Novo (6 de 15 páginas prontas). **Publicado (PR #85, deploy `DVq5XgBk4bfTRNGNvKKQJkhKgrcT` success) e conferido: visitantes continuam no Clássico.**
 
 > **04/11/2026 (parte 9) — SITE NOVO, FASE 3:** a busca `/reservar` no Novo (4 de 15 páginas prontas): mesma consulta, mesmos preços, totais e links do Clássico (testado suíte por suíte em 3 períodos), "Buscando suas suítes" e rolagem mantidas. **Publicado (PR #83, deploy `HW8G846zEzKeGLVRd8wfebxMUHeA` success) e conferido: visitantes continuam no Clássico.**
 
