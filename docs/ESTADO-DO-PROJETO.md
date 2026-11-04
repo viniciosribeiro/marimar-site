@@ -1,5 +1,7 @@
 # Estado do projeto — Marimar Site
 
+> **04/11/2026 — FOTOS SINCRONIZADAS COM O DESBRAVADOR + FOTOS DO CAFÉ PARA A MARINA + BLOCO DE FALA (PR #63, branch `claude/sleepy-mccarthy-62jmwj`):** a pousada sobe as fotos das suítes só no Desbravador e o site copia (botão em Admin → Mídias, de carona nas buscas 1×/hora, e a Vercel 1×/dia **quando a `CRON_SECRET` existir**); foto trocada lá some daqui, foto do painel fica; com `BLOB_READ_WRITE_TOKEN` as fotos são copiadas para o nosso Blob. As 3 suítes "faltando" na verdade existem **desativadas** desde o seed — a sincronização avisa e ativar é em Hospedagem → Quartos. Marina ganhou `/api/agent/fotos?secao=cafe|restaurante|praia|pousada|eventos` (anexo pelo `url_whatsapp`). Áudio: a skill exige `[[tts:text]]frase curta[[/tts:text]]`, o site nunca mostra o bloco. **Migration 0022** a rodar. Testado localmente (136 unitários, e2e 42/42); **pendente** deploy, `CRON_SECRET` na Vercel, reinstalar skills na Hostinger, `settings/tts.json`, e teste real no WhatsApp. Passo a passo no HANDOFF (ESTADO ATUAL 04/11). Detalhes: `docs/fluxo-fotos-desbravador.md`.
+
 > **03/11/2026 — PR #61 PUBLICADO EM PRODUÇÃO:** corrigidos links antigos que levavam ao 404 em cards da busca de suítes, mantendo foto/nome/Detalhes dentro do modal; merge `faa3f397` e deploy Vercel `dpl_BSeERqnhDCnpKKzaUwq5cKeUTGYn` READY. Quatro períodos verificados em produção para 2 adultos: 09–12/12 (9 suítes), 10–12/11 (6), 20–23/12 (5), 10–13/01/2027 (6); sem falhas da busca nem links antigos na extração; logs sem erro/fatal no intervalo consultado. **E2E real de clique e validação em iPhone/Android/desktop físicos PENDENTES**, não confundir com build READY e teste de GET. Preview usa DATABASE_URL localhost indevido; não copiar credenciais reais para contornar. Preços, mídias, Marina, WhatsApp, roomCode e regras do Desbravador não foram alterados; continuam pendências OpenClaw separadas no PR #60. Veja CHANGELOG/HANDOFF.
 
 
@@ -274,6 +276,10 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
    e a correcao de resposta: tudo passou em `tsc`, `lint` e `build`, e nada
    passou por uma pessoa. E o maior risco aberto do projeto hoje.
 3. **3 quartos faltando** — o motor retorna 10 tipos, o banco tem 7 ativos.
+   **Entendido em 04/11:** os 3 existem no banco, **desativados** desde o
+   seed (`ativo = disponivel` no dia). A sincronização de fotos (04/11) lista
+   quais são no aviso e no Diagnóstico; ativar é decisão da pousada em
+   Hospedagem → Quartos → Editar → Ativo (as fotos já estarão lá).
 
 ## Pendencias menores
 
@@ -415,6 +421,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | 2 | **Dados de produção com placeholder.** Rodar `npm run db:corrigir` (telefone real, acentos, desativar passeio de teste "Vinicios/VR/R$350" que está público) | Vinicios (precisa de rede até o Neon) |
 | 3 | **Hero sem foto.** Cadastrar em Admin → Mídias uma imagem com `destaque = true` e **sem quarto vinculado** | Vinicios |
 | 4 | Pendente da 1ª sessão: `AGENT_API_KEY` nova na Vercel + OpenClaw | Vinicios |
+| 5 | **04/11:** `npm run db:migrate` (0022); `CRON_SECRET` (16+ chars) na Vercel + Redeploy; `BLOB_READ_WRITE_TOKEN` conferido; reinstalar as 2 skills na Hostinger; `settings/tts.json` com `maxLength: 240`; testar WhatsApp real (link + áudio curto, foto do café) — passo a passo no HANDOFF | Vinicios |
 
 ### ✅ Verificado nesta sessão
 

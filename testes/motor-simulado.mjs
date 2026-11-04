@@ -17,6 +17,11 @@ http.createServer((req, res) => {
   const criancas = Number(u.searchParams.get("criancas") ?? 0);
   const ci = u.searchParams.get("check_in"); const co = u.searchParams.get("check_out");
   const noites = Math.round((Date.parse(co) - Date.parse(ci)) / 86400000);
+  /* Fotos como o motor real devolve (servidor do Desbravador). SIM_FOTOS_V2=1
+     simula a pousada trocando uma foto lá: a 2ª some e entra uma nova. */
+  const fotosDe = (id) => process.env.SIM_FOTOS_V2
+    ? [`https://reservas.desbravador.com.br/reservas/images/hoteis/img719501/gt_${id}_1.jpg`, `https://reservas.desbravador.com.br/reservas/images/hoteis/img719501/gt_${id}_3.jpg`]
+    : [`https://reservas.desbravador.com.br/reservas/images/hoteis/img719501/gt_${id}_1.jpg`, `https://reservas.desbravador.com.br/reservas/images/hoteis/img719501/gt_${id}_2.jpg`];
   const quarto = (id, nome, max) => {
     const cabe = adultos + criancas <= max;
     const total = 275 * adultos * noites;
@@ -26,10 +31,13 @@ http.createServer((req, res) => {
       total_geral: total + totalCriancas, valor_adulto: 275, valor_crianca: 150,
       ocupacao_max: max, estadia_minima: 1, disponivel: cabe, unidades_disponiveis: cabe ? 2 : 0,
       motivo_indisponivel: cabe ? undefined : "não comporta o número de hóspedes",
-      pacote: "Café da manhã", comodidades: [], fotos: [],
+      pacote: "Café da manhã", comodidades: [], fotos: fotosDe(id),
     };
   };
-  const todos = [quarto("FAM", "STANDARD FAMILIA", 4), quarto("CASAL", "CASAL STANDARD", 2)];
+  /* "SR" existe no site mas desativada (como as 3 de produção); "NOVAMOTOR" só
+     existe no motor: a sincronização precisa criá-la desativada no site. */
+  const todos = [quarto("FAM", "STANDARD FAMILIA", 4), quarto("CASAL", "CASAL STANDARD", 2),
+    quarto("SR", "SUITE REDE", 2), quarto("NOVAMOTOR", "SUÍTE NOVA DO MOTOR", 3)];
   const corpo = {
     hotel: "Marimar", check_in: ci, check_out: co, adultos, criancas, noites,
     quartos: todos.filter((q) => q.disponivel), indisponiveis: todos.filter((q) => !q.disponivel),

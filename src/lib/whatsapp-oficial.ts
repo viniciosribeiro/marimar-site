@@ -2,7 +2,7 @@ import { comSql, type Sql } from "./db-conexao";
 import { CONTEXTO_MENSAGENS, LIMITE_AUDIO_BYTES, LIMITE_VOZ_CARACTERES, MODELO_TRANSCRICAO, URL_TRANSCRICAO, cabecalhosGateway, gatewayConfigurado, urlGateway } from "./chat";
 import { montarTreinamento, pareceSemResposta, registrarLacuna } from "./marina";
 import { chaveDoProvedor, falarComAVozGravada } from "./voz";
-import { prepararFalaDaMarina } from "./voz-fala";
+import { prepararFalaDaMarina, textoSemBlocoDeFala } from "./voz-fala";
 import { abrirChamado, lerConfigEscalonamento, responderChamado, talvezProcessarPrazos, vinculoDaAbertura } from "./escalonamento";
 import type { ConfigEscalonamento } from "./escalonamento-base";
 import { registrarUso } from "./aprendizado";
@@ -183,14 +183,16 @@ async function atender(sql: Sql, cfg: ConfigEscalonamento, m: MensagemRecebida) 
 
   if (!resposta) { await enviarTextoMeta(m.de, INDISPONIVEL_WA); return; }
 
-  for (const parte of partirResposta(resposta)) {
+  /* O bloco [[tts:text]] vai só para o áudio; a pessoa lê a resposta sem ele. */
+  const legivel = textoSemBlocoDeFala(resposta) || resposta;
+  for (const parte of partirResposta(legivel)) {
     const envio = parte.tipo === "texto" ? await enviarTextoMeta(m.de, parte.texto) : await enviarMidiaMeta(m.de, parte);
     if (!envio.ok) console.error("[whatsapp-oficial] não saiu:", envio.erro);
   }
   if (veioAudio) await responderEmAudio(sql, m.de, resposta).catch((e) => console.error("[whatsapp-oficial] voz:", (e as Error).message));
 
-  const semResposta = pareceSemResposta(resposta);
-  await sql`INSERT INTO chat_mensagens (sessao, papel, conteudo, sem_resposta) VALUES (${sessao}, 'marina', ${resposta}, ${semResposta})`;
+  const semResposta = pareceSemResposta(legivel);
+  await sql`INSERT INTO chat_mensagens (sessao, papel, conteudo, sem_resposta) VALUES (${sessao}, 'marina', ${legivel}, ${semResposta})`;
   if (semResposta && cfg.ativo) {
     const contexto = anteriores.filter((x) => x.papel === "visitante" && x.conteudo !== texto).slice(-3).map((x) => x.conteudo.slice(0, 160)).join(" / ");
     const a = await abrirChamado(sql, { canal: "whatsapp", destino: m.de, pergunta: texto, contexto: contexto || null });

@@ -109,6 +109,12 @@ function responder(corpo) {
   let texto = achou.length
     ? "Pelo que a pousada me ensinou: " + achou.map((l) => l.trim()).join(" ") + (etapas.length ? "\n" + etapas.join("\n") : "")
     : "Não tenho essa informação ainda. Vou confirmar com a pousada.";
+  /* "[teste-tts]" na pergunta: responde como a skill de 04/11 manda — link
+     no texto e um bloco [[tts:text]] curto no fim, que o site não pode
+     mostrar à pessoa (só serve para o áudio). */
+  if (/\[teste-tts\]/.test(pergunta)) {
+    texto += " Para reservar: https://reservas.desbravador.com.br/hotel-app/marimar/reservation?roomCode=QUEEN [[tts:text]]Enviei o link de reserva aqui na conversa, é só tocar nele.[[/tts:text]]";
+  }
   // Modo teste do painel: devolve as fontes no formato que o painel espera.
   const codigos = [...new Set(achou.join(" ").match(/#[a-z0-9]{4,}/g) ?? [])];
   if (/FONTES:/.test(sistema)) texto += `\nFONTES: ${codigos.join(", ") || "nenhuma"}`;

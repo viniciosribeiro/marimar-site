@@ -41,3 +41,33 @@ test("voz: sem link nao altera respostas e valores existentes", () => {
   const t = "Para duas noites são R$ 780. O café da manhã está incluso.";
   assert.equal(prepararFalaDaMarina(t), t);
 });
+
+/* ── bloco de fala [[tts:text]] (skill de 04/11/2026) ───────────────── */
+import { separarFalaDaMarina, textoSemBlocoDeFala } from "../../src/lib/voz-fala";
+
+test("bloco de fala: a pessoa le a resposta sem o bloco e o audio fala so o bloco", () => {
+  const resposta = "Suíte Queen, 10 a 12/11: R$ 780.\nReserve aqui: https://reservas.desbravador.com.br/x?roomCode=QUEEN\n\n[[tts:text]]Encontrei a Suíte Queen, setecentos e oitenta reais. O link está na conversa.[[/tts:text]]";
+  const { texto, fala } = separarFalaDaMarina(resposta);
+  assert.equal(texto, "Suíte Queen, 10 a 12/11: R$ 780.\nReserve aqui: https://reservas.desbravador.com.br/x?roomCode=QUEEN");
+  assert.equal(fala, "Encontrei a Suíte Queen, setecentos e oitenta reais. O link está na conversa.");
+  assert.equal(prepararFalaDaMarina(resposta), fala);
+  assert.equal(textoSemBlocoDeFala(resposta), texto);
+});
+
+test("bloco de fala: URL escorregada dentro do bloco nao e narrada", () => {
+  const fala = prepararFalaDaMarina("Texto. [[tts:text]]Toque em https://reservas.desbravador.com.br/x para reservar.[[/tts:text]]");
+  assert.doesNotMatch(fala, /https|desbravador/);
+  assert.match(fala, /reservar/);
+});
+
+test("bloco de fala: bloco aberto no meio do streaming nao aparece na tela", () => {
+  assert.equal(textoSemBlocoDeFala("Encontrei opções. [[tts:text]]Encontrei op"), "Encontrei opções.");
+  assert.equal(textoSemBlocoDeFala("Encontrei opções. [[tts:te"), "Encontrei opções.");
+  assert.equal(textoSemBlocoDeFala("Encontrei opções. [[tts:text]]"), "Encontrei opções.");
+});
+
+test("bloco de fala: sem bloco, nada muda", () => {
+  const t = "Check-in às 14h e check-out às 12h.";
+  assert.deepEqual(separarFalaDaMarina(t), { texto: t, fala: null });
+  assert.equal(prepararFalaDaMarina(t), t);
+});

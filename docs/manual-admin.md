@@ -95,6 +95,19 @@ computador, na coluna da esquerda.
 - **Filtros**: "Sem legenda" e "Sem uso" mostram o que falta arrumar.
 - Selo **"WhatsApp: vai como link"** num vídeo: ele ficou grande demais para
   o WhatsApp; a Marina manda o link da página da suíte no lugar.
+- **Sincronizar com o Desbravador** (desde 04/11/2026): as fotos das suítes
+  você continua subindo **no Desbravador**, como sempre. O site copia de lá
+  sozinho (uma vez por dia e também quando alguém faz uma busca, no máximo de
+  hora em hora). Para não esperar, toque no botão **Sincronizar com o
+  Desbravador** (em "Todas as mídias" ou no álbum de uma suíte): a mensagem
+  diz quantas fotos entraram, quantas saíram e se alguma suíte está
+  desativada no site. Essas fotos levam o selo **"Do Desbravador"**: se você
+  trocar a foto lá, ela troca aqui; se excluir aqui sem tirar de lá, ela volta
+  na próxima sincronização. As fotos que você envia por aqui ficam como estão.
+- **Café da manhã, Restaurante, Praia, Eventos, A pousada:** essas fotos só
+  existem se alguém enviar aqui (o Desbravador não tem). A Marina manda no
+  WhatsApp as que estiverem com "A Marina pode enviar" ligado; sem nenhuma,
+  ela diz que a pousada ainda não cadastrou fotos dessa parte.
 
 ## Restaurante
 
@@ -394,3 +407,9 @@ Outras ferramentas do mapa:
 ### Integrações · Diagnóstico · Usuários
 Ligar o chat da Marina no site, testar o motor de reservas e ver quem tem
 acesso.
+O Diagnóstico tem o cartão **Agendadores**: se a Vercel tem a chave do
+agendador (`CRON_SECRET`), quando as fotos das suítes foram sincronizadas
+com o Desbravador pela última vez (e o resumo) e quando o vigia do WhatsApp
+rodou. "Sem chave" ali significa que a rodada diária automática está
+recusada — o botão em Mídias e a sincronização durante as buscas continuam
+funcionando; quem resolve é quem tem acesso à Vercel (`docs/runbook.md`).

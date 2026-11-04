@@ -97,6 +97,15 @@ marina_roteiro_etapas   id, roteiro_id → cascade, ordem, titulo, texto,
   roteiro (a Marina responde normalmente).
 - Excluir roteiro apaga as etapas, **nunca** as mídias.
 
+## De onde vem cada foto (migration 0022, 04/11/2026)
+
+`midias.origem`: `'painel'` (enviada aqui) ou `'desbravador'` (copiada do
+motor pela sincronização — `docs/fluxo-fotos-desbravador.md`). A
+sincronização só cria e apaga linhas `'desbravador'`; `url_origem` guarda o
+endereço no Desbravador para reconhecer a foto depois de espelhada no Blob.
+Fotos das seções (café, restaurante, praia…) são sempre do painel e saem
+para a Marina por `/api/agent/fotos` + `/api/midia-secao/[secao]/[indice]`.
+
 ## Como a Marina recebe e manda
 
 | Canal | De onde vem | O que manda |

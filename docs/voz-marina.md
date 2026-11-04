@@ -146,3 +146,23 @@ Teste unitário sem custo: \`npm test\`, arquivo
 link da reserva, confirme que o texto contém o endereço completo e que
 a resposta falada tem somente uma frase curta.
 
+## Bloco de fala `[[tts:text]]` nos três canais (04/11/2026)
+
+O OpenClaw QR fala a resposta final inteira (até 1500 caracteres, depois
+resume). A instrução "não ler o link" não bastava: a Marina obedecia no
+texto e o gateway sintetizava tudo. Agora:
+
+- **Skill** (`marimar-pousada`, "Voz econômica"): toda resposta com link,
+  preço ou mais de duas frases termina com `[[tts:text]]frase curta
+  [[/tts:text]]` (<180 caracteres, sem URL). O OpenClaw fala só o bloco.
+  Reinstalar a skill na Hostinger; `settings/tts.json` com `maxLength: 240`
+  como rede de segurança (`docs/runbook.md`, "Fala curta no WhatsApp QR").
+- **Site e API oficial** (`src/lib/voz-fala.ts`): `separarFalaDaMarina()`
+  devolve `{ texto, fala }`; `textoSemBlocoDeFala()` é o que a pessoa lê
+  (chat do site, mensagem da Meta, revisão do painel); `prepararFalaDaMarina()`
+  usa o bloco quando existe — passando pela mesma remoção de URL e limite.
+  Durante o streaming, um `[[tts:te` incompleto também não aparece.
+- Testes: `testes/unit/voz-fala.test.ts` (bloco, URL dentro do bloco,
+  streaming parcial, sem bloco nada muda), `testes/unit/skill-marina.test.mjs`,
+  e o chat do site em `testes/e2e-fotos-sync.mjs` (gateway simulado responde
+  com bloco quando a pergunta tem `[teste-tts]`).

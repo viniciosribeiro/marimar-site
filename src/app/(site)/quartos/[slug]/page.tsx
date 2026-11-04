@@ -33,9 +33,14 @@ export default async function QuartoDetailPage({ params }: { params: Promise<{ s
     if (found) preco = found;
   }
 
+  /* Sem foto própria, as do motor (mesma regra dos cards da busca); a
+     sincronização traz essas fotos para a biblioteca na próxima rodada. */
+  const fotosMotor: string[] = Array.isArray(preco?.fotos) ? preco.fotos.filter((u: unknown) => typeof u === "string" && !!u) : [];
   const galleryImages = fotos.length > 0
     ? fotos.map((f: any) => ({ url: f.url, alt: f.alt }))
-    : [{ url: "", alt: q.nome }];
+    : fotosMotor.length > 0
+      ? fotosMotor.map((url) => ({ url, alt: q.nome }))
+      : [{ url: "", alt: q.nome }];
 
   const wa = digitosWhatsApp(p?.whatsapp);
   const waMsg = `Olá! Tenho interesse no quarto *${q.nome}* da Pousada Marimar.`;

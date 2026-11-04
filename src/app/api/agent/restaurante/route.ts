@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
 
   return Response.json({
     ok: true,
+    fotos: "Fotos do café da manhã e do restaurante: GET /api/agent/fotos?secao=cafe e ?secao=restaurante (url_whatsapp para anexar).",
     dados: { restaurante: RESTAURANTE, cafe_da_manha: CAFE_DA_MANHA, cardapio: categorias },
     resumo_texto: linhas.join("\n"),
     fonte: "local",
