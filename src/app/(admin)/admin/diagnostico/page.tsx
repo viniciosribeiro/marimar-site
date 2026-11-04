@@ -10,6 +10,7 @@ import { chaveDoProvedor, lerOpcoesVoz } from "@/lib/voz";
 import { PROVEDOR, type Provedor } from "@/lib/voz-base";
 import { ultimaSincronizacao, type ResumoSincronizacao } from "@/lib/sincronizar-fotos-desbravador";
 import { lerMemoria } from "@/lib/whatsapp-vigia";
+import { colunasDaMigration0022 } from "@/lib/esquema-midias";
 import { MEMORIA_VAZIA, type MemoriaVigia } from "@/lib/whatsapp-saude";
 import { Pagina, Cabecalho, Cartao, Indicador, Aviso, Selo, quandoFoi } from "@/components/admin/ui";
 
@@ -32,7 +33,7 @@ async function testarMotor() {
    CRON_SECRET; sem ela, a chamada diária é recusada e só a sincronização
    "de carona" (nas buscas de /reservar) e o botão do painel funcionam.
    Fora do componente porque lê o relógio. */
-function listarAgendadores(fotos: { em: Date; resumo: ResumoSincronizacao } | null, vigia: MemoriaVigia) {
+function listarAgendadores(fotos: { em: Date; resumo: ResumoSincronizacao } | null, vigia: MemoriaVigia, colunas0022: boolean) {
   const cronSecret = process.env.CRON_SECRET ?? "";
   const cronOk = cronSecret.length >= 16;
   const diaMs = 24 * 3600_000;
@@ -42,11 +43,19 @@ function listarAgendadores(fotos: { em: Date; resumo: ResumoSincronizacao } | nu
   return [
     {
       nome: "Agendador da Vercel (CRON_SECRET)",
-      tom: cronOk ? "sucesso" : "aviso",
-      valor: cronOk ? "configurado" : "sem chave",
+      tom: cronOk ? "sucesso" : "neutro",
+      valor: cronOk ? "configurado" : "opcional",
       ajuda: cronOk
-        ? "a Vercel chama /api/cron/sincronizar-fotos todo dia às 12:00 UTC (9h de Brasília)"
-        : "crie CRON_SECRET (16+ caracteres) na Vercel e faça Redeploy — até lá a rodada diária é recusada; o botão em Mídias e a carona nas buscas continuam funcionando",
+        ? "a Vercel chama /api/cron/sincronizar-fotos todo dia às 12:00 UTC (9h de Brasília) com a chave e recebe o resumo"
+        : "não é obrigatória: a rodada diária da Vercel roda mesmo sem ela, em segundo plano (no máximo 1 vez por hora, como nas buscas). Com a chave, a resposta do agendador traz o resumo",
+    },
+    {
+      nome: "Colunas das fotos (migration 0022)",
+      tom: colunas0022 ? "sucesso" : "aviso",
+      valor: colunas0022 ? "aplicadas" : "pendentes",
+      ajuda: colunas0022
+        ? "midias.origem e midias.url_origem existem — o site sabe de onde veio cada foto"
+        : "o site aplica sozinho na primeira sincronização ou ao abrir Mídias; nada a fazer",
     },
     {
       nome: "Fotos das suítes sincronizadas com o Desbravador",
@@ -86,6 +95,7 @@ export default async function DiagnosticoPage() {
   let voz: { provedor: Provedor; pronta: boolean; transcricao: boolean } = { provedor: "elevenlabs", pronta: false, transcricao: false };
   let fotos: { em: Date; resumo: ResumoSincronizacao } | null = null;
   let vigia: MemoriaVigia = MEMORIA_VAZIA;
+  let colunas0022 = false;
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false, connect_timeout: 5 });
     antigas = await contarDominioAntigo(sql);
@@ -98,6 +108,7 @@ export default async function DiagnosticoPage() {
     };
     fotos = await ultimaSincronizacao(sql).catch(() => null);
     vigia = await lerMemoria(sql).catch(() => MEMORIA_VAZIA);
+    colunas0022 = await colunasDaMigration0022(sql).catch(() => false);
     await sql.end();
   } catch { banco = false; }
 
@@ -110,7 +121,7 @@ export default async function DiagnosticoPage() {
     { nome: "Motor de reservas", ok: Boolean(process.env.WORKER_BASE_URL), ajuda: "WORKER_BASE_URL e WORKER_SLUG" },
   ];
 
-  const agendadores = listarAgendadores(fotos, vigia);
+  const agendadores = listarAgendadores(fotos, vigia, colunas0022);
 
   return (
     <Pagina larga>

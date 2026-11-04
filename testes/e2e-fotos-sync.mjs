@@ -47,16 +47,25 @@ try {
   await sql`DELETE FROM quartos WHERE desbravador_room_id = 'NOVAMOTOR'`;
   await sql`DELETE FROM integracoes WHERE chave = 'fotos_sync'`;
   await sql`DELETE FROM midias WHERE alt = 'Café da manhã (teste e2e)'`;
+  await sql`DELETE FROM chat_mensagens WHERE conteudo LIKE '%[teste-tts]%'`.catch(() => {});
   await sql`INSERT INTO midias (url, alt, tipo, secao, ordem, visivel_marina, titulo)
     VALUES ('https://teste.public.blob.vercel-storage.com/cafe-e2e.jpg', 'Café da manhã (teste e2e)', 'foto', 'cafe', 0, true, 'Mesa do café')`;
   const [{ n: doPainelAntes }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'painel'`;
 
   await ligarMotor();
 
-  /* 1. O agendador recusa sem chave e roda com a AGENT_API_KEY. */
-  ok((await json("/api/cron/sincronizar-fotos", {})).status === 401, "agendador sem chave: 401");
-  const r1 = await json("/api/cron/sincronizar-fotos");
-  ok(r1.status === 200 && r1.corpo?.ok === true, "agendador com a chave da Marina roda", JSON.stringify(r1.corpo));
+  /* 1. Sem chave (como a Vercel chama sem CRON_SECRET), o agendador roda em
+     segundo plano, uma vez por hora — igual a uma busca no site. */
+  const semChave = await json("/api/cron/sincronizar-fotos", {});
+  ok(semChave.status === 202 && semChave.corpo?.modo === "carona" && semChave.corpo?.ultima_em === null, "agendador sem chave: 202, rodada em segundo plano", JSON.stringify(semChave.corpo));
+  let gravado = null;
+  for (let i = 0; i < 60 && !gravado; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    [gravado] = await sql`SELECT valor FROM integracoes WHERE chave = 'fotos_sync'`;
+  }
+  ok(Boolean(gravado), "a rodada em segundo plano concluiu e ficou registrada");
+  const r1 = { status: 200, corpo: gravado ? { ok: true, ...JSON.parse(gravado.valor) } : null };
+  ok((await json("/api/cron/sincronizar-fotos", {})).corpo?.ultima_em !== null, "sem chave de novo: só informa a hora da última rodada (e não roda antes de 1 h)");
   ok(r1.corpo?.suites_motor === 4, "4 suítes vistas no motor", String(r1.corpo?.suites_motor));
   ok(r1.corpo?.fotos_novas === 8 && r1.corpo?.fotos_removidas === 0, "8 fotos novas (2 por suíte), nenhuma removida", `${r1.corpo?.fotos_novas}/${r1.corpo?.fotos_removidas}`);
   ok(r1.corpo?.espelho === "sem_blob", "sem BLOB_READ_WRITE_TOKEN: fotos apontam para o Desbravador (e o resumo diz isso)");
@@ -71,8 +80,9 @@ try {
   const [{ n: daRede }] = await sql`SELECT COUNT(*)::int AS n FROM midias m JOIN quartos q ON q.id = m.quarto_id WHERE q.desbravador_room_id = 'SR' AND m.origem = 'desbravador'`;
   ok(daRede === 2, "a suíte desativada também recebe as fotos (prontas para quando for ativada)", String(daRede));
 
-  /* 2. Rodar de novo não duplica. */
+  /* 2. Com a chave da Marina roda na hora, devolve o resumo e não duplica. */
   const r2 = await json("/api/cron/sincronizar-fotos");
+  ok(r2.status === 200 && r2.corpo?.modo === "imediato", "agendador com a chave da Marina roda na hora e devolve o resumo", JSON.stringify(r2.corpo));
   ok(r2.corpo?.fotos_novas === 0 && r2.corpo?.fotos_ja_presentes === 8 && r2.corpo?.fotos_removidas === 0, "segunda rodada: nada novo, nada removido, nada duplicado", JSON.stringify(r2.corpo));
 
   /* 3. O site mostra as fotos: página da suíte (ativa), galeria sem link para inativa. */
@@ -102,6 +112,8 @@ try {
   ok(indice.corpo?.resumo_texto?.includes("/api/agent/fotos"), "o índice de fontes da Marina lista a rota de fotos");
   const openapi = await fetch(`${BASE}/api/agent/openapi`).then((r) => r.json());
   ok(Boolean(openapi?.paths?.["/api/agent/fotos"]), "OpenAPI descreve /api/agent/fotos");
+  const conhecimento = await json("/api/agent/conhecimento");
+  ok(/REGRAS DO CANAL WHATSAPP/.test(conhecimento.corpo?.resumo_texto ?? "") && /\[\[tts:text\]\]/.test(conhecimento.corpo?.resumo_texto ?? "") && /secao=cafe/.test(conhecimento.corpo?.resumo_texto ?? ""), "o WhatsApp lê as regras novas (bloco de fala, fotos por seção, link da suíte) pelo treinamento do site");
   const restaurante = await json("/api/agent/restaurante");
   ok(/api\/agent\/fotos\?secao=cafe/.test(JSON.stringify(restaurante.corpo ?? {})), "rota do restaurante aponta para as fotos do café");
 
@@ -145,7 +157,8 @@ try {
     await pag.goto(`${BASE}/admin/diagnostico`);
     const diag = await pag.content();
     ok(diag.includes("Agendadores") && diag.includes("Fotos das suítes sincronizadas com o Desbravador"), "Diagnóstico mostra os agendadores e a última sincronização");
-    ok(diag.includes("Agendador da Vercel (CRON_SECRET)") && (process.env.CRON_SECRET ? diag.includes("configurado") : diag.includes("sem chave")), "Diagnóstico diz se a CRON_SECRET existe (sem mostrar o valor)");
+    ok(diag.includes("Agendador da Vercel (CRON_SECRET)") && (process.env.CRON_SECRET ? diag.includes("configurado") : diag.includes("opcional")), "Diagnóstico diz se a CRON_SECRET existe (sem mostrar o valor) e que ela é opcional");
+    ok(diag.includes("Colunas das fotos (migration 0022)") && diag.includes("aplicadas"), "Diagnóstico mostra as colunas da 0022 como aplicadas");
     ok(diag.includes("4 suítes no motor"), "Diagnóstico resume a última rodada");
 
     /* Chat do site: a Marina responde com link + bloco de fala; a pessoa lê sem o bloco. */
@@ -162,6 +175,8 @@ try {
     ok(/Para reservar/.test(conversa), "o resto da resposta (com o link) aparece normalmente");
     const [ultima] = await sql`SELECT conteudo FROM chat_mensagens WHERE papel = 'marina' ORDER BY criado_em DESC LIMIT 1`;
     ok(ultima && !ultima.conteudo.includes("[[tts:text]]") && /Para reservar/.test(ultima.conteudo), "a revisão do painel grava a resposta sem o bloco");
+    const ultimaDoGateway = await fetch("http://localhost:4010/__ultima").then((r) => r.text()).catch(() => "");
+    ok(ultimaDoGateway.length > 0 && !ultimaDoGateway.includes("REGRAS DO CANAL WHATSAPP"), "o chat do site não recebe as regras do WhatsApp");
     ok(errosPagina.length === 0, "sem erro de script nas páginas", errosPagina.join(" | "));
     await ctx.close();
   } finally { await nav.close(); }

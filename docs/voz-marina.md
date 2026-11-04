@@ -166,3 +166,8 @@ texto e o gateway sintetizava tudo. Agora:
   streaming parcial, sem bloco nada muda), `testes/unit/skill-marina.test.mjs`,
   e o chat do site em `testes/e2e-fotos-sync.mjs` (gateway simulado responde
   com bloco quando a pergunta tem `[teste-tts]`).
+- **Sem reinstalar a skill (04/11, parte 2):** a mesma regra do bloco entra
+  no texto que a Marina do WhatsApp lê em `/api/agent/conhecimento`
+  (`src/lib/marina-regras-canal.ts`). O OpenClaw 2026.9.4 já fala só o
+  bloco quando ele existe, então o áudio encurta assim que a Marina reler o
+  treinamento (até 15 min). `tts.json` vira rede de segurança.

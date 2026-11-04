@@ -1,4 +1,5 @@
 import type postgres from "postgres";
+import { garantirEsquemaMidias } from "./esquema-midias";
 import { SECOES_FOTO, nomeSecao } from "./fotos";
 
 /**
@@ -36,6 +37,7 @@ export const albumDe = (m: { secao: string; quarto_id: string | null }) =>
 export async function lerBiblioteca(sql: Sql) {
   /* Colunas da 0018 com fallback: a tela abre antes da migration também. */
   let linhas: Omit<MidiaBiblioteca, "usos">[] = [];
+  await garantirEsquemaMidias(sql).catch(() => {});
   try {
     linhas = await sql<Omit<MidiaBiblioteca, "usos">[]>`
       SELECT id, url, tipo, alt, titulo, descricao, secao, quarto_id, destaque, ordem,

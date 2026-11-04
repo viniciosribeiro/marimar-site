@@ -1,4 +1,5 @@
 import { comSql, type Sql } from "@/lib/db-conexao";
+import { garantirEsquemaMidias } from "./esquema-midias";
 import { fetchTarifas, type WorkerQuarto } from "@/lib/worker";
 import { datasExemplo } from "@/lib/format";
 import { origemFotoPermitida } from "@/lib/foto-whatsapp";
@@ -117,6 +118,8 @@ export async function sincronizarFotosDoMotor(opcoes: { espelhar?: boolean } = {
   if (!motor.length) throw new Error("O motor não devolveu suítes; nenhuma foto foi alterada.");
 
   return comSql(async (sql) => {
+    /* As colunas da 0022, se o banco ainda não as tiver (src/lib/esquema-midias.ts). */
+    await garantirEsquemaMidias(sql);
     /* Uma rodada por vez (o botão e o agendador podem coincidir). */
     const [trava] = await sql<{ livre: boolean }[]>`SELECT pg_try_advisory_lock(20261102) AS livre`;
     if (!trava?.livre) throw new Error("Já há uma sincronização de fotos em andamento.");
@@ -214,9 +217,6 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
   }
 
   await apagarDoBlob(paraApagarDoBlob);
-  await sql`
-    INSERT INTO integracoes (chave, valor, atualizado_em) VALUES ('fotos_sync', ${JSON.stringify(resumo)}, now())
-    ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor, atualizado_em = now()`.catch(() => {});
   if (resumo.suites_criadas.length) {
     resumo.avisos.push(`Suíte(s) nova(s) criada(s) desativada(s), para revisar no painel: ${resumo.suites_criadas.join(", ")}.`);
   }
@@ -226,6 +226,10 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
   if (resumo.espelho === "sem_blob" && resumo.fotos_novas) {
     resumo.avisos.push("Sem BLOB_READ_WRITE_TOKEN na Vercel, as fotos ficam apontando para o servidor do Desbravador.");
   }
+  /* Gravado por último, com os avisos: é o que o Diagnóstico mostra. */
+  await sql`
+    INSERT INTO integracoes (chave, valor, atualizado_em) VALUES ('fotos_sync', ${JSON.stringify(resumo)}, now())
+    ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor, atualizado_em = now()`.catch(() => {});
   return resumo;
 }
 
@@ -237,10 +241,13 @@ export async function ultimaSincronizacao(sql: Sql): Promise<{ em: Date; resumo:
   try { return { em: new Date(l.atualizado_em), resumo: JSON.parse(l.valor) }; } catch { return null; }
 }
 
-/* De carona, no máximo uma vez por hora, sem atrasar quem está buscando. */
+/* De carona, no máximo uma vez por hora (pela hora gravada no banco), sem
+   atrasar quem está buscando. A memória do processo só evita perguntar ao
+   banco a cada busca numa rajada; quem decide é o banco. */
 let ultimaCarona = 0;
+const INTERVALO_CARONA_PROCESSO_MS = 60_000;
 export async function talvezSincronizarFotos(sql: Sql): Promise<void> {
-  if (Date.now() - ultimaCarona < INTERVALO_CARONA_MS) return;
+  if (Date.now() - ultimaCarona < INTERVALO_CARONA_PROCESSO_MS) return;
   ultimaCarona = Date.now();
   try {
     const ultima = await ultimaSincronizacao(sql);

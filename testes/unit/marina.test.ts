@@ -90,3 +90,19 @@ test("divide documento longo em trechos de tamanho de leitura", () => {
   assert.ok(t.length >= 3);
   assert.ok(t.every((x) => x.length <= 800));
 });
+
+/* ── regras do canal WhatsApp servidas pelo site (04/11/2026) ─────────── */
+test("whatsapp le as regras do canal pelo treinamento, sem reinstalar a habilidade", () => {
+  const w = ensinamentosEmTexto(CONFIG_PADRAO, { fatos: [], limites: [] }, { canal: "whatsapp" });
+  assert.match(w, /REGRAS DO CANAL WHATSAPP/);
+  assert.match(w, /\[\[tts:text\]\]frase curta\[\[\/tts:text\]\]/);
+  assert.match(w, /\/api\/agent\/fotos\?secao=cafe/);
+  assert.match(w, /link_reserva|deep_link/);
+  assert.doesNotMatch(w, /https?:\/\//, "as regras nao trazem URL para a Marina copiar");
+});
+
+test("o chat do site nao recebe as regras do WhatsApp (sem audio, sem ferramenta message)", () => {
+  const s = ensinamentosEmTexto(CONFIG_PADRAO, { fatos: [], limites: [] }, { canal: "site" });
+  assert.doesNotMatch(s, /tts:text|REGRAS DO CANAL WHATSAPP/);
+  assert.equal(ensinamentosEmTexto(CONFIG_PADRAO, { fatos: [], limites: [] }), "");
+});
