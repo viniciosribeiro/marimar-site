@@ -50,6 +50,21 @@ Uma rodada (`sincronizarFotosDoMotor()`):
      `integracoes.fotos_sync_ausentes`). Em 04/11 o motor devolveu a mesma
      suíte ora com 4 fotos novas, ora só com a antiga, em rodadas seguidas.
      Fotos com `origem = 'painel'` **nunca** são tocadas.
+   - **O motor voltou atrás** (desde 04/11, parte 14 — `src/lib/fotos-motor-historico.ts`):
+     por suíte, o site guarda a lista em vigor, cada lista que o motor já
+     devolveu (com a hora em que apareceu pela primeira vez) e as URLs já
+     vistas (`integracoes.fotos_sync_historico`). Lista com foto nunca vista
+     → entra (a pousada subiu foto). Lista que o motor mostrou pela primeira
+     vez **antes** da lista em vigor → **ignorada**: o site mantém a mais
+     recente (`suites_lista_antiga` no resumo, nota na suíte, aviso). Lista só
+     com fotos conhecidas mas nunca vista como conjunto (foto retirada) →
+     entra, com a carência. Lista vazia → nunca apaga sozinha. O botão do
+     painel e `?forcar=1` (com chave) aplicam a lista atual do motor sem
+     apagar a memória.
+   - **Cópias reconferidas:** até 8 por rodada, `HEAD` no endereço original e
+     comparação do tamanho com `midias.bytes`; mudou → copiada de novo
+     (`fotos_conferidas`/`fotos_trocadas`). Foto trocada no Desbravador com o
+     mesmo nome de arquivo deixa de ficar velha no site.
 4. Grava o resumo em `integracoes.fotos_sync` (lido pelo Diagnóstico).
 
 Quando roda:
@@ -133,6 +148,15 @@ seções da biblioteca. Agora:
   foto é inserida individualmente).
 - O motor é consultado com uma data exemplo; um tipo que o motor só devolve
   em outra época do ano entra quando ela chegar.
+- O motor **volta atrás** às vezes (04/11/2026: 4 fotos novas da STANDARD
+  FAMILIA das 16:05 às 16:33 UTC; só a antiga desde 17:35, para qualquer
+  período). A memória acima segura isso, mas o site só recebe a lista nova
+  quando o motor voltar a devolvê-la. Se a lista antiga trouxer fotos que o
+  site nunca teve, ela entra como "nova" (a memória nasce do que o site tem
+  no primeiro deploy); o botão corrige.
+- A conferência de bytes depende de o Desbravador responder `HEAD` ao site
+  (`gru1`); se `fotos_conferidas` ficar sempre 0 em produção, trocar por um
+  `GET` curto.
 
 ## As regras chegam à Marina sem reinstalar a skill (04/11, parte 2)
 

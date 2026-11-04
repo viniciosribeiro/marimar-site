@@ -37,7 +37,8 @@ async function lerDados() {
   const vazio = {
     suites: [] as Suite[], totalSuites: 0, perguntas: [] as Pergunta[],
     fotos: {} as Record<string, { url: string; alt: string }>, banners: [] as Banner[],
-    heroMidia: null as { url: string; alt: string } | null, itens: {} as Record<string, ItemBloco[]>,
+    heroMidia: null as { url: string; alt: string } | null, capaAlbum: null as { url: string; alt: string } | null,
+    itens: {} as Record<string, ItemBloco[]>,
     conteudo: padroes() as Conteudo, regras: REGRAS_PADRAO as Regras,
     escondidos: new Set<string>(), heroBloco: null as string | null,
   };
@@ -59,10 +60,17 @@ async function lerDados() {
         SELECT DISTINCT ON (secao) secao, url, alt FROM midias
         WHERE quarto_id IS NULL AND tipo = 'foto'
         ORDER BY secao, destaque DESC, ordem, criado_em`.catch(() => []);
-      /* A foto do topo: a capa do álbum Praia e ilha; sem ela, a do álbum
-         A pousada (Fotos e vídeos → estrela "Usar como capa do álbum"). Entre
-         fotos sem capa, a mais larga — a foto do topo ocupa a tela inteira. */
+      /* A foto do topo é A MESMA do Clássico (pedido do proprietário em
+         04/11/2026: o banner cadastrado no painel tem que aparecer): a foto
+         em destaque da biblioteca, como a home do Clássico escolhe
+         (src/app/(site)/page.tsx). O banner ativo e a imagem do bloco
+         "hero" vêm antes dela, na mesma ordem do Clássico (ver HomeNovo). */
       const [heroMidia] = await sql<{ url: string; alt: string }[]>`
+        SELECT url, alt FROM midias WHERE destaque = true AND tipo = 'foto' AND secao <> 'orientacao'
+        ORDER BY (quarto_id IS NULL) DESC, ordem LIMIT 1`.catch(() => []);
+      /* Só quando o Clássico não teria foto nenhuma: a capa do álbum Praia e
+         ilha (senão A pousada), a mais larga — melhor que o topo sem foto. */
+      const [capaAlbum] = await sql<{ url: string; alt: string }[]>`
         SELECT url, alt FROM midias
         WHERE quarto_id IS NULL AND tipo = 'foto' AND secao IN ('praia', 'pousada')
         ORDER BY (secao = 'praia') DESC, destaque DESC, largura DESC NULLS LAST, ordem, criado_em LIMIT 1`.catch(() => []);
@@ -78,7 +86,7 @@ async function lerDados() {
       return {
         suites: suites.slice(0, 6), totalSuites: suites.length, perguntas,
         fotos: Object.fromEntries(fotosSecao.map((f) => [f.secao, { url: f.url, alt: f.alt }])),
-        banners: banners.map((b) => lerBanner(b)), heroMidia: heroMidia ?? null,
+        banners: banners.map((b) => lerBanner(b)), heroMidia: heroMidia ?? null, capaAlbum: capaAlbum ?? null,
         itens: agruparItens([...itensBlocos]),
         conteudo: await lerConteudo(sql), regras: await lerRegras(sql),
         escondidos: new Set(blocos.filter((b) => b.ativo === false).map((b) => b.tipo)),
@@ -120,11 +128,14 @@ export async function HomeNovo() {
   const [d, p, visita] = await Promise.all([lerDados(), lerPousada(), modeloDaVisita()]);
   const wa = digitosWhatsApp(p?.whatsapp) || CONTATO.whatsappDigitos;
   const banner = d.banners[0] ?? null;
-  /* O banner do painel costuma ser uma foto pequena (o de 04/11 tem 945 px):
-     no topo de tela inteira ele só entra se não houver foto de praia ou da pousada. */
-  const foto = d.heroBloco || d.heroMidia?.url || banner?.imagem_url || p?.og_image_url || null;
-  const fotoAlt = (banner && foto === banner.imagem_url ? banner.alt : null) || d.heroMidia?.alt || "Encantadas, Ilha do Mel";
-  const foco = banner && foto === banner.imagem_url ? `${banner.foco_x ?? 50}% ${banner.foco_y ?? 50}%` : "50% 50%";
+  /* A foto do topo segue a MESMA ordem do Clássico (decisão do proprietário,
+     04/11/2026): o banner ativo do painel (o primeiro, com o seu enquadramento),
+     senão a imagem do bloco "hero", senão a foto em destaque da biblioteca,
+     senão a imagem de compartilhamento; só sem nada disso, a capa do álbum. */
+  const foto = banner?.imagem_url || d.heroBloco || d.heroMidia?.url || p?.og_image_url || d.capaAlbum?.url || null;
+  const doBanner = !!banner?.imagem_url && foto === banner.imagem_url;
+  const fotoAlt = (doBanner ? banner?.alt : null) || (foto === d.heroMidia?.url ? d.heroMidia?.alt : null) || (foto === d.capaAlbum?.url ? d.capaAlbum?.alt : null) || "Encantadas, Ilha do Mel";
+  const foco = doBanner ? `${banner?.foco_x ?? 50}% ${banner?.foco_y ?? 50}%` : "50% 50%";
   const regraCriancas = d.regras.idadeColoMax !== null ? { idadeColoMax: d.regras.idadeColoMax } : null;
   const ver = (tipo: string) => !d.escondidos.has(tipo);
   const T = d.conteudo.TRAVESSIA;

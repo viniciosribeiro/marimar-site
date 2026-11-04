@@ -173,6 +173,37 @@ try {
       conferir(`${nome}: sem erro de JavaScript`, erros.length === 0, erros.join(" | "));
       await ctx.close();
     }
+
+    console.log("7. A foto do topo do Novo é a mesma do Clássico (pedido do proprietário, 04/11)");
+    const COOKIE = `marimar_previa=${assinar("previa", Date.now() + 86_400_000)}; marimar_ver=novo`;
+    /* A primeira imagem do topo (seção `data-topo-imersivo`), decodificada de /_next/image?url=… */
+    const fotoDoTopo = (html) => {
+      const i = html.indexOf("data-topo-imersivo");
+      const trecho = i >= 0 ? html.slice(i, i + 6000) : "";
+      const m = trecho.match(/<img[^>]*?\s(?:src|srcSet)="([^"\s]+)/);
+      if (!m) return null;
+      const u = m[1].replace(/&amp;/g, "&");
+      const q = u.match(/[?&]url=([^&]+)/);
+      return q ? decodeURIComponent(q[1]) : u;
+    };
+    const altDoTopo = (html) => { const i = html.indexOf("data-topo-imersivo"); const m = html.slice(i, i + 6000).match(/<img[^>]*?\salt="([^"]*)"/); return m ? m[1] : null; };
+    const htmlClassico = await pagina("/");
+    const htmlNovo = await pagina("/", COOKIE);
+    const topoClassico = fotoDoTopo(htmlClassico), topoNovo = fotoDoTopo(htmlNovo);
+    conferir("sem banner: o topo do Novo usa a mesma foto que o Clássico (foto em destaque)", !!topoNovo && topoNovo === topoClassico, `${topoClassico} × ${topoNovo}`);
+    const [banner] = await sql`
+      INSERT INTO banners (titulo, imagem_url, alt, ordem, ativo, foco_x, foco_y)
+      VALUES ('Banner de teste E2E', '/__teste/praia.jpg', 'Banner de teste E2E', -100, true, 30, 70) RETURNING id`;
+    try {
+      const comBannerClassico = fotoDoTopo(await pagina("/"));
+      const novoComBanner = await pagina("/", COOKIE);
+      const comBannerNovo = fotoDoTopo(novoComBanner);
+      conferir("com banner ativo no painel: o Clássico mostra o banner no topo", comBannerClassico === "/__teste/praia.jpg", String(comBannerClassico));
+      conferir("e o Novo mostra o MESMO banner", comBannerNovo === "/__teste/praia.jpg" && altDoTopo(novoComBanner) === "Banner de teste E2E", `${comBannerNovo} alt=${altDoTopo(novoComBanner)}`);
+      conferir("com o enquadramento do banner (ponto focal)", /object-position:\s*30% 70%/.test(novoComBanner));
+    } finally {
+      await sql`DELETE FROM banners WHERE id = ${banner.id}`;
+    }
   } finally { await nav.close(); }
 } finally {
   await sql`UPDATE pousada SET modelo_site = ${antes ? sql.json(antes) : null}`.catch(() => {});

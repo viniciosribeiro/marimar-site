@@ -46,7 +46,7 @@ try {
      e uma foto do café subida "pelo painel" (que a sincronização não pode tocar). */
   await sql`DELETE FROM midias WHERE origem = 'desbravador'`;
   await sql`DELETE FROM quartos WHERE desbravador_room_id = 'NOVAMOTOR'`;
-  await sql`DELETE FROM integracoes WHERE chave IN ('fotos_sync', 'fotos_sync_erro', 'fotos_sync_ausentes', 'openclaw_audio_curto')`;
+  await sql`DELETE FROM integracoes WHERE chave IN ('fotos_sync', 'fotos_sync_erro', 'fotos_sync_ausentes', 'fotos_sync_historico', 'openclaw_audio_curto')`;
   /* Como em produção em 04/11: SR desligada no site embora o motor venda; CASAL ligada. */
   await sql`UPDATE quartos SET ativo = false WHERE desbravador_room_id = 'SR'`;
   await sql`UPDATE quartos SET ativo = true WHERE desbravador_room_id = 'CASAL'`;
@@ -62,6 +62,11 @@ try {
   await sql`INSERT INTO midias (url, alt, tipo, secao, ordem, visivel_marina, titulo)
     VALUES ('https://teste.public.blob.vercel-storage.com/cafe-e2e.jpg', 'Café da manhã (teste e2e)', 'foto', 'cafe', 0, true, 'Mesa do café')`;
   const [{ n: doPainelAntes }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'painel'`;
+  /* Foto enviada pelo painel fica sempre: o site tem as do motor MAIS essas. */
+  const painelPor = Object.fromEntries((await sql`
+    SELECT upper(q.desbravador_room_id) AS codigo, COUNT(*)::int AS n FROM midias m JOIN quartos q ON q.id = m.quarto_id
+    WHERE m.tipo = 'foto' AND m.origem <> 'desbravador' GROUP BY 1`).map((l) => [l.codigo, l.n]));
+  const emDia = (d) => d.site_depois === d.motor + (painelPor[d.codigo] ?? 0);
 
   await ligarMotor();
 
@@ -75,7 +80,7 @@ try {
   const publico = await json("/api/cron/sincronizar-fotos", {});
   ok(publico.status === 202 && publico.corpo?.ultima_em !== null, "sem chave de novo: 202, só informa a última rodada (não roda antes de 1 h)", String(publico.status));
   const porSuite = Object.fromEntries((publico.corpo?.ultimo_resumo?.suites ?? []).map((d) => [d.codigo, d]));
-  ok(porSuite.FAM?.motor === 2 && porSuite.FAM?.site_depois === 2 && porSuite.FAM?.novas === 2 && porSuite.FAM?.ativo === true, "resumo público diz, por suíte, quantas fotos o motor tem e quantas o site tem (FAM)", JSON.stringify(porSuite.FAM));
+  ok(porSuite.FAM?.motor === 2 && emDia(porSuite.FAM) && porSuite.FAM?.novas === 2 && porSuite.FAM?.ativo === true, "resumo público diz, por suíte, quantas fotos o motor tem e quantas o site tem (FAM)", JSON.stringify(porSuite.FAM));
   ok(porSuite.SR?.nota === "ativada: o motor vende" && porSuite.NOVAMOTOR?.nota === "cadastro criado (o motor vende)", "resumo público marca a suíte religada e a criada", JSON.stringify([porSuite.SR, porSuite.NOVAMOTOR]));
   ok(publico.corpo?.ultimo_erro === null, "sem erro registrado quando a rodada concluiu");
   ok(r1.corpo?.suites_motor === 4, "4 suítes vistas no motor", String(r1.corpo?.suites_motor));
@@ -154,18 +159,22 @@ try {
   ok(r3.corpo?.suites_desativadas?.includes("CASAL STANDARD"), "suíte que o motor parou de vender é desligada do site", JSON.stringify(r3.corpo?.suites_desativadas));
   ok((await fetch(`${BASE}/quartos/casal-standard`)).status === 404, "a suíte desligada sai do site");
   ok((await json("/api/cron/sincronizar-fotos", {})).corpo?.ultimo_erro === null, "rodada que concluiu limpa o erro anterior");
-  /* Motor "piscando": a foto antiga volta antes da carência → nada é apagado. */
+  /* O motor VOLTA ATRÁS (devolve a lista antiga, como fez de verdade em
+     04/11/2026): a lista é ignorada — nada entra, as fotos novas ficam e as
+     antigas continuam ausentes (saem quando a carência passar). */
   await ligarMotor({ SIM_SEM_CASAL: "1" });
   const r3p = await json("/api/cron/sincronizar-fotos");
-  ok(r3p.corpo?.fotos_removidas === 0 && r3p.corpo?.fotos_aguardando_remocao === 3 && r3p.corpo?.fotos_novas === 0, "motor piscou de volta: nada apagado, nada duplicado; agora as novas é que ficam em carência", JSON.stringify({ ...r3p.corpo, suites: undefined }));
-  /* A piscada zera o relógio da ausência: só depois de duas rodadas ausentes
-     separadas por mais do que a carência a foto antiga sai. */
-  await ligarMotor({ SIM_FOTOS_V2: "1", SIM_SEM_CASAL: "1" });
-  const r3b = await json("/api/cron/sincronizar-fotos");
-  ok(r3b.corpo?.fotos_removidas === 0 && r3b.corpo?.fotos_aguardando_remocao === 3, "a piscada zerou o relógio: as antigas voltam à carência, nada sai ainda", JSON.stringify({ ...r3b.corpo, suites: undefined }));
+  ok(r3p.corpo?.fotos_novas === 0 && (r3p.corpo?.suites_lista_antiga ?? []).length === 3 && r3p.corpo?.fotos_removidas + r3p.corpo?.fotos_aguardando_remocao === 3, "motor voltou atrás: a lista antiga é ignorada nas 3 suítes, nada entra de novo", JSON.stringify({ ...r3p.corpo, suites: undefined }));
+  ok(r3p.corpo?.avisos?.some((a) => /lista de fotos antiga/.test(a)) && r3p.corpo?.suites?.some((d) => /lista antiga/.test(d.nota ?? "")), "o aviso e a nota por suíte explicam que o motor voltou atrás");
+  const [{ n: novasAinda }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador' AND url LIKE '%\\_3.jpg'`;
+  ok(novasAinda === 3, "as 3 fotos novas continuam no site", String(novasAinda));
   await new Promise((r) => setTimeout(r, 3500));
   const r3c = await json("/api/cron/sincronizar-fotos");
-  ok(r3c.corpo?.fotos_removidas === 3 && r3c.corpo?.fotos_novas === 0 && r3c.corpo?.fotos_aguardando_remocao === 0, "ausência confirmada depois da carência: as 3 fotos antigas saem", JSON.stringify({ ...r3c.corpo, suites: undefined }));
+  ok((r3c.corpo?.suites_lista_antiga ?? []).length === 3 && r3c.corpo?.fotos_aguardando_remocao === 0 && r3p.corpo?.fotos_removidas + r3c.corpo?.fotos_removidas === 3, "ainda voltando atrás: segue ignorada, e as antigas saem depois da carência", JSON.stringify({ ...r3c.corpo, suites: undefined }));
+  /* O motor volta a mostrar a lista nova: é a em vigor, nada muda. */
+  await ligarMotor({ SIM_FOTOS_V2: "1", SIM_SEM_CASAL: "1" });
+  const r3d = await json("/api/cron/sincronizar-fotos");
+  ok(r3d.corpo?.fotos_novas === 0 && r3d.corpo?.fotos_removidas === 0 && (r3d.corpo?.suites_lista_antiga ?? []).length === 0 && r3d.corpo?.suites?.every(emDia), "o motor voltou à lista nova: nada a fazer, cada suíte com as fotos do motor", JSON.stringify(r3d.corpo?.suites?.map((d) => [d.codigo, d.motor, d.site_depois])));
   /* O motor volta a vender a CASAL: ela volta sozinha, com a foto trocada. */
   await ligarMotor({ SIM_FOTOS_V2: "1" });
   const r4 = await json("/api/cron/sincronizar-fotos");
@@ -173,7 +182,7 @@ try {
   ok((await fetch(`${BASE}/quartos/casal-standard`)).status === 200, "a suíte religada volta ao site");
   await new Promise((r) => setTimeout(r, 3500));
   const r4b = await json("/api/cron/sincronizar-fotos");
-  ok(r4b.corpo?.fotos_removidas === 1 && r4b.corpo?.suites?.every((d) => d.site_depois === d.motor), "depois da carência, cada suíte tem no site exatamente as fotos do motor", JSON.stringify(r4b.corpo?.suites?.map((d) => [d.codigo, d.motor, d.site_depois])));
+  ok(r4b.corpo?.fotos_removidas === 1 && r4b.corpo?.suites?.every(emDia), "depois da carência, cada suíte tem no site exatamente as fotos do motor", JSON.stringify(r4b.corpo?.suites?.map((d) => [d.codigo, d.motor, d.site_depois])));
   const [{ n: v2 }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador'`;
   const [{ n: antigas }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador' AND url LIKE '%\\_2.jpg'`;
   ok(v2 === 8 && antigas === 0, "continuam 8 fotos do Desbravador, nenhuma das que sumiram lá", `${v2}/${antigas}`);
@@ -181,6 +190,22 @@ try {
   ok(doPainelDepois === doPainelAntes, "as fotos subidas pelo painel não foram tocadas", `${doPainelAntes} → ${doPainelDepois}`);
   const [sync] = await sql`SELECT valor FROM integracoes WHERE chave = 'fotos_sync'`;
   ok(sync && JSON.parse(sync.valor).consultado_em === r4b.corpo?.consultado_em, "a última rodada fica registrada para o painel");
+
+  /* 5b. Forçar (o botão do painel / ?forcar=1 com chave): a lista atual do
+        motor vale mesmo sendo a antiga; depois, a nova volta a entrar. */
+  await ligarMotor({});
+  const r5 = await json("/api/cron/sincronizar-fotos?forcar=1");
+  ok(r5.corpo?.forcada === true && r5.corpo?.fotos_novas === 4 && (r5.corpo?.suites_lista_antiga ?? []).length === 0 && r5.corpo?.fotos_aguardando_remocao === 4, "forçada: a lista antiga do motor entra nas 4 suítes (as novas ficam em carência)", JSON.stringify({ ...r5.corpo, suites: undefined }));
+  ok((await json("/api/cron/sincronizar-fotos?forcar=1", {})).corpo?.forcada !== true, "sem chave, ?forcar=1 não força nada");
+  await ligarMotor({ SIM_FOTOS_V2: "1" });
+  const r5b = await json("/api/cron/sincronizar-fotos");
+  /* As fotos novas ainda estavam no banco (em carência): nada a inserir; agora as antigas é que ficam em carência. */
+  ok(r5b.corpo?.fotos_novas === 0 && r5b.corpo?.fotos_aguardando_remocao === 4 && (r5b.corpo?.suites_lista_antiga ?? []).length === 0, "depois da forçada, a lista nova do motor volta a valer (não é tratada como antiga)", JSON.stringify({ ...r5b.corpo, suites: undefined }));
+  await new Promise((r) => setTimeout(r, 3500));
+  const r5c = await json("/api/cron/sincronizar-fotos");
+  const [{ n: v2b }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador'`;
+  const [{ n: antigasB }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador' AND url LIKE '%\\_2.jpg'`;
+  ok(r5c.corpo?.fotos_removidas === 4 && v2b === 8 && antigasB === 0, "e as antigas saem de novo depois da carência: 8 fotos, nenhuma antiga", `${r5c.corpo?.fotos_removidas} ${v2b}/${antigasB}`);
 
   /* 6. Painel: botão em Mídias, selo, Diagnóstico com os agendadores; chat sem o bloco de fala. */
   const nav = await chromium.launch();
