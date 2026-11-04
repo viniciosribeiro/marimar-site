@@ -29,12 +29,14 @@ Uma rodada (`sincronizarFotosDoMotor()`):
 2. Trava `pg_try_advisory_lock(20261102)`: o botão e o agendador nunca rodam
    ao mesmo tempo.
 3. Para cada tipo do motor (`id` = código, ex. `QUEEN`):
-   - **Não existe no site** → cria a suíte **desativada**, `ordem 100+`, slug
-     limpo (`slugDe`), com nome, categoria e ocupação do motor. A pousada
-     revisa em Hospedagem → Quartos e ativa quando quiser. (`ON CONFLICT
+   - **Não existe no site** → cria a suíte **ativa** (decisão do proprietário
+     em 04/11: "se tem na Desbravador tem que aparecer"), `ordem 100+`, slug
+     limpo (`slugDe`), com nome, categoria e ocupação do motor. (`ON CONFLICT
      (desbravador_room_id) DO NOTHING`, então nunca duplica.)
-   - **Existe, mas desativada** → as fotos entram mesmo assim e a suíte vai
-     para `suites_inativas` + um aviso dizendo onde ativar.
+   - **Existe, mas desativada** → é religada (`suites_ativadas`).
+   - **Tem código do motor e o motor não a devolveu** → é desligada
+     (`suites_desativadas`), só quando a rodada viu 3+ tipos; volta sozinha
+     quando o motor voltar a vendê-la. O campo Ativo do painel não manda mais.
    - **Fotos novas** → `INSERT` em `midias` com `origem = 'desbravador'`,
      `url_origem` = endereço no Desbravador, `secao = 'quarto'`. Com
      `BLOB_READ_WRITE_TOKEN` na Vercel, a imagem é **copiada para o Vercel

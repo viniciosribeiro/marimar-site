@@ -220,7 +220,9 @@ export async function sincronizarComDesbravador(): Promise<Resultado> {
       r.fotos_espelhadas ? `${r.fotos_espelhadas} copiada(s) para o nosso armazenamento` : null,
       `${r.fotos_removidas} ${r.fotos_removidas === 1 ? "removida" : "removidas"}`,
       `${r.fotos_ja_presentes} já estavam`,
-      r.suites_criadas.length ? `${r.suites_criadas.length} suíte(s) nova(s) desativada(s) para revisar` : null,
+      r.suites_criadas.length ? `${r.suites_criadas.length} suíte(s) nova(s) do motor já no site` : null,
+      r.suites_ativadas.length ? `${r.suites_ativadas.length} suíte(s) religada(s) porque o motor vende` : null,
+      r.suites_desativadas.length ? `${r.suites_desativadas.length} suíte(s) desligada(s) porque o motor não vende mais` : null,
     ].filter(Boolean);
     return { ok: true, mensagem: `Sincronizado com o Desbravador (${r.suites_motor} suítes no motor): ${partes.join(", ")}.${r.avisos.length ? " " + r.avisos.join(" ") : ""}` };
   } catch (e) {

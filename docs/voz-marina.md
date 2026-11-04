@@ -171,3 +171,10 @@ texto e o gateway sintetizava tudo. Agora:
   (`src/lib/marina-regras-canal.ts`). O OpenClaw 2026.9.4 já fala só o
   bloco quando ele existe, então o áudio encurta assim que a Marina reler o
   treinamento (até 15 min). `tts.json` vira rede de segurança.
+- **Modo `tagged` aplicado pelo site (04/11, parte 4):** o proprietário
+  confirmou que, mesmo com a skill nova, o áudio lia o link. O site passou a
+  gravar `tts.auto: "tagged"` (e `tts.modelOverrides.enabled/allowText`) na
+  config do OpenClaw pelo RPC de administração (`src/lib/openclaw-audio.ts`),
+  uma vez, de carona na rodada de fotos. Resultado: só o bloco `[[tts:text]]`
+  vira áudio; resposta sem bloco vai em texto. Voz, provedor e chaves não
+  mudam. `settings/tts.json` deixa de ser necessário.

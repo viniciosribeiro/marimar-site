@@ -11,6 +11,7 @@ import { PROVEDOR, type Provedor } from "@/lib/voz-base";
 import { ultimaSincronizacao, ultimoErroSincronizacao, type ResumoSincronizacao } from "@/lib/sincronizar-fotos-desbravador";
 import { lerMemoria } from "@/lib/whatsapp-vigia";
 import { colunasDaMigration0022 } from "@/lib/esquema-midias";
+import { lerEstadoAudio, MODO_AUDIO_DESEJADO, type EstadoAudio } from "@/lib/openclaw-audio";
 import { MEMORIA_VAZIA, type MemoriaVigia } from "@/lib/whatsapp-saude";
 import { Pagina, Cabecalho, Cartao, Indicador, Aviso, Selo, quandoFoi } from "@/components/admin/ui";
 
@@ -33,7 +34,7 @@ async function testarMotor() {
    CRON_SECRET; sem ela, a chamada diária é recusada e só a sincronização
    "de carona" (nas buscas de /reservar) e o botão do painel funcionam.
    Fora do componente porque lê o relógio. */
-function listarAgendadores(fotos: { em: Date; resumo: ResumoSincronizacao } | null, vigia: MemoriaVigia, colunas0022: boolean) {
+function listarAgendadores(fotos: { em: Date; resumo: ResumoSincronizacao } | null, vigia: MemoriaVigia, colunas0022: boolean, audio: EstadoAudio | null) {
   const cronSecret = process.env.CRON_SECRET ?? "";
   const cronOk = cronSecret.length >= 16;
   const diaMs = 24 * 3600_000;
@@ -64,6 +65,16 @@ function listarAgendadores(fotos: { em: Date; resumo: ResumoSincronizacao } | nu
       ajuda: fotos
         ? `${fotos.resumo.suites_motor} suítes no motor · ${fotos.resumo.fotos_novas} novas · ${fotos.resumo.fotos_removidas} removidas · espelho ${fotos.resumo.espelho === "blob" ? "no Blob" : "desligado (sem BLOB_READ_WRITE_TOKEN)"}${fotos.resumo.suites_criadas.length ? ` · suítes criadas: ${fotos.resumo.suites_criadas.join(", ")}` : ""}${fotos.resumo.avisos.length ? ` · ${fotos.resumo.avisos.length} aviso(s)` : ""}`
         : "ainda não rodou — use o botão “Sincronizar com o Desbravador” em Mídias, ou faça uma busca em /reservar",
+    },
+    {
+      nome: "Áudio do WhatsApp (OpenClaw)",
+      tom: audio?.modo === MODO_AUDIO_DESEJADO && !audio.erro ? "sucesso" : "aviso",
+      valor: audio?.modo === MODO_AUDIO_DESEJADO ? "só a frase curta" : audio?.modo ? `resposta inteira (${audio.modo})` : "não conferido",
+      ajuda: audio?.erro
+        ? `${audio.erro} — o site tenta de novo a cada rodada de fotos`
+        : audio?.modo === MODO_AUDIO_DESEJADO
+          ? `a Marina fala só o que põe em [[tts:text]]; o link vai por escrito${audio.aplicado_em ? ` (aplicado pelo site ${quandoFoi(audio.aplicado_em)})` : ""}`
+          : "o site aplica sozinho na próxima rodada de fotos (busca em /reservar ou agendador)",
     },
     {
       nome: "Vigia do WhatsApp",
@@ -97,6 +108,7 @@ export default async function DiagnosticoPage() {
   let fotosErro: { em: string; erro: string } | null = null;
   let vigia: MemoriaVigia = MEMORIA_VAZIA;
   let colunas0022 = false;
+  let audio: EstadoAudio | null = null;
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false, connect_timeout: 5 });
     antigas = await contarDominioAntigo(sql);
@@ -111,6 +123,7 @@ export default async function DiagnosticoPage() {
     fotosErro = await ultimoErroSincronizacao(sql).catch(() => null);
     vigia = await lerMemoria(sql).catch(() => MEMORIA_VAZIA);
     colunas0022 = await colunasDaMigration0022(sql).catch(() => false);
+    audio = await lerEstadoAudio(sql).catch(() => null);
     await sql.end();
   } catch { banco = false; }
 
@@ -123,7 +136,7 @@ export default async function DiagnosticoPage() {
     { nome: "Motor de reservas", ok: Boolean(process.env.WORKER_BASE_URL), ajuda: "WORKER_BASE_URL e WORKER_SLUG" },
   ];
 
-  const agendadores = listarAgendadores(fotos, vigia, colunas0022);
+  const agendadores = listarAgendadores(fotos, vigia, colunas0022, audio);
 
   return (
     <Pagina larga>

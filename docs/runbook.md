@@ -168,6 +168,11 @@ Desde 04/11/2026 (`docs/fluxo-fotos-desbravador.md`). Ordem de verificação:
 
 ## Fala curta no WhatsApp QR (tts.json)
 
+> **Desde 04/11/2026 (parte 4) isto é opcional:** o site grava sozinho
+> `tts.auto: "tagged"` no OpenClaw (`src/lib/openclaw-audio.ts`), e aí só o
+> bloco `[[tts:text]]` vira áudio. O `maxLength` abaixo continua válido como
+> rede de segurança, mas não é mais necessário para o link não ser lido.
+
 O OpenClaw na Hostinger fala a resposta final inteira (`tts.auto: inbound`),
 até **1500 caracteres** por padrão, e só resume acima disso. Desde 04/11 a
 skill termina as respostas com link por `[[tts:text]]frase curta[[/tts:text]]`

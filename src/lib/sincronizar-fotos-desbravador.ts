@@ -61,8 +61,10 @@ export type ResumoSincronizacao = {
   periodo_consulta: { check_in: string; check_out: string };
   suites_motor: number;
   suites_criadas: string[];
-  /** Suítes que o motor oferece mas estão desativadas no site (ativar em Quartos). */
-  suites_inativas: string[];
+  /** Suítes que estavam desativadas no site e o motor vende: ligadas nesta rodada. */
+  suites_ativadas: string[];
+  /** Suítes com código do motor que o motor não devolveu mais: desligadas nesta rodada. */
+  suites_desativadas: string[];
   fotos_novas: number;
   fotos_espelhadas: number;
   fotos_removidas: number;
@@ -183,7 +185,7 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
   const resumo: ResumoSincronizacao = {
     consultado_em: new Date().toISOString(),
     periodo_consulta: { check_in: periodo.checkIn, check_out: periodo.checkOut },
-    suites_motor: 0, suites_criadas: [], suites_inativas: [], fotos_novas: 0, fotos_espelhadas: 0, fotos_removidas: 0,
+    suites_motor: 0, suites_criadas: [], suites_ativadas: [], suites_desativadas: [], fotos_novas: 0, fotos_espelhadas: 0, fotos_removidas: 0,
     fotos_ja_presentes: 0, suites_sem_fotos_validas: 0, espelho: espelhar && blobConfigurado() ? "blob" : "sem_blob",
     espelho_pendentes: 0, suites: [], avisos: [],
   };
@@ -219,25 +221,28 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
     resumo.suites.push(detalhe);
     let local = porCodigo.get(codigo);
 
-    /* Suíte que só existe no motor: entra desativada, para a pousada revisar. */
+    /* O motor manda (decisão do proprietário, 04/11/2026): suíte que o
+       Desbravador vende aparece no site — nova entra ativa; desligada no
+       site é religada. Ninguém ativa/desativa quarto no painel. */
     if (!local) {
       const slug = slugDe(quarto.nome, slugsUsados);
       const [criada] = await sql<{ id: string; nome: string; slug: string; desbravador_room_id: string; ativo: boolean }[]>`
         INSERT INTO quartos (nome, slug, descricao_motor, ocupacao_max, capacidade_adultos, diaria_minima, desbravador_room_id, ordem, ativo)
         VALUES (${quarto.nome}, ${slug}, ${quarto.categoria || null}, ${quarto.ocupacao_max || 2}, ${Math.min(2, quarto.ocupacao_max || 2)},
-                ${quarto.estadia_minima || 1}, ${codigo}, ${100 + resumo.suites_criadas.length}, false)
+                ${quarto.estadia_minima || 1}, ${codigo}, ${100 + resumo.suites_criadas.length}, true)
         ON CONFLICT (desbravador_room_id) DO NOTHING
         RETURNING id, nome, slug, desbravador_room_id, ativo`;
       if (!criada) { detalhe.nota = "não foi possível criar o cadastro"; continue; }
       local = criada;
       porCodigo.set(codigo, criada);
       resumo.suites_criadas.push(quarto.nome);
-      detalhe.nota = "cadastro criado desativado";
+      detalhe.nota = "cadastro criado (o motor vende)";
     } else if (!local.ativo) {
-      /* Existe, mas está desligada no site: as fotos entram mesmo assim
-         (prontas para quando a pousada ativar) e o aviso diz onde ativar. */
-      resumo.suites_inativas.push(local.nome);
-      detalhe.nota = "desativada no site";
+      await sql`UPDATE quartos SET ativo = true WHERE id = ${local.id}`;
+      local = { ...local, ativo: true };
+      porCodigo.set(codigo, local);
+      resumo.suites_ativadas.push(local.nome);
+      detalhe.nota = "ativada: o motor vende";
     }
     detalhe.slug = local.slug;
     detalhe.ativo = local.ativo;
@@ -289,6 +294,19 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
 
   await apagarDoBlob(paraApagarDoBlob);
 
+  /* Suíte com código do motor que o motor não devolveu nesta rodada sai do
+     site (volta sozinha quando o motor voltar a vendê-la). Só quando a
+     resposta do motor parece inteira: com menos de 3 tipos, não se mexe. */
+  if (resumo.suites_motor >= 3) {
+    const codigos = [...vistos];
+    const desligadas = await sql<{ nome: string }[]>`
+      UPDATE quartos SET ativo = false
+      WHERE ativo = true AND desbravador_room_id IS NOT NULL AND btrim(desbravador_room_id) <> ''
+        AND upper(btrim(desbravador_room_id)) <> ALL(${codigos}::text[])
+      RETURNING nome`;
+    resumo.suites_desativadas = desligadas.map((q) => q.nome);
+  }
+
   /* Espelho atrasado: fotos do motor que já estavam no banco antes de hoje
      (ou entraram sem tempo) ainda apontam para o Desbravador. Poucas por
      rodada, dentro do orçamento; a Marina e o site deixam de depender de lá. */
@@ -309,10 +327,13 @@ async function rodar(sql: Sql, motor: WorkerQuarto[], periodo: { checkIn: string
   }
 
   if (resumo.suites_criadas.length) {
-    resumo.avisos.push(`Suíte(s) nova(s) criada(s) desativada(s), para revisar no painel: ${resumo.suites_criadas.join(", ")}.`);
+    resumo.avisos.push(`Suíte(s) nova(s) do motor cadastrada(s) e já no site: ${resumo.suites_criadas.join(", ")}. Revise descrição e detalhes em Hospedagem → Quartos.`);
   }
-  if (resumo.suites_inativas.length) {
-    resumo.avisos.push(`O motor oferece ${resumo.suites_inativas.length} suíte(s) que estão desativadas no site (Hospedagem → Quartos → Editar → Ativo): ${resumo.suites_inativas.join(", ")}.`);
+  if (resumo.suites_ativadas.length) {
+    resumo.avisos.push(`Suíte(s) ligada(s) no site porque o motor vende: ${resumo.suites_ativadas.join(", ")}.`);
+  }
+  if (resumo.suites_desativadas.length) {
+    resumo.avisos.push(`Suíte(s) desligada(s) do site porque o motor não devolveu mais: ${resumo.suites_desativadas.join(", ")}. Volta sozinha se o motor voltar a vendê-la.`);
   }
   if (resumo.espelho === "sem_blob" && resumo.fotos_novas) {
     resumo.avisos.push("Sem BLOB_READ_WRITE_TOKEN na Vercel, as fotos ficam apontando para o servidor do Desbravador.");
