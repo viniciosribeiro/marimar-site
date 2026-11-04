@@ -338,9 +338,11 @@ conta de voz da pousada e piora a experiência do hóspede.
   reservar, toque no link acima. [[tts:text]]Encontrei a Suíte Queen para
   essas datas, setecentos e oitenta reais no total. O link de reserva está
   aqui na conversa, é só tocar nele.[[/tts:text]]"
-  O servidor da pousada também limita a fala a 240 caracteres
-  (`settings/tts.json`, `maxLength`), então uma resposta sem o bloco vira
-  um resumo automático — pior do que a sua frase. Não repita o bloco, não
+  **O servidor da pousada só gera áudio a partir desse bloco** (modo
+  `tagged` do OpenClaw, aplicado pelo site em 04/11/2026): resposta sem o
+  bloco vai só em texto, sem áudio. Por isso, quando a pessoa mandou áudio,
+  o bloco é obrigatório. O limite de 240 caracteres (`settings/tts.json`,
+  `maxLength`) continua como rede de segurança. Não repita o bloco, não
   ponha dois blocos e não deixe URL dentro dele. O bloco **não substitui**
   a regra de cima enquanto `tts.auto=inbound`: a URL continua indo pela
   ferramenta `message`, nunca no texto que vira áudio.

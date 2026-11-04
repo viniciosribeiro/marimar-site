@@ -55,6 +55,13 @@ e é o número que a Marina passa ao hóspede. Digite com DDD:
 ## Acomodações
 
 ### Quartos
+**Desde 04/11/2026 o motor de reservas manda:** a suíte que o Desbravador
+vende aparece no site sozinha (até uma suíte nova é cadastrada e ligada),
+e a que ele deixa de vender some sozinha. O campo "Ativo" continua na
+tela, mas a próxima sincronização de fotos (a cada hora em que há busca)
+desfaz um desligamento manual. Para tirar uma suíte do site, tire-a do
+Desbravador.
+
 Cada suíte tem:
 - **Motor ID**: liga a suíte ao sistema de reservas (Desbravador). Clique em
   "Carregar quartos do motor" para ver os IDs.
@@ -407,6 +414,10 @@ Outras ferramentas do mapa:
 ### Integrações · Diagnóstico · Usuários
 Ligar o chat da Marina no site, testar o motor de reservas e ver quem tem
 acesso.
+O Diagnóstico tem também a linha **Áudio do WhatsApp (OpenClaw)**: "só a
+frase curta" significa que a Marina fala apenas a frase que ela mesma
+separa para o áudio e nunca lê o link; o site aplica isso sozinho.
+
 O Diagnóstico tem o cartão **Agendadores**: se a Vercel tem a chave do
 agendador (`CRON_SECRET`), quando as fotos das suítes foram sincronizadas
 com o Desbravador pela última vez (e o resumo) e quando o vigia do WhatsApp

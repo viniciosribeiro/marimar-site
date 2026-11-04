@@ -1,5 +1,7 @@
 # Estado do projeto — Marimar Site
 
+> **04/11/2026 (parte 4) — ÁUDIO SÓ DA FRASE CURTA E SUÍTES PELO MOTOR:** o site grava sozinho `tts.auto: "tagged"` no OpenClaw (só o bloco `[[tts:text]]` vira áudio; o link nunca é lido; sem bloco, só texto) e a sincronização liga/desliga suítes conforme o Desbravador devolve (o campo Ativo do painel não manda mais). Ver HANDOFF (parte 4).
+
 > **04/11/2026 (parte 3) — FOTOS CONFERIDAS EM PRODUÇÃO:** rodada síncrona às 16:33 UTC: as 10 suítes do motor estão com as mesmas fotos no site (STANDARD FAMILIA atualizada de 1 antiga para 4 novas; as 3 desativadas com fotos no banco); espelho no Blob em andamento (8 copiadas, 31 pendentes, 6 por rodada). Resumo por suíte e último erro visíveis em `/api/cron/sincronizar-fotos` (sem chave) e no Diagnóstico (PRs #69–#71). Falta só o que é da pousada: ativar as 3 suítes se quiser vendê-las pelo site, subir fotos do café da manhã e da praia no painel, e testar o WhatsApp. Ver HANDOFF (parte 3).
 
 
@@ -280,11 +282,10 @@ no visual novo (Marina no centro, painel do assunto, equipes de apoio).
    rotas novas do agente, a Marina mandando foto no chat, a aba de cobertura
    e a correcao de resposta: tudo passou em `tsc`, `lint` e `build`, e nada
    passou por uma pessoa. E o maior risco aberto do projeto hoje.
-3. **3 quartos faltando** — o motor retorna 10 tipos, o banco tem 7 ativos.
-   **Entendido em 04/11:** os 3 existem no banco, **desativados** desde o
-   seed (`ativo = disponivel` no dia). A sincronização de fotos (04/11) lista
-   quais são no aviso e no Diagnóstico; ativar é decisão da pousada em
-   Hospedagem → Quartos → Editar → Ativo (as fotos já estarão lá).
+3. **3 quartos faltando** — resolvido em 04/11 (parte 4): a sincronização
+   com o motor liga no site toda suíte que o Desbravador devolve e desliga a
+   que ele deixa de devolver. Os 3 (SUITE REDE, STANDARD TRIPLO, STANDARD
+   QUADRUPLO) entram sozinhos na primeira rodada depois do deploy.
 
 ## Pendencias menores
 

@@ -18,6 +18,8 @@ export const REGRAS_CANAL_WHATSAPP = [
   "   termina com um bloco [[tts:text]]frase curta[[/tts:text]]: menos de 180",
   "   caracteres, sem endereço de internet, sem código, sem número soletrado. Só",
   "   esse trecho vira áudio; o resto a pessoa lê. Um bloco por resposta, no fim.",
+  "   O servidor só gera áudio a partir desse bloco: resposta sem o bloco vai só em",
+  "   texto. Quando a pessoa mandou áudio, o bloco é obrigatório.",
   "   Nunca leia um link em voz alta: o link vai por escrito, uma vez, completo.",
   "   Exemplo: \"Suíte Queen, 10 a 12 de novembro, 2 adultos: R$ 780 no total.",
   "   Para reservar, toque no link acima. [[tts:text]]Encontrei a Suíte Queen para",

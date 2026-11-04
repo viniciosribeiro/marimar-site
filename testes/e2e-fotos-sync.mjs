@@ -45,7 +45,17 @@ try {
      e uma foto do café subida "pelo painel" (que a sincronização não pode tocar). */
   await sql`DELETE FROM midias WHERE origem = 'desbravador'`;
   await sql`DELETE FROM quartos WHERE desbravador_room_id = 'NOVAMOTOR'`;
-  await sql`DELETE FROM integracoes WHERE chave = 'fotos_sync'`;
+  await sql`DELETE FROM integracoes WHERE chave IN ('fotos_sync', 'fotos_sync_erro', 'openclaw_audio_curto')`;
+  /* Como em produção em 04/11: SR desligada no site embora o motor venda; CASAL ligada. */
+  await sql`UPDATE quartos SET ativo = false WHERE desbravador_room_id = 'SR'`;
+  await sql`UPDATE quartos SET ativo = true WHERE desbravador_room_id = 'CASAL'`;
+  /* O OpenClaw simulado começa como o de verdade começou: áudio da resposta inteira. */
+  const GW = process.env.GW ?? "http://localhost:4010";
+  const configGw = await fetch(`${GW}/__config`).then((r) => r.json());
+  configGw.tts = { ...(configGw.tts ?? {}), auto: "inbound" }; delete configGw.tts.modelOverrides;
+  await fetch(`${GW}/__config`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(configGw) });
+  const contarPatches = async () => (await fetch(`${GW}/__rpcs`).then((r) => r.json()).catch(() => [])).filter((m) => (typeof m === "string" ? m : m?.method) === "config.patch").length;
+  const patchesAntes = await contarPatches();
   await sql`DELETE FROM midias WHERE alt = 'Café da manhã (teste e2e)'`;
   await sql`DELETE FROM chat_mensagens WHERE conteudo LIKE '%[teste-tts]%'`.catch(() => {});
   await sql`INSERT INTO midias (url, alt, tipo, secao, ordem, visivel_marina, titulo)
@@ -65,17 +75,22 @@ try {
   ok(publico.status === 202 && publico.corpo?.ultima_em !== null, "sem chave de novo: 202, só informa a última rodada (não roda antes de 1 h)", String(publico.status));
   const porSuite = Object.fromEntries((publico.corpo?.ultimo_resumo?.suites ?? []).map((d) => [d.codigo, d]));
   ok(porSuite.FAM?.motor === 2 && porSuite.FAM?.site_depois === 2 && porSuite.FAM?.novas === 2 && porSuite.FAM?.ativo === true, "resumo público diz, por suíte, quantas fotos o motor tem e quantas o site tem (FAM)", JSON.stringify(porSuite.FAM));
-  ok(porSuite.SR?.nota === "desativada no site" && porSuite.NOVAMOTOR?.nota === "cadastro criado desativado", "resumo público marca a suíte desativada e a criada", JSON.stringify([porSuite.SR, porSuite.NOVAMOTOR]));
+  ok(porSuite.SR?.nota === "ativada: o motor vende" && porSuite.NOVAMOTOR?.nota === "cadastro criado (o motor vende)", "resumo público marca a suíte religada e a criada", JSON.stringify([porSuite.SR, porSuite.NOVAMOTOR]));
   ok(publico.corpo?.ultimo_erro === null, "sem erro registrado quando a rodada concluiu");
   ok(r1.corpo?.suites_motor === 4, "4 suítes vistas no motor", String(r1.corpo?.suites_motor));
   ok(r1.corpo?.fotos_novas === 8 && r1.corpo?.fotos_removidas === 0, "8 fotos novas (2 por suíte), nenhuma removida", `${r1.corpo?.fotos_novas}/${r1.corpo?.fotos_removidas}`);
   ok(r1.corpo?.espelho === "sem_blob", "sem BLOB_READ_WRITE_TOKEN: fotos apontam para o Desbravador (e o resumo diz isso)");
   ok(r1.corpo?.suites_criadas?.length === 1 && r1.corpo.suites_criadas[0] === "SUÍTE NOVA DO MOTOR", "a suíte que só existe no motor foi criada", JSON.stringify(r1.corpo?.suites_criadas));
-  ok(r1.corpo?.suites_inativas?.includes("SUITE REDE"), "a suíte desativada no site é apontada no aviso", JSON.stringify(r1.corpo?.suites_inativas));
-  ok(r1.corpo?.avisos?.some((a) => /desativadas no site/.test(a)) && r1.corpo?.avisos?.some((a) => /nova\(s\) criada/.test(a)), "avisos dizem onde ativar e o que revisar");
+  ok(r1.corpo?.suites_ativadas?.includes("SUITE REDE"), "a suíte que estava desligada no site foi religada porque o motor vende", JSON.stringify(r1.corpo?.suites_ativadas));
+  ok(r1.corpo?.avisos?.some((a) => /ligada\(s\) no site porque o motor vende/.test(a)) && r1.corpo?.avisos?.some((a) => /nova\(s\) do motor cadastrada/.test(a)), "avisos explicam o que o motor fez no site");
+  ok(r1.corpo?.audio_whatsapp?.modo === "tagged" && r1.corpo?.audio_whatsapp?.aplicado_em && !r1.corpo?.audio_whatsapp?.erro, "o site mudou o OpenClaw para falar só a frase curta (tagged)", JSON.stringify(r1.corpo?.audio_whatsapp));
+  const configDepois = await fetch(`${GW}/__config`).then((r) => r.json());
+  ok(configDepois?.tts?.auto === "tagged" && configDepois?.tts?.modelOverrides?.allowText === true && configDepois?.tts?.provider === "elevenlabs" && configDepois?.tts?.providers?.elevenlabs?.voiceId, "no OpenClaw: tts.auto=tagged, bloco permitido, voz e provedor intactos", JSON.stringify(configDepois?.tts));
 
   const [nova] = await sql`SELECT slug, ativo, ordem, ocupacao_max FROM quartos WHERE desbravador_room_id = 'NOVAMOTOR'`;
-  ok(nova && nova.ativo === false && nova.ordem >= 100 && nova.slug === "suite-nova-do-motor", "suíte nova entra desativada, no fim da lista, com slug limpo", JSON.stringify(nova));
+  ok(nova && nova.ativo === true && nova.ordem >= 100 && nova.slug === "suite-nova-do-motor", "suíte nova entra ATIVA (o motor vende), no fim da lista, com slug limpo", JSON.stringify(nova));
+  const [rede] = await sql`SELECT ativo FROM quartos WHERE desbravador_room_id = 'SR'`;
+  ok(rede?.ativo === true, "SUITE REDE ligada no banco");
   const [{ n: desb }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador' AND url_origem IS NOT NULL AND secao = 'quarto'`;
   ok(desb === 8, "8 fotos marcadas como do Desbravador, com a URL de origem guardada", String(desb));
   const [{ n: daRede }] = await sql`SELECT COUNT(*)::int AS n FROM midias m JOIN quartos q ON q.id = m.quarto_id WHERE q.desbravador_room_id = 'SR' AND m.origem = 'desbravador'`;
@@ -84,18 +99,22 @@ try {
   /* 2. Com a chave da Marina roda na hora, devolve o resumo e não duplica. */
   const r2 = await json("/api/cron/sincronizar-fotos");
   ok(r2.status === 200 && r2.corpo?.modo === "imediato", "agendador com a chave da Marina roda na hora e devolve o resumo", JSON.stringify(r2.corpo));
-  ok(r2.corpo?.fotos_novas === 0 && r2.corpo?.fotos_ja_presentes === 8 && r2.corpo?.fotos_removidas === 0, "segunda rodada: nada novo, nada removido, nada duplicado", JSON.stringify(r2.corpo));
+  ok(r2.corpo?.fotos_novas === 0 && r2.corpo?.fotos_ja_presentes === 8 && r2.corpo?.fotos_removidas === 0, "segunda rodada: nada novo, nada removido, nada duplicado", JSON.stringify({ ...r2.corpo, suites: undefined }));
+  ok(r2.corpo?.suites_ativadas?.length === 0 && r2.corpo?.suites_desativadas?.length === 0 && r2.corpo?.suites_criadas?.length === 0, "segunda rodada: nenhuma suíte muda de estado");
+  ok((await contarPatches()) - patchesAntes === 1, "o modo de áudio foi aplicado uma vez só (sem repetir o patch)", String((await contarPatches()) - patchesAntes));
 
   /* 3. O site mostra as fotos: página da suíte (ativa), galeria sem link para inativa. */
   const paginaCasal = await fetch(`${BASE}/quartos/casal-standard`).then(async (r) => ({ status: r.status, html: await r.text() }));
   ok(paginaCasal.status === 200 && temFoto(paginaCasal.html, "gt_CASAL_1.jpg"), "página da suíte mostra a foto que veio do Desbravador");
-  ok((await fetch(`${BASE}/quartos/suite-nova-do-motor`)).status === 404, "a suíte nova (desativada) não tem página pública ainda");
+  ok((await fetch(`${BASE}/quartos/suite-nova-do-motor`)).status === 200, "a suíte nova já tem página pública (o motor vende)");
+  ok((await fetch(`${BASE}/quartos/suite-rede`)).status === 200, "a suíte religada tem página pública");
   const galeria = await fetch(`${BASE}/galeria`).then((r) => r.text());
-  ok(!galeria.includes("/quartos/suite-rede") && !galeria.includes("/quartos/suite-nova-do-motor"), "galeria não leva a página de suíte desativada (sem 404)");
+  ok(galeria.includes("/quartos/suite-rede") && galeria.includes("/quartos/suite-nova-do-motor"), "galeria mostra as suítes que o motor vende");
   ok(temFoto(galeria, "gt_CASAL_1.jpg"), "galeria mostra as fotos sincronizadas da suíte ativa");
   const home = await fetch(`${BASE}/`).then((r) => r.text());
   const quartos = await fetch(`${BASE}/quartos`).then((r) => r.text());
-  ok(!home.includes("/quartos/suite-rede") && !quartos.includes("/quartos/suite-nova-do-motor"), "home e /quartos só linkam suítes ativas");
+  ok(quartos.includes("/quartos/suite-rede") && quartos.includes("/quartos/suite-nova-do-motor"), "/quartos lista as suítes que o motor vende");
+  void home;
   const busca = await fetch(`${BASE}/reservar?check_in=2026-12-01&check_out=2026-12-03&adultos=2`).then((r) => r.text());
   ok(busca.includes("Ver fotos e detalhes de") && !busca.includes('href="/quartos/suite-nova-do-motor"'), "busca lista as suítes do motor sem link antigo para /quartos");
 
@@ -125,19 +144,27 @@ try {
   const comErro = await json("/api/cron/sincronizar-fotos", {});
   ok(typeof comErro.corpo?.ultimo_erro?.erro === "string" && comErro.corpo.ultimo_erro.erro.length > 0, "o erro da rodada fica registrado e visível sem chave", JSON.stringify(comErro.corpo?.ultimo_erro));
 
-  /* 5. A troca de foto no Desbravador chega ao site; o que é do painel fica. */
-  await ligarMotor({ SIM_FOTOS_V2: "1" });
+  /* 5. A troca de foto no Desbravador chega ao site; o que é do painel fica.
+        E o motor deixa de vender a CASAL: ela sai do site sozinha. */
+  await ligarMotor({ SIM_FOTOS_V2: "1", SIM_SEM_CASAL: "1" });
   const r3 = await json("/api/cron/sincronizar-fotos");
-  ok(r3.corpo?.fotos_novas === 4 && r3.corpo?.fotos_removidas === 4, "foto trocada no Desbravador: 4 saem, 4 entram", JSON.stringify({ ...r3.corpo, suites: undefined }));
+  ok(r3.corpo?.fotos_novas === 3 && r3.corpo?.fotos_removidas === 3, "foto trocada no Desbravador (3 suítes à venda): 3 saem, 3 entram", JSON.stringify({ ...r3.corpo, suites: undefined }));
+  ok(r3.corpo?.suites_desativadas?.includes("CASAL STANDARD"), "suíte que o motor parou de vender é desligada do site", JSON.stringify(r3.corpo?.suites_desativadas));
+  ok((await fetch(`${BASE}/quartos/casal-standard`)).status === 404, "a suíte desligada sai do site");
   ok((await json("/api/cron/sincronizar-fotos", {})).corpo?.ultimo_erro === null, "rodada que concluiu limpa o erro anterior");
-  ok(r3.corpo?.suites?.every((d) => d.site_depois === d.motor), "depois da troca, cada suíte tem no site exatamente as fotos do motor", JSON.stringify(r3.corpo?.suites?.map((d) => [d.codigo, d.motor, d.site_depois])));
+  /* O motor volta a vender a CASAL: ela volta sozinha, com a foto trocada. */
+  await ligarMotor({ SIM_FOTOS_V2: "1" });
+  const r4 = await json("/api/cron/sincronizar-fotos");
+  ok(r4.corpo?.suites_ativadas?.includes("CASAL STANDARD") && r4.corpo?.fotos_novas === 1 && r4.corpo?.fotos_removidas === 1, "o motor voltou a vender a CASAL: religada e com a foto trocada", JSON.stringify({ ...r4.corpo, suites: undefined }));
+  ok((await fetch(`${BASE}/quartos/casal-standard`)).status === 200, "a suíte religada volta ao site");
+  ok(r4.corpo?.suites?.every((d) => d.site_depois === d.motor), "depois da troca, cada suíte tem no site exatamente as fotos do motor", JSON.stringify(r4.corpo?.suites?.map((d) => [d.codigo, d.motor, d.site_depois])));
   const [{ n: v2 }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador'`;
   const [{ n: antigas }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador' AND url LIKE '%\\_2.jpg'`;
   ok(v2 === 8 && antigas === 0, "continuam 8 fotos do Desbravador, nenhuma das que sumiram lá", `${v2}/${antigas}`);
   const [{ n: doPainelDepois }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'painel'`;
   ok(doPainelDepois === doPainelAntes, "as fotos subidas pelo painel não foram tocadas", `${doPainelAntes} → ${doPainelDepois}`);
   const [sync] = await sql`SELECT valor FROM integracoes WHERE chave = 'fotos_sync'`;
-  ok(sync && JSON.parse(sync.valor).fotos_removidas === 4, "a última rodada fica registrada para o painel");
+  ok(sync && JSON.parse(sync.valor).consultado_em === r4.corpo?.consultado_em, "a última rodada fica registrada para o painel");
 
   /* 6. Painel: botão em Mídias, selo, Diagnóstico com os agendadores; chat sem o bloco de fala. */
   const nav = await chromium.launch();
@@ -170,6 +197,7 @@ try {
     ok(diag.includes("Agendador da Vercel (CRON_SECRET)") && (process.env.CRON_SECRET ? diag.includes("configurado") : diag.includes("opcional")), "Diagnóstico diz se a CRON_SECRET existe (sem mostrar o valor) e que ela é opcional");
     ok(diag.includes("Colunas das fotos (migration 0022)") && diag.includes("aplicadas"), "Diagnóstico mostra as colunas da 0022 como aplicadas");
     ok(diag.includes("4 suítes no motor"), "Diagnóstico resume a última rodada");
+    ok(diag.includes("Áudio do WhatsApp (OpenClaw)") && diag.includes("só a frase curta"), "Diagnóstico mostra que o áudio do WhatsApp fala só a frase curta");
 
     /* Chat do site: a Marina responde com link + bloco de fala; a pessoa lê sem o bloco. */
     await pag.goto(`${BASE}/`);

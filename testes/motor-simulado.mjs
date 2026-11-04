@@ -36,7 +36,8 @@ http.createServer((req, res) => {
   };
   /* "SR" existe no site mas desativada (como as 3 de produção); "NOVAMOTOR" só
      existe no motor: a sincronização precisa criá-la desativada no site. */
-  const todos = [quarto("FAM", "STANDARD FAMILIA", 4), quarto("CASAL", "CASAL STANDARD", 2),
+  /* SIM_SEM_CASAL=1: o motor deixa de vender a CASAL (o site tem que desligá-la sozinho). */
+  const todos = [quarto("FAM", "STANDARD FAMILIA", 4), ...(process.env.SIM_SEM_CASAL ? [] : [quarto("CASAL", "CASAL STANDARD", 2)]),
     quarto("SR", "SUITE REDE", 2), quarto("NOVAMOTOR", "SUÍTE NOVA DO MOTOR", 3)];
   const corpo = {
     hotel: "Marimar", check_in: ci, check_out: co, adultos, criancas, noites,

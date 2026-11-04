@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { checkAgentAuth } from "@/lib/agent-auth";
 import { comSql } from "@/lib/db-conexao";
 import { INTERVALO_CARONA_MS, sincronizarFotosDoMotor, ultimaSincronizacao, ultimoErroSincronizacao } from "@/lib/sincronizar-fotos-desbravador";
+import { garantirAudioSoFraseCurta } from "@/lib/openclaw-audio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +29,10 @@ function autorizado(request: NextRequest): boolean {
 }
 
 export async function GET(request: NextRequest) {
+  /* De carona na mesma rodada: o áudio do WhatsApp só da frase curta
+     (src/lib/openclaw-audio.ts). Uma conferência curta; depois de aplicado,
+     o registro no banco responde sem falar com o gateway. */
+  const audio_whatsapp = await garantirAudioSoFraseCurta().catch((e) => ({ modo: null, desejado: "tagged", conferido_em: new Date().toISOString(), aplicado_em: null, erro: (e as Error).message }));
   if (!autorizado(request)) {
     /* Sem chave: a rodada só acontece se a última tem mais de 1 h (a mesma
        regra da carona nas buscas) — e acontece AQUI, antes de responder, e
@@ -42,10 +47,10 @@ export async function GET(request: NextRequest) {
       try {
         const resumo = await sincronizarFotosDoMotor();
         console.info("[cron/fotos] rodada sem chave concluída", { novas: resumo.fotos_novas, removidas: resumo.fotos_removidas });
-        return Response.json({ ok: true, modo: "carona-agora", ...resumo }, { headers: { "cache-control": "no-store" } });
+        return Response.json({ ok: true, modo: "carona-agora", audio_whatsapp, ...resumo }, { headers: { "cache-control": "no-store" } });
       } catch (erro) {
         console.error("[cron/fotos] rodada sem chave não concluiu:", (erro as Error).message);
-        return Response.json({ ok: false, modo: "carona-agora", erro: (erro as Error).message }, { status: 503, headers: { "cache-control": "no-store" } });
+        return Response.json({ ok: false, modo: "carona-agora", audio_whatsapp, erro: (erro as Error).message }, { status: 503, headers: { "cache-control": "no-store" } });
       }
     }
     /* O resumo da última rodada e o último erro são públicos de propósito:
@@ -56,7 +61,7 @@ export async function GET(request: NextRequest) {
     return Response.json(
       {
         ok: true, modo: "carona", ultima_em: ultima?.em.toISOString() ?? null,
-        ultimo_resumo: ultima?.resumo ?? null, ultimo_erro: erro,
+        ultimo_resumo: ultima?.resumo ?? null, ultimo_erro: erro, audio_whatsapp,
         aviso: "Sem chave: a rodada só roda se a última tem mais de 1 hora. Com CRON_SECRET ou AGENT_API_KEY roda sempre.",
       },
       { status: 202, headers: { "cache-control": "no-store" } },
@@ -65,7 +70,7 @@ export async function GET(request: NextRequest) {
   try {
     const resumo = await sincronizarFotosDoMotor();
     console.info("[cron/fotos] sincronização concluída", resumo);
-    return Response.json({ ok: true, modo: "imediato", ...resumo }, { headers: { "cache-control": "no-store" } });
+    return Response.json({ ok: true, modo: "imediato", audio_whatsapp, ...resumo }, { headers: { "cache-control": "no-store" } });
   } catch (erro) {
     console.error("[cron/fotos] não concluiu; nada foi alterado:", (erro as Error).message);
     return Response.json({ ok: false, erro: (erro as Error).message }, { status: 503 });
