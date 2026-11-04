@@ -1,6 +1,6 @@
 # Estado do projeto — Marimar Site
 
-> **04/11/2026 (parte 4) — ÁUDIO SÓ DA FRASE CURTA E SUÍTES PELO MOTOR:** o site grava sozinho `tts.auto: "tagged"` no OpenClaw (só o bloco `[[tts:text]]` vira áudio; o link nunca é lido; sem bloco, só texto) e a sincronização liga/desliga suítes conforme o Desbravador devolve (o campo Ativo do painel não manda mais). Ver HANDOFF (parte 4).
+> **04/11/2026 (parte 4) — ÁUDIO SÓ DA FRASE CURTA E SUÍTES PELO MOTOR — CONFIRMADO PELO PROPRIETÁRIO ("funcionou perfeitamente"):** o site grava sozinho `tts.auto: "tagged"` no OpenClaw (só o bloco `[[tts:text]]` vira áudio; o link nunca é lido; sem bloco, só texto) e a sincronização liga/desliga suítes conforme o Desbravador devolve (o campo Ativo do painel não manda mais). Ver HANDOFF (parte 4).
 
 > **04/11/2026 (parte 3) — FOTOS CONFERIDAS EM PRODUÇÃO:** rodada síncrona às 16:33 UTC: as 10 suítes do motor estão com as mesmas fotos no site (STANDARD FAMILIA atualizada de 1 antiga para 4 novas; as 3 desativadas com fotos no banco); espelho no Blob em andamento (8 copiadas, 31 pendentes, 6 por rodada). Resumo por suíte e último erro visíveis em `/api/cron/sincronizar-fotos` (sem chave) e no Diagnóstico (PRs #69–#71). Falta só o que é da pousada: ativar as 3 suítes se quiser vendê-las pelo site, subir fotos do café da manhã e da praia no painel, e testar o WhatsApp. Ver HANDOFF (parte 3).
 
