@@ -4,7 +4,12 @@ import { lerContato } from "@/lib/pousada";
 import { modeloDaVisita } from "@/lib/modelo-site";
 import { paginaPronta } from "@/lib/site-novo/paginas";
 import { PacotesNovo } from "@/components/site-novo/paginas/PacotesNovo";
+import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Pacotes — Pousada Marimar, Ilha do Mel",
+  description: "Pacotes e ofertas da Pousada Marimar, em Encantadas, Ilha do Mel, quando a pousada publica.",
+};
 export default async function PacotesPage() {
   /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
   if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/pacotes")) return <PacotesNovo />;

@@ -18,8 +18,14 @@ import {
 import { modeloDaVisita } from "@/lib/modelo-site";
 import { paginaPronta } from "@/lib/site-novo/paginas";
 import { ReservarNovo } from "@/components/site-novo/reservar/ReservarNovo";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Disponibilidade e preços — Pousada Marimar, Ilha do Mel",
+  description: "Escolha as datas e veja as suítes livres e o preço da estadia, com a reserva no site oficial da Pousada Marimar, em Encantadas, Ilha do Mel.",
+};
 /* O motor demora em datas concorridas: a busca espera até 45 s (TIMEOUT_BUSCA). */
 export const maxDuration = 60;
 

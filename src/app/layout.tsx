@@ -6,6 +6,8 @@ import { textoIdeal } from "@/lib/contraste";
 import { versaoIcone } from "@/lib/icone";
 import { headers } from "next/headers";
 import { modeloDaVisita } from "@/lib/modelo-site";
+import { caminhoCanonico, urlDoSite } from "@/lib/seo";
+import { IDENTIDADE } from "@/lib/conteudo-pousada";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -18,7 +20,12 @@ import {
 
 export async function generateMetadata(): Promise<Metadata> {
   const p = await lerPousada();
+  /* Endereço canônico de cada página (sem ?check_in=…, sempre no domínio
+     oficial) e prévia de link com o título e a descrição DA PÁGINA: sem
+     título próprio aqui no openGraph, o Next usa os de cada página. */
+  const canonico = caminhoCanonico((await headers()).get("x-pathname"));
   return {
+    metadataBase: new URL(urlDoSite()),
     title: p?.seo_title || "Pousada Ilha do Mel Marimar — Reserva Oficial",
     description: p?.seo_description || "Pousada na Ilha do Mel (Encantadas, PR). Consulte disponibilidade e reserve diretamente no site oficial.",
     /* Ícones gerados da logo (src/app/marca/icone): antes, sem favicon
@@ -31,9 +38,10 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: [{ url: `/marca/icone/180?v=${versaoIcone(p)}`, sizes: "180x180", type: "image/png" }],
     },
     manifest: "/manifest.webmanifest",
+    ...(canonico ? { alternates: { canonical: canonico } } : {}),
     openGraph: {
-      title: p?.seo_title || "Pousada Ilha do Mel Marimar",
-      description: p?.seo_description || undefined,
+      siteName: IDENTIDADE.nome,
+      ...(canonico ? { url: canonico } : {}),
       images: p?.og_image_url ? [p.og_image_url] : undefined,
       type: "website",
       locale: "pt_BR",

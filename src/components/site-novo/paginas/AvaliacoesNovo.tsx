@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AVALIACOES } from "@/lib/conteudo-pousada";
 import { CabecalhoPagina, Fecho, Lista, Nota, Secao } from "./Partes";
+import { Migalhas } from "../DadosEstruturados";
 
 const virgula = (n: number) => n.toString().replace(".", ",");
 
@@ -13,6 +14,7 @@ export function AvaliacoesNovo() {
   const total = AVALIACOES.plataformas.reduce((s, p) => s + p.total, 0);
   return (
     <div>
+      <Migalhas trilha={[["Avaliações", "/avaliacoes"]]} />
       <CabecalhoPagina titulo="Avaliações">
         <p>São {total.toLocaleString("pt-BR")} avaliações de hóspedes em {AVALIACOES.plataformas.length} plataformas.</p>
         <p className="mt-2 text-[0.93rem]">Números consultados em {AVALIACOES.consultadoEm} e sujeitos a alteração. Cada nota pertence à plataforma indicada.</p>

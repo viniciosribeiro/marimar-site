@@ -7,6 +7,7 @@ import { BuscaNovo } from "../BuscaNovo";
 import { CartaoSuiteNovo } from "./CartaoSuiteNovo";
 import { lerPessoas } from "./preco";
 import { lerSuitesAtivas } from "./dados";
+import { Migalhas } from "../DadosEstruturados";
 
 /**
  * /quartos no site novo: as suítes com foto inteira, para quantas pessoas
@@ -30,6 +31,7 @@ export async function SuitesNovo({ pessoas }: { pessoas?: string }) {
 
   return (
     <div>
+      <Migalhas trilha={[["Suítes", "/quartos"]]} />
       <div className="sn-margem mx-auto max-w-[1240px] pt-10 lg:pt-16">
         <h1 className="sn-titulo-pagina">As suítes</h1>
         <p className="mt-4 max-w-[38rem] text-[1.06rem] leading-relaxed text-sn-texto-2">

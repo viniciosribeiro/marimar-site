@@ -5,6 +5,7 @@ import { comSql } from "@/lib/db-conexao";
 import { lerContato } from "@/lib/pousada";
 import { dataBR, pluralizar, resumir } from "@/lib/format";
 import { CabecalhoPagina, Fecho, Lista, Nota } from "./Partes";
+import { Migalhas } from "../DadosEstruturados";
 
 type Pacote = {
   id: string; nome: string; slug: string; descricao: string | null; inclusos: unknown;
@@ -32,6 +33,7 @@ export async function PacotesNovo() {
 
   return (
     <div>
+      <Migalhas trilha={[["Pacotes", "/pacotes"]]} />
       <CabecalhoPagina titulo="Pacotes"><p>Ofertas especiais para a sua estadia, quando a pousada publica.</p></CabecalhoPagina>
       <div className="sn-margem mx-auto mt-10 max-w-[1240px]">
         {!lista?.length ? (
@@ -78,6 +80,7 @@ export async function PacoteNovo({ slug }: { slug: string }) {
   const quando = vigencia(p);
   return (
     <div>
+      <Migalhas trilha={[["Pacotes", "/pacotes"], [p.nome, `/pacotes/${slug}`]]} />
       <div className="sn-margem mx-auto max-w-[1240px] pt-3 lg:pt-6">
         <Link href="/pacotes" className="inline-flex min-h-11 items-center gap-1.5 text-[0.95rem] text-sn-texto-2 hover:text-sn-texto">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden><polyline points="15 18 9 12 15 6" /></svg>

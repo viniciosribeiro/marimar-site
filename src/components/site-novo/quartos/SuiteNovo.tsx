@@ -14,6 +14,9 @@ import { CartaoSuiteNovo } from "./CartaoSuiteNovo";
 import { GaleriaSuite } from "./GaleriaSuite";
 import { BarraReserva, type AcaoBarra } from "./BarraReserva";
 import { estadoDoPreco, hospedes, iconeDaComodidade, linhaCapacidade, paramsDaConsulta, periodo, type EstadoPreco } from "./preco";
+import { DadosEstruturados } from "../DadosEstruturados";
+import { noMigalhas, noSuite } from "@/lib/site-novo/dados-estruturados";
+import { urlDoSite } from "@/lib/seo";
 import { lerSuite, type Foto, type SuiteCompleta } from "./dados";
 
 /**
@@ -74,8 +77,16 @@ export async function SuiteNovo({ slug, busca }: { slug: string; busca: BuscaSui
     ? (v.motivo === "ordem" ? "A data de saída precisa ser depois da data de entrada." : "Não entendemos as datas escolhidas. Escolha de novo.")
     : null;
 
+  const site = urlDoSite();
   return (
     <article className="pb-16 lg:pb-24">
+      <DadosEstruturados nos={[
+        noSuite(site, {
+          slug: q.slug, nome, descricao: q.descricao?.trim() || q.descricao_motor, fotos: fotosGaleria.map((f) => f.url),
+          ocupacaoMax: q.ocupacao_max, cama: q.cama, metragem: q.metragem, comodidades: comodidades.map((c) => c.nome),
+        }),
+        noMigalhas(site, [["Suítes", "/quartos"], [nome, `/quartos/${q.slug}`]]),
+      ]} />
       <div className="sn-margem mx-auto max-w-[1240px] pt-3 lg:pt-6">
         <Link href="/quartos" className="inline-flex min-h-11 items-center gap-1.5 text-[0.95rem] text-sn-texto-2 hover:text-sn-texto">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden><polyline points="15 18 9 12 15 6" /></svg>

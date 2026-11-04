@@ -5,6 +5,9 @@ import { COMPLEXO, faqCanonico } from "@/lib/conteudo-pousada";
 import { CabecalhoPagina, Fecho } from "./Partes";
 import { PerguntasComBusca, type GrupoPerguntas } from "./PerguntasComBusca";
 import { conteudoDoPainel } from "./dados";
+import { DadosEstruturados } from "../DadosEstruturados";
+import { noMigalhas, noPerguntas } from "@/lib/site-novo/dados-estruturados";
+import { urlDoSite } from "@/lib/seo";
 
 /** /faq no site novo: as mesmas perguntas do Clássico (canônicas + as do painel, sem repetir), com busca. */
 export async function FaqNovo() {
@@ -26,6 +29,7 @@ export async function FaqNovo() {
 
   return (
     <div>
+      <DadosEstruturados nos={[noPerguntas(urlDoSite(), grupos.flatMap((g) => g.itens)), noMigalhas(urlDoSite(), [["Perguntas frequentes", "/faq"]])]} />
       <CabecalhoPagina titulo="Perguntas frequentes">
         <p>A dúvida mais comum primeiro: <strong className="font-semibold text-sn-texto">{COMPLEXO.respostaFaq}</strong></p>
       </CabecalhoPagina>

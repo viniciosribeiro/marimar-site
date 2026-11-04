@@ -326,11 +326,14 @@ export const CONJUNTOS: Conjunto[] = [
 
 /* ─────────────── Catálogo de fontes ─────────────── */
 
+/* Fraunces e Albert Sans são as letras do site novo (Site → Modelo do site);
+   aqui elas ficam à disposição do Clássico e do painel. O Novo usa sempre as
+   duas (docs/plano-site-novo.md). */
 export const FONTES_TITULO = [
-  "Geist", "Playfair Display", "Lora", "Merriweather", "Cormorant Garamond",
+  "Geist", "Fraunces", "Playfair Display", "Lora", "Merriweather", "Cormorant Garamond",
   "Libre Baskerville", "Spectral", "Montserrat", "Raleway", "Poppins", "Inter",
 ];
-export const FONTES_CORPO = ["Geist", "Inter", "Roboto", "Open Sans", "Lato", "Nunito", "Source Sans 3"];
+export const FONTES_CORPO = ["Geist", "Albert Sans", "Inter", "Roboto", "Open Sans", "Lato", "Nunito", "Source Sans 3"];
 export const FONTES_MANUSCRITA = [
   "Caveat", "Kalam", "Dancing Script", "Shadows Into Light", "Patrick Hand", "Gloria Hallelujah", "nenhuma",
 ];

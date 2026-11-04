@@ -2,8 +2,14 @@ import { pluralizar } from "@/lib/format";
 import { modeloDaVisita } from "@/lib/modelo-site";
 import { paginaPronta } from "@/lib/site-novo/paginas";
 import { PacoteNovo } from "@/components/site-novo/paginas/PacotesNovo";
+import { metadadosDoPacote } from "@/lib/seo";
+import type { Metadata } from "next";
 import postgres from "postgres"; import { notFound } from "next/navigation"; import Link from "next/link";
 export const dynamic = "force-dynamic";
+/* Nome, descrição e imagem do pacote (buscadores e prévia do link); valem nos dois modelos. */
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  return metadadosDoPacote((await params).slug);
+}
 export default async function PacoteDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */

@@ -8,6 +8,7 @@ import { LinhaTravessia } from "../LinhaTravessia";
 import { CabecalhoPagina, Fecho, Nota, Secao } from "./Partes";
 import { ValoresTravessia } from "./ValoresTravessia";
 import { conteudoDoPainel, fotoDaSecao } from "./dados";
+import { Migalhas } from "../DadosEstruturados";
 
 /**
  * /como-chegar no site novo: o passo a passo na linha da travessia (a mesma da
@@ -29,6 +30,7 @@ export async function ComoChegarNovo() {
 
   return (
     <div>
+      <Migalhas trilha={[["Como chegar", "/como-chegar"]]} />
       <CabecalhoPagina titulo="Como chegar" foto={capa ? { url: capa.url, alt: capa.alt || "Encantadas, Ilha do Mel" } : null}>
         <p>{c.SOBRE_A_ILHA.acesso}</p>
         <p className="mt-4"><a href="#rota" className="sn-link">Traçar a rota de onde você está</a></p>
