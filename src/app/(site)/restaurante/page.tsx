@@ -10,6 +10,9 @@ import {
   Hero, Secao, Onda, TituloSecao, Subtexto, Manuscrita, Aviso, Botao, Selo,
 } from "@/components/site/ui";
 import type { CategoriaCardapio } from "@/lib/cardapio";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { RestauranteNovo } from "@/components/site-novo/restaurante/RestauranteNovo";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +32,8 @@ export const metadata: Metadata = {
  * next.config.ts) para nao quebrar link, QR code ou busca ja indexada.
  */
 export default async function RestaurantePage() {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/restaurante")) return <RestauranteNovo />;
   // WhatsApp salvo em Admin → Dados da pousada (com o número confirmado como reserva).
   const contato = await lerContato();
   let categorias: CategoriaCardapio[] = [];

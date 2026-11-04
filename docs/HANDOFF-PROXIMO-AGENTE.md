@@ -1,5 +1,11 @@
 # Handoff — continuar de onde paramos
 
+## ESTADO ATUAL — 04/11/2026 (parte 10): site novo, fase 4 (galeria e restaurante) construída
+- **O que entrou:** `/galeria` (capítulos curtos, `src/components/site-novo/galeria/`) e `/restaurante` (`src/components/site-novo/restaurante/`) no Novo, `pronta: true` (6 de 15). Visitantes continuam no Clássico.
+- **Detalhes:** a galeria usa a mesma consulta do Clássico e `montarCapitulos` (unitário em `testes/unit/galeria-novo.test.ts`); o mosaico mostra no máximo 5 fotos por capítulo (`NO_MOSAICO`) — mudar esse número exige rever as classes de `celula()`. O restaurante reaproveita o `Cardapio` do Clássico; a regra `.sn .sn-cardapio .sticky` (fora da camada, com `!important`) acerta a barra de categorias abaixo do topo do Novo.
+- **Situação de produção:** ver o fim desta seção (preenchido depois do merge e do deploy).
+- **Próximo passo (Fase 5):** como chegar/mapa, Ilha do Mel, a pousada, eventos, avaliações, perguntas, políticas, contato e pacotes. Aceite do plano: mapa e rota funcionando (4G de verdade), formulário de contato enviando. Os componentes do mapa (`src/components/site/rota/*`) e o envio do contato (`enviarContato`) devem ser reaproveitados como estão.
+
 ## ESTADO ATUAL — 04/11/2026 (parte 9): site novo, fase 3 (a busca) construída
 - **O que entrou:** `/reservar` no Novo (`src/components/site-novo/reservar/`), `pronta: true` (4 de 15). Visitantes continuam no Clássico.
 - **Para não quebrar:** a busca do Novo repete a do Clássico de propósito (consulta, regra de crianças, sincronização de carona com `after()`, `RolarParaResultados`, "Buscando suas suítes" do `FormularioBuscaDisponibilidade`). Os cartões vêm de `montarResultados` (puro, `reservar/resultados.ts`). O teste `testes/e2e-site-novo-reservar.mjs` compara com o Clássico suíte por suíte (nomes, diária, total, link) em 3 períodos — rode-o em qualquer mudança. Ele segura a sincronização de carona durante o teste (atualiza `integracoes.fotos_sync.atualizado_em` e devolve no fim).

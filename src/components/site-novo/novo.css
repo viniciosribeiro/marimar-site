@@ -151,3 +151,8 @@
 
 @keyframes sn-desenhar { to { stroke-dashoffset: 0; } }
 @keyframes sn-acender { from { opacity: .25; transform: scale(.6); } to { opacity: 1; transform: none; } }
+
+/* O cardápio do Clássico (src/components/site/Cardapio.tsx) dentro do Novo:
+   a barra de categorias gruda logo abaixo do topo do Novo (64/76 px), não
+   nos 64 px do Clássico. Fora da camada para ganhar da utilitária `top-16`. */
+.sn .sn-cardapio .sticky { top: var(--sn-topo) !important; }
