@@ -1,12 +1,23 @@
-# Plano do site novo (`/site-novo`) — análise e proposta de 04/11/2026
+# Plano do site novo ("Chegando pelo mar") — análise de 04/11/2026, aprovado com a chave no painel
 
-> **Situação em 04/11/2026:** proposta publicada para o proprietário em
-> <https://claude.ai/artifact/TpNqehNji4siweqz5U6Avc> (página privada do
-> Vinicios, com capturas, direção de design e rascunho da home). **Nada do
-> site novo foi construído.** Só constrói depois de ele responder
-> "aprovo" (ou "aprovo, mas…"). Se ele reprovar, este plano vira histórico.
-> Este arquivo é a versão para o próximo agente (inclusive Opus 5.5) executar
-> sem depender do chat.
+> **Situação em 04/11/2026 (fim do dia):** proposta **APROVADA** pelo
+> Vinicios, com um ajuste dele: em vez de uma prévia separada em `/site-novo`,
+> uma **chave no painel** (Site → Modelo do site) que alterna o site inteiro
+> entre o **Clássico** e o **Novo** nos mesmos endereços — "assim não
+> faríamos o serviço duas vezes". Respostas dele: a chave troca **o site
+> inteiro de uma vez** (o Novo só pode ir para todos com as 15 páginas
+> prontas); até lá **só quem entra no painel vê o Novo** (prévia neste
+> aparelho, com barrinha para comparar); os 4 erros do Clássico **corrigidos
+> já** (PR #78, em produção). Fraunces + Albert Sans e o céu por hora entram
+> (o céu pode ser desligado na mesma tela).
+>
+> **Construído:** a chave e a prévia (§6) e a **Fase 1** (base visual +
+> página inicial). Fases 2–6 seguem a tabela do §7. **Ligar o Novo para todos
+> é decisão do proprietário** — nenhum agente aperta esse botão.
+>
+> Proposta original (com capturas e rascunho): 
+> <https://claude.ai/artifact/TpNqehNji4siweqz5U6Avc>. Este arquivo é a
+> versão para o próximo agente executar sem depender do chat.
 
 ## 1. O pedido do proprietário (04/11/2026)
 
@@ -110,25 +121,34 @@ a pessoa decide: *quando venho → qual suíte → quanto custa → como chego �
 que como*. Regra: **as fotos mandam, o resto fica quieto**; um momento de
 impacto por tela; nada de enfeite repetido.
 
-### Tokens (CSS variables do site novo; a marca continua vindo do painel)
+### Tokens (como ficaram na Fase 1; a marca e o acento continuam vindo do painel)
 
-| Token | Valor padrão | Uso |
+Cores registradas no `@theme inline` de `src/app/globals.css` (classes
+Tailwind `bg-sn-mar`, `text-sn-texto-2`, `border-sn-linha`…):
+
+| Token | Valor | Uso |
 |---|---|---|
-| `--sn-mar` | `#0E2A3E` | fundos escuros, rodapé, títulos fortes |
-| `--sn-espuma` | `#FBF8F3` | fundo das páginas |
-| `--sn-areia` | `#F1E6D4` | faixas, respiro, cards de apoio |
-| `--sn-mare` | `var(--marca)` (hoje `#0D9488`) | ação: botões, links |
-| `--sn-sol` | `var(--acento)` (hoje laranja) | um destaque por tela |
-| `--sn-mata` | `#3F6B4F` | confirmações, natureza |
-| `--sn-texto` / `--sn-texto-2` | `#17324A` / `#4F6476` | texto / apoio |
-| `--sn-linha` | `#E3D7C3` | bordas finas |
+| `sn-mar` / `sn-mar-2` | `#0E2A3E` / `#163C57` | fundos escuros (travessia, rodapé, botão da Marina) |
+| `sn-espuma` | `#FBF8F3` | fundo das páginas |
+| `sn-areia` / `sn-areia-2` | `#F1E6D4` / `#E7D7BD` | faixas de respiro (notas dos hóspedes) |
+| `sn-texto` / `sn-texto-2` | `#17324A` / `#4F6476` | texto / apoio |
+| `sn-linha` | `#E3D7C3` | bordas finas |
+| `sn-mata` | `#3F6B4F` | confirmações, natureza |
+| `sn-mare-forte` / `sn-mare-texto` | a marca do painel com 30% / 40% de preto | botões (texto branco AA) / links sobre a espuma |
+
+O `LayoutNovo` também sobrepõe as variáveis do Clássico (`--fundo`,
+`--tinta`, `--fonte-titulo`…) para que um corpo do Clássico mostrado dentro
+do layout novo (página ainda não pronta, só na prévia) fique coerente.
+Estilos próprios em `src/components/site-novo/novo.css` (dentro de
+`@layer components`, para os utilitários do Tailwind ganharem).
 
 Tipografia: **Fraunces** (títulos, peso 500, eixos `opsz`/`SOFT`) +
 **Albert Sans** (texto, 17 px no celular, linha 1,55); números tabulares nos
-preços. Entram em `FONTES_TITULO`/`FONTES_CORPO` de `src/lib/tema.ts` para o
-painel poder escolher. Caveat deixa de ser padrão (opção no painel). Se o
-painel tiver fontes diferentes das padrão (Playfair/Inter), o site novo
-respeita o painel.
+preços. Na Fase 1 as duas são **fixas** no Novo (`next/font` no
+`LayoutNovo`); o seletor de fontes do painel (Identidade visual) continua
+valendo para o Clássico. **Ainda não feito (Fase 6):** oferecer Fraunces e
+Albert Sans em `FONTES_TITULO`/`FONTES_CORPO` de `src/lib/tema.ts` e o Novo
+respeitar uma escolha diferente do painel.
 
 Layout: fotos em sangria; coluna de leitura 65–72 caracteres; no máximo uma
 caixa por tela; seções separadas por espaço (sem ondas/folhas); cards de
@@ -182,68 +202,96 @@ Metas (celular, Lighthouse): Performance ≥ 85, Acessibilidade 100, SEO 100,
 CLS < 0,05. Se a abertura em vídeo impedir ≥ 85, mostrar os dois números ao
 proprietário e deixar a decisão com ele.
 
-## 6. Mecanismo da prévia `/site-novo`
+## 6. Mecanismo aprovado: a chave Clássico/Novo (Site → Modelo do site)
 
-Decisão: **mesmo domínio, caminho `/site-novo`** (não subdomínio): não mexe em
-DNS, usa o mesmo banco/motor/Marina, some sem rastro. O ambiente Preview da
-Vercel não tem `DATABASE_URL`, por isso um deploy separado não serviria.
+Os dois modelos vivem nos **mesmos endereços** (`/`, `/quartos`, `/reservar`…).
+Cada página decide, a cada visita, qual corpo mostrar. Nada de `/site-novo`,
+nada de redirect, nada de `noindex` (o visitante nunca vê o Novo antes da
+hora).
 
-Estrutura (nada do site atual é tocado):
+**Peças:**
 
 ```
-src/app/(site-novo)/site-novo/layout.tsx      # menu, rodapé, botão Falar, faixa "Prévia do site novo", tokens
-src/app/(site-novo)/site-novo/page.tsx        # home
-src/app/(site-novo)/site-novo/quartos/page.tsx, quartos/[slug]/page.tsx, reservar/page.tsx, galeria/…, restaurante/…, como-chegar/…, ilha-do-mel/…, a-pousada/…, eventos/…, avaliacoes/…, faq/…, politicas/…, contato/…, pacotes/…
-src/components/site-novo/**                   # componentes próprios (copiar e adaptar; não editar os de src/components/site)
-src/app/site-novo.css                         # tokens --sn-* e estilos próprios (importado só pelo layout do site novo)
-src/lib/site-novo/base.ts                     # BASE = "/site-novo"; hrefNovo(path) prefixa links internos
+drizzle/0023_modelo_site.sql              # pousada.modelo_site jsonb (também aplicada pelo site: src/lib/esquema-modelo-site.ts)
+src/lib/site-novo/paginas.ts              # PAGINAS_SITE: as 15 páginas, a fase de cada uma e `pronta`
+src/lib/modelo-site.ts                    # lerConfigModelo, prévia assinada, modeloDaVisita (React cache), voltarSeguro, hostPublico
+src/app/(admin)/admin/modelo-site/        # a tela (page.tsx) e as Server Actions (actions.ts)
+src/app/api/modelo-site/previa/route.ts   # link do painel → cookie de prévia (30 dias) → "/"
+src/app/api/modelo-site/ver/route.ts      # barrinha: Ver o Clássico / Ver o Novo / Sair da prévia (POST)
+src/components/site-novo/**               # LayoutNovo, TopoNovo, RodapeNovo, BarraPrevia, BuscaNovo, PilulaWhatsApp, useSemFlutuante, novo.css, home/HomeNovo
 ```
 
-Regras:
-- `export const dynamic = "force-dynamic"` em todas as páginas (tempo real).
-- `metadata.robots = { index: false, follow: false }` no layout e header
-  `X-Robots-Tag: noindex` para `/site-novo/:path*` em `next.config.ts`
-  (`headers()`); não listar no sitemap.
-- Faixa fixa discreta "Prévia do site novo · nada aqui é definitivo · ver o
-  site atual" (link para `/`).
-- Todos os links internos passam por `hrefNovo()`; APIs (`/api/*`) ficam
-  iguais.
-- Reaproveitar bibliotecas de dados sem alterá-las: `lerPousada`, `lerTema`,
-  `lerConteudo`, `lerRegras`, `fetchTarifas`, `buildDeepLink`, `comSql`,
-  `talvezSincronizarFotos`, `SECOES_FOTO`, `format.ts`.
-- Testar com o Postgres local + `testes/motor-simulado.mjs` +
-  `testes/gateway-simulado.mjs` (receita no HANDOFF) e com
-  `testes/auditoria-site.mjs` apontado para `http://localhost:3000/site-novo`.
+**Quem vê o quê (`modeloDaVisita()`):**
+- Visitante: o modelo gravado em `pousada.modelo_site.modelo` — e o Novo só
+  vale se `todasProntas()`. Coluna ausente/vazia/estranha = Clássico.
+- Quem abriu o link do painel neste aparelho (cookie `marimar_previa`,
+  `v1.previa.<expira>.<hmac>`, HMAC-SHA256 com `AUTH_SECRET`, 30 dias,
+  HttpOnly, SameSite=Lax): vê o Novo por padrão; `marimar_ver=classico`
+  (barrinha) mostra o Clássico. Sem `AUTH_SECRET` não há prévia (falha
+  fechada). O link do painel é `v1.entrar.<expira>.<hmac>` e vale 15 min;
+  validade maior do que a emitida é recusada.
+- Por que cookie assinado e não a sessão do painel: em produção o painel fica
+  em `admin.` e o site em `www.`; o cookie de um não chega ao outro.
+  `hostPublico()` troca `admin.` por `www.` ao montar o link.
 
-Promoção (aprovação final):
-1. `BASE = ""` em `src/lib/site-novo/base.ts`; mover
-   `src/app/(site-novo)/site-novo/*` para `src/app/(site)/*` substituindo as
-   páginas antigas (os arquivos antigos ficam no histórico do git);
-   mover `src/components/site-novo` → `src/components/site` (substituindo),
-   remover a faixa de prévia, o `noindex` e o header; `TEMA_PADRAO` com as
-   fontes novas; `docs/` atualizados.
-2. URLs públicas idênticas (`/quartos`, `/reservar`, …): nenhum redirect novo.
-3. Rollback: Vercel → Deployments → Promote no deployment anterior.
+**Como uma página entra no Novo (receita de cada fase):**
+1. Componente em `src/components/site-novo/<área>/…` (Server Component;
+   cliente só onde há interação), usando os tokens `sn-*` e as classes de
+   `novo.css`.
+2. Na página do Clássico, **uma linha no topo** (o corpo do Clássico não muda):
+   `if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/rota")) return <XNovo … />;`
+3. `pronta: true` no item de `PAGINAS_SITE` **só quando a fase passar no
+   aceite** (§7). Enquanto `pronta: false`, quem está na prévia vê o corpo
+   do Clássico dentro do layout novo, e a barrinha avisa "Esta página ainda
+   está no desenho clássico (fase N)".
 
-Rejeição: `git rm -r "src/app/(site-novo)" src/components/site-novo src/app/site-novo.css src/lib/site-novo` +
-remover o `headers()` do `/site-novo` + nota no CHANGELOG. Um commit só.
+**Layout:** `src/app/(site)/layout.tsx` devolve `<LayoutNovo>` quando a
+visita é Novo (tokens sobrepostos às variáveis do Clássico, fontes Fraunces e
+Albert Sans por `next/font` com `preload: false` — com `true` o Clássico
+também baixaria as fontes; virar `true` quando o Clássico for aposentado). O
+layout raiz não carrega as fontes do Google do Clássico quando a visita é
+Novo (exceto em `/admin`, pelo `x-pathname` do middleware).
 
-## 7. Fases (cada uma: PR → merge → deploy → link no celular → opinião)
+**Ligar para todos:** botão "Ligar o Novo para todos" aparece só com 15/15
+páginas prontas e só para o perfil Administração (`role === "master"`); a
+Server Action recusa em qualquer outro caso. "Voltar ao Clássico" funciona a
+qualquer momento e vale na hora (`revalidatePath("/", "layout")`). Se uma
+página voltar para `pronta: false`, o site volta sozinho ao Clássico para os
+visitantes (nunca dois visuais misturados).
 
-| Fase | Entrega | Aceite |
-|---|---|---|
-| 1 | Base (tokens, fontes, layout, menu, rodapé, botão Falar, faixa, noindex) + home | `/site-novo` abre em 390 px sem rolagem lateral; H1; Lighthouse ≥ 80; capturas antes/depois no PR |
-| 2 | `/site-novo/quartos` e `/site-novo/quartos/[slug]` com preço por datas | preço igual ao de `/reservar` para as mesmas datas; Reservar com `roomCode` |
-| 3 | `/site-novo/reservar` | mesmos resultados do `/reservar` atual (ids, preços, totais) para 3 períodos; rolagem suave e mensagem mantidas; modal sem 404; nunca R$ 0 |
-| 4 | galeria + restaurante/cardápio | lightbox com teclado e deslize; cardápio vazio explicado |
-| 5 | como chegar/mapa, ilha, a pousada, eventos, avaliações, faq, políticas, contato, pacotes | mapa e rota funcionando (testar com 4G de verdade); formulário de contato enviando |
-| 6 | acabamento: performance, a11y, SEO, iPhone/Android físicos, correções | metas do §5; relatório antes/depois |
-| 7 | decisão: promoção ou remoção | docs atualizados; deploy de produção verificado |
+**Aposentar o Clássico (só depois de o proprietário ligar o Novo e aprovar
+em uso):** apagar o corpo antigo de cada página e os componentes de
+`src/components/site` que ficarem sem uso, `preload: true` nas fontes, docs.
+A chave pode ficar (Clássico = some da tela) ou sair num PR próprio.
+
+**Se ele reprovar o Novo:** deixar no Clássico já basta. Para apagar o
+código: `src/components/site-novo`, `src/lib/site-novo`, as linhas de
+despacho nas páginas, `LayoutNovo` no layout, a tela e as rotas
+`modelo-site`; a coluna `modelo_site` pode ficar (inofensiva).
+
+**Testes da chave:** `testes/unit/modelo-site.test.ts` (assinatura, prazo,
+segredo, config, endereço de volta) e `testes/e2e-modelo-site.mjs` (banco
+LOCAL; visitante no Clássico, cookie forjado ignorado, "novo" no banco com
+página faltando ignorado, link vencido → 403, barrinha, painel, home nova no
+celular e em duas larguras de computador).
+
+## 7. Fases (cada uma: PR → merge → deploy → prévia no celular → opinião)
+
+| Fase | Entrega | Aceite | Situação |
+|---|---|---|---|
+| 1 | Chave + prévia; base (tokens, fontes, layout, topo, rodapé, "Falar com a Marina", barrinha) + página inicial | home do Novo em 390 px sem rolagem lateral; um H1; busca leva datas e hóspedes para `/reservar`; o Clássico intacto para os visitantes | **feita (04/11)** |
+| 2 | `/quartos` e `/quartos/[slug]` com preço por datas | preço igual ao de `/reservar` para as mesmas datas; Reservar com `roomCode` | a fazer |
+| 3 | `/reservar` | mesmos resultados do Clássico (ids, preços, totais) para 3 períodos; rolagem suave e "Buscando suas suítes" mantidas; janela sem 404; nunca R$ 0 | a fazer |
+| 4 | galeria + restaurante/cardápio | lightbox com teclado e deslize; cardápio vazio explicado | a fazer |
+| 5 | como chegar/mapa, ilha, a pousada, eventos, avaliações, faq, políticas, contato, pacotes | mapa e rota funcionando (4G de verdade); formulário de contato enviando | a fazer |
+| 6 | acabamento: performance, a11y, SEO/JSON-LD, iPhone/Android físicos | metas do §5; relatório antes/depois | a fazer |
+| 7 | o proprietário liga o Novo para todos (ou não) | deploy de produção verificado; docs | dele |
 
 Em cada PR: `npm test`, `tsc` limpo em export `git archive`, `npm run build`,
-`testes/auditoria-site.mjs` nas páginas tocadas, e-2-e existentes
-(`testes/e2e-cards-reserva.mjs`, `testes/e2e-fotos-sync.mjs`) continuam
-passando.
+`testes/e2e-modelo-site.mjs`, os e2e do Clássico
+(`testes/e2e-cards-reserva.mjs`, `testes/e2e-erros-classico.mjs`,
+`testes/e2e-calendario-abertura.mjs`, `testes/e2e-abertura.mjs`) continuam
+passando, e capturas da prévia no celular e no computador.
 
 ## 8. Ferramentas (skills) no repositório
 
@@ -259,21 +307,28 @@ passando.
 ## 9. O que NÃO muda (lista de proteção)
 
 Preços/consulta ao motor, `roomCode`, regras de crianças, Marina (skills,
-OpenClaw, áudio curto `tts.auto: "tagged"`, fotos por seção), painel e banco
-(nenhuma migration), rotas `/api/agent/*`, sincronização de fotos, textos da
-casa ("à beira-mar", pousada protagonista, sem contato inventado), abertura em
-vídeo, calendário, rolagem suave, modal sem 404. O site atual não recebe
-nenhuma alteração visual enquanto o `/site-novo` existir.
+OpenClaw, áudio curto `tts.auto: "tagged"`, fotos por seção), rotas
+`/api/agent/*`, sincronização de fotos, textos da casa ("à beira-mar",
+pousada protagonista, sem contato inventado), abertura em vídeo, calendário,
+rolagem suave, janela sem 404. Banco: só a migration **0023** (uma coluna
+`jsonb` em `pousada`, aprovada junto com a chave). **O corpo das páginas do
+Clássico não muda** enquanto ele existir: cada página ganha só a linha de
+despacho do §6.
 
-Correções pequenas no site atual (bugs do §3) só com pedido explícito do
-proprietário ("corrige já"): PR separado, sem mudança de comportamento.
+Correções pequenas no Clássico só com pedido explícito do proprietário: PR
+separado, sem mudança de comportamento (como o PR #78).
 
-## 10. Pendências e perguntas feitas ao proprietário
+## 10. Pendências e perguntas
 
-- Aprovar / ajustar / reprovar a proposta.
-- O "céu por hora" entra?
-- Mantém Fraunces + Albert Sans?
-- Corrigir já os 4 bugs visíveis do site atual?
+Respondidas em 04/11/2026: aprovado (com a chave no painel); céu por hora
+entra (desligável); Fraunces + Albert Sans mantidas; 4 erros do Clássico
+corrigidos já (PR #78).
+
+Em aberto:
 - Fotos faltando no painel: café da manhã e praia (hoje 404 em
-  `/api/midia-secao/cafe/0` e `/praia/0`); indicar fotos do acervo para cada
-  seção, se ele quiser.
+  `/api/midia-secao/cafe/0` e `/praia/0`). A foto do topo do Novo
+  (`HomeNovo.tsx`): imagem do bloco "hero" da home → foto do álbum **Praia e
+  ilha** (capa, senão a mais larga) → do álbum **A pousada** (capa, senão a
+  mais larga) → banner → imagem de compartilhamento. Sem fotos de praia hoje,
+  produção usa A pousada; vale a pousada escolher uma foto bem larga.
+- Quando ligar o Novo para todos: decisão do proprietário depois da Fase 6.

@@ -1,6 +1,8 @@
 # Estado do projeto — Marimar Site
 
-> **04/11/2026 (parte 6) — 4 ERROS DO CLÁSSICO CORRIGIDOS:** ícones como palavras em A Pousada, "1 anos"/"até 0 anos" nas regras de crianças, "R$ 0" quando o motor não publica tarifa e Pacotes vazio sem aviso. Testes locais 21/21; ver CHANGELOG (parte 6) para o status de produção.
+> **04/11/2026 (parte 7) — SITE NOVO APROVADO; CHAVE CLÁSSICO/NOVO NO PAINEL E A FASE 1 (PÁGINA INICIAL) CONSTRUÍDAS:** Site → Modelo do site alterna o site inteiro entre o Clássico e o Novo nos mesmos endereços; o Novo só pode ir para todos com as 15 páginas prontas (hoje 1) e só pelo perfil Administração — **decisão do proprietário, nenhum agente liga**. Até lá, só quem abre "Ver o site novo neste aparelho" (link/QR assinado) vê o Novo, com barrinha para comparar. Visitantes continuam no Clássico. Migration 0023 (uma coluna; aplicada pelo próprio site). Testado localmente (148 unitários; chave e home nova 44/44; Clássico intacto). Plano e receita das próximas fases: `docs/plano-site-novo.md` §6–§7. Ver CHANGELOG/HANDOFF (parte 7) para o status de produção.
+
+> **04/11/2026 (parte 6) — 4 ERROS DO CLÁSSICO CORRIGIDOS E CONFERIDOS EM PRODUÇÃO (PR #78):** ícones como palavras em A Pousada, "1 anos"/"até 0 anos" nas regras de crianças, "R$ 0" quando o motor não publica tarifa e Pacotes vazio sem aviso.
 
 > **04/11/2026 (parte 5) — PROPOSTA DO SITE NOVO PUBLICADA, AGUARDANDO APROVAÇÃO:** análise completa do site (capturas, Lighthouse, código) e proposta de redesign "Chegando pelo mar" em `/site-novo` entregues ao proprietário (https://claude.ai/artifact/TpNqehNji4siweqz5U6Avc); plano para agentes em `docs/plano-site-novo.md`; skills de design em `.claude/skills/`. **Nenhum código do site novo foi escrito; o site no ar não mudou.** Pendente: resposta do proprietário (aprovar/ajustar/reprovar). Bugs visíveis encontrados no site atual (ícones como texto em A Pousada, "1 anos" em Políticas, "R$ 0" na busca sem tarifa, Pacotes vazio) ficam para correção só com pedido dele.
 
@@ -401,7 +403,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 |---|---|
 | `docs/ESTADO-DO-PROJETO.md` | **este arquivo** — visao geral e ponto de entrada |
 | `docs/HANDOFF-PROXIMO-AGENTE.md` | prompt pronto para retomar o trabalho e fazer o deploy |
-| `docs/plano-site-novo.md` | análise de 04/11/2026 e plano completo do site novo (`/site-novo`): direção, módulos, prévia, fases |
+| `docs/plano-site-novo.md` | site novo "Chegando pelo mar": análise de 04/11/2026, direção, a chave Clássico/Novo (Site → Modelo do site), receita para cada página entrar no Novo, fases |
 | `docs/CHANGELOG.md` | historico datado de mudancas |
 | `docs/CHANGELOG-IA.md` | revisao geral de 28/09/2026: o que foi corrigido e pendencias priorizadas |
 | `docs/contrato-api.md` | contrato completo do Worker PousadaHub (todos os campos) |
@@ -433,6 +435,7 @@ Line endings normalizados por `.gitattributes` (`* text=auto eol=lf`). Se o
 | 3 | **Hero sem foto.** Cadastrar em Admin → Mídias uma imagem com `destaque = true` e **sem quarto vinculado** | Vinicios |
 | 4 | Pendente da 1ª sessão: `AGENT_API_KEY` nova na Vercel + OpenClaw | Vinicios |
 | 5 | **04/11 (parte 2):** nada obrigatório — migration 0022, agendador e regras do WhatsApp passaram a ser automáticos. Recomendado (não bloqueia): `BLOB_READ_WRITE_TOKEN` existir na Vercel (espelho das fotos); reinstalar as 2 skills na Hostinger e `settings/tts.json` como rede de segurança; **observar** um áudio real no WhatsApp e o Diagnóstico | Vinicios (observar) |
+| 6 | **04/11 (parte 7) — site novo:** abrir Site → Modelo do site → "Ver o site novo neste aparelho" (ou o QR) e dar opinião sobre a página inicial nova; fases 2–6 (suítes, reserva, galeria, restaurante, como chegar e páginas de conteúdo, acabamento) a construir, uma por PR (`docs/plano-site-novo.md` §7). **Ligar o Novo para todos só pelo proprietário**, com 15/15 páginas prontas | Vinicios (opinião) / agentes (fases) |
 
 ### ✅ Verificado nesta sessão
 

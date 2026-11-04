@@ -5,6 +5,9 @@ import { agruparItens } from "@/lib/blocos";
 import { lerConteudo, padroes, type Conteudo } from "@/lib/conteudo-editavel";
 import { lerRegras, textoCriancas, REGRAS_PADRAO, type Regras } from "@/lib/regras-hospedagem";
 import { RenderBloco, type Bloco, type DadosHome } from "@/components/site/BlocosHome";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { HomeNovo } from "@/components/site-novo/home/HomeNovo";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +31,9 @@ const PADRAO = [
 ] as const;
 
 export default async function HomePage() {
+  /* Site → Modelo do site: a página inicial do site novo. */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/")) return <HomeNovo />;
+
   let pousada: any = null;
   let quartos: any[] = [];
   let faqs: any[] = [];

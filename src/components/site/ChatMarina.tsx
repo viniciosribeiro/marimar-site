@@ -5,6 +5,7 @@ import { Icone } from "./Icone";
 import { Marcacao } from "./Marcacao";
 import { SUGESTOES, SAUDACAO, INDISPONIVEL, LIMITE_AUDIO_SEGUNDOS } from "@/lib/chat";
 import { textoSemBlocoDeFala } from "@/lib/voz-fala";
+import { useSemFlutuante } from "@/components/site-novo/useSemFlutuante";
 
 type Fala = { de: "visitante" | "marina"; texto: string };
 
@@ -23,9 +24,15 @@ type Fala = { de: "visitante" | "marina"; texto: string };
  * (celular em pé, celular deitado, tablet, desktop) e média de tela não
  * cabe em atributo de elemento.
  */
-export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string }) {
+export function ChatMarina({ whatsapp, nome, estilo = "classico" }: {
+  whatsapp: string; nome: string;
+  /** "novo": o botão único do site novo (canto, rótulo inteiro, sem o botão verde ao lado). */
+  estilo?: "classico" | "novo";
+}) {
   const [aberto, setAberto] = useState(false);
   const [ampliado, setAmpliado] = useState(false);
+  /* Site novo: o botão sai da frente enquanto a busca está na tela. */
+  const esconderBotao = useSemFlutuante(estilo === "novo");
   const [falas, setFalas] = useState<Fala[]>([]);
   const [rascunho, setRascunho] = useState("");
   const [esperando, setEsperando] = useState(false);
@@ -361,13 +368,26 @@ export function ChatMarina({ whatsapp, nome }: { whatsapp: string; nome: string 
           /* No celular fica na MESMA linha do botao do WhatsApp, a esquerda
              dele, e com rotulo curto: empilhados, os dois cobriam uma coluna
              inteira de texto e cartoes em toda pagina. */
-          className="fixed bottom-4 right-[4.5rem] sm:bottom-24 sm:right-5 z-40 flex items-center gap-2 h-[3.25rem] sm:h-auto bg-marca text-marca-texto pl-3 pr-4 sm:pl-4 sm:pr-5 sm:py-3 rounded-full shadow-marca-forte hover:bg-marca-hover transition-marca"
+          aria-hidden={esconderBotao || undefined}
+          tabIndex={esconderBotao ? -1 : undefined}
+          className={estilo === "novo"
+            ? `fixed z-40 flex items-center gap-2.5 h-12 rounded-full bg-sn-mar pl-2 pr-4 text-white shadow-[0_14px_30px_-12px_rgb(0_0_0/0.55)] ring-1 ring-white/15 transition-[opacity,transform,background-color] duration-200 hover:bg-sn-mar-2 ${esconderBotao ? "pointer-events-none translate-y-3 opacity-0" : ""}`
+            : "fixed bottom-4 right-[4.5rem] sm:bottom-24 sm:right-5 z-40 flex items-center gap-2 h-[3.25rem] sm:h-auto bg-marca text-marca-texto pl-3 pr-4 sm:pl-4 sm:pr-5 sm:py-3 rounded-full shadow-marca-forte hover:bg-marca-hover transition-marca"}
+          style={estilo === "novo" ? { right: "max(1rem, env(safe-area-inset-right, 0px))", bottom: "max(1rem, env(safe-area-inset-bottom, 0px))" } : undefined}
         >
-          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-white/20 shrink-0" aria-hidden>
-            <Icone nome="coracao" tamanho={14} />
+          <span className={estilo === "novo"
+            ? "flex items-center justify-center w-8 h-8 rounded-full bg-acento text-acento-texto shrink-0"
+            : "flex items-center justify-center w-6 h-6 rounded-full bg-white/20 shrink-0"} aria-hidden>
+            <Icone nome="coracao" tamanho={estilo === "novo" ? 16 : 14} />
           </span>
-          <span className="text-sm font-semibold sm:hidden">Marina</span>
-          <span className="text-sm font-semibold hidden sm:inline">{novidade ? "A Marina respondeu" : "Falar com a Marina"}</span>
+          {estilo === "novo" ? (
+            <span className="text-[0.95rem] font-semibold">{novidade ? "A Marina respondeu" : "Falar com a Marina"}</span>
+          ) : (
+            <>
+              <span className="text-sm font-semibold sm:hidden">Marina</span>
+              <span className="text-sm font-semibold hidden sm:inline">{novidade ? "A Marina respondeu" : "Falar com a Marina"}</span>
+            </>
+          )}
           {novidade && <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-amber-400 ring-2 ring-white animate-pulse" aria-hidden />}
         </button>
       )}

@@ -52,6 +52,8 @@ export const pousada = pgTable("pousada", {
    * onde ser gravados — e por isso simplesmente nao salvavam nada.
    */
   tema: jsonb("tema").$type<Record<string, any>>().default({}),
+  /** Site → Modelo do site: Clássico ou Novo (migration 0023, aplicada também pelo site). */
+  modelo_site: jsonb("modelo_site").$type<Record<string, unknown>>(),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
   atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
 });
