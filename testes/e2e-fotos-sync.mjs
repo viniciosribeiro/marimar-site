@@ -65,7 +65,12 @@ try {
   }
   ok(Boolean(gravado), "a rodada em segundo plano concluiu e ficou registrada");
   const r1 = { status: 200, corpo: gravado ? { ok: true, ...JSON.parse(gravado.valor) } : null };
-  ok((await json("/api/cron/sincronizar-fotos", {})).corpo?.ultima_em !== null, "sem chave de novo: só informa a hora da última rodada (e não roda antes de 1 h)");
+  const publico = await json("/api/cron/sincronizar-fotos", {});
+  ok(publico.corpo?.ultima_em !== null, "sem chave de novo: só informa a hora da última rodada (e não roda antes de 1 h)");
+  const porSuite = Object.fromEntries((publico.corpo?.ultimo_resumo?.suites ?? []).map((d) => [d.codigo, d]));
+  ok(porSuite.FAM?.motor === 2 && porSuite.FAM?.site_depois === 2 && porSuite.FAM?.novas === 2 && porSuite.FAM?.ativo === true, "resumo público diz, por suíte, quantas fotos o motor tem e quantas o site tem (FAM)", JSON.stringify(porSuite.FAM));
+  ok(porSuite.SR?.nota === "desativada no site" && porSuite.NOVAMOTOR?.nota === "cadastro criado desativado", "resumo público marca a suíte desativada e a criada", JSON.stringify([porSuite.SR, porSuite.NOVAMOTOR]));
+  ok(publico.corpo?.ultimo_erro === null, "sem erro registrado quando a rodada concluiu");
   ok(r1.corpo?.suites_motor === 4, "4 suítes vistas no motor", String(r1.corpo?.suites_motor));
   ok(r1.corpo?.fotos_novas === 8 && r1.corpo?.fotos_removidas === 0, "8 fotos novas (2 por suíte), nenhuma removida", `${r1.corpo?.fotos_novas}/${r1.corpo?.fotos_removidas}`);
   ok(r1.corpo?.espelho === "sem_blob", "sem BLOB_READ_WRITE_TOKEN: fotos apontam para o Desbravador (e o resumo diz isso)");
@@ -117,10 +122,19 @@ try {
   const restaurante = await json("/api/agent/restaurante");
   ok(/api\/agent\/fotos\?secao=cafe/.test(JSON.stringify(restaurante.corpo ?? {})), "rota do restaurante aponta para as fotos do café");
 
+  /* 4b. Motor fora do ar: a rodada falha, o erro fica visível e some na próxima que conclui. */
+  motor.kill(); await new Promise((r) => setTimeout(r, 500));
+  const falha = await json("/api/cron/sincronizar-fotos");
+  ok(falha.status === 503 && falha.corpo?.ok === false, "motor fora: a rodada com chave devolve 503 e não altera nada", JSON.stringify(falha.corpo));
+  const comErro = await json("/api/cron/sincronizar-fotos", {});
+  ok(typeof comErro.corpo?.ultimo_erro?.erro === "string" && comErro.corpo.ultimo_erro.erro.length > 0, "o erro da rodada fica registrado e visível sem chave", JSON.stringify(comErro.corpo?.ultimo_erro));
+
   /* 5. A troca de foto no Desbravador chega ao site; o que é do painel fica. */
   await ligarMotor({ SIM_FOTOS_V2: "1" });
   const r3 = await json("/api/cron/sincronizar-fotos");
-  ok(r3.corpo?.fotos_novas === 4 && r3.corpo?.fotos_removidas === 4, "foto trocada no Desbravador: 4 saem, 4 entram", JSON.stringify(r3.corpo));
+  ok(r3.corpo?.fotos_novas === 4 && r3.corpo?.fotos_removidas === 4, "foto trocada no Desbravador: 4 saem, 4 entram", JSON.stringify({ ...r3.corpo, suites: undefined }));
+  ok((await json("/api/cron/sincronizar-fotos", {})).corpo?.ultimo_erro === null, "rodada que concluiu limpa o erro anterior");
+  ok(r3.corpo?.suites?.every((d) => d.site_depois === d.motor), "depois da troca, cada suíte tem no site exatamente as fotos do motor", JSON.stringify(r3.corpo?.suites?.map((d) => [d.codigo, d.motor, d.site_depois])));
   const [{ n: v2 }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador'`;
   const [{ n: antigas }] = await sql`SELECT COUNT(*)::int AS n FROM midias WHERE origem = 'desbravador' AND url LIKE '%\\_2.jpg'`;
   ok(v2 === 8 && antigas === 0, "continuam 8 fotos do Desbravador, nenhuma das que sumiram lá", `${v2}/${antigas}`);

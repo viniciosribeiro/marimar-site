@@ -1,7 +1,7 @@
 import { NextRequest, after } from "next/server";
 import { checkAgentAuth } from "@/lib/agent-auth";
 import { comSql } from "@/lib/db-conexao";
-import { sincronizarFotosDoMotor, talvezSincronizarFotos, ultimaSincronizacao } from "@/lib/sincronizar-fotos-desbravador";
+import { sincronizarFotosDoMotor, talvezSincronizarFotos, ultimaSincronizacao, ultimoErroSincronizacao } from "@/lib/sincronizar-fotos-desbravador";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,9 +30,17 @@ function autorizado(request: NextRequest): boolean {
 export async function GET(request: NextRequest) {
   if (!autorizado(request)) {
     after(() => comSql((sql) => talvezSincronizarFotos(sql)).catch(() => {}));
-    const ultima = await comSql((sql) => ultimaSincronizacao(sql)).catch(() => null);
+    /* O resumo da última rodada e o último erro são públicos de propósito:
+       só têm nomes de suíte (que já estão no site) e contagens, e são o que
+       permite a qualquer pessoa — ou agente sem a chave — ver se a foto nova
+       entrou e por que uma rodada não concluiu. Nunca inclua URLs internas. */
+    const [ultima, erro] = await comSql(async (sql) => [await ultimaSincronizacao(sql), await ultimoErroSincronizacao(sql)] as const).catch(() => [null, null] as const);
     return Response.json(
-      { ok: true, modo: "carona", ultima_em: ultima?.em.toISOString() ?? null, aviso: "Sem chave: a rodada roda em segundo plano, no máximo uma vez por hora. Com CRON_SECRET ou AGENT_API_KEY a resposta traz o resumo." },
+      {
+        ok: true, modo: "carona", ultima_em: ultima?.em.toISOString() ?? null,
+        ultimo_resumo: ultima?.resumo ?? null, ultimo_erro: erro,
+        aviso: "Sem chave: a rodada roda em segundo plano, no máximo uma vez por hora. Com CRON_SECRET ou AGENT_API_KEY a resposta traz o resumo na hora.",
+      },
       { status: 202, headers: { "cache-control": "no-store" } },
     );
   }
