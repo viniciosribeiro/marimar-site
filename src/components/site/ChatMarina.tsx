@@ -56,6 +56,13 @@ export function ChatMarina({ whatsapp, nome, estilo = "classico" }: {
      e uma vez ao abrir a página, para quem navegou e voltou. */
   const [pendente, setPendente] = useState(false);
   const [novidade, setNovidade] = useState(false);
+  /* Site novo: um botão da página (ex.: "Tirar dúvidas com a Marina" na suíte) abre este chat. */
+  useEffect(() => {
+    if (estilo !== "novo") return;
+    const abrir = () => { setAberto(true); setNovidade(false); };
+    window.addEventListener("marimar:abrir-marina", abrir);
+    return () => window.removeEventListener("marimar:abrir-marina", abrir);
+  }, [estilo]);
   const vistasRef = useRef<Set<string>>(new Set());
   const abertoRef = useRef(false);
   const consultarEquipe = useCallback(async () => {
@@ -364,7 +371,10 @@ export function ChatMarina({ whatsapp, nome, estilo = "classico" }: {
       {!aberto && (
         <button
           onClick={() => { setAberto(true); setNovidade(false); }}
-          aria-label={novidade ? "Abrir atendimento — chegou resposta" : "Abrir atendimento"}
+          /* No Novo o texto visível ("Falar com a Marina") é o nome do botão: o
+             leitor de tela e o comando de voz usam o que a pessoa vê. */
+          aria-label={estilo === "novo" ? undefined : novidade ? "Abrir atendimento — chegou resposta" : "Abrir atendimento"}
+          data-marina-flutuante={estilo === "novo" ? "" : undefined}
           /* No celular fica na MESMA linha do botao do WhatsApp, a esquerda
              dele, e com rotulo curto: empilhados, os dois cobriam uma coluna
              inteira de texto e cartoes em toda pagina. */

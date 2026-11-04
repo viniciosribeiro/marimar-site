@@ -12,10 +12,9 @@ export function RodapeNovo({ nome, logoUrl, whatsapp, whatsappDigitos, telefone,
   telefone: string | null; email: string | null; endereco: string | null;
 }) {
   const ano = new Date().getFullYear();
-  const lado = { paddingLeft: "max(1rem, env(safe-area-inset-left, 0px))", paddingRight: "max(1rem, env(safe-area-inset-right, 0px))" };
   return (
     <footer className="sobre-escuro mt-auto bg-sn-mar text-[#EAE4DA]">
-      <div className="mx-auto max-w-[1240px] px-4 pb-28 pt-14 sm:px-6 lg:px-10 lg:pb-14" style={lado}>
+      <div className="sn-margem mx-auto max-w-[1240px] pb-28 pt-14 lg:pb-14">
         <div className="grid gap-10 lg:grid-cols-[1.2fr_2fr]">
           <div className="max-w-sm">
             {logoUrl

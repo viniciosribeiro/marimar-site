@@ -14,8 +14,8 @@ export type PaginaSite = { caminho: string; nome: string; fase: number; pronta: 
 
 export const PAGINAS_SITE: PaginaSite[] = [
   { caminho: "/", nome: "Página inicial", fase: 1, pronta: true },
-  { caminho: "/quartos", nome: "Suítes", fase: 2, pronta: false },
-  { caminho: "/quartos/[slug]", nome: "Página de cada suíte", fase: 2, pronta: false },
+  { caminho: "/quartos", nome: "Suítes", fase: 2, pronta: true },
+  { caminho: "/quartos/[slug]", nome: "Página de cada suíte", fase: 2, pronta: true },
   { caminho: "/reservar", nome: "Busca e reserva", fase: 3, pronta: false },
   { caminho: "/galeria", nome: "Galeria", fase: 4, pronta: false },
   { caminho: "/restaurante", nome: "Restaurante e cardápio", fase: 4, pronta: false },

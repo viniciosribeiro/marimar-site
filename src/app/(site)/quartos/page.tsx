@@ -3,6 +3,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { CartaoSuite } from "@/components/site/CartaoSuite";
 import { COMPLEXO, COMODIDADES_CONFIRMADAS } from "@/lib/conteudo-pousada";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { SuitesNovo } from "@/components/site-novo/quartos/SuitesNovo";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +14,9 @@ export const metadata: Metadata = {
   description: "Suítes com banheiro privativo, ar-condicionado e TV em Encantadas. Consulte disponibilidade e tarifas em tempo real.",
 };
 
-export default async function QuartosPage() {
+export default async function QuartosPage({ searchParams }: { searchParams: Promise<{ pessoas?: string }> }) {
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/quartos")) return <SuitesNovo pessoas={(await searchParams).pessoas} />;
   let lista: any[] = [];
   try {
     const sql = postgres(process.env.DATABASE_URL!, { max: 1, connect_timeout: 5, prepare: false });

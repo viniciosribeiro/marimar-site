@@ -14,24 +14,46 @@ import { rotuloBebes, rotuloCriancas } from "@/lib/regras-hospedagem-base";
  * hóspedes em dois toques, com contadores no lugar das listas de números.
  * Limites iguais aos da busca do Clássico (1–4 adultos, 0–3 crianças, 0–2 bebês).
  */
-export function BuscaNovo({ regra, className = "" }: { regra: { idadeColoMax: number } | null; className?: string }) {
+export type BuscaInicial = { checkIn?: string | null; checkOut?: string | null; adultos?: number; criancas?: number; bebes?: number };
+
+export function BuscaNovo({
+  regra, className = "", action = "/reservar", titulo = "Quando você vem?", rotuloBotao, espera, inicial, estilo = "flutuante",
+  nota = "Preços do sistema de reservas da pousada, na hora. Reserva direta.",
+}: {
+  regra: { idadeColoMax: number } | null; className?: string;
+  /** Para onde a busca vai (padrão: /reservar; a página da suíte manda para ela mesma). */
+  action?: string; titulo?: string; rotuloBotao?: string; espera?: { titulo: string; texto: string };
+  /** Datas e hóspedes já escolhidos (vindos do endereço). */
+  inicial?: BuscaInicial;
+  /** flutuante: cartão com sombra (sobre foto); contorno: cartão com borda; plano: só os campos (dentro de outro cartão). */
+  estilo?: "flutuante" | "contorno" | "plano"; nota?: string | null;
+}) {
   return (
-    <FormularioBuscaDisponibilidade action="/reservar" variante="novo"
-      className={`grid grid-cols-2 gap-x-2.5 gap-y-3 rounded-[20px] bg-white p-4 text-sn-texto shadow-[0_28px_60px_-28px_rgb(14_42_62/0.55)] sm:p-5 ${className}`}
-      rodape={<p className="col-span-full -mt-1 text-center text-[0.8rem] leading-snug text-sn-texto-2">Preços do sistema de reservas da pousada, na hora. Reserva direta.</p>}>
-      <p className="col-span-full font-titulo text-[1.3rem] leading-tight">Quando você vem?</p>
-      <SeletorDatas variante="novo" />
-      <Hospedes regra={regra} />
+    <FormularioBuscaDisponibilidade action={action} variante="novo" rotuloBotao={rotuloBotao} espera={espera}
+      className={`grid grid-cols-2 gap-x-2.5 gap-y-3 text-sn-texto ${CARTAO[estilo]} ${className}`}
+      rodape={nota ? <p className="col-span-full -mt-1 text-center text-[0.8rem] leading-snug text-sn-texto-2">{nota}</p> : undefined}>
+      <p className="col-span-full font-titulo text-[1.3rem] leading-tight">{titulo}</p>
+      <SeletorDatas variante="novo" entradaInicial={inicial?.checkIn} saidaInicial={inicial?.checkOut} />
+      <Hospedes regra={regra} inicial={inicial} />
     </FormularioBuscaDisponibilidade>
   );
 }
 
-function Hospedes({ regra }: { regra: { idadeColoMax: number } | null }) {
+const CARTAO = {
+  flutuante: "rounded-[20px] bg-white p-4 sm:p-5 shadow-[0_28px_60px_-28px_rgb(14_42_62/0.55)]",
+  contorno: "rounded-[20px] bg-white p-4 sm:p-5 ring-1 ring-sn-linha",
+  plano: "",
+} as const;
+
+const entre = (n: number | undefined, min: number, max: number, padrao: number) =>
+  typeof n === "number" && Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : padrao;
+
+function Hospedes({ regra, inicial }: { regra: { idadeColoMax: number } | null; inicial?: BuscaInicial }) {
   const id = useId();
   const [aberto, setAberto] = useState(false);
-  const [adultos, setAdultos] = useState(2);
-  const [criancas, setCriancas] = useState(0);
-  const [bebes, setBebes] = useState(0);
+  const [adultos, setAdultos] = useState(() => entre(inicial?.adultos, 1, 4, 2));
+  const [criancas, setCriancas] = useState(() => entre(inicial?.criancas, 0, 3, 0));
+  const [bebes, setBebes] = useState(() => (regra ? entre(inicial?.bebes, 0, 2, 0) : 0));
   const partes = [`${adultos} ${adultos === 1 ? "adulto" : "adultos"}`];
   if (criancas) partes.push(`${criancas} ${criancas === 1 ? "criança" : "crianças"}`);
   if (bebes) partes.push(`${bebes} ${bebes === 1 ? "bebê" : "bebês"}`);

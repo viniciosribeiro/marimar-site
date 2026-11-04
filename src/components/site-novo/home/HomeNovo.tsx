@@ -1,4 +1,4 @@
-import { cache, Suspense } from "react";
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { comSql } from "@/lib/db-conexao";
@@ -7,8 +7,8 @@ import { lerBanner, type Banner } from "@/lib/banners";
 import { agruparItens, type ItemBloco } from "@/lib/blocos";
 import { lerConteudo, padroes, type Conteudo } from "@/lib/conteudo-editavel";
 import { lerRegras, REGRAS_PADRAO, type Regras } from "@/lib/regras-hospedagem";
-import { fetchTarifas } from "@/lib/worker";
-import { brl, datasExemplo, pluralizar, tituloQuarto } from "@/lib/format";
+import { brl, pluralizar, tituloQuarto } from "@/lib/format";
+import { acharNoMotor, tarifasDeReferencia, temDiaria } from "../tarifas";
 import { modeloDaVisita } from "@/lib/modelo-site";
 import { AVALIACOES, CAFE_DA_MANHA, CONTATO, DIFERENCIAIS, IDENTIDADE, RESTAURANTE } from "@/lib/conteudo-pousada";
 import { Icone } from "@/components/site/Icone";
@@ -87,21 +87,11 @@ async function lerDados() {
   }
 }
 
-/* Uma consulta ao motor por visita, dividida por todos os cartões. */
-const tarifasDeReferencia = cache(async () => {
-  const ex = datasExemplo(7, 2);
-  try {
-    return await fetchTarifas(ex.checkIn, ex.checkOut, 2, 0, { timeoutMs: 8000 });
-  } catch {
-    return null;
-  }
-});
-
+/* Uma consulta ao motor por visita, dividida por todos os cartões (../tarifas). */
 async function PrecoSuite({ codigo }: { codigo: string | null }) {
   if (!codigo) return null;
-  const dados = await tarifasDeReferencia();
-  const q = dados ? [...dados.quartos, ...dados.indisponiveis].find((r) => r.id === codigo) : null;
-  if (!q || !(Number(q.diaria) > 0)) {
+  const q = acharNoMotor(await tarifasDeReferencia(2), codigo);
+  if (!temDiaria(q)) {
     return <p className="mt-2 text-[0.92rem] text-sn-texto-2">Preço para as suas datas na busca</p>;
   }
   return (
@@ -121,7 +111,6 @@ function faixaDoCeu(): "amanhecer" | "dia" | "tarde" | "noite" {
   return "noite";
 }
 
-const lado = { paddingLeft: "max(1rem, env(safe-area-inset-left, 0px))", paddingRight: "max(1rem, env(safe-area-inset-right, 0px))" };
 
 export async function HomeNovo() {
   const [d, p, visita] = await Promise.all([lerDados(), lerPousada(), modeloDaVisita()]);
@@ -150,8 +139,8 @@ export async function HomeNovo() {
           {visita.config.ceuPorHora && <div className={`sn-ceu sn-ceu--${faixaDoCeu()} absolute inset-0`} aria-hidden />}
         </div>
         {banner?.titulo && (
-          <p className="absolute left-0 right-0 z-10 mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-10"
-            style={{ top: "calc(var(--sn-topo) + 0.75rem)", ...lado }}>
+          <p className="sn-margem absolute left-0 right-0 z-10 mx-auto max-w-[1240px]"
+            style={{ top: "calc(var(--sn-topo) + 0.75rem)" }}>
             <span className="inline-flex flex-wrap items-center gap-x-2 rounded-full bg-black/35 px-3.5 py-1.5 text-[0.88rem] backdrop-blur-sm">
               {banner.rotulo && <strong className="font-semibold">{banner.rotulo}</strong>}
               <span>{banner.titulo}</span>
@@ -159,8 +148,7 @@ export async function HomeNovo() {
             </span>
           </p>
         )}
-        <div className="mx-auto grid min-h-[min(68svh,38rem)] max-w-[1240px] grid-cols-1 content-end gap-7 px-4 pt-[calc(var(--sn-topo)+2.5rem)] sm:px-6 lg:pt-[calc(var(--sn-topo)+4rem)] lg:min-h-[min(92svh,54rem)] lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:gap-14 lg:px-10 lg:pb-16"
-          style={lado}>
+        <div className="sn-margem mx-auto grid min-h-[min(68svh,38rem)] max-w-[1240px] grid-cols-1 content-end gap-7 pt-[calc(var(--sn-topo)+2.5rem)] lg:pt-[calc(var(--sn-topo)+4rem)] lg:min-h-[min(92svh,54rem)] lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:gap-14 lg:pb-16">
           <div className="max-w-[40rem]">
             <h1 id="sn-titulo">
               <span className="mb-3 block font-sans text-[1rem] font-medium tracking-normal text-white/90">
@@ -181,7 +169,7 @@ export async function HomeNovo() {
 
       {/* ── as suítes ───────────────────────────────────────────────── */}
       {ver("quartos") && d.suites.length > 0 && (
-        <section aria-labelledby="sn-suites" className="mx-auto max-w-[1240px] px-4 pt-14 sm:px-6 lg:px-10 lg:pt-24" style={lado}>
+        <section aria-labelledby="sn-suites" className="sn-margem mx-auto max-w-[1240px] pt-14 lg:pt-24">
           <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
             <h2 id="sn-suites" className="sn-h2">As suítes</h2>
             <Link href="/quartos" className="sn-link text-[0.98rem]">Ver as {pluralizar(d.totalSuites, "suíte")}</Link>
@@ -190,7 +178,7 @@ export async function HomeNovo() {
             Todas com banheiro privativo, ar-condicionado e café da manhã incluso. Os valores são diárias para 2 adultos,
             consultadas agora para daqui a uma semana; o preço das suas datas aparece na busca.
           </p>
-          <ul className="sn-trilho -mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-x-8 lg:gap-y-12 lg:overflow-visible lg:px-0">
+          <ul className="sn-trilho -mx-4 mt-8 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-x-8 lg:gap-y-12 lg:overflow-visible lg:px-0">
             {d.suites.map((q) => (
               <li key={q.id} className="w-[78%] shrink-0 snap-start sm:w-[44%] lg:w-auto">
                 <Link href={`/quartos/${q.slug}`} className="group block">
@@ -227,7 +215,7 @@ export async function HomeNovo() {
       {/* ── a travessia: o momento de ousadia do site ───────────────── */}
       {ver("mapa") && (
         <section aria-labelledby="sn-travessia" className="sobre-escuro mt-20 bg-sn-mar text-white lg:mt-28">
-          <div className="mx-auto max-w-[1240px] px-4 py-16 sm:px-6 lg:px-10 lg:py-24" style={lado}>
+          <div className="sn-margem mx-auto max-w-[1240px] py-16 lg:py-24">
             <div className="max-w-[40rem]">
               <h2 id="sn-travessia" className="sn-h2 text-white">Chegar já faz parte da viagem</h2>
               <p className="mt-4 text-[1.04rem] leading-relaxed text-white/80">
@@ -275,7 +263,7 @@ export async function HomeNovo() {
 
       {/* ── o restaurante ───────────────────────────────────────────── */}
       {ver("restaurante") && (
-        <section aria-labelledby="sn-restaurante" className="mx-auto grid max-w-[1240px] gap-8 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-10 lg:py-24" style={lado}>
+        <section aria-labelledby="sn-restaurante" className="sn-margem mx-auto grid max-w-[1240px] gap-8 py-16 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-24">
           <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-sn-areia lg:aspect-[5/4]">
             {fotoRestaurante && <Image src={fotoRestaurante.url} alt={fotoRestaurante.alt || RESTAURANTE.nome} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />}
           </div>
@@ -300,7 +288,7 @@ export async function HomeNovo() {
       {/* ── as notas ────────────────────────────────────────────────── */}
       {ver("avaliacoes") && (
         <section aria-labelledby="sn-notas" className="border-y border-sn-linha bg-sn-areia/60">
-          <div className="mx-auto max-w-[1240px] px-4 py-12 sm:px-6 lg:px-10 lg:py-16" style={lado}>
+          <div className="sn-margem mx-auto max-w-[1240px] py-12 lg:py-16">
             <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
               <h2 id="sn-notas" className="sn-h3 text-[1.5rem]">Notas dos hóspedes</h2>
               <Link href="/avaliacoes" className="sn-link text-[0.98rem]">Ver as notas por critério</Link>
@@ -323,7 +311,7 @@ export async function HomeNovo() {
 
       {/* ── dúvidas antes de reservar ──────────────────────────────── */}
       {ver("faq") && d.perguntas.length > 0 && (
-        <section aria-labelledby="sn-perguntas" className="mx-auto max-w-[860px] px-4 py-16 sm:px-6 lg:py-24" style={lado}>
+        <section aria-labelledby="sn-perguntas" className="sn-margem mx-auto max-w-[860px] py-16 lg:py-24">
           <h2 id="sn-perguntas" className="sn-h2">Antes de reservar</h2>
           <div className="mt-8 divide-y divide-sn-linha border-y border-sn-linha">
             {d.perguntas.map((f) => (

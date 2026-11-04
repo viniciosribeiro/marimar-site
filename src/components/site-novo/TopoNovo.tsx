@@ -83,8 +83,7 @@ export function TopoNovo({ nome, logoUrl, whatsappDigitos, telefone }: {
       <header data-solido={solido ? "true" : "false"}
         className="sn-topo sticky z-50 w-full"
         style={{ top: "env(safe-area-inset-top, 0px)" }}>
-        <div ref={barraRef} className="mx-auto flex h-full max-w-[1240px] items-center gap-4 px-4 sm:px-6 lg:px-10"
-          style={{ paddingLeft: "max(1rem, env(safe-area-inset-left, 0px))", paddingRight: "max(1rem, env(safe-area-inset-right, 0px))" }}>
+        <div ref={barraRef} className="sn-margem mx-auto flex h-full max-w-[1240px] items-center gap-4">
           <Link href="/" aria-label={`${nome}, página inicial`} className="sn-topo-texto flex shrink-0 items-center">
             {logoUrl
               // eslint-disable-next-line @next/next/no-img-element

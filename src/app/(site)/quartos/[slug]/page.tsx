@@ -1,10 +1,17 @@
 import { brl, datasExemplo } from "@/lib/format";
+import { modeloDaVisita } from "@/lib/modelo-site";
+import { paginaPronta } from "@/lib/site-novo/paginas";
+import { SuiteNovo, type BuscaSuite } from "@/components/site-novo/quartos/SuiteNovo";
 import postgres from "postgres"; import { notFound } from "next/navigation"; import Link from "next/link"; import { fetchTarifas } from "@/lib/worker"; import { buildDeepLink } from "@/lib/deeplink"; import { Gallery } from "@/components/site/Gallery"; import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 
 export const dynamic = "force-dynamic";
+/* No site novo a página consulta o motor com as datas da pessoa (até 45 s, como o /reservar). */
+export const maxDuration = 60;
 
-export default async function QuartoDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function QuartoDetailPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<BuscaSuite> }) {
   const { slug } = await params;
+  /* Site → Modelo do site: no Novo, a página nova (o corpo abaixo é o Clássico, intocado). */
+  if ((await modeloDaVisita()).modelo === "novo" && paginaPronta("/quartos/[slug]")) return <SuiteNovo slug={slug} busca={await searchParams} />;
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
   const [q] = await sql`SELECT q.*, c.nome as cat_nome FROM quartos q LEFT JOIN categorias c ON q.categoria_id = c.id WHERE q.slug = ${slug} AND q.ativo = true`;
   if (!q) { await sql.end(); notFound(); }
