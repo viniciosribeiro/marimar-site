@@ -6,10 +6,15 @@
  * repete a consulta de sempre com pequenas variações e mostra o que voltou:
  * código, tempo, cabeçalhos de cache e um resumo do corpo.
  *
- * Só LEITURA e só o serviço da própria pousada (`WORKER_BASE_URL`): nada vai
- * ao Desbravador a partir daqui, nada é gravado, nenhum segredo é lido ou
- * mostrado. No máximo uma rodada por minuto por instância.
+ * Só LEITURA. Ao serviço da própria pousada (`WORKER_BASE_URL`) vão as
+ * consultas de sempre. Ao Desbravador vai apenas o que o site já faz em toda
+ * sincronização de fotos: perguntar o tamanho de duas fotos de suíte (HEAD, só
+ * cabeçalhos), para saber se o servidor do site continua sendo atendido lá.
+ * Nenhuma consulta de tarifa ou de cadastro vai ao Desbravador a partir daqui,
+ * nada é gravado, nenhum segredo é lido ou mostrado. No máximo uma rodada por
+ * minuto por instância.
  */
+import postgres from "postgres";
 import { urlTarifas } from "@/lib/worker";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +33,7 @@ type Exame = {
 const CABECALHOS = [
   "cf-cache-status", "age", "cache-control", "expires", "etag", "last-modified", "vary",
   "date", "server", "cf-ray", "content-type", "content-length",
+  "via", "location", "allow", "retry-after", "www-authenticate",
 ];
 const SENSIVEL = /senha|pass|token|secret|segredo|chave|key|pix|mail|auth|cookie/i;
 
@@ -74,6 +80,9 @@ async function examinar(nome: string, o_que_muda: string, url: string, init: Req
     const cabecalhos: Record<string, string> = {};
     for (const c of CABECALHOS) { const v = r.headers.get(c); if (v) cabecalhos[c] = curto(v, 120); }
     r.headers.forEach((v, k) => { if (k.startsWith("x-") && !SENSIVEL.test(k)) cabecalhos[k] = curto(v, 120); });
+    /* Dos cookies, só os nomes (dizem se há verificação de robô na frente); nunca os valores. */
+    const cookies = r.headers.getSetCookie?.().map((c) => c.split("=")[0].trim()).filter(Boolean) ?? [];
+    if (cookies.length) cabecalhos["cookies_recebidos"] = cookies.join(", ").slice(0, 120);
     return { nome, o_que_muda, http: r.status, ms: Date.now() - inicio, cabecalhos, corpo: { bytes: texto.length, ...resumir(texto) } };
   } catch (e) {
     const tipo = (e as Error)?.name;
@@ -82,6 +91,32 @@ async function examinar(nome: string, o_que_muda: string, url: string, init: Req
       corpo: { erro: tipo === "TimeoutError" || tipo === "AbortError" ? "sem resposta em 15 s" : "sem conexão" },
     };
   }
+}
+
+/**
+ * O mesmo pedido que `conferirCopias` (sincronização de fotos) faz a cada
+ * rodada: HEAD numa foto de suíte hospedada no Desbravador, com o mesmo
+ * cabeçalho. Diz se o servidor do site continua sendo atendido por lá.
+ */
+async function examinarFotos(): Promise<Exame[]> {
+  const db = process.env.DATABASE_URL;
+  if (!db) return [];
+  const sql = postgres(db, { max: 1, connect_timeout: 5 });
+  let fotos: { url_origem: string }[] = [];
+  try {
+    fotos = [...await sql<{ url_origem: string }[]>`
+      SELECT url_origem FROM midias
+      WHERE origem = 'desbravador' AND tipo = 'foto'
+        AND url_origem LIKE 'https://reservas.desbravador.com.br/%'
+      ORDER BY atualizado_em DESC NULLS LAST LIMIT 2`];
+  } catch { fotos = []; } finally { await sql.end({ timeout: 2 }).catch(() => {}); }
+  const exames: Exame[] = [];
+  for (const foto of fotos) {
+    const arquivo = foto.url_origem.split("/").pop() ?? "foto";
+    exames.push(await examinar("foto_no_desbravador", `tamanho da foto ${arquivo}, como na sincronização de fotos`,
+      foto.url_origem, { method: "HEAD", headers: { accept: "image/*" } }));
+  }
+  return exames;
 }
 
 function dia(mais: number): string {
@@ -115,6 +150,7 @@ async function rodar(): Promise<Saida> {
     tarifas("pousada-que-nao-existe-teste", ci, co, 2)));
   exames.push(await examinar("raiz", "a página inicial do serviço", `${base}/`));
   exames.push(await examinar("padrao_de_novo", "a consulta de sempre, repetida no fim", tarifas(slug, ci, co, 2)));
+  exames.push(...await examinarFotos());
   return { consultado_em: new Date().toISOString(), regiao: process.env.VERCEL_REGION ?? "local", servico: padrao.host, exames };
 }
 
