@@ -9,7 +9,9 @@
  * Só LEITURA. Ao serviço da própria pousada (`WORKER_BASE_URL`) vão as
  * consultas de sempre. Ao Desbravador vai apenas o que o site já faz em toda
  * sincronização de fotos: perguntar o tamanho de duas fotos de suíte (HEAD, só
- * cabeçalhos), para saber se o servidor do site continua sendo atendido lá.
+ * cabeçalhos), para saber se o servidor do site continua sendo atendido lá, e
+ * abrir a página pública de reservas (a do botão "Reservar") só para ler o nome
+ * do arquivo do aplicativo, que muda quando o Desbravador publica versão nova.
  * Nenhuma consulta de tarifa ou de cadastro vai ao Desbravador a partir daqui,
  * nada é gravado, nenhum segredo é lido ou mostrado. No máximo uma rodada por
  * minuto por instância.
@@ -119,6 +121,50 @@ async function examinarFotos(): Promise<Exame[]> {
   return exames;
 }
 
+/** Só o formato: código, tempo, tamanho e os NOMES dos campos (nunca os valores). */
+async function sondar(nome: string, o_que_muda: string, url: string): Promise<Exame> {
+  const inicio = Date.now();
+  try {
+    const r = await fetch(url, { method: "GET", cache: "no-store", redirect: "follow", signal: AbortSignal.timeout(10_000) });
+    const texto = await r.text();
+    let campos = "";
+    try {
+      const d = JSON.parse(texto);
+      if (d && typeof d === "object" && !Array.isArray(d)) {
+        campos = Object.entries(d as Record<string, unknown>)
+          .map(([k, v]) => `${k}:${Array.isArray(v) ? "lista" + v.length : v === null ? "nulo" : typeof v}`).join(", ").slice(0, 600);
+      } else campos = Array.isArray(d) ? `lista com ${d.length}` : typeof d;
+    } catch { campos = "(não é JSON)"; }
+    return { nome, o_que_muda, http: r.status, ms: Date.now() - inicio, cabecalhos: { "content-type": curto(r.headers.get("content-type"), 60) }, corpo: { bytes: texto.length, campos } };
+  } catch {
+    return { nome, o_que_muda, http: 0, ms: Date.now() - inicio, cabecalhos: {}, corpo: { erro: "sem resposta" } };
+  }
+}
+
+/**
+ * A página pública de reservas da pousada (a mesma que o botão "Reservar"
+ * abre): só o nome do arquivo do aplicativo, para saber se o Desbravador
+ * publicou uma versão nova. Em 11/11/2026 era `main.f5828971.js`.
+ */
+async function versaoDaPagina(slug: string): Promise<Exame> {
+  const inicio = Date.now();
+  const nome = "pagina_de_reservas", o_que_muda = "nome do arquivo do aplicativo na página pública de reservas";
+  try {
+    const r = await fetch(`https://reservas.desbravador.com.br/hotel-app/${encodeURIComponent(slug)}`, {
+      method: "GET", cache: "no-store", redirect: "follow", signal: AbortSignal.timeout(10_000), headers: { accept: "text/html" },
+    });
+    const texto = await r.text();
+    const arquivos = [...new Set(texto.match(/static\/(?:js|css)\/main\.[a-f0-9]+\.(?:js|css)/g) ?? [])];
+    return {
+      nome, o_que_muda, http: r.status, ms: Date.now() - inicio,
+      cabecalhos: { "content-type": curto(r.headers.get("content-type"), 60), "last-modified": curto(r.headers.get("last-modified"), 60) },
+      corpo: { bytes: texto.length, arquivos: arquivos.join(", ") || "(nenhum encontrado)" },
+    };
+  } catch {
+    return { nome, o_que_muda, http: 0, ms: Date.now() - inicio, cabecalhos: {}, corpo: { erro: "sem resposta" } };
+  }
+}
+
 function dia(mais: number): string {
   const d = new Date(); d.setUTCDate(d.getUTCDate() + mais);
   return d.toISOString().slice(0, 10);
@@ -151,6 +197,15 @@ async function rodar(): Promise<Saida> {
   exames.push(await examinar("raiz", "a página inicial do serviço", `${base}/`));
   exames.push(await examinar("padrao_de_novo", "a consulta de sempre, repetida no fim", tarifas(slug, ci, co, 2)));
   exames.push(...await examinarFotos());
+  /* O serviço tem algum modo de detalhe ou outra rota? Só o formato da resposta. */
+  for (const extra of ["debug=1", "raw=1", "verbose=1", "detalhes=1"]) {
+    exames.push(await sondar("tarifas_com_" + extra.split("=")[0], "a consulta de sempre com " + extra, tarifas(slug, ci, co, 2, "&" + extra)));
+  }
+  const consulta = padrao.search;
+  for (const caminho of ["/debug", "/health", "/status", "/hotel", "/quartos", "/disponibilidade", "/diagnostico"]) {
+    exames.push(await sondar("rota" + caminho.replace("/", "_"), "outra rota do serviço: " + caminho, base + caminho + consulta));
+  }
+  exames.push(await versaoDaPagina(slug));
   return { consultado_em: new Date().toISOString(), regiao: process.env.VERCEL_REGION ?? "local", servico: padrao.host, exames };
 }
 
