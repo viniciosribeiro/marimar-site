@@ -158,7 +158,14 @@ async function versaoDaPagina(slug: string): Promise<Exame> {
     return {
       nome, o_que_muda, http: r.status, ms: Date.now() - inicio,
       cabecalhos: { "content-type": curto(r.headers.get("content-type"), 60), "last-modified": curto(r.headers.get("last-modified"), 60) },
-      corpo: { bytes: texto.length, arquivos: arquivos.join(", ") || "(nenhum encontrado)" },
+      corpo: {
+        bytes: texto.length,
+        arquivos: arquivos.join(", ") || "(nenhum encontrado)",
+        /* A página é pública (é a que o hóspede abre): título, endereços dos arquivos e o texto visível. */
+        titulo: curto(texto.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1], 120),
+        enderecos: [...texto.matchAll(/(?:src|href)=["']([^"']+)["']/g)].map((m) => curto(m[1], 90)).slice(0, 14).join(" | "),
+        texto_visivel: curto(texto.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " "), 300),
+      },
     };
   } catch {
     return { nome, o_que_muda, http: 0, ms: Date.now() - inicio, cabecalhos: {}, corpo: { erro: "sem resposta" } };
