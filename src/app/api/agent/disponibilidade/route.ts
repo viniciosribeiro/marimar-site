@@ -88,6 +88,13 @@ export async function GET(request: NextRequest) {
     });
   } catch (e) {
     console.error("[agent/disponibilidade] Erro:", e);
-    return Response.json({ ok: false, erro: "Erro ao consultar disponibilidade" }, { status: 500 });
+    /* Falha de consulta nunca é "sem vaga" (14/11/2026): a Marina avisa que
+       não conseguiu consultar e manda o link geral, com as datas. */
+    const link = buildDeepLink({ checkIn: ci, checkOut: co, adultos: v.consulta.adultos + v.consulta.criancas, criancas: 0 });
+    return Response.json({
+      ok: false, erro: "Erro ao consultar disponibilidade", motivo: "consulta_indisponivel",
+      link_reserva: link,
+      resumo_texto: `Não consegui consultar os preços e a disponibilidade agora (de ${dataBR(ci)} a ${dataBR(co)}). NÃO diga que não há vagas e não informe preço. Diga que o sistema de preços está fora do ar neste momento, envie o link do sistema de reservas para a pessoa ver direto e ofereça chamar a equipe: ${link}`,
+    }, { status: 500 });
   }
 }

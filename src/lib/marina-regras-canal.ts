@@ -12,7 +12,7 @@
  * não existe e as fotos vão em markdown (`CONTEXTO_CANAL`, src/lib/chat.ts).
  */
 export const REGRAS_CANAL_WHATSAPP = [
-  "REGRAS DO CANAL WHATSAPP (atualizadas pelo site em 04/11/2026; valem por cima da habilidade instalada):",
+  "REGRAS DO CANAL WHATSAPP (atualizadas pelo site em 14/11/2026; valem por cima da habilidade instalada):",
   "",
   "1. ÁUDIO CURTO. Toda resposta final que tenha link, preço ou mais de duas frases",
   "   termina com um bloco [[tts:text]]frase curta[[/tts:text]]: menos de 180",
@@ -41,4 +41,14 @@ export const REGRAS_CANAL_WHATSAPP = [
   "   (o café e o cardápio estão em /api/agent/restaurante). Nunca diga \"não",
   "   possui imagens\" como se fosse erro, e nunca mande foto de suíte no lugar.",
   "   Fotos de suíte continuam em /api/agent/quartos (fotos[].url_whatsapp).",
+  "",
+  "4. CONSULTA DE PREÇOS FORA DO AR. Se /api/agent/disponibilidade (ou o script de",
+  "   consulta) responder com erro, ok:false, ou sem NENHUMA suíte na lista, isso é",
+  "   falha do sistema, não falta de vaga. NUNCA diga que a pousada está lotada ou",
+  "   sem disponibilidade por causa disso e nunca informe preço de memória. Diga",
+  "   que o sistema de preços está fora do ar neste momento, mande por escrito o",
+  "   link oficial de reservas (o campo link_reserva que vem na resposta de erro",
+  "   de /api/agent/disponibilidade; se não vier, o link geral da habilidade) e",
+  "   ofereça chamar a equipe. Só diga que não há vaga quando a consulta trouxer",
+  "   as suítes e elas vierem como esgotadas.",
 ].join("\n");

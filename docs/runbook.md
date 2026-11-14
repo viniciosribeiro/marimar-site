@@ -76,6 +76,24 @@ O site continua no ar mostrando catalogo sem precos + CTA WhatsApp.
 
 ---
 
+## Site sem preços (a consulta responde, mas sem quartos)
+
+Visto em 14/11/2026. Sinais: `/reservar` mostra o aviso "Não conseguimos mostrar
+os preços aqui agora" com o botão "Ver no sistema de reservas";
+`/api/saude/status` → `servicos.desbravador.estado: "offline"`;
+`/api/cron/sincronizar-fotos` → 503.
+
+1. Abra num celular o link do botão "Ver no sistema de reservas". Aparecem
+   quartos e preços? Então o motor está bem e o problema é o serviço de
+   tarifas (PousadaHub). Não aparecem? É cadastro ou tarifa no Desbravador:
+   a pousada resolve com o suporte deles.
+2. Veja a resposta crua do serviço:
+   `<WORKER_BASE_URL>/tarifas?slug=pousada-ilha-do-mel-marimar&check_in=…&check_out=…&adultos=2&criancas=0`.
+3. O código do serviço não está neste repositório. Se o Desbravador passou a
+   recusar a consulta automática, não contorne: peça a eles um acesso oficial.
+4. Enquanto não volta, o site já manda o hóspede ao sistema de reservas e ao
+   WhatsApp, e a Marina tem regra para não dizer que não há vaga.
+
 ## Preco errado
 
 1. Admin → Diagnostico → Testar Worker

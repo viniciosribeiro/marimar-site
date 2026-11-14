@@ -92,6 +92,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("[disponibilidade] Erro:", err);
-    return Response.json({ ok: false, erro: "Erro ao consultar disponibilidade" }, { status: 500 });
+    /* Falha de consulta nunca é "sem vaga": quem chama recebe o link direto
+       do sistema de reservas, com as datas, para não deixar o hóspede sem saída. */
+    return Response.json({
+      ok: false, erro: "Erro ao consultar disponibilidade", motivo: "consulta_indisponivel",
+      link_reserva: buildDeepLink({ checkIn, checkOut, adultos, criancas }),
+    }, { status: 500 });
   }
 }
