@@ -172,6 +172,49 @@ async function versaoDaPagina(slug: string): Promise<Exame> {
   }
 }
 
+/**
+ * O arquivo do aplicativo que a página pública de reservas manda a qualquer
+ * visitante. Daqui saem só NOMES: rotas da página, parâmetros que ela lê do
+ * endereço (para saber se os links "Reservar" do site continuam valendo),
+ * endereços que ela chama e nomes dos pedidos. Nenhum valor é mostrado.
+ */
+async function lerAplicativo(caminho: string): Promise<Exame> {
+  const inicio = Date.now();
+  const nome = "aplicativo_de_reservas", o_que_muda = "nomes de rotas, parâmetros e pedidos no arquivo público " + caminho.split("/").pop();
+  if (!/^\/hotel-app\/assets\/[\w.-]+\.js$/.test(caminho)) {
+    return { nome, o_que_muda, http: 0, ms: 0, cabecalhos: {}, corpo: { erro: "arquivo do aplicativo não reconhecido" } };
+  }
+  try {
+    const r = await fetch("https://reservas.desbravador.com.br" + caminho, {
+      method: "GET", cache: "no-store", redirect: "follow", signal: AbortSignal.timeout(20_000), headers: { accept: "*/*" },
+    });
+    const js = await r.text();
+    const unicos = (re: RegExp, max: number, grupo = 1) => {
+      const vistos = new Set<string>();
+      for (const m of js.matchAll(re)) { const v = (m[grupo] ?? "").slice(0, 90); if (v) vistos.add(v); if (vistos.size >= max) break; }
+      return [...vistos].join(" | ");
+    };
+    const conta = (re: RegExp) => (js.match(re) ?? []).length;
+    return {
+      nome, o_que_muda, http: r.status, ms: Date.now() - inicio,
+      cabecalhos: { "content-type": curto(r.headers.get("content-type"), 60), "last-modified": curto(r.headers.get("last-modified"), 60) },
+      corpo: {
+        bytes: js.length,
+        rotas: unicos(/path:\s*["'`]([^"'`]{1,70})["'`]/g, 50),
+        parametros_do_endereco: unicos(/\.get\(["'`]([A-Za-z0-9_]{2,24})["'`]\)/g, 60),
+        enderecos_chamados: unicos(/["'`]((?:https?:\/\/[a-z0-9.-]+)?\/[A-Za-z0-9_\/.-]{2,80}\.(?:php|json))(?:\?[^"'`]*)?["'`]/g, 40),
+        servidores: unicos(/["'`](https?:\/\/[a-z0-9.-]+)(?:[\/?][^"'`]*)?["'`]/g, 40),
+        pedidos: unicos(/\b([A-Za-z]{3,30}R[QS])\b/g, 80),
+        outros_arquivos: unicos(/["'`](?:\.\/|assets\/)?([\w-]+-[\w-]{6,12}\.js)["'`]/g, 60),
+        verificacao_de_robo: `recaptcha ${conta(/recaptcha/gi)}, turnstile ${conta(/turnstile/gi)}, hcaptcha ${conta(/hcaptcha/gi)}`,
+        nomes_antigos: `wsrolRQ ${conta(/wsrolRQ/g)}, interface.php ${conta(/interface\.php/g)}, roomCode ${conta(/roomCode/g)}, rateCode ${conta(/rateCode/g)}, checkin ${conta(/checkin/g)}, child1 ${conta(/child1/g)}, child2 ${conta(/child2/g)}`,
+      },
+    };
+  } catch {
+    return { nome, o_que_muda, http: 0, ms: Date.now() - inicio, cabecalhos: {}, corpo: { erro: "sem resposta" } };
+  }
+}
+
 function dia(mais: number): string {
   const d = new Date(); d.setUTCDate(d.getUTCDate() + mais);
   return d.toISOString().slice(0, 10);
@@ -212,7 +255,10 @@ async function rodar(): Promise<Saida> {
   for (const caminho of ["/debug", "/health", "/status", "/hotel", "/quartos", "/disponibilidade", "/diagnostico"]) {
     exames.push(await sondar("rota" + caminho.replace("/", "_"), "outra rota do serviço: " + caminho, base + caminho + consulta));
   }
-  exames.push(await versaoDaPagina(slug));
+  const pagina = await versaoDaPagina(slug);
+  exames.push(pagina);
+  const arquivoDoAplicativo = String((pagina.corpo as { enderecos?: string }).enderecos ?? "").split(" | ").find((e) => /^\/hotel-app\/assets\/index-[\w.-]+\.js$/.test(e));
+  if (arquivoDoAplicativo) exames.push(await lerAplicativo(arquivoDoAplicativo));
   return { consultado_em: new Date().toISOString(), regiao: process.env.VERCEL_REGION ?? "local", servico: padrao.host, exames };
 }
 
