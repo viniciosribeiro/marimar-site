@@ -1,5 +1,20 @@
 # Changelog — Marimar Site
 
+## 14/11/2026 (parte 3) — Causa do site sem preços: o Desbravador publicou um sistema de reservas novo em 13/11
+**Autor:** Claude (Claude Code). **Migration:** nenhuma. Só exame (`/api/saude/tarifas`, das partes anteriores) e documentação.
+
+- **O que o exame mostrou em produção (18:22–18:50 UTC):**
+  1. O serviço de tarifas responde **200 com listas vazias e política de crianças zerada, igual para a pousada certa, para o nome em maiúsculas e para uma pousada que não existe**, em 46–140 ms. Resposta instantânea e idêntica para qualquer hotel = o Desbravador recusa o serviço **na porta**, sem processar a consulta. Não é cache do serviço nem cadastro da pousada.
+  2. O Desbravador **ainda atende o servidor do site nas fotos** (HEAD nas fotos de suíte → 200 com tamanho real). Não é bloqueio do nosso datacenter.
+  3. A página pública de reservas (a do botão "Reservar") agora carrega **um aplicativo novo** (`/hotel-app/assets/index-Dxhmbz6E.js`, `last-modified` **Sex, 13/11/2026 23:48 UTC**). Em 11/11 era `static/js/main.f5828971.js`. **O Desbravador republicou o motor de reservas na noite de 13/11, a véspera do incidente.**
+  4. No aplicativo novo, os **parâmetros do endereço são os mesmos** (checkin, checkout, adults, child1, child2, child3, roomCode, rateCode) e as rotas também: **os links "Reservar" do site seguem válidos**. O endereço da verificação de robô mudou de `/reservas/rol1/recaptcha.php` para `/reservas/modules/ws/recaptcha.php` (ao lado do `interface.php` das consultas).
+- **Leitura:** o motor foi atualizado em 13/11 e, depois disso, o serviço de tarifas (PousadaHub, Worker do proprietário na Cloudflare, **código fora deste repositório**) deixou de receber dados dele — mesma pergunta, resposta vazia. **Não é um congelamento que passa; não volta sozinho.** O conserto está no serviço (ajustar à versão nova do motor) ou num acesso oficial de integração do Desbravador — nos dois casos, fora deste site.
+- **O que continua no ar:** o aviso de falha com "Ver no sistema de reservas" (link válido, com datas e hóspedes), WhatsApp e "Tentar de novo"; a Marina sem falar em falta de vaga; as fotos.
+- **Limite respeitado:** não repliquei a consulta do motor a partir do site (recusado pela regra de permissões como acesso não autorizado) e não contornei a verificação de robô.
+- **Pendente (só o proprietário alcança):** (a) o acesso à Cloudflare onde roda o PousadaHub, para ver o log e ajustar o serviço à versão nova do motor; ou (b) o suporte do Desbravador, para o acesso oficial de integração e para avisar que a busca automática parou depois da atualização de 13/11.
+
+# Changelog — Marimar Site
+
 ## 14/11/2026 (parte 2) — Exame do serviço de tarifas pelo próprio site (`/api/saude/tarifas`)
 **Autor:** Claude (Claude Code), a pedido do proprietário ("O desbravador voltou a funcionar, ele estava travado… procure como fazer funcionar novamente"). **Migration:** nenhuma.
 
