@@ -94,6 +94,12 @@ os preços aqui agora" com o botão "Ver no sistema de reservas";
    resumo da resposta (só leitura, uma rodada por minuto).
 3. O código do serviço não está neste repositório. Se o Desbravador passou a
    recusar a consulta automática, não contorne: peça a eles um acesso oficial.
+   **Causa em 14/11/2026:** o Desbravador republicou o motor de reservas em
+   13/11 (aplicativo `index-Dxhmbz6E.js`) e o serviço parou de receber dados.
+   O exame `/api/saude/tarifas` mostra isso: resposta vazia e instantânea até
+   para pousada inexistente, mas as fotos ainda são atendidas e os parâmetros
+   do link "Reservar" seguem os mesmos. Conserto no serviço (Cloudflare) ou
+   acesso oficial do Desbravador.
 4. Enquanto não volta, o site já manda o hóspede ao sistema de reservas e ao
    WhatsApp, e a Marina tem regra para não dizer que não há vaga.
 
