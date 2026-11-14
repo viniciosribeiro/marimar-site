@@ -1,5 +1,15 @@
 # Changelog — Marimar Site
 
+## 14/11/2026 (parte 2) — Exame do serviço de tarifas pelo próprio site (`/api/saude/tarifas`)
+**Autor:** Claude (Claude Code), a pedido do proprietário ("O desbravador voltou a funcionar, ele estava travado… procure como fazer funcionar novamente"). **Migration:** nenhuma.
+
+- **Contexto (18:02–18:16 UTC):** com o Desbravador de volta segundo o proprietário, a consulta do site seguia vazia em 7 períodos, inclusive 4 nunca consultados antes (isso afasta a ideia de resposta guardada por endereço). O serviço responde em ~0,2 s. As duas amostras degradadas de setembro em `docs/samples/` são de consultas com o **slug errado** (`marimar`): a assinatura de hoje é a de "pousada não reconhecida", agora com o slug certo.
+- **O que entrou:** rota pública só de leitura `GET /api/saude/tarifas` (`src/app/api/saude/tarifas/route.ts`). Repete a consulta de sempre ao serviço da pousada (endereço montado por `urlTarifas`, o mesmo do site) com variações: parâmetro novo pedindo resposta fresca, outro período, nome em maiúsculas, pousada inexistente, página inicial do serviço e repetição no fim. Mostra código, tempo, cabeçalhos de cache e um resumo do corpo (nomes dos campos e contagens; campo com cara de segredo sai oculto). Não chama o Desbravador, não grava nada; uma rodada por minuto por instância; sem `WORKER_BASE_URL` responde 503 `configurado: false`.
+- **Tentativa barrada (não refazer sem decisão do proprietário):** uma consulta direta do site ao motor do Desbravador, só de leitura, foi recusada pela regra de permissões da sessão como acesso não autorizado. Não foi contornada e nenhum código dela entrou.
+- **Ambiente:** a sessão continua sem alcançar o serviço (a troca para o ambiente `marimar-site` não é possível com a sessão em curso), por isso o exame roda no site.
+- **Testes (locais):** `npm test` 178/178 e 1 pulado por falta de banco; `tsc` e lint do arquivo limpos; a rota rodada contra `testes/motor-simulado.mjs` nos modos vazio e normal (7 exames, 200) e sem configuração (503).
+- **Situação:** versionado; publicação e leitura do exame registradas na entrada seguinte.
+
 ## 14/11/2026 — Incidente: site sem preços nem disponibilidade (o motor devolve lista vazia); o site deixa de dizer "nenhuma suíte livre"
 **Autor:** Claude (Claude Code), a pedido do proprietário ("Socorro, o site não está conseguindo puxar os valores e disponibilidade nem nada mais"). **Migration:** nenhuma. Inclui o registro de 11/11 (commit de documentação que estava só na branch).
 

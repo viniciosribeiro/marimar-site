@@ -89,6 +89,9 @@ os preços aqui agora" com o botão "Ver no sistema de reservas";
    a pousada resolve com o suporte deles.
 2. Veja a resposta crua do serviço:
    `<WORKER_BASE_URL>/tarifas?slug=pousada-ilha-do-mel-marimar&check_in=…&check_out=…&adultos=2&criancas=0`.
+   Sem acesso ao serviço, abra `/api/saude/tarifas` no site: ele repete a
+   consulta com variações e mostra código, tempo, cabeçalhos de cache e um
+   resumo da resposta (só leitura, uma rodada por minuto).
 3. O código do serviço não está neste repositório. Se o Desbravador passou a
    recusar a consulta automática, não contorne: peça a eles um acesso oficial.
 4. Enquanto não volta, o site já manda o hóspede ao sistema de reservas e ao
