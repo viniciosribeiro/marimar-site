@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { after } from "next/server";
 import { fetchTarifas, validarConsulta, TIMEOUT_BUSCA } from "@/lib/worker";
+import { buildDeepLink, FALHA_CONSULTA, ROTULO_SISTEMA_DE_RESERVAS } from "@/lib/deeplink";
 import { comSql } from "@/lib/db-conexao";
 import { lerContato } from "@/lib/pousada";
 import {
@@ -59,6 +60,8 @@ export async function ReservarNovo({ sp }: { sp: BuscaReservar }) {
 
   let resultados: Resultado[] = [];
   let erro = "";
+  /* Preenchido quando a consulta ao motor falha: o link direto, com as datas. */
+  let linkMotor = "";
   let avisoCrianca = "";
   if (v && !v.ok) {
     erro = v.motivo === "ordem"
@@ -92,7 +95,8 @@ export async function ReservarNovo({ sp }: { sp: BuscaReservar }) {
     } catch (e) {
       /* O motivo vai para os logs da Vercel (Logs → /reservar). */
       console.error("[reservar novo] busca falhou:", consulta.checkIn, consulta.checkOut, (e as Error)?.message ?? e);
-      erro = "Não conseguimos consultar a disponibilidade agora. Tente novamente em instantes ou fale com a gente no WhatsApp.";
+      erro = FALHA_CONSULTA;
+      linkMotor = buildDeepLink({ checkIn: consulta.checkIn, checkOut: consulta.checkOut, adultos: oc.adultosMotor, criancas: oc.criancasMotor });
     }
   }
 
@@ -130,8 +134,9 @@ export async function ReservarNovo({ sp }: { sp: BuscaReservar }) {
           <div className="rounded-[18px] bg-sn-areia/70 p-6">
             <p className="text-[1.05rem]">{erro}</p>
             <div className="mt-4 flex flex-wrap gap-3">
-              {consulta && <a href={`/reservar?${query}&ver_resultados=1`} className="sn-botao">Tentar de novo</a>}
+              {linkMotor && <a href={linkMotor} target="_blank" rel="noopener noreferrer" className="sn-botao" data-link-motor>{ROTULO_SISTEMA_DE_RESERVAS}</a>}
               {wa && <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" className="sn-botao-linha">Falar no WhatsApp</a>}
+              {consulta && <a href={`/reservar?${query}&ver_resultados=1`} className={linkMotor ? "sn-botao-linha" : "sn-botao"}>Tentar de novo</a>}
             </div>
           </div>
         </div>

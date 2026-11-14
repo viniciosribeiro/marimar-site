@@ -77,6 +77,11 @@ Provável: `"quartos": [], "indisponiveis": [], "total_disponiveis": 0` sem mens
 ### Erro no motor
 Provável: HTTP 200 com `"quartos": []` e sem mensagem (degradação silenciosa)
 
+> **Confirmado em 14/11/2026:** o serviço respondeu 200 com `quartos` e
+> `indisponiveis` vazios para qualquer data. Desde então o site trata as duas
+> listas vazias como **falha de consulta** (`MotorSemQuartos`, `src/lib/worker.ts`),
+> nunca como "sem vaga": período lotado vem com os tipos em `indisponiveis`.
+
 ---
 
 ## Quartos mapeados (15-17/Out/2026)

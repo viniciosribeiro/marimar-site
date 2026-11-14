@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchTarifas, validarConsulta, TIMEOUT_BUSCA, type Consulta, type WorkerResponse } from "@/lib/worker";
-import { buildDeepLink } from "@/lib/deeplink";
+import { buildDeepLink, ROTULO_SISTEMA_DE_RESERVAS } from "@/lib/deeplink";
 import { calcularOcupacao, type Ocupacao } from "@/lib/regras-hospedagem";
 import { brl, dataBR, pluralizar, tituloQuarto } from "@/lib/format";
 import { lerContato, lerPousada } from "@/lib/pousada";
@@ -262,23 +262,28 @@ async function PainelPreco({ q, nome, consulta, noites, oc, resposta, whatsapp, 
     esgotada: "Sem vaga nesta suíte nestas datas. Veja as suítes livres para o mesmo período.",
     sem_tarifa: "O sistema de reservas não publicou tarifa desta suíte para estas datas. Veja as outras suítes ou pergunte à pousada.",
     fora_do_motor: "O sistema de reservas não trouxe esta suíte para estas datas. Veja as suítes livres ou pergunte à pousada.",
-    erro: "Não conseguimos consultar o sistema de reservas agora. Tente de novo em instantes ou fale com a pousada.",
+    erro: "Não conseguimos mostrar o preço aqui agora. Veja o preço desta suíte para as suas datas direto no sistema de reservas da pousada ou fale com a gente.",
   }[estado.tipo];
   const tentarDeNovo = `/quartos/${q.slug}${qs}#preco`;
+  /* Falha da consulta (14/11/2026): o caminho direto, já nesta suíte e nas datas. */
+  const linkMotor = estado.tipo === "erro"
+    ? buildDeepLink({ checkIn: consulta.checkIn, checkOut: consulta.checkOut, adultos: oc.adultosMotor, criancas: oc.criancasMotor, quartoId: q.desbravador_room_id })
+    : "";
   return (
     <>
       <p className="text-[0.93rem] text-sn-texto-2">{resumo}</p>
       <p role="status" className="mt-2 text-[1.04rem] leading-relaxed">{texto}</p>
       <div className="mt-4 grid gap-3">
         {estado.tipo === "erro"
-          ? <a href={tentarDeNovo} className="sn-botao w-full rounded-xl">Tentar de novo</a>
+          ? <a href={linkMotor} target="_blank" rel="noopener noreferrer" data-link-motor className="sn-botao w-full rounded-xl">{ROTULO_SISTEMA_DE_RESERVAS}</a>
           : <Link href={outrasSuites} className="sn-botao w-full rounded-xl">Ver as suítes livres</Link>}
         {pergunta && <a href={pergunta} target="_blank" rel="noopener noreferrer" className="sn-botao-linha w-full rounded-xl">Perguntar no WhatsApp</a>}
+        {estado.tipo === "erro" && <a href={tentarDeNovo} className="sn-botao-linha w-full rounded-xl">Tentar de novo</a>}
       </div>
       <BarraReserva
         titulo={estado.tipo === "erro" ? "Não deu para consultar agora" : estado.tipo === "esgotada" ? "Sem vaga nestas datas" : estado.tipo === "nao_comporta" ? "Não acomoda o grupo" : "Sem preço nestas datas"}
         detalhe={resumo}
-        acao={estado.tipo === "erro" ? { href: tentarDeNovo, rotulo: "Tentar de novo" } : { href: outrasSuites, rotulo: "Ver livres" }} />
+        acao={estado.tipo === "erro" ? { href: linkMotor, rotulo: "Ver no sistema", externo: true } : { href: outrasSuites, rotulo: "Ver livres" }} />
     </>
   );
 }

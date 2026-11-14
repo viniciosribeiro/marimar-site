@@ -1,7 +1,7 @@
 import postgres from "postgres";
 import { list } from "@vercel/blob";
 import { lookup } from "node:dns/promises";
-import { fetchTarifas } from "@/lib/worker";
+import { fetchTarifas, MotorSemQuartos } from "@/lib/worker";
 import { chamarRpc } from "@/lib/openclaw-config";
 import { lerSaude } from "@/lib/whatsapp-saude";
 
@@ -31,7 +31,17 @@ async function sonda(nome: string, metodo: string, fn: () => Promise<void>): Pro
   try {
     await fn();
     return { estado: "online", latencia_ms: Date.now() - inicio, descricao: nome + ": verificação concluída", metodo };
-  } catch {
+  } catch (e) {
+    /* A consulta respondeu, mas sem nenhum quarto (14/11/2026): o site fica sem
+       preços. É a falha que mais importa e a sonda antiga dava "online". */
+    if (e instanceof MotorSemQuartos) {
+      return {
+        estado: "offline", latencia_ms: Date.now() - inicio, metodo,
+        descricao: e.recebidos > 0
+          ? `${nome}: a consulta trouxe ${e.recebidos} quarto(s), mas nenhum pôde ser lido (formato mudou)`
+          : `${nome}: a consulta respondeu sem nenhum quarto; o site está sem preços`,
+      };
+    }
     // Falha de um único teste não derruba os demais; detalhes internos ficam no servidor.
     return { estado: "atencao", latencia_ms: Date.now() - inicio, descricao: nome + ": verificação não concluiu", metodo };
   }
@@ -111,7 +121,7 @@ async function medir(): Promise<Dados> {
       const co = new Date(ci); co.setUTCDate(co.getUTCDate()+2);
       const res = await fetchTarifas(ci.toISOString().slice(0,10),co.toISOString().slice(0,10),2,0,{timeoutMs:16000});
       if (!Array.isArray(res.quartos) || !Array.isArray(res.indisponiveis)) throw new Error("invalid-response");
-      // Zero quartos disponiveis pode ser normal.
+      // Zero quartos DISPONÍVEIS pode ser normal (lotado); zero tipos de quarto não é: fetchTarifas acusa.
     }) : NAO("Motor sem configuração"),
     voztoken ? sonda("ElevenLabs", "GET /v1/user autenticado", async () => {
       const r=await fetch("https://api.elevenlabs.io/v1/user",{headers:{"xi-api-key":voztoken},signal:AbortSignal.timeout(6000),cache:"no-store"});

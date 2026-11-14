@@ -5,7 +5,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { lerRespostaTarifas } from "../../src/lib/worker";
+import { lerRespostaTarifas, MotorSemQuartos } from "../../src/lib/worker";
 import { buildDeepLink } from "../../src/lib/deeplink";
 
 const pedido = { checkIn: "2026-12-28", checkOut: "2027-01-01", adultos: 2, criancas: 0 };
@@ -45,6 +45,28 @@ test("null, texto no lugar de número e campos faltando não derrubam a busca", 
 test("resposta sem quartos é erro claro", () => {
   assert.throws(() => lerRespostaTarifas({ erro: "motor fora do ar" }, pedido), /motor fora do ar/);
   assert.throws(() => lerRespostaTarifas(null, pedido), /vazia/);
+});
+
+/* 14/11/2026: o serviço respondeu 200 com as duas listas vazias para qualquer
+   data e o site mostrou "Nenhuma suíte livre nestas datas". Lista vazia de
+   TIPOS de quarto é falha de consulta; lotado vem em `indisponiveis`. */
+
+test("resposta com as duas listas vazias é falha de consulta, não \"sem vaga\"", () => {
+  const vazia = { hotel: "pousada-ilha-do-mel-marimar", check_in: pedido.checkIn, check_out: pedido.checkOut, adultos: 2, criancas: 0, noites: 4, quartos: [], indisponiveis: [], total_disponiveis: 0 };
+  assert.throws(() => lerRespostaTarifas(vazia, pedido), (e: unknown) => e instanceof MotorSemQuartos && e.recebidos === 0 && /nenhum tipo de quarto/.test((e as Error).message));
+  // só uma das listas presente e vazia também é falha
+  assert.throws(() => lerRespostaTarifas({ quartos: [] }, pedido), MotorSemQuartos);
+});
+
+test("quartos que vieram mas não puderam ser lidos: falha, com a contagem e o motivo", () => {
+  const ruim = { quartos: [{ nome: "Sem código", diaria: 500, total: 1000, disponivel: true }, quarto({ id: "102", diaria: null, total: null })], indisponiveis: [] };
+  assert.throws(() => lerRespostaTarifas(ruim, pedido), (e: unknown) => e instanceof MotorSemQuartos && e.recebidos === 2 && e.motivo.length > 0);
+});
+
+test("período lotado (todos em indisponiveis) continua sendo resposta válida", () => {
+  const r = lerRespostaTarifas({ quartos: [], indisponiveis: [{ id: "103", nome: "Família", disponivel: false, diaria: 0, motivo_indisponivel: "esgotado no periodo" }], total_disponiveis: 0 }, pedido);
+  assert.equal(r.quartos.length, 0);
+  assert.equal(r.indisponiveis.length, 1);
 });
 
 /* Link do "Reservar no site oficial" (19/10/2026): o formato do motor novo, o mesmo da Marina. */

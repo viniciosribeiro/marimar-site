@@ -125,15 +125,45 @@ function normalizarQuarto(q: unknown): unknown {
   };
 }
 
-function lerQuartos(lista: unknown, onde: string): WorkerQuarto[] {
+function lerQuartos(lista: unknown, onde: string, motivos: string[] = []): WorkerQuarto[] {
   if (!Array.isArray(lista)) return [];
   const ok: WorkerQuarto[] = [];
   for (const q of lista) {
     const r = workerQuartoSchema.safeParse(normalizarQuarto(q));
     if (r.success) ok.push(r.data);
-    else console.error(`[worker] quarto ignorado em ${onde}:`, r.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`).join("; "));
+    else {
+      const motivo = r.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+      motivos.push(motivo);
+      console.error(`[worker] quarto ignorado em ${onde}:`, motivo);
+    }
   }
   return ok;
+}
+
+/**
+ * A consulta voltou sem NENHUM tipo de quarto (14/11/2026).
+ *
+ * O serviço de tarifas responde 200 com `quartos` e `indisponiveis` vazios
+ * quando o motor não entrega nada (falha silenciosa, `docs/contrato-api.md`).
+ * Isso NÃO é "sem vaga": período lotado vem com os tipos em `indisponiveis`.
+ * Antes o site mostrava "Nenhuma suíte livre nestas datas" para qualquer data
+ * e a Marina respondia que não havia vaga. Agora é falha de consulta: as
+ * telas mostram o aviso de falha com o link direto do sistema de reservas.
+ *
+ * `recebidos` > 0 quer dizer que vieram quartos e nenhum pôde ser lido
+ * (formato mudou); `motivo` traz o primeiro campo que não bateu.
+ */
+export class MotorSemQuartos extends Error {
+  readonly recebidos: number;
+  readonly motivo: string;
+  constructor(recebidos = 0, motivo = "") {
+    super(recebidos > 0
+      ? `Worker: ${recebidos} quarto(s) recebido(s), nenhum aproveitável${motivo ? ` (${motivo})` : ""}`
+      : "Worker: o motor não devolveu nenhum tipo de quarto");
+    this.name = "MotorSemQuartos";
+    this.recebidos = recebidos;
+    this.motivo = motivo;
+  }
 }
 
 /**
@@ -149,8 +179,13 @@ export function lerRespostaTarifas(
   if (!Array.isArray(d.quartos) && !Array.isArray(d.indisponiveis)) {
     throw new Error(`Worker: resposta sem quartos (${typeof d.erro === "string" ? d.erro : Object.keys(d).slice(0, 6).join(", ")})`);
   }
-  const quartos = lerQuartos(d.quartos, "quartos");
-  const indisponiveis = lerQuartos(d.indisponiveis, "indisponiveis");
+  const motivos: string[] = [];
+  const quartos = lerQuartos(d.quartos, "quartos", motivos);
+  const indisponiveis = lerQuartos(d.indisponiveis, "indisponiveis", motivos);
+  if (quartos.length === 0 && indisponiveis.length === 0) {
+    const recebidos = (Array.isArray(d.quartos) ? d.quartos.length : 0) + (Array.isArray(d.indisponiveis) ? d.indisponiveis.length : 0);
+    throw new MotorSemQuartos(recebidos, motivos[0] ?? "");
+  }
   const num = (v: unknown, padrao: number) => (typeof v === "number" && Number.isFinite(v) ? v : padrao);
   const noitesPedido = Math.round((Date.parse(pedido.checkOut) - Date.parse(pedido.checkIn)) / 86_400_000);
   return workerResponseSchema.parse({

@@ -13,13 +13,18 @@ const PORTA = Number(process.env.PORTA ?? 4011);
    motor devolve todas as suítes indisponíveis e com diária 0, como fez de
    verdade em 04/11/2026 por alguns minutos ("sem tarifa publicada"). */
 let semTarifa = !!process.env.SIM_SEM_TARIFA;
+/* SIM_VAZIO=1 (ou GET /__modo?vazio=1): o serviço responde 200 com as duas
+   listas vazias, como fez de verdade em 14/11/2026 (falha silenciosa do
+   motor). O site tem de tratar como falha de consulta, não como "sem vaga". */
+let vazio = !!process.env.SIM_VAZIO;
 
 http.createServer((req, res) => {
   const u = new URL(req.url, "http://x");
   if (u.pathname === "/__modo") {
     if (u.searchParams.has("sem_tarifa")) semTarifa = u.searchParams.get("sem_tarifa") === "1";
+    if (u.searchParams.has("vazio")) vazio = u.searchParams.get("vazio") === "1";
     res.writeHead(200, { "content-type": "application/json" });
-    return res.end(JSON.stringify({ semTarifa }));
+    return res.end(JSON.stringify({ semTarifa, vazio }));
   }
   if (u.pathname !== "/tarifas") { res.writeHead(404); return res.end(); }
   const adultos = Number(u.searchParams.get("adultos") ?? 2);
@@ -56,10 +61,11 @@ http.createServer((req, res) => {
   /* SIM_SEM_CASAL=1: o motor deixa de vender a CASAL (o site tem que desligá-la sozinho). */
   const todos = [quarto("FAM", "STANDARD FAMILIA", 4), ...(process.env.SIM_SEM_CASAL ? [] : [quarto("CASAL", "CASAL STANDARD", 2)]),
     quarto("SR", "SUITE REDE", 2), quarto("NOVAMOTOR", "SUÍTE NOVA DO MOTOR", 3)];
+  const lista = vazio ? [] : todos;
   const corpo = {
     hotel: "Marimar", check_in: ci, check_out: co, adultos, criancas, noites,
-    quartos: todos.filter((q) => q.disponivel), indisponiveis: todos.filter((q) => !q.disponivel),
-    total_disponiveis: todos.filter((q) => q.disponivel).length,
+    quartos: lista.filter((q) => q.disponivel), indisponiveis: lista.filter((q) => !q.disponivel),
+    total_disponiveis: lista.filter((q) => q.disponivel).length,
     ...(criancas > 0 ? { aviso_crianca: "Faixas etarias de crianca nao configuradas no motor de reservas. Confirmar valor com a recepcao antes de informar ao hospede." } : {}),
   };
   res.writeHead(200, { "content-type": "application/json" });

@@ -30,3 +30,13 @@ export function buildDeepLink(params: {
   }
   return `${MOTOR}/reservation?${qs.toString()}`;
 }
+
+/**
+ * Quando a consulta de preços falha (motor fora do ar, lento, ou devolvendo
+ * lista vazia — 14/11/2026), o site não mostra "sem vaga": avisa e manda a
+ * pessoa para o sistema de reservas com as datas dela, onde dá para ver os
+ * preços e reservar. Mesma frase nos dois modelos do site.
+ */
+export const FALHA_CONSULTA =
+  "Não conseguimos mostrar os preços aqui agora. Veja as suítes e os preços das suas datas direto no sistema de reservas da pousada ou fale com a gente no WhatsApp.";
+export const ROTULO_SISTEMA_DE_RESERVAS = "Ver no sistema de reservas";

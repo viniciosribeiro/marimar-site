@@ -1,5 +1,5 @@
 import { fetchTarifas, validarConsulta, TIMEOUT_BUSCA } from "@/lib/worker";
-import { buildDeepLink } from "@/lib/deeplink";
+import { buildDeepLink, FALHA_CONSULTA, ROTULO_SISTEMA_DE_RESERVAS } from "@/lib/deeplink";
 import { SeletorDatas } from "@/components/site/SeletorDatas";
 import { FormularioBuscaDisponibilidade } from "@/components/site/FormularioBuscaDisponibilidade";
 import { RolarParaResultados } from "@/components/site/RolarParaResultados";
@@ -55,6 +55,8 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
   const oc = calcularOcupacao({ adultos, criancas, bebes: bebesInformados, noites: noitesConsulta }, regras);
   const bebes = oc.bebes;
   let resultados: any[] = []; let erro = ""; let noites = 0; let whatsapp = "";
+  /* Preenchido quando a consulta ao motor falha: o link direto, com as datas. */
+  let linkMotor = "";
   let avisoCrianca = "";
 
   /* Cada busca também confere, depois da resposta, se as fotos das suítes
@@ -134,7 +136,8 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
     } catch (e) {
       /* O motivo vai para os logs da Vercel (Logs → /reservar). */
       console.error("[reservar] busca falhou:", ci, co, (e as Error)?.message ?? e);
-      erro = "Não conseguimos consultar a disponibilidade agora. Tente novamente em instantes ou fale com a gente no WhatsApp.";
+      erro = FALHA_CONSULTA;
+      linkMotor = buildDeepLink({ checkIn: ci, checkOut: co, adultos: oc.adultosMotor, criancas: oc.criancasMotor });
     } finally {
       await sql.end();
     }
@@ -182,6 +185,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       {erro && (
         <div className="text-red-700 bg-red-50 border border-red-100 p-4 rounded-lg mb-6">
           <p className="text-sm">{erro}</p>
+          {linkMotor && <a href={linkMotor} target="_blank" rel="noopener noreferrer" data-link-motor className="inline-block mt-2 mr-4 py-2.5 text-sm font-semibold text-red-800 underline">{ROTULO_SISTEMA_DE_RESERVAS}</a>}
           {whatsapp && <a href={`https://wa.me/${whatsapp}`} target="_blank" className="inline-block mt-1 py-2.5 text-sm font-medium text-green-700 hover:underline">💬 Falar no WhatsApp</a>}
         </div>
       )}
