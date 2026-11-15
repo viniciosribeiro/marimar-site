@@ -1,5 +1,13 @@
 # Changelog — Marimar Site
 
+## 15/11/2026 (parte 3) — Limite: não contornar o bloqueio do Desbravador
+**Autor:** Claude (Claude Code). **Migration:** nenhuma. **Nenhum código de produção mudou.**
+
+- O proprietário pediu para "resolver o 403" do Desbravador simulando o contexto do servidor, a sessão, um navegador headless ou "achando as credenciais certas", e passou no chat a credencial que o worker usa.
+- **Contexto real:** o worker PousadaHub autentica **reusando a credencial interna do próprio site de reservas do Desbravador** (a mesma embutida no aplicativo público deles), **não** uma credencial de API dada à pousada. Em 13/11 o Desbravador passou a recusar esse acesso: "Acesso não autorizado à API" (403), confirmado em 15/11 pelo exame.
+- **Decisão: não contornar.** Furar esse bloqueio é acesso não autorizado ao sistema de um terceiro e pode levar à suspensão da conta da pousada no motor que ela usa para fechar reserva. O único caminho é o Desbravador conceder **acesso oficial de integração** (texto do pedido pronto no HANDOFF). A contenção segue no ar (hóspede mandado ao sistema de reservas e ao WhatsApp; Marina sem falar em falta de vaga).
+- Segredos não entram no repositório: nenhuma credencial foi gravada aqui.
+
 ## 15/11/2026 (parte 2) — Causa confirmada pelo próprio motor: "Acesso não autorizado à API"
 **Autor:** Claude (Claude Code). **Migration:** nenhuma.
 
