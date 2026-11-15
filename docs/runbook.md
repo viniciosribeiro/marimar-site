@@ -94,6 +94,9 @@ os preços aqui agora" com o botão "Ver no sistema de reservas";
    resumo da resposta (só leitura, uma rodada por minuto).
 3. O código do serviço não está neste repositório. Se o Desbravador passou a
    recusar a consulta automática, não contorne: peça a eles um acesso oficial.
+   Abra `/api/saude/tarifas` e veja `diagnostico_do_servico` (mensagem do
+   motor em cada pedido). **"Acesso não autorizado à API"** = o Desbravador
+   recusa o serviço: peça a eles acesso autorizado; não contorne.
    **Causa em 14/11/2026:** o Desbravador republicou o motor de reservas em
    13/11 (aplicativo `index-Dxhmbz6E.js`) e o serviço parou de receber dados.
    O exame `/api/saude/tarifas` mostra isso: resposta vazia e instantânea até
