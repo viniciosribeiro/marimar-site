@@ -110,6 +110,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       resultados = [...data.quartos, ...data.indisponiveis].map(r => {
         const l = map.get(r.id);
         const qFotos = l ? (fotosMap.get(l.id) || []) : [];
+        const comodidadesLocais = l ? (comodidadesMap.get(l.id) || []) : [];
         // Cai para a foto do proprio motor quando o quarto ainda nao tem midia local
         const fotoCapa = qFotos.length > 0 ? qFotos[0].url : (r.fotos?.[0] || null);
         const nomeExibido = tituloQuarto(l?.nome || r.nome);
@@ -118,7 +119,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           descricaoLocal: l?.descricao_motor || r.categoria || "", catNome: l?.cat_nome,
           descricaoCompleta: l?.descricao || null,
           descricaoMotor: l?.descricao_motor || r.categoria || null,
-          comodidadesLocal: l ? (comodidadesMap.get(l.id) || []) : [],
+          comodidadesLocal: comodidadesLocais.length ? comodidadesLocais : r.comodidades,
           fotosGaleria: qFotos.length > 0
             ? qFotos.map((f: any) => ({ url: String(f.url), alt: f.alt || nomeExibido }))
             : (r.fotos || []).filter((url: string) => !!url).map((url: string) => ({ url, alt: nomeExibido })),

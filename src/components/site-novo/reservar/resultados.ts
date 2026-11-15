@@ -25,7 +25,7 @@ export type Resultado = {
   diaria: number; totalFinal: number; valorBebes: number; temTarifa: boolean;
   fotoCapa: string | null; fotos: { url: string; alt: string }[]; comodidades: string[];
   cama: string | null; metragem: number | null; vista: string | null;
-  descricao: string | null; descricaoMotor: string | null;
+  descricao: string | null; descricaoMotor: string | null; pacote: string;
   escassez: string | null; avisoEstadia: number | null; motivo: string | null;
   linkReserva: string; whatsappUrl: string | null;
   /** Página da suíte no site com as mesmas datas — só para suíte ativa (nunca um 404). */
@@ -48,6 +48,7 @@ export function montarResultados(dados: WorkerResponse, ctx: {
   return [...dados.quartos, ...dados.indisponiveis].map((r) => {
     const l = porCodigo.get(r.id);
     const nome = tituloQuarto(l?.nome || r.nome);
+    const comodidadesLocais = l ? comodidadesDe.get(l.id) ?? [] : [];
     const proprias = l ? fotosDe.get(l.id) ?? [] : [];
     const fotos = proprias.length
       ? proprias.map((f) => ({ url: String(f.url), alt: f.alt || nome }))
@@ -68,10 +69,11 @@ export function montarResultados(dados: WorkerResponse, ctx: {
       temTarifa: Number(r.diaria) > 0,
       fotoCapa: proprias[0]?.url ?? r.fotos?.[0] ?? null,
       fotos,
-      comodidades: l ? comodidadesDe.get(l.id) ?? [] : [],
+      comodidades: comodidadesLocais.length ? comodidadesLocais : r.comodidades,
       cama: l?.cama ?? null, metragem: l?.metragem ?? null, vista: l?.vista ?? null,
       descricao: l?.descricao ?? null,
       descricaoMotor: l?.descricao_motor || r.categoria || null,
+      pacote: r.pacote,
       escassez: r.disponivel ? escassez(r.unidades_disponiveis) : null,
       avisoEstadia: r.estadia_minima > noites ? r.estadia_minima : null,
       motivo: r.motivo_indisponivel ?? null,
