@@ -18,6 +18,7 @@
  */
 import postgres from "postgres";
 import { urlTarifas } from "@/lib/worker";
+import { fraseDoMotor } from "@/lib/frase-do-motor";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -54,7 +55,7 @@ function semSegredos(v: unknown, prof = 0): unknown {
     }
     return o;
   }
-  return typeof v === "string" ? curto(v, 200) : v;
+  return typeof v === "string" ? fraseDoMotor(v) : v;
 }
 
 /** Resumo do corpo: nunca o conteúdo inteiro, nunca campo com cara de segredo. */

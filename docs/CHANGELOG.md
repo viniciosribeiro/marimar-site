@@ -1,5 +1,15 @@
 # Changelog — Marimar Site
 
+## 15/11/2026 (parte 2) — Causa confirmada pelo próprio motor: "Acesso não autorizado à API"
+**Autor:** Claude (Claude Code). **Migration:** nenhuma.
+
+- **O que o motor responde (lido às 16:03 UTC, depois que o proprietário publicou o worker com diagnóstico):** nos três pedidos do serviço (`hotelInfoRQ`, `tarifasRQ`, `disponibilidadeRQ`), `status.resultado: 0`, `code: 403`, mensagem **"Acesso não autorizado à API: Interface.php"**. Igual para a pousada certa, outra data e pousada inexistente. Ou seja: **desde a atualização de 13/11 o Desbravador recusa de propósito o acesso do serviço à API dele.** Não é erro de digitação de senha nem defeito do serviço.
+- **Conserto:** só com **acesso autorizado do Desbravador** para a pousada (credencial ou integração oficial), pedido pelo proprietário ao suporte deles. Quando vier, ela entra nos segredos do worker (`DESBRAVADOR_USER`/`DESBRAVADOR_PWD`, na Cloudflare) ou o serviço passa a usar a forma oficial que eles indicarem.
+- **Não fazer:** contornar o bloqueio (por exemplo, usar a chave que o site de reservas deles usa por dentro). É exatamente o acesso que eles fecharam; pode trazer problema para a conta da pousada.
+- **Dado sensível na mensagem do motor:** depois da seta, a mensagem do Desbravador traz dados internos do servidor deles. O exame `/api/saude/tarifas` passa a mostrar só a frase (`src/lib/frase-do-motor.ts`, 3 testes unitários). O worker com diagnóstico ainda repassa a mensagem inteira: na próxima troca do worker (quando houver acesso autorizado), cortar também lá.
+- **Testes:** `npm test` 181 passam (1 pulado sem banco); `tsc`, lint e `npm run build` limpos.
+- **Situação:** contenção no ar (hóspede mandado ao sistema de reservas e ao WhatsApp; Marina sem falar em falta de vaga; botões "Reservar" válidos). **Pendente do proprietário:** pedir ao suporte do Desbravador o acesso autorizado (texto pronto no HANDOFF).
+
 ## 15/11/2026 — Código do serviço de tarifas revisto; versão que diz o motivo entregue ao proprietário
 **Autor:** Claude (Claude Code). **Migration:** nenhuma. O proprietário escolheu consertar pelo serviço (caminho 1) e colou no chat o código do worker `pousadahub` da Cloudflare (ele não tem como gerar chave de API pelo celular agora). **O código do serviço continua fora deste repositório.**
 
