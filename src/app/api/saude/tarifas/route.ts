@@ -43,6 +43,20 @@ function curto(v: unknown, n = 80): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 }
 
+/** Cópia sem campos com cara de segredo, rasa e curta (para o `_diagnostico` do serviço). */
+function semSegredos(v: unknown, prof = 0): unknown {
+  if (prof > 4) return "…";
+  if (Array.isArray(v)) return v.slice(0, 10).map((x) => semSegredos(x, prof + 1));
+  if (v && typeof v === "object") {
+    const o: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(v as Record<string, unknown>).slice(0, 20)) {
+      o[k] = SENSIVEL.test(k) ? "(oculto)" : semSegredos(x, prof + 1);
+    }
+    return o;
+  }
+  return typeof v === "string" ? curto(v, 200) : v;
+}
+
 /** Resumo do corpo: nunca o conteúdo inteiro, nunca campo com cara de segredo. */
 function resumir(texto: string): Record<string, unknown> {
   let dados: unknown;
@@ -71,6 +85,9 @@ function resumir(texto: string): Record<string, unknown> {
     primeiro_quarto: primeiro && typeof primeiro === "object"
       ? Object.keys(primeiro as object).slice(0, 40).join(",")
       : undefined,
+    /* Desde 15/11/2026 o serviço manda, quando não lê nenhum quarto, o status que o
+       Desbravador devolveu em cada pedido (resultado, código e mensagem do motor). */
+    diagnostico_do_servico: d._diagnostico && typeof d._diagnostico === "object" ? semSegredos(d._diagnostico) : undefined,
   };
 }
 
