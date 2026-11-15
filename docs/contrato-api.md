@@ -84,6 +84,15 @@ Provável: HTTP 200 com `"quartos": []` e sem mensagem (degradação silenciosa)
 
 ---
 
+## Como o serviço consulta o motor (código lido em 15/11/2026)
+
+O código do worker `pousadahub` fica na Cloudflare do proprietário, fora deste repositório. Em resumo:
+
+- Três `POST` em `https://reservas.desbravador.com.br/reservas/modules/ws/interface.php`, em paralelo, com `Authorization: Basic` de dois segredos do worker (`DESBRAVADOR_USER`, `DESBRAVADOR_PWD`): `hotelInfoRQ` (quartos, opcionais, parâmetros), `tarifasRQ` (tarifa `WEB`) e `disponibilidadeRQ`.
+- Lê `hotelInfoRS.quartos`, `hotelInfoRS.parametros.variaveis` (P014, P029, P031, P032, P035, P042 → `politica_crianca`), `tarifasRS.tarifas` e `disponibilidadeRS.disponibilidade.result`.
+- HTTP diferente de 200 do motor → o serviço responde **502**. Motor respondendo 200 sem os dados (acesso recusado) → listas vazias e política zerada.
+- Desde 15/11/2026 (se o proprietário publicou a versão nova), quando nenhum quarto é lido, a resposta traz `_diagnostico`: `{ login, tarifas, disponibilidade }` com o `status` do motor em cada pedido (`resultado`, `code`, `msg`), `tem_hotelInfoRS`, `tipos_de_quarto` e `parametros`. O site ignora o campo; `/api/saude/tarifas` o mostra em `diagnostico_do_servico`.
+
 ## Quartos mapeados (15-17/Out/2026)
 
 | Sigla | Nome | Diária | Ocup. | Disponível |

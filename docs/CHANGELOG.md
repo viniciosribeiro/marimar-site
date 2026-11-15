@@ -1,5 +1,15 @@
 # Changelog — Marimar Site
 
+## 15/11/2026 — Código do serviço de tarifas revisto; versão que diz o motivo entregue ao proprietário
+**Autor:** Claude (Claude Code). **Migration:** nenhuma. O proprietário escolheu consertar pelo serviço (caminho 1) e colou no chat o código do worker `pousadahub` da Cloudflare (ele não tem como gerar chave de API pelo celular agora). **O código do serviço continua fora deste repositório.**
+
+- **Como o serviço consulta o motor (lido no código):** três POST em `/reservas/modules/ws/interface.php` com `Authorization: Basic` montado de dois segredos do worker (`DESBRAVADOR_USER` e `DESBRAVADOR_PWD`, valores só na Cloudflare): `hotelInfoRQ` (quartos e parâmetros), `tarifasRQ` e `disponibilidadeRQ`. Lê só `hotelInfoRS`, `tarifasRS` e `disponibilidadeRS` e **ignora o `wsrolRS.status`**, onde o motor diz se aceitou o acesso. Quando o motor recusa com HTTP 200, o serviço devolve listas vazias e política zerada sem dizer por quê — exatamente o que se vê desde 14/11. Em 26/10, com HTTP 403, ele devolvia 502.
+- **Leitura:** o motor responde 200 ao serviço (senão seria 502), mas sem `hotelInfoRS`: o acesso do serviço deixou de ser aceito depois da atualização de 13/11. Hipótese mais provável: a senha de acesso mudou junto com o sistema novo; a confirmação vem da mensagem do próprio motor (abaixo).
+- **Versão com diagnóstico (entregue no chat, para o proprietário colar e publicar na Cloudflare):** igual à atual, mais o campo `_diagnostico` **só quando nenhum quarto é lido**, com o `status` (resultado, código, mensagem) de cada um dos três pedidos, se veio `hotelInfoRS` e quantos tipos de quarto e parâmetros vieram. Os segredos não mudam. Conferida localmente com as respostas reais do motor gravadas em 11/11: **10 de 10** totais iguais aos do site para 2 adultos em 10–12/12 e os 5 de 3 adultos iguais; nenhum `_diagnostico` com dados bons; com recusa simulada, o campo aparece com as três mensagens.
+- **Site:** `/api/saude/tarifas` passa a mostrar esse campo inteiro em `diagnostico_do_servico` (campos com cara de segredo ocultos). O site em si ignora o campo novo (`lerRespostaTarifas` monta a resposta só com os campos conhecidos). Testado de ponta a ponta localmente: worker novo servido na máquina, motor recusando, exame do site mostrando as mensagens. `npm test` 178 passam (1 pulado sem banco); `tsc` e lint limpos.
+- **Também corrigido:** o título do CHANGELOG tinha ficado repetido no registro anterior (#102).
+- **Pendente:** o proprietário publicar a versão nova do worker; depois ler `diagnostico_do_servico` em `/api/saude/tarifas` e consertar de acordo (provável: atualizar `DESBRAVADOR_USER`/`DESBRAVADOR_PWD` nos segredos do worker, o que é feito pelo proprietário na Cloudflare, sem que a senha passe pelo chat ou pelo repositório).
+
 ## 14/11/2026 (parte 3) — Causa do site sem preços: o Desbravador publicou um sistema de reservas novo em 13/11
 **Autor:** Claude (Claude Code). **Migration:** nenhuma. Só exame (`/api/saude/tarifas`, das partes anteriores) e documentação.
 
@@ -12,8 +22,6 @@
 - **O que continua no ar:** o aviso de falha com "Ver no sistema de reservas" (link válido, com datas e hóspedes), WhatsApp e "Tentar de novo"; a Marina sem falar em falta de vaga; as fotos.
 - **Limite respeitado:** não repliquei a consulta do motor a partir do site (recusado pela regra de permissões como acesso não autorizado) e não contornei a verificação de robô.
 - **Pendente (só o proprietário alcança):** (a) o acesso à Cloudflare onde roda o PousadaHub, para ver o log e ajustar o serviço à versão nova do motor; ou (b) o suporte do Desbravador, para o acesso oficial de integração e para avisar que a busca automática parou depois da atualização de 13/11.
-
-# Changelog — Marimar Site
 
 ## 14/11/2026 (parte 2) — Exame do serviço de tarifas pelo próprio site (`/api/saude/tarifas`)
 **Autor:** Claude (Claude Code), a pedido do proprietário ("O desbravador voltou a funcionar, ele estava travado… procure como fazer funcionar novamente"). **Migration:** nenhuma.
