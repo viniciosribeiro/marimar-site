@@ -119,8 +119,10 @@ export const LIMITE_AUDIO_POR_HORA = 20;
 /** Teto de tamanho do arquivo, como segunda linha de defesa. */
 export const LIMITE_AUDIO_BYTES = 4 * 1024 * 1024;
 
-/** Transcricao (audio -> texto). Mesmo fornecedor da voz, mesma chave. */
-export const URL_TRANSCRICAO = "https://api.elevenlabs.io/v1/speech-to-text";
+/** Transcricao (audio -> texto). Mesmo fornecedor da voz, mesma chave.
+    Honra VOZ_URL_ELEVENLABS (só os testes a definem; produção não tem). */
+export const URL_TRANSCRICAO =
+  (process.env.VOZ_URL_ELEVENLABS?.trim().replace(/\/+$/, "") || "https://api.elevenlabs.io") + "/v1/speech-to-text";
 export const MODELO_TRANSCRICAO = "scribe_v2";
 
 /* Textos e limites que o widget do chat (navegador) também usa: ficam em

@@ -11,6 +11,7 @@ import { Toaster } from "./ui-cliente";
 import { cn } from "./ui";
 import { AREAS, itemAtual, inicioDaArea, type Area, type AreaId } from "./areas";
 import { PaletaTarefas } from "./PaletaTarefas";
+import { VozTreino } from "./VozTreino";
 
 /**
  * O casco do painel ("Central"), no visual de vidro líquido.
@@ -72,6 +73,7 @@ export function AdminNav({ nome, tecnico, contagens, children }: {
         <BarraCelular tecnico={tecnico} contagens={contagens} />
       </Suspense>
       <PaletaTarefas aberta={paleta} aoFechar={() => setPaleta(false)} tecnico={tecnico} />
+      <VozTreino />
       {toaster}
     </div>
   );

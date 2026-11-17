@@ -79,6 +79,15 @@ function responder(corpo) {
   if (daEquipe) return `Oi! Voltei com a confirmação da pousada: ${daEquipe[1].trim()} 😊`;
   const sistema = corpo.messages.filter((m) => m.role === "system").map((m) => m.content).join("\n");
   const pergunta = [...corpo.messages].reverse().find((m) => m.role === "user")?.content ?? "";
+  /* Modo voz (o sistema traz a lista de AÇÕES): "anota/ensina/guarda que ..."
+     vira um bloco de ação ensinar, como a Marina proporia. */
+  if (/AÇÕES QUE VOCÊ PODE PROPOR/.test(sistema)) {
+    const m = pergunta.match(/(?:anota|ensina|guarda)(?:\s+(?:que|aí|isso:?))?\s+(.+)/i);
+    if (m) {
+      const frase = m[1].trim();
+      return `[[acao]]{"nome":"ensinar","dados":{"tipo":"fato","titulo":${JSON.stringify(frase.slice(0, 60))},"conteudo":${JSON.stringify(frase)}},"fala":"Vou guardar isso, confirma?"}[[/acao]]`;
+    }
+  }
   const chaves = palavras(pergunta);
   const linhas = sistema.split("\n").filter((l) => {
     const n = normal(l);

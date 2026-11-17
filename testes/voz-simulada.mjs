@@ -46,6 +46,14 @@ http.createServer((req, res) => {
     /* ElevenLabs */
     const xi = String(req.headers["xi-api-key"] ?? "");
     if (url.pathname === "/v1/voices") return xi.startsWith("sk_teste") ? enviar(res, 200, { voices: VOZES }) : negar(res);
+    /* Transcrição (Scribe): o corpo é multipart (áudio); devolvemos um texto
+       fixo, ou o que o teste pedir no cabeçalho x-teste-transcricao. */
+    if (url.pathname === "/v1/speech-to-text") {
+      if (!xi.startsWith("sk_teste")) return negar(res);
+      const texto = String(req.headers["x-teste-transcricao"] ?? "quero ensinar uma coisa");
+      pedidos.push({ provedor: "elevenlabs-stt", chave: xi.slice(-4) });
+      return enviar(res, 200, { text: texto });
+    }
     const tts = /^\/v1\/text-to-speech\/([^/]+)$/.exec(url.pathname);
     if (tts) {
       if (!xi.startsWith("sk_teste")) return negar(res);
