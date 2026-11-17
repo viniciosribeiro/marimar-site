@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Cartao, campo, Rotulo } from "@/components/admin/ui";
 import { BotaoEnviar, useAcao } from "@/components/admin/ui-cliente";
+import { BotaoMelhorar } from "@/components/admin/BotaoMelhorar";
 import { salvarPersonalidade } from "./actions";
 import { AbaConhecimento } from "./AbaConhecimento";
 import type { DadosMarina, Rascunho } from "./tipos";
@@ -38,6 +39,7 @@ export function AbaPersonalidade({ dados, ensinar, verHistorico }: {
             <textarea name="tom" rows={9} value={tom} onChange={(e) => setTom(e.target.value)} className={campo + " leading-relaxed"}
               placeholder={MODELO_TOM} maxLength={4000} />
           </Rotulo>
+          {tom.trim() && <BotaoMelhorar valor={tom} aoMelhorar={setTom} contexto="o jeito de falar da Marina (tom e estilo de atendimento), não informações" className="mt-2" />}
           {!tom && (
             <button type="button" onClick={() => setTom(MODELO_TOM)} className="mt-2 min-h-9 text-xs font-medium text-marca hover:underline">
               Começar a partir de um modelo
@@ -49,6 +51,7 @@ export function AbaPersonalidade({ dados, ensinar, verHistorico }: {
             <textarea name="escalonamento" rows={9} value={escalar} onChange={(e) => setEscalar(e.target.value)} className={campo + " leading-relaxed"}
               placeholder={MODELO_ESCALAR} maxLength={3000} />
           </Rotulo>
+          {escalar.trim() && <BotaoMelhorar valor={escalar} aoMelhorar={setEscalar} contexto="as regras de quando a Marina passa o atendimento para uma pessoa da recepção" className="mt-2" />}
           {!escalar && (
             <button type="button" onClick={() => setEscalar(MODELO_ESCALAR)} className="mt-2 min-h-9 text-xs font-medium text-marca hover:underline">
               Começar a partir de um modelo

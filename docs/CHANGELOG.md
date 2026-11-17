@@ -1,5 +1,26 @@
 # Changelog — Marimar Site
 
+## 17/11/2026 — Modo voz do treinamento da Marina (fala com ela e ela age no painel)
+**Autor:** Claude (Claude Code). **Migration:** `marina_voz_sessao`, aplicada pelo próprio site (`garantirEsquemaVoz`, igual à 0022 — sem `db:migrate`).
+
+**Intenção (pedido do proprietário):** na central de treinamento, um modo voz
+— conversar com a Marina de viva voz, ela responder e ir perguntando o que
+falta; e, mais que a base de conhecimento, **ela tomar ações no painel** a
+pedido de quem treina, **confirmando antes de cada mudança** (decisão do
+proprietário: "perguntar antes").
+
+**O que entrou (ver `docs/modo-voz-treino.md`):**
+- Botão flutuante de microfone em todo o painel (`src/components/admin/VozTreino.tsx`, montado no `AdminNav`). Dois modos: **viva voz** (ouve sozinha, detecta o silêncio) e **apertar para falar**. Legenda na tela, lista do que foi feito, campo de texto como rede de segurança.
+- Voz reaproveitada: **ouvir** = ElevenLabs Scribe; **pensar** = gateway do OpenClaw (mesmo treinamento do chat); **falar** = mesma voz do WhatsApp. **Sem reinstalar skill na Hostinger.**
+- **Ela age no painel** pelas MESMAS Server Actions das telas, por um registro de ações extensível (`src/lib/marina-voz-acoes.ts`): `ensinar`, `editar_conhecimento`, `ajustar_personalidade`, `dados_pousada`. Marina **propõe** a ação (bloco `[[acao]]{…}[[/acao]]`), a pessoa **confirma** e só então `executarAcaoVoz` (`admin/marina/voz-acoes.ts`) grava — `exigirSessao()`, revalida, autor assinado, Histórico. Ativar/desativar suíte ficou **de fora** de propósito (a sincronização com o Desbravador é que manda nisso desde 04/11).
+- **Teto de gasto do mês** (estimativa): avisa em 80%, pausa a voz em 100% e o treino segue por texto (`marina_voz_sessao` guarda custo; config em `integracoes.voz_treino_config`, com padrões). Sem tela para mudar o teto ainda (pendência).
+- **Botão "✨ Melhorar texto"** nos campos de ensino e de personalidade (`BotaoMelhorar.tsx` + `/api/admin/marina/melhorar`): a própria Marina melhora o texto sem inventar fato, com "desfazer". Atalho `/melhorar` para o Claude Code (`.claude/skills/melhorar/`).
+- Rotas: `/api/admin/marina/voz/{estado,ouvir,conversar,falar}` e `/api/admin/marina/melhorar`. `URL_TRANSCRICAO` passou a honrar `VOZ_URL_ELEVENLABS` (só os testes a definem; produção não tem, nada muda lá).
+
+**Testes/evidência (local):** unitário `testes/unit/marina-voz.test.ts` (leitor do bloco + custo), suíte `npm test` **193 (192 ok, 1 skip)**, `tsc --noEmit` limpo, `next build` limpo, lint sem erros nos arquivos novos. **E2E real com banco local + simuladores** (`testes/e2e-voz-treino.mjs`): login → estado (gateway+voz) → **conversar devolve ação `ensinar` válida e descrita** → falar (áudio) → ouvir (texto) → **sessão gravada em `marina_voz_sessao` (tabela criada pelo site)** — 14/14. Execução das ações no banco conferida à parte (ensinar + editar gravam assinado, com Histórico).
+
+**Situação:** versionado na branch `claude/sleepy-mccarthy-62jmwj`; **a publicar na Vercel nesta entrega** (conferir o deploy READY). Em produção o modo voz usa o gateway e a voz que já existem; a tabela se cria sozinha na primeira conversa. **Não conferido daqui:** uso real em iPhone/Android (microfone, viva voz) e a proposta de ação com a Marina de produção (pode exigir ajuste fino do pedido). Nenhum segredo no repositório.
+
 ## 15/11/2026 (parte 4) — Busca preserva comodidades e nome da tarifa; auditoria do extrator local
 **Autor:** Codex, a pedido do proprietário para reparar o sistema com urgência. **Migration:** nenhuma.
 

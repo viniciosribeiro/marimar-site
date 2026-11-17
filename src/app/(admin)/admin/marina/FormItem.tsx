@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CATEGORIAS, TIPOS, sugerirCategoria, type Tipo } from "@/lib/marina-base";
 import { Gaveta, useAcao, Girando } from "@/components/admin/ui-cliente";
 import { botao, campo, Rotulo, cn } from "@/components/admin/ui";
+import { BotaoMelhorar } from "@/components/admin/BotaoMelhorar";
 import { salvarItem } from "./actions";
 import type { Rascunho } from "./tipos";
 
@@ -109,7 +110,14 @@ export function FormItem({ rascunho, aoFechar }: { rascunho: Rascunho; aoFechar:
           ajuda={ehPergunta ? "Ela responde com as palavras dela, mantendo o sentido." : undefined}>
           <textarea name="conteudo" required rows={5} value={conteudo} onChange={(e) => setConteudo(e.target.value)}
             placeholder={EXEMPLOS[tipo].conteudo} className={campo + " leading-relaxed"} maxLength={6000} />
-          <span className="mt-1 block text-right text-[11px] text-tinta-suave tabular-nums">{conteudo.length} / 6000</span>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <BotaoMelhorar
+              valor={conteudo}
+              aoMelhorar={setConteudo}
+              contexto={ehPergunta ? "uma resposta que a Marina dá a hóspedes" : tipo === "limite" ? "um limite: o que a Marina nunca deve dizer" : tipo === "escalar" ? "quando a Marina deve passar para a recepção" : "uma informação que a Marina usa no atendimento"}
+            />
+            <span className="text-[11px] text-tinta-suave tabular-nums">{conteudo.length} / 6000</span>
+          </div>
         </Rotulo>
 
         <fieldset>
