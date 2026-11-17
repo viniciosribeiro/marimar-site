@@ -25,7 +25,10 @@ const local = (id: string, x: Record<string, unknown> = {}) => ({
 
 test("resultados: nome, capa, total e link como no Clássico", () => {
   const oc = { ...calcularOcupacao({ adultos: 2, criancas: 0, noites: 2 }, REGRAS_PADRAO), valorBebes: 80 };
-  const [a, b] = montarResultados(resposta([q("QUEEN", { unidades_disponiveis: 1, estadia_minima: 3 }), q("KING")]), {
+  const [a, b] = montarResultados(resposta([
+    q("QUEEN", { unidades_disponiveis: 1, estadia_minima: 3, comodidades: ["Ar", "Wifi"] }),
+    q("KING", { comodidades: ["Ar", "Wifi"] }),
+  ]), {
     consulta, noites: 2, oc,
     locais: [local("QUEEN")],
     fotos: [{ quarto_id: "l-QUEEN", url: "/painel/queen.jpg", alt: null }],
@@ -43,7 +46,21 @@ test("resultados: nome, capa, total e link como no Clássico", () => {
   assert.ok(a.whatsappUrl?.startsWith("https://wa.me/5541999999999?text="));
   assert.equal(b.nome, "Suíte King", "sem cadastro: nome do motor arrumado (tituloQuarto)");
   assert.equal(b.fotoCapa, "https://motor/KING.jpg");
+  assert.deepEqual(b.comodidades, ["Ar", "Wifi"], "sem cadastro: comodidades reais do motor");
   assert.equal(b.paginaSuite, null, "sem cadastro: nenhum link para /quartos (nunca 404)");
+});
+
+test("resultados: cadastro sem comodidades preserva as do motor e o nome da tarifa consultada", () => {
+  const oc = calcularOcupacao({ adultos: 2, criancas: 0, noites: 2 }, REGRAS_PADRAO);
+  const [r] = montarResultados(resposta([q("KING", {
+    comodidades: ["Ar", "Frigobar"], pacote: "Tarifa Online com Café da Manhã",
+  })]), {
+    consulta, noites: 2, oc, locais: [local("KING")], fotos: [], comodidades: [], whatsapp: "", query: "",
+  });
+  assert.deepEqual(r.comodidades, ["Ar", "Frigobar"]);
+  assert.equal(r.pacote, "Tarifa Online com Café da Manhã");
+  assert.equal(r.totalFinal, 1000);
+  assert.equal(new URL(r.linkReserva).searchParams.get("roomCode"), "KING");
 });
 
 test("resultados: suíte desligada no site não ganha link; sem WhatsApp, sem botão", () => {

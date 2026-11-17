@@ -238,6 +238,7 @@ function CartaoResultado({ r, noites }: { r: Resultado; noites: number }) {
         <div className="mt-3">
           <p><span className="font-titulo text-[1.8rem] leading-none tabular-nums">{brl(r.diaria)}</span> <span className="text-sn-texto-2">por noite</span></p>
           <p className="mt-1 text-[0.98rem]">Total de {pluralizar(noites, "noite")}: <strong className="font-semibold tabular-nums">{brl(r.totalFinal)}</strong></p>
+          {r.pacote.trim() ? <p className="mt-1 text-[0.9rem] leading-relaxed text-sn-texto-2">Tarifa: {r.pacote}</p> : null}
           {r.valorBebes > 0 && <p className="mt-0.5 text-[0.86rem] text-sn-texto-2">Inclui {brl(r.valorBebes)} de bebê de colo, pago à parte na pousada.</p>}
         </div>
       ) : (

@@ -21,6 +21,17 @@ proprietário: "perguntar antes").
 
 **Situação:** versionado na branch `claude/sleepy-mccarthy-62jmwj`; **a publicar na Vercel nesta entrega** (conferir o deploy READY). Em produção o modo voz usa o gateway e a voz que já existem; a tabela se cria sozinha na primeira conversa. **Não conferido daqui:** uso real em iPhone/Android (microfone, viva voz) e a proposta de ação com a Marina de produção (pode exigir ajuste fino do pedido). Nenhum segredo no repositório.
 
+## 15/11/2026 (parte 4) — Busca preserva comodidades e nome da tarifa; auditoria do extrator local
+**Autor:** Codex, a pedido do proprietário para reparar o sistema com urgência. **Migration:** nenhuma.
+
+- Na busca dos dois modelos, quando o cadastro local não tem comodidades, usar `comodidades` da resposta do motor. Uma lista editorial preenchida continua tendo prioridade. Antes a transformação descartava esses dados.
+- A busca do Novo preserva `pacote` e mostra o nome original da tarifa junto ao preço quando houver tarifa. Esse campo não cria ofertas na tabela editorial `pacotes`.
+- Arquivos: `src/app/(site)/reservar/page.tsx`, `src/components/site-novo/reservar/resultados.ts`, `ReservarNovo.tsx` e `testes/unit/reservar-novo.test.ts`. Sem mudança nos cálculos, nas regras de hóspedes ou nos links de reserva.
+- **Validação local:** `npm test`: 182 passam, 1 pulado sem banco; TypeScript limpo; lint dos arquivos do Novo e do teste limpo; `npm run build` concluído. O primeiro build ficou sem acesso às fontes Google; a repetição com rede concluiu. No Clássico, os mesmos 9 `no-explicit-any` do HEAD, sem erro novo. Sem E2E com banco local nesta entrega. Publicação acompanhada na PR da branch `fix/consulta-marimar-comodidades-tarifa-20261115`.
+- **Produção consultada novamente em 15/11:** o Worker continua respondendo HTTP 200 com as duas listas vazias; `_diagnostico.login`, `tarifas` e `disponibilidade` têm `resultado: 0`, `code: 403`. `/api/disponibilidade` responde 500 e `motivo: consulta_indisponivel`. Início, quartos, galeria, pacotes e busca respondem 200; a busca mostra a contenção com o link oficial. Isso confirma a degradação da consulta, não a queda do site inteiro.
+- **Arquivos trazidos pelo proprietário em `C:/Users/vinic/pousadahub` (fora deste repositório):** `api.py` passava cinco argumentos para um extrator que aceitava quatro; o extrator ignorava respostas e construía tarifas/fotos/descrições fixas. Não são uma fonte corrigida nem dados atuais homologados. O catálogo gravado e a amostra de 15–17/10 são históricos; não usar para publicar preço ou estoque atual. Correção desses arquivos e evidências em `recon.md` nesse workspace, separadas do deploy do site.
+- **Pendente real:** a consulta ao vivo ainda exige uma integração autorizada funcionando. O proprietário informou ter outra integração oficial, mas não foi identificado endpoint/configuração dela nesta entrega. Não foram usados os valores fixos nem contornado o 403. Nenhuma alteração na Cloudflare ou Hostinger.
+
 ## 15/11/2026 (parte 3) — Limite: não contornar o bloqueio do Desbravador
 **Autor:** Claude (Claude Code). **Migration:** nenhuma. **Nenhum código de produção mudou.**
 
