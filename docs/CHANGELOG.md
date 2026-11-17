@@ -1,5 +1,12 @@
 # Changelog — Marimar Site
 
+## 17/11/2026 (parte 2) — Modo voz: janela sólida e mais ações da Marina
+**Autor:** Claude (Claude Code). **Migration:** nenhuma.
+
+- **Transparência corrigida:** a janela do modo voz usava `bg-white`, e o painel tem a regra `.painel-admin .bg-white { background-color: var(--vidro) }` (branco a 58%) — por isso ficava transparente. Agora o fundo da janela é posto em **estilo em linha** (opaco), que a regra não alcança (`src/components/admin/VozTreino.tsx`). A janela também virou **arrastável e redimensionável** no computador (minimizar/maximizar) e folha responsiva no celular, com rolagem automática.
+- **Marina faz mais no painel (sempre confirmando antes):** além de ensinar/editar/personalidade/contato, agora também **manda item para a lixeira** e **restaura**, **regra de crianças e bebês**, **cria adicional** e muda mais **dados da pousada** (nome, endereço, cidade, horário da recepção, descrição curta, como chegar). Tudo reversível, assinado e registrado, pelas mesmas Server Actions das telas (`src/lib/marina-voz-acoes.ts`, catálogo em `src/lib/marina-voz.ts`).
+- **Evidência:** `tsc --noEmit` limpo, `npm test` 193 (192 ok, 1 skip), `next build` limpo, lint sem erro nos arquivos. Publicado na Vercel nesta entrega.
+
 ## 17/11/2026 — Modo voz do treinamento da Marina (fala com ela e ela age no painel)
 **Autor:** Claude (Claude Code). **Migration:** `marina_voz_sessao`, aplicada pelo próprio site (`garantirEsquemaVoz`, igual à 0022 — sem `db:migrate`).
 

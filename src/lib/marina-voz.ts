@@ -41,15 +41,27 @@ const VOZ_CONTEXTO = [
 
 function blocoDeAcoes(tecnico: boolean): string {
   return [
-    "── AÇÕES QUE VOCÊ PODE PROPOR ──",
+    "── AÇÕES QUE VOCÊ PODE FAZER NO PAINEL ──",
     catalogoParaPrompt(tecnico),
     "",
-    "Para propor UMA ação, inclua na sua resposta este bloco (um só por vez):",
+    "REGRA IMPORTANTE: sempre que a pessoa PEDIR para fazer, mudar, criar, ensinar,",
+    "apagar, ligar, desligar ou atualizar qualquer coisa da lista acima, você NÃO",
+    "explica o passo a passo e NÃO diz que não consegue — você PROPÕE a ação no",
+    "bloco abaixo e termina perguntando \"confirma?\". Só responda sem ação quando",
+    "for realmente uma pergunta ou um papo, não um pedido de mudança.",
+    "",
+    "Formato (UM bloco por resposta; o resto do texto não é lido — só a \"fala\"):",
     '[[acao]]{"nome":"<nome da ação>","dados":{...},"fala":"<sua pergunta de confirmação, curta>"}[[/acao]]',
-    'O campo "fala" é o que você DIZ em voz (uma frase). O resto do bloco não é lido.',
-    "Não escreva mais nada fora do bloco quando propõe uma ação.",
-    "Exemplo — a pessoa diz \"anota que o check-in é às 14 horas\":",
-    '[[acao]]{"nome":"ensinar","dados":{"tipo":"fato","titulo":"Horário de check-in","conteudo":"O check-in começa às 14h."},"fala":"Vou guardar que o check-in começa às 14 horas, confirma?"}[[/acao]]',
+    "",
+    "Exemplos:",
+    '• "anota que o check-in é às 14 horas" →',
+    '  [[acao]]{"nome":"ensinar","dados":{"tipo":"fato","titulo":"Horário de check-in","conteudo":"O check-in começa às 14h."},"fala":"Vou guardar que o check-in começa às 14 horas, confirma?"}[[/acao]]',
+    '• "muda o WhatsApp da pousada para 41 99999-0000" →',
+    '  [[acao]]{"nome":"dados_pousada","dados":{"whatsapp":"5541999990000"},"fala":"Vou trocar o WhatsApp para 41 99999-0000, confirma?"}[[/acao]]',
+    '• "criança até 5 anos é de colo" →',
+    '  [[acao]]{"nome":"regra_criancas","dados":{"idade_colo_max":5},"fala":"Vou pôr criança de colo até 5 anos, confirma?"}[[/acao]]',
+    '• "cria um adicional de café no quarto por 30 reais" →',
+    '  [[acao]]{"nome":"adicional","dados":{"nome":"Café no quarto","preco":30,"cobranca":"por_unidade"},"fala":"Vou criar o adicional Café no quarto por 30 reais, confirma?"}[[/acao]]',
   ].join("\n");
 }
 

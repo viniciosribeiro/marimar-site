@@ -14,6 +14,11 @@ import { executarAcaoVoz } from "@/app/(admin)/admin/marina/voz-acoes";
  *  • Viva voz  — ela ouve sozinha, espera você parar de falar e responde.
  *  • Apertar   — segure o botão para falar (bom para lugar barulhento).
  *
+ * A janela é SÓLIDA (o painel tem uma regra que deixa todo `bg-white`
+ * translúcido — por isso aqui o fundo é posto em estilo, não por classe),
+ * arrastável, com minimizar/maximizar/redimensionar no computador e folha
+ * responsiva no celular.
+ *
  * O que muda no painel passa pela MESMA gravação das telas (Server Action
  * `executarAcaoVoz`), com o seu login e registrado. A voz custa por fora
  * (ElevenLabs): há um teto de gasto no mês; se estourar, a voz pausa e o
@@ -26,13 +31,18 @@ type Gasto = { usoCentavos: number; limiteCentavos: number; nivel: "ok" | "aviso
 type Pendente = { nome: string; dados: Record<string, unknown>; descricao: string };
 type Estado = "parado" | "ouvindo" | "pensando" | "falando";
 
-const SILENCIO_MS = 1100;   // silêncio que encerra uma fala na viva voz
-const LIMIAR = 0.02;        // volume mínimo que conta como fala
-const MIN_FALA_MS = 250;    // abaixo disso é ruído, não fala
-const MAX_FALA_MS = 15_000; // trava de segurança por fala
+const SILENCIO_MS = 1100;
+const LIMIAR = 0.02;
+const MIN_FALA_MS = 250;
+const MAX_FALA_MS = 15_000;
 
 const SIM = /\b(sim|pode|confirma|confirmo|isso|exato|ta certo|tá certo|certo|manda|fecha|beleza|claro|ok|okay)\b/i;
 const NAO = /\b(nao|não|negativo|cancela|deixa|espera|para|errado|melhor nao|melhor não)\b/i;
+
+const LARGURA_INICIAL = 384;
+const ALTURA_INICIAL = 592;
+const SUPERFICIE = "#ffffff";
+const TINTA = "#1f2937";
 
 export function VozTreino() {
   const [aberto, setAberto] = useState(false);
@@ -47,6 +57,13 @@ export function VozTreino() {
   const [aviso, setAviso] = useState<string | null>(null);
   const [digitado, setDigitado] = useState("");
 
+  // janela
+  const [celular, setCelular] = useState(false);
+  const [min, setMin] = useState(false);
+  const [max, setMax] = useState(false);
+  const [pos, setPos] = useState({ x: 24, y: 24 });
+  const [tam, setTam] = useState({ w: LARGURA_INICIAL, h: ALTURA_INICIAL });
+
   const sessaoRef = useRef<string>("");
   const histRef = useRef<{ papel: Papel; conteudo: string }[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -58,16 +75,33 @@ export function VozTreino() {
   const pendenteRef = useRef<Pendente | null>(null);
   const modoRef = useRef(modo);
   const estadoCaixa = useRef<Estado>("parado");
+  const arrastarRef = useRef<{ dx: number; dy: number } | null>(null);
+  const redimRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const corpoRolagem = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { modoRef.current = modo; }, [modo]);
   useEffect(() => { pendenteRef.current = pendente; }, [pendente]);
   const mudarEstado = (e: Estado) => { estadoCaixa.current = e; setEstado(e); };
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const ler = () => setCelular(mq.matches);
+    ler();
+    mq.addEventListener?.("change", ler);
+    return () => mq.removeEventListener?.("change", ler);
+  }, []);
 
   const log = useCallback((papel: Papel, texto: string) => {
     if (!texto) return;
     setFalas((f) => [...f, { papel, texto }].slice(-40));
     histRef.current = [...histRef.current, { papel, conteudo: texto }].slice(-12);
   }, []);
+
+  /* rola a conversa para o fim quando chega fala nova */
+  useEffect(() => {
+    const el = corpoRolagem.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [falas, pendente, feito]);
 
   /* ── estado inicial ao abrir ─────────────────────────────────────── */
   const carregarEstado = useCallback(async () => {
@@ -117,7 +151,6 @@ export function VozTreino() {
     return Math.sqrt(soma / buf.length);
   }, []);
 
-  /** Grava UMA fala (viva voz): começa a ouvir, para quando você silencia. */
   const gravarUmaFala = useCallback((): Promise<Blob | null> => {
     return new Promise((resolve) => {
       const stream = streamRef.current;
@@ -144,9 +177,9 @@ export function VozTreino() {
         const v = volume();
         const agora = Date.now();
         if (v > LIMIAR) { teveFala = true; ultimaFala = agora; }
-        const duração = agora - inicio;
-        const silêncio = agora - ultimaFala;
-        if ((teveFala && silêncio > SILENCIO_MS && duração > MIN_FALA_MS) || duração > MAX_FALA_MS) {
+        const duracao = agora - inicio;
+        const silencio = agora - ultimaFala;
+        if ((teveFala && silencio > SILENCIO_MS && duracao > MIN_FALA_MS) || duracao > MAX_FALA_MS) {
           try { mr.stop(); } catch {}
         }
       }, 60);
@@ -155,7 +188,6 @@ export function VozTreino() {
     });
   }, [volume]);
 
-  /* ── enviar áudio → texto ────────────────────────────────────────── */
   const transcrever = useCallback(async (blob: Blob, segundos: number): Promise<string | null> => {
     const fd = new FormData();
     fd.append("audio", blob, "fala.webm");
@@ -170,7 +202,6 @@ export function VozTreino() {
     } catch { setAviso("Falha ao enviar o áudio."); return null; }
   }, []);
 
-  /* ── falar (texto → áudio) ───────────────────────────────────────── */
   const falar = useCallback(async (texto: string): Promise<void> => {
     if (!cap?.voz) return;
     try {
@@ -193,7 +224,6 @@ export function VozTreino() {
     } catch { /* fica só o texto na tela */ }
   }, [cap]);
 
-  /* ── executar a ação confirmada ──────────────────────────────────── */
   const confirmar = useCallback(async (p: Pendente) => {
     setPendente(null);
     mudarEstado("pensando");
@@ -214,16 +244,14 @@ export function VozTreino() {
     await falar("Tudo bem, não vou mexer nisso.");
   }, [falar, log]);
 
-  /* ── um turno: texto da pessoa → Marina → (ação?) → voz ──────────── */
   const conversar = useCallback(async (texto: string) => {
     log("voce", texto);
 
-    /* Se há uma ação esperando confirmação, a resposta pode ser só "sim/não". */
     const p = pendenteRef.current;
     if (p) {
       if (SIM.test(texto) && !NAO.test(texto)) { await confirmar(p); return; }
       if (NAO.test(texto)) { await cancelarPendente(); return; }
-      setPendente(null); // virou outro assunto: segue como mensagem normal
+      setPendente(null);
     }
 
     mudarEstado("pensando");
@@ -236,18 +264,12 @@ export function VozTreino() {
       if (!r.ok) { const m = d?.erro ?? "Não consegui falar com a Marina."; log("marina", m); setAviso(m); return; }
       if (d.gasto) { setGasto(d.gasto); if (d.gasto.nivel === "aviso") setAviso("Atenção: a voz já passou de " + d.gasto.pct + "% do teto do mês."); }
       log("marina", d.resposta);
-      if (d.acao && d.acao.valido) {
-        const nova = { nome: d.acao.nome, dados: d.acao.dados, descricao: d.acao.descricao };
-        setPendente(nova);
-      } else if (d.acao && !d.acao.valido) {
-        // a Marina tentou uma ação que não deu: deixa só o texto/ a explicação
-      }
+      if (d.acao && d.acao.valido) setPendente({ nome: d.acao.nome, dados: d.acao.dados, descricao: d.acao.descricao });
       await falar(d.resposta);
     } catch { log("marina", "Falha ao falar com a Marina."); }
   }, [confirmar, cancelarPendente, falar, log]);
 
-  /* ── laço da viva voz ────────────────────────────────────────────── */
-  const laço = useCallback(async () => {
+  const laco = useCallback(async () => {
     pararRef.current = false;
     while (!pararRef.current && modoRef.current === "vivavoz") {
       mudarEstado("ouvindo");
@@ -265,8 +287,8 @@ export function VozTreino() {
     setAviso(null);
     if (!(await garantirMic())) return;
     acRef.current?.resume().catch(() => {});
-    laço();
-  }, [garantirMic, laço]);
+    laco();
+  }, [garantirMic, laco]);
 
   const pararTudo = useCallback(() => {
     pararRef.current = true;
@@ -275,7 +297,6 @@ export function VozTreino() {
     mudarEstado("parado");
   }, []);
 
-  /* ── apertar para falar ──────────────────────────────────────────── */
   const inicioApertar = useRef(0);
   const comecarApertar = useCallback(async () => {
     if (estadoCaixa.current !== "parado") return;
@@ -312,6 +333,12 @@ export function VozTreino() {
     sessaoRef.current = crypto.randomUUID();
     histRef.current = [];
     setFalas([]); setFeito([]); setPendente(null); setAviso(null);
+    setMin(false); setMax(false);
+    if (typeof window !== "undefined" && !window.matchMedia("(max-width: 639px)").matches) {
+      const w = LARGURA_INICIAL, h = ALTURA_INICIAL;
+      setTam({ w, h });
+      setPos({ x: Math.max(16, window.innerWidth - w - 24), y: Math.max(16, window.innerHeight - h - 24) });
+    }
     setAberto(true);
     await carregarEstado();
   }, [carregarEstado]);
@@ -334,123 +361,190 @@ export function VozTreino() {
     await conversar(t);
   }, [digitado, conversar]);
 
+  /* ── arrastar e redimensionar (computador) ──────────────────────── */
+  const aoArrastar = (e: React.PointerEvent) => {
+    if (celular || max) return;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    arrastarRef.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y };
+  };
+  const moverArrasto = (e: React.PointerEvent) => {
+    if (!arrastarRef.current) return;
+    const w = tam.w, h = min ? 56 : tam.h;
+    const x = Math.max(8, Math.min(window.innerWidth - w - 8, e.clientX - arrastarRef.current.dx));
+    const y = Math.max(8, Math.min(window.innerHeight - h - 8, e.clientY - arrastarRef.current.dy));
+    setPos({ x, y });
+  };
+  const soltarArrasto = () => { arrastarRef.current = null; };
+
+  const aoRedim = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    redimRef.current = { x: e.clientX, y: e.clientY, w: tam.w, h: tam.h };
+  };
+  const moverRedim = (e: React.PointerEvent) => {
+    if (!redimRef.current) return;
+    const w = Math.max(300, Math.min(window.innerWidth - pos.x - 8, redimRef.current.w + (e.clientX - redimRef.current.x)));
+    const h = Math.max(360, Math.min(window.innerHeight - pos.y - 8, redimRef.current.h + (e.clientY - redimRef.current.y)));
+    setTam({ w, h });
+  };
+  const soltarRedim = () => { redimRef.current = null; };
+
   /* ── visual ──────────────────────────────────────────────────────── */
   const ocupada = estado === "pensando" || estado === "falando";
+  const semParar = (e: React.PointerEvent) => e.stopPropagation();
+
+  const cabecalho = (
+    <div
+      onPointerDown={aoArrastar}
+      onPointerMove={moverArrasto}
+      onPointerUp={soltarArrasto}
+      className="flex items-center justify-between gap-2 px-3 py-2.5 select-none"
+      style={{ borderBottom: "1px solid rgba(12,38,56,.1)", cursor: celular || max ? "default" : "grab", touchAction: "none" }}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: "#e0f2f1", color: "#0f766e" }}><IconeMic small /></span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold leading-tight">Treinar a Marina por voz</p>
+          <p className="truncate text-[11px] leading-tight" style={{ color: "#6b7280" }}>{rotuloEstado(estado)}</p>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1" onPointerDown={semParar}>
+        <div className="mr-1 flex rounded-full p-0.5 text-[11px] font-medium" style={{ background: "#f1f3f5" }}>
+          <button type="button" onClick={() => { pararTudo(); setModo("vivavoz"); }}
+            className="rounded-full px-2 py-1" style={modo === "vivavoz" ? { background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,.12)" } : { color: "#6b7280" }}>Viva voz</button>
+          <button type="button" onClick={() => { pararTudo(); setModo("apertar"); }}
+            className="rounded-full px-2 py-1" style={modo === "apertar" ? { background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,.12)" } : { color: "#6b7280" }}>Apertar</button>
+        </div>
+        {!celular && (
+          <>
+            <BotaoJanela titulo="Minimizar" onClick={() => setMin((v) => !v)}><IconeMenos /></BotaoJanela>
+            <BotaoJanela titulo={max ? "Restaurar" : "Maximizar"} onClick={() => { setMax((v) => !v); setMin(false); }}><IconeQuadrado /></BotaoJanela>
+          </>
+        )}
+        <BotaoJanela titulo="Fechar" onClick={fechar}><IconeX /></BotaoJanela>
+      </div>
+    </div>
+  );
+
+  const corpo = (
+    <>
+      {aviso && <p className="px-4 py-2 text-[12px]" style={{ background: "#fef3c7", color: "#92400e" }}>{aviso}</p>}
+      {gasto && gasto.limiteCentavos > 0 && (
+        <div className="px-4 pt-2">
+          <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "#edf0f2" }}>
+            <div className="h-full rounded-full transition-all" style={{ width: Math.min(100, gasto.pct) + "%", background: gasto.nivel === "estourou" ? "#dc2626" : gasto.nivel === "aviso" ? "#d97706" : "#0ea5a3" }} />
+          </div>
+          {reais && <p className="mt-0.5 text-right text-[10px]" style={{ color: "#9aa3ab" }}>voz do mês: {reais.uso} de {reais.limite} (estimativa)</p>}
+        </div>
+      )}
+
+      <div ref={corpoRolagem} className="flex-1 space-y-2 overflow-y-auto px-4 py-3" style={{ minHeight: 0 }}>
+        {falas.length === 0 && (
+          <p className="py-6 text-center text-[13px]" style={{ color: "#9aa3ab" }}>
+            {modo === "vivavoz" ? "Toque no microfone e fale. A Marina ouve, responde e vai te perguntando o que falta." : "Segure o botão e fale. Solte quando terminar."}
+          </p>
+        )}
+        {falas.map((f, i) => (
+          <div key={i} className={f.papel === "voce" ? "text-right" : "text-left"}>
+            <span className="inline-block max-w-[85%] rounded-2xl px-3 py-1.5 text-[13px]"
+              style={f.papel === "voce" ? { background: "#0284c7", color: "#fff" } : { background: "#eef1f4", color: TINTA }}>{f.texto}</span>
+          </div>
+        ))}
+      </div>
+
+      {pendente && (
+        <div className="mx-4 mb-2 rounded-2xl p-3" style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
+          <p className="text-[12px]" style={{ color: "#065f46" }}>A Marina quer <strong>{pendente.descricao}</strong>. Confirma?</p>
+          <div className="mt-2 flex gap-2">
+            <button type="button" onClick={() => confirmar(pendente)} className="rounded-full px-3 py-1 text-[12px] font-semibold text-white" style={{ background: "#0d9488" }}>Confirmar</button>
+            <button type="button" onClick={cancelarPendente} className="rounded-full px-3 py-1 text-[12px] font-medium" style={{ background: "#fff", color: "#4b5563", border: "1px solid #e5e7eb" }}>Agora não</button>
+          </div>
+        </div>
+      )}
+
+      {feito.length > 0 && (
+        <div className="mx-4 mb-2 rounded-xl p-2" style={{ background: "#f6f8fa" }}>
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: "#9aa3ab" }}>Feito nesta conversa</p>
+          <ul className="space-y-0.5">
+            {feito.map((f, i) => <li key={i} className="text-[11px]" style={{ color: "#4b5563" }}>✓ {f}</li>)}
+          </ul>
+        </div>
+      )}
+
+      <div className="p-3" style={{ borderTop: "1px solid rgba(12,38,56,.1)" }}>
+        {cap?.voz && modo === "vivavoz" && (
+          <button type="button" onClick={() => (estado === "parado" ? iniciarVivaVoz() : pararTudo())}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white transition"
+            style={{ background: estado === "parado" ? "#0ea5a3" : "#dc2626" }}>
+            <IconeMic small /> {estado === "parado" ? "Começar a falar" : estado === "ouvindo" ? "Ouvindo… (toque para parar)" : ocupada ? "Um instante…" : "Parar"}
+          </button>
+        )}
+        {cap?.voz && modo === "apertar" && (
+          <button type="button"
+            onPointerDown={comecarApertar} onPointerUp={soltarApertar} onPointerLeave={soltarApertar}
+            className="flex h-12 w-full select-none items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white"
+            style={{ background: estado === "ouvindo" ? "#dc2626" : "#0ea5a3", touchAction: "none" }}>
+            <IconeMic small /> {estado === "ouvindo" ? "Gravando… solte para enviar" : ocupada ? "Um instante…" : "Segure para falar"}
+          </button>
+        )}
+        <div className="mt-2 flex items-center gap-2">
+          <input value={digitado} onChange={(e) => setDigitado(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") enviarDigitado(); }}
+            placeholder={cap?.gateway ? "…ou escreva aqui" : "Marina não está ligada"} disabled={!cap?.gateway}
+            className="min-w-0 flex-1 rounded-xl px-3 py-2 text-[13px] outline-none"
+            style={{ border: "1px solid #e5e7eb", background: "#fff", color: TINTA }} />
+          <button type="button" onClick={enviarDigitado} disabled={!cap?.gateway || !digitado.trim()}
+            className="shrink-0 rounded-xl px-3 py-2 text-[13px] font-medium text-white disabled:opacity-40" style={{ background: "#374151" }}>Enviar</button>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => (aberto ? fechar() : abrir())}
-        aria-label={aberto ? "Fechar o treino por voz" : "Treinar a Marina por voz"}
-        className="fixed right-4 z-[60] flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition active:scale-95"
-        style={{
-          bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)",
-          background: aberto ? "#6b7280" : "linear-gradient(135deg,#0ea5a3,#0369a1)",
-          color: "#fff",
-        }}
-      >
-        {aberto ? <IconeX /> : <IconeMic />}
-      </button>
+      {!aberto && (
+        <button
+          type="button"
+          onClick={abrir}
+          aria-label="Treinar a Marina por voz"
+          className="fixed right-4 z-[60] flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition active:scale-95"
+          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)", background: "linear-gradient(135deg,#0ea5a3,#0369a1)", color: "#fff" }}
+        >
+          <IconeMic />
+        </button>
+      )}
 
-      {aberto && (
-        <div className="fixed inset-x-0 bottom-0 z-[59] sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[26rem]"
-          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-          <div className="mx-auto flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/10 sm:rounded-3xl"
-            style={{ color: "#1f2937" }}>
-            {/* cabeçalho */}
-            <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "#e0f2f1", color: "#0f766e" }}><IconeMic small /></span>
-                <div>
-                  <p className="text-sm font-semibold leading-tight">Treinar a Marina por voz</p>
-                  <p className="text-[11px] leading-tight text-gray-500">{rotuloEstado(estado)}</p>
-                </div>
-              </div>
-              <div className="flex rounded-full bg-gray-100 p-0.5 text-[11px] font-medium">
-                <button type="button" onClick={() => { pararTudo(); setModo("vivavoz"); }}
-                  className="rounded-full px-2.5 py-1" style={modo === "vivavoz" ? { background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,.1)" } : { color: "#6b7280" }}>Viva voz</button>
-                <button type="button" onClick={() => { pararTudo(); setModo("apertar"); }}
-                  className="rounded-full px-2.5 py-1" style={modo === "apertar" ? { background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,.1)" } : { color: "#6b7280" }}>Apertar</button>
-              </div>
-            </div>
+      {aberto && celular && (
+        <div role="dialog" aria-label="Treinar a Marina por voz"
+          className="fixed inset-x-0 bottom-0 z-[70] flex max-h-[86vh] flex-col overflow-hidden"
+          style={{ background: SUPERFICIE, color: TINTA, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: "env(safe-area-inset-bottom, 0px)", boxShadow: "0 -14px 44px -14px rgba(12,38,56,.5)", borderTop: "1px solid rgba(12,38,56,.1)" }}>
+          {cabecalho}
+          {corpo}
+        </div>
+      )}
 
-            {/* avisos */}
-            {aviso && <p className="bg-amber-50 px-4 py-2 text-[12px] text-amber-800">{aviso}</p>}
-            {gasto && gasto.limiteCentavos > 0 && (
-              <div className="px-4 pt-2">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-                  <div className="h-full rounded-full transition-all" style={{ width: Math.min(100, gasto.pct) + "%", background: gasto.nivel === "estourou" ? "#dc2626" : gasto.nivel === "aviso" ? "#d97706" : "#0ea5a3" }} />
-                </div>
-                {reais && <p className="mt-0.5 text-right text-[10px] text-gray-400">voz do mês: {reais.uso} de {reais.limite} (estimativa)</p>}
-              </div>
-            )}
-
-            {/* conversa */}
-            <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
-              {falas.length === 0 && (
-                <p className="py-6 text-center text-[13px] text-gray-400">
-                  {modo === "vivavoz" ? "Toque no microfone e fale. A Marina ouve, responde e vai te perguntando o que falta." : "Segure o botão e fale. Solte quando terminar."}
-                </p>
-              )}
-              {falas.map((f, i) => (
-                <div key={i} className={f.papel === "voce" ? "text-right" : "text-left"}>
-                  <span className={"inline-block max-w-[85%] rounded-2xl px-3 py-1.5 text-[13px] " + (f.papel === "voce" ? "bg-sky-600 text-white" : "bg-gray-100 text-gray-800")}>{f.texto}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* confirmação de ação */}
-            {pendente && (
-              <div className="mx-4 mb-2 rounded-2xl border border-teal-200 bg-teal-50 p-3">
-                <p className="text-[12px] text-teal-900">A Marina quer <strong>{pendente.descricao}</strong>. Confirma?</p>
-                <div className="mt-2 flex gap-2">
-                  <button type="button" onClick={() => confirmar(pendente)} className="rounded-full bg-teal-600 px-3 py-1 text-[12px] font-semibold text-white">Confirmar</button>
-                  <button type="button" onClick={cancelarPendente} className="rounded-full bg-white px-3 py-1 text-[12px] font-medium text-gray-600 ring-1 ring-gray-200">Agora não</button>
-                </div>
-              </div>
-            )}
-
-            {/* feito nesta conversa */}
-            {feito.length > 0 && (
-              <div className="mx-4 mb-2 rounded-xl bg-gray-50 p-2">
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Feito nesta conversa</p>
-                <ul className="space-y-0.5">
-                  {feito.map((f, i) => <li key={i} className="text-[11px] text-gray-600">✓ {f}</li>)}
-                </ul>
-              </div>
-            )}
-
-            {/* controles */}
-            <div className="border-t border-gray-100 p-3">
-              <div className="flex items-center gap-2">
-                {cap?.voz && modo === "vivavoz" && (
-                  <button type="button" onClick={() => (estado === "parado" ? iniciarVivaVoz() : pararTudo())}
-                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white transition"
-                    style={{ background: estado === "parado" ? "#0ea5a3" : "#dc2626" }}>
-                    <IconeMic small /> {estado === "parado" ? "Começar a falar" : estado === "ouvindo" ? "Ouvindo… (toque para parar)" : ocupada ? "Um instante…" : "Parar"}
-                  </button>
-                )}
-                {cap?.voz && modo === "apertar" && (
-                  <button type="button"
-                    onPointerDown={comecarApertar} onPointerUp={soltarApertar} onPointerLeave={soltarApertar}
-                    className="flex h-12 flex-1 select-none items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white"
-                    style={{ background: estado === "ouvindo" ? "#dc2626" : "#0ea5a3", touchAction: "none" }}>
-                    <IconeMic small /> {estado === "ouvindo" ? "Gravando… solte para enviar" : ocupada ? "Um instante…" : "Segure para falar"}
-                  </button>
-                )}
-              </div>
-              {/* texto como rede de segurança (e único caminho se a voz pausar) */}
-              <div className="mt-2 flex items-center gap-2">
-                <input value={digitado} onChange={(e) => setDigitado(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") enviarDigitado(); }}
-                  placeholder={cap?.gateway ? "…ou escreva aqui" : "Marina não está ligada"} disabled={!cap?.gateway}
-                  className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-[13px] outline-none focus:border-teal-400" />
-                <button type="button" onClick={enviarDigitado} disabled={!cap?.gateway || !digitado.trim()}
-                  className="rounded-xl bg-gray-800 px-3 py-2 text-[13px] font-medium text-white disabled:opacity-40">Enviar</button>
-              </div>
-            </div>
-          </div>
+      {aberto && !celular && (
+        <div role="dialog" aria-label="Treinar a Marina por voz"
+          className="fixed z-[70] flex flex-col overflow-hidden"
+          style={{
+            left: max ? "50%" : pos.x,
+            top: max ? "50%" : pos.y,
+            transform: max ? "translate(-50%,-50%)" : undefined,
+            width: max ? "min(940px,94vw)" : tam.w,
+            height: min ? "auto" : max ? "90vh" : tam.h,
+            maxWidth: "96vw", maxHeight: "92vh",
+            background: SUPERFICIE, color: TINTA, borderRadius: 18,
+            border: "1px solid rgba(12,38,56,.12)",
+            boxShadow: "0 24px 64px -20px rgba(12,38,56,.55), 0 6px 20px -8px rgba(12,38,56,.28)",
+          }}>
+          {cabecalho}
+          {!min && corpo}
+          {!min && !max && (
+            <div onPointerDown={aoRedim} onPointerMove={moverRedim} onPointerUp={soltarRedim}
+              title="Arraste para redimensionar"
+              className="absolute bottom-0 right-0 h-5 w-5"
+              style={{ cursor: "nwse-resize", touchAction: "none", background: "linear-gradient(135deg, transparent 50%, rgba(12,38,56,.22) 50%)", borderBottomRightRadius: 18 }} />
+          )}
         </div>
       )}
     </>
@@ -459,6 +553,16 @@ export function VozTreino() {
 
 function rotuloEstado(e: Estado): string {
   return e === "ouvindo" ? "Ouvindo você…" : e === "pensando" ? "Pensando…" : e === "falando" ? "Falando…" : "Pronta quando você quiser";
+}
+
+function BotaoJanela({ titulo, onClick, children }: { titulo: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" title={titulo} aria-label={titulo} onClick={onClick}
+      className="flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-black/5"
+      style={{ color: "#4b5563" }}>
+      {children}
+    </button>
+  );
 }
 
 function IconeMic({ small }: { small?: boolean }) {
@@ -471,9 +575,11 @@ function IconeMic({ small }: { small?: boolean }) {
   );
 }
 function IconeX() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
+  return (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>);
+}
+function IconeMenos() {
+  return (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M5 12h14" /></svg>);
+}
+function IconeQuadrado() {
+  return (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="4" y="4" width="16" height="16" rx="2" /></svg>);
 }
