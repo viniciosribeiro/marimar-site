@@ -36,8 +36,10 @@ const LIMIAR = 0.02;
 const MIN_FALA_MS = 250;
 const MAX_FALA_MS = 15_000;
 
-const SIM = /\b(sim|pode|confirma|confirmo|isso|exato|ta certo|tá certo|certo|manda|fecha|beleza|claro|ok|okay)\b/i;
-const NAO = /\b(nao|não|negativo|cancela|deixa|espera|para|errado|melhor nao|melhor não)\b/i;
+// Depois de "confirma?": só um "não/muda/espera" cancela; qualquer outra coisa
+// (inclusive repetir o pedido com outras palavras) conta como SIM — assim a
+// confirmação não entra em loop e não gasta outra ida à Marina.
+const CANCELAR = /\b(n[ãa]o|nao|negativo|cancela|cancelar|deixa|esquece|espera|para|parar|errado|muda|mudar|troca|trocar|na verdade|melhor\s+n[ãa]o|outro|outra|diferente)\b/i;
 
 const LARGURA_INICIAL = 384;
 const ALTURA_INICIAL = 592;
@@ -246,6 +248,7 @@ export function VozTreino() {
 
   const confirmar = useCallback(async (p: Pendente) => {
     setPendente(null);
+    pendenteRef.current = null;
     mudarEstado("pensando");
     try {
       const r = await executarAcaoVoz(sessaoRef.current, p.nome, p.dados);
@@ -260,6 +263,7 @@ export function VozTreino() {
 
   const cancelarPendente = useCallback(async () => {
     setPendente(null);
+    pendenteRef.current = null;
     log("marina", "Tudo bem, não vou mexer nisso.");
     await falar("Tudo bem, não vou mexer nisso.");
   }, [falar, log]);
@@ -269,9 +273,8 @@ export function VozTreino() {
 
     const p = pendenteRef.current;
     if (p) {
-      if (SIM.test(texto) && !NAO.test(texto)) { await confirmar(p); return; }
-      if (NAO.test(texto)) { await cancelarPendente(); return; }
-      setPendente(null);
+      if (CANCELAR.test(texto)) { await cancelarPendente(); return; }
+      await confirmar(p); return; // qualquer coisa que não seja "não/muda" confirma
     }
 
     mudarEstado("pensando");
@@ -284,7 +287,7 @@ export function VozTreino() {
       if (!r.ok) { const m = d?.erro ?? "Não consegui falar com a Marina."; log("marina", m); setAviso(m); return; }
       if (d.gasto) { setGasto(d.gasto); if (d.gasto.nivel === "aviso") setAviso("Atenção: a voz já passou de " + d.gasto.pct + "% do teto do mês."); }
       log("marina", d.resposta);
-      if (d.acao && d.acao.valido) setPendente({ nome: d.acao.nome, dados: d.acao.dados, descricao: d.acao.descricao });
+      if (d.acao && d.acao.valido) { const nova = { nome: d.acao.nome, dados: d.acao.dados, descricao: d.acao.descricao }; setPendente(nova); pendenteRef.current = nova; }
       await falar(d.resposta);
     } catch { log("marina", "Falha ao falar com a Marina."); }
   }, [confirmar, cancelarPendente, falar, log]);
