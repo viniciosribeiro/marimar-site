@@ -5,6 +5,7 @@ import { chaveDoProvedor } from "@/lib/voz";
 import { garantirEsquemaVoz } from "@/lib/esquema-voz-treino";
 import { lerPrecosVoz, usoDoMesCentavos, lacunasAbertas, ultimaConversa } from "@/lib/marina-voz";
 import { estadoGasto, emReais } from "@/lib/marina-voz-base";
+import { estadoPilha } from "@/lib/marina-voz-desfazer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export async function GET() {
   return comSql(async (sql) => {
     await garantirEsquemaVoz(sql);
     const [precos, { chave }] = await Promise.all([lerPrecosVoz(sql), chaveDoProvedor(sql, "elevenlabs")]);
-    const [uso, lacunas, ultima] = await Promise.all([usoDoMesCentavos(sql, precos), lacunasAbertas(sql, 8), ultimaConversa(sql, autor)]);
+    const [uso, lacunas, ultima, pilha] = await Promise.all([usoDoMesCentavos(sql, precos), lacunasAbertas(sql, 8), ultimaConversa(sql, autor), estadoPilha(sql, autor)]);
     const gasto = estadoGasto(uso, precos);
     return Response.json({
       ok: true,
@@ -35,6 +36,7 @@ export async function GET() {
       reais: { uso: emReais(gasto.usoCentavos), limite: emReais(precos.limiteCentavos) },
       lacunas,
       ultima,
+      pilha,
     });
   });
 }

@@ -3,6 +3,8 @@ import { tipoValido, categoriaValida } from "./marina-base";
 import { sugerirCategoria, registrarHistorico } from "./marina";
 import { texto, listaDeTexto, soDigitos, dinheiro, type Dados } from "./marina-voz-util";
 import { ACOES_PAINEL } from "./marina-voz-acoes-painel";
+import { ACOES_GERAIS } from "./marina-voz-painel";
+import type { ContextoAcao } from "./marina-voz-desfazer";
 
 /**
  * O que a Marina PODE fazer no painel pela voz.
@@ -22,7 +24,7 @@ import { ACOES_PAINEL } from "./marina-voz-acoes-painel";
  * e não um `if` gigante. Preço e disponibilidade NUNCA entram (são do motor).
  */
 
-export type ResultadoAcao = { ok: true; resumo: string } | { ok: false; erro: string };
+export type ResultadoAcao = { ok: true; resumo: string; caminhos?: string[] } | { ok: false; erro: string };
 
 export type Acao = {
   rotulo: string;
@@ -34,7 +36,8 @@ export type Acao = {
   caminhos?: string[];
   validar(dados: Dados): { ok: true; dados: Dados } | { ok: false; erro: string };
   descrever(sql: Sql, dados: Dados): Promise<string>;
-  executar(sql: Sql, dados: Dados, autor: string): Promise<ResultadoAcao>;
+  /** `ctx.tocar` ANTES de mudar uma linha e `ctx.criou` depois de inserir: é o que permite desfazer. */
+  executar(sql: Sql, dados: Dados, autor: string, ctx: ContextoAcao): Promise<ResultadoAcao>;
 };
 
 /* ── utilidades: ver marina-voz-util.ts ──────────────────────────── */
@@ -86,6 +89,13 @@ const CAMPOS_POUSADA: { chave: string; rotulo: string; tipo: "texto" | "digitos"
   { chave: "horario_recepcao", rotulo: "horário da recepção", tipo: "texto", max: 200 },
   { chave: "descricao_curta", rotulo: "descrição curta", tipo: "texto", max: 400 },
   { chave: "como_chegar", rotulo: "como chegar", tipo: "texto", max: 2000 },
+  { chave: "descricao_longa", rotulo: "descrição longa", tipo: "texto", max: 6000 },
+  { chave: "instagram", rotulo: "Instagram", tipo: "texto", max: 255 },
+  { chave: "facebook", rotulo: "Facebook", tipo: "texto", max: 255 },
+  { chave: "uf", rotulo: "estado (UF)", tipo: "texto", max: 2 },
+  { chave: "cep", rotulo: "CEP", tipo: "texto", max: 9 },
+  { chave: "seo_title", rotulo: "título no Google", tipo: "texto", max: 200 },
+  { chave: "seo_description", rotulo: "descrição no Google", tipo: "texto", max: 400 },
 ];
 
 /* ── as ações ────────────────────────────────────────────────────── */
@@ -108,16 +118,18 @@ const ACOES_TREINO: Record<string, Acao> = {
       const rotulo = tipo === "pergunta" ? "a pergunta" : tipo === "limite" ? "o limite" : "a informação";
       return `guardar ${rotulo} "${texto(d.titulo, 120)}"`;
     },
-    async executar(sql, d, autor) {
+    async executar(sql, d, autor, ctx) {
       const tipo = tipoValido(d.tipo);
       const categoria = categoriaValida(sugerirCategoria(`${d.titulo} ${d.conteudo}`));
       const [novo] = await sql<{ id: string }[]>`
         INSERT INTO marina_conhecimento (tipo, categoria, titulo, conteudo, variacoes, ativo, atualizado_por)
         VALUES (${tipo}, ${categoria}, ${String(d.titulo)}, ${String(d.conteudo)}, ${sql.json((d.variacoes as string[]) ?? [])}, true, ${autor})
         RETURNING id`;
+      ctx.criou("marina_conhecimento", novo.id);
       const [linha] = await sql`SELECT tipo, categoria, titulo, conteudo, variacoes, ativo FROM marina_conhecimento WHERE id = ${novo.id}`;
       await registrarHistorico(sql, novo.id, "criou", null, foto(linha as never), autor);
       if (d.lacuna_id) {
+        await ctx.tocar("marina_lacunas", String(d.lacuna_id)).catch(() => {});
         await sql`UPDATE marina_lacunas SET status = 'resolvida', conhecimento_id = ${novo.id}, resolvido_em = now() WHERE id = ${String(d.lacuna_id)}`.catch(() => {});
       }
       return { ok: true, resumo: `Ensinei "${texto(d.titulo, 80)}". Já vale no site e o WhatsApp lê na próxima conversa.` };
@@ -146,10 +158,11 @@ const ACOES_TREINO: Record<string, Acao> = {
       if (d.conteudo) partes.push("trocar o texto");
       return `${partes.join(" e ") || "mudar"} o item "${achado.item.titulo}"`;
     },
-    async executar(sql, d, autor) {
+    async executar(sql, d, autor, ctx) {
       const achado = await acharItem(sql, String(d.alvo));
       if (!achado.ok) return { ok: false, erro: achado.erro };
       const antes = achado.item;
+      await ctx.tocar("marina_conhecimento", antes.id);
       const titulo = (d.titulo as string) ?? antes.titulo;
       const conteudo = (d.conteudo as string) ?? antes.conteudo;
       const ativo = typeof d.ativo === "boolean" ? d.ativo : antes.ativo;
@@ -178,9 +191,10 @@ const ACOES_TREINO: Record<string, Acao> = {
       const achado = await acharItem(sql, String(d.alvo));
       return achado.ok ? `mandar para a lixeira o item "${achado.item.titulo}"` : achado.erro;
     },
-    async executar(sql, d, autor) {
+    async executar(sql, d, autor, ctx) {
       const achado = await acharItem(sql, String(d.alvo));
       if (!achado.ok) return { ok: false, erro: achado.erro };
+      await ctx.tocar("marina_conhecimento", achado.item.id);
       await sql`UPDATE marina_conhecimento SET excluido_em = now(), atualizado_por = ${autor}, atualizado_em = now() WHERE id = ${achado.item.id}`;
       await registrarHistorico(sql, achado.item.id, "excluiu", foto(achado.item as never), null, autor);
       return { ok: true, resumo: `Mandei "${achado.item.titulo}" para a lixeira. Dá para restaurar quando quiser.` };
@@ -199,9 +213,10 @@ const ACOES_TREINO: Record<string, Acao> = {
       const achado = await acharItem(sql, String(d.alvo), true);
       return achado.ok ? `restaurar da lixeira o item "${achado.item.titulo}"` : achado.erro;
     },
-    async executar(sql, d, autor) {
+    async executar(sql, d, autor, ctx) {
       const achado = await acharItem(sql, String(d.alvo), true);
       if (!achado.ok) return { ok: false, erro: achado.erro };
+      await ctx.tocar("marina_conhecimento", achado.item.id);
       await sql`UPDATE marina_conhecimento SET excluido_em = NULL, atualizado_por = ${autor}, atualizado_em = now() WHERE id = ${achado.item.id}`;
       await registrarHistorico(sql, achado.item.id, "restaurou", null, foto(achado.item as never), autor);
       return { ok: true, resumo: `Restaurei "${achado.item.titulo}".` };
@@ -224,11 +239,13 @@ const ACOES_TREINO: Record<string, Acao> = {
         ? `trocar o jeito de falar dela por "${texto(d.tom, 100)}"`
         : `acrescentar ao jeito de falar dela: "${texto(d.tom, 100)}"`;
     },
-    async executar(sql, d) {
+    async executar(sql, d, _autor, ctx) {
       const linha = await lerConfigLinha(sql);
+      if (linha) await ctx.tocar("marina_config", linha.id);
       const atual = linha?.tom?.trim() ?? "";
       const novo = d.modo === "substituir" || !atual ? String(d.tom) : `${atual}\n${d.tom}`;
       await gravarTom(sql, novo.slice(0, 4000));
+      if (!linha) { const criada = await lerConfigLinha(sql); if (criada) ctx.criou("marina_config", criada.id); }
       return { ok: true, resumo: "Mudei o jeito dela falar. Vale na próxima mensagem, nos dois canais." };
     },
   },
@@ -267,7 +284,8 @@ const ACOES_TREINO: Record<string, Acao> = {
       if ("bebe_cobranca" in d) partes.push(`bebê ${d.bebe_cobranca === "gratis" ? "não paga" : "cobrado " + String(d.bebe_cobranca).replace("_", " ")}`);
       return `mudar a regra de hóspedes: ${partes.join("; ")}`;
     },
-    async executar(sql, d, autor) {
+    async executar(sql, d, autor, ctx) {
+      await ctx.tocar("regras_hospedagem", 1);
       const [atual] = await sql<{ idade_colo_max: number | null; crianca_paga_como_adulto: boolean; bebe_cobranca: string; bebe_valor: string | null; observacao: string | null }[]>`
         SELECT idade_colo_max, crianca_paga_como_adulto, bebe_cobranca, bebe_valor, observacao FROM regras_hospedagem WHERE id = 1`;
       const dados = {
@@ -288,7 +306,7 @@ const ACOES_TREINO: Record<string, Acao> = {
     rotulo: "Mudar dados da pousada",
     caminhos: ["/admin/pousada", "/", "/contato", "/como-chegar"],
     comoUsar:
-      'mudar dados da pousada. dados (só o que mudar): {"whatsapp":"...","telefone":"...","email":"...","nome":"...","endereco":"...","cidade":"...","horario_recepcao":"...","descricao_curta":"...","como_chegar":"..."}',
+      'mudar dados da pousada. dados (só o que mudar): {"whatsapp":"...","telefone":"...","email":"...","nome":"...","endereco":"...","cidade":"...","uf":"PR","cep":"...","horario_recepcao":"...","descricao_curta":"...","descricao_longa":"...","como_chegar":"...","instagram":"...","facebook":"...","seo_title":"...","seo_description":"..."}',
     validar(d) {
       const out: Dados = {};
       for (const c of CAMPOS_POUSADA) {
@@ -313,9 +331,12 @@ const ACOES_TREINO: Record<string, Acao> = {
       const partes = CAMPOS_POUSADA.filter((c) => c.chave in d).map((c) => `${c.rotulo} para "${String(d[c.chave]).slice(0, 60)}"`);
       return `mudar ${partes.join(", ")}`;
     },
-    async executar(sql, d) {
+    async executar(sql, d, _autor, ctx) {
+      const [p] = await sql<{ id: string }[]>`SELECT id FROM pousada LIMIT 1`;
+      if (!p) return { ok: false, erro: "A pousada ainda não tem cadastro." };
+      await ctx.tocar("pousada", p.id);
       const campos = Object.fromEntries(Object.entries(d).map(([k, v]) => [k, String(v)]));
-      await sql`UPDATE pousada SET ${sql(campos)}, atualizado_em = now() WHERE id = (SELECT id FROM pousada LIMIT 1)`;
+      await sql`UPDATE pousada SET ${sql(campos)}, atualizado_em = now() WHERE id = ${p.id}`;
       return { ok: true, resumo: "Dados da pousada atualizados. Já aparecem no site." };
     },
   },
@@ -335,17 +356,19 @@ const ACOES_TREINO: Record<string, Acao> = {
       const p = d.preco != null ? ` por R$ ${Number(d.preco).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "";
       return `criar o adicional "${texto(d.nome, 80)}"${p}`;
     },
-    async executar(sql, d, autor) {
-      await sql`
+    async executar(sql, d, autor, ctx) {
+      const [novo] = await sql<{ id: string }[]>`
         INSERT INTO adicionais (nome, descricao, preco, cobranca, categoria, precisa_pedir, visivel_site, visivel_marina, ativo, atualizado_por)
-        VALUES (${String(d.nome)}, ${(d.descricao as string) ?? null}, ${(d.preco as number | null) ?? null}, ${String(d.cobranca)}, 'outros', true, true, true, true, ${autor})`;
+        VALUES (${String(d.nome)}, ${(d.descricao as string) ?? null}, ${(d.preco as number | null) ?? null}, ${String(d.cobranca)}, 'outros', true, true, true, true, ${autor})
+        RETURNING id`;
+      ctx.criou("adicionais", novo.id);
       return { ok: true, resumo: `Criei o adicional "${texto(d.nome, 80)}". Já aparece no site e para a Marina.` };
     },
   },
 };
 
 /** Todas as ações: as do treinamento e as do resto do painel. */
-export const ACOES: Record<string, Acao> = { ...ACOES_TREINO, ...ACOES_PAINEL };
+export const ACOES: Record<string, Acao> = { ...ACOES_TREINO, ...ACOES_PAINEL, ...ACOES_GERAIS };
 
 /** Catálogo em texto para o pedido à Marina. Oculta as ações técnicas de quem não é Administração. */
 export function catalogoParaPrompt(tecnico: boolean): string {

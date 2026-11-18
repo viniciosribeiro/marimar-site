@@ -1,5 +1,13 @@
 # Handoff — continuar de onde paramos
 
+## ESTADO ATUAL — 18/11/2026 (parte 9): modo voz com o painel inteiro, desfazer/refazer e áudio como no WhatsApp
+- **Leia `docs/modo-voz-treino.md`** (seções "Mapa do painel", "Desfazer/refazer" e "Gravar e corrigir").
+- **Acrescentar uma área do painel:** uma entrada em `AREAS` (`src/lib/marina-voz-painel.ts`) e a tabela em `TABELAS_DESFAZER` (`src/lib/marina-voz-desfazer.ts`). Acrescentar ação própria: chamar `ctx.tocar(tabela, chave)` ANTES de mudar e `ctx.criou` depois de inserir — sem isso o desfazer não enxerga a mudança.
+- **Não fazer:** pôr senhas, chaves, telefones/nome de hóspedes no retrato; aceitar coluna/área que não está no mapa; desfazer por cima de mudança feita pela tela (a conferência existe de propósito).
+- **Testes:** `DATABASE_URL=postgres://postgres@localhost:5433/marimar npx tsx --test testes/unit/voz-acoes-painel.test.ts` (7) e `testes/e2e-voz-treino.mjs` (36; o navegador sobe com microfone simulado). Receita do ambiente: seção de 17/11.
+- **Para o proprietário conferir:** "cadastra a Joana na equipe…" → confirmar → ↶ desfaz; "passa o contato da Cecília quando for assunto de trabalho" → ela deve propor ensinar com o número do cadastro. Segurar o botão no modo Apertar num iPhone/Android de verdade.
+- Situação de publicação: CHANGELOG (parte 9).
+
 ## ESTADO ATUAL — 18/11/2026 (parte 8): botão "Entrar no painel" no rodapé
 - Componente `src/components/site/EntrarPainel.tsx`, usado no rodapé do Clássico (`src/app/(site)/layout.tsx`) e do Novo (`src/components/site-novo/RodapeNovo.tsx`).
 - **Não trocar o destino para `/admin/login`:** no `www` essa rota não é redirecionada (é pública no middleware) e a sessão ficaria no `www`; `/admin` leva ao `admin.` e o login acontece lá.

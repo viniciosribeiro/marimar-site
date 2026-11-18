@@ -1,6 +1,10 @@
 import type { Sql } from "./db-conexao";
 import type { Acao } from "./marina-voz-acoes";
+import type { ContextoAcao } from "./marina-voz-desfazer";
 import { lerConteudo, hojeBR, type Atracao } from "./conteudo-editavel";
+import { lerConfigModelo } from "./modelo-site";
+import { todasProntas } from "./site-novo/paginas";
+import { garantirColunaModeloSite } from "./esquema-modelo-site";
 import {
   texto, listaDeTexto, dinheiro, simNao, slugDe, dataISO, horario, acharUm, type Dados,
 } from "./marina-voz-util";
@@ -27,7 +31,8 @@ async function lerLinhaConteudo(sql: Sql, chave: "chegar" | "ilha" | "eventos"):
   const [l] = await sql<{ dados: Record<string, unknown> }[]>`SELECT dados FROM conteudo_editavel WHERE chave = ${chave}`;
   return l?.dados ?? {};
 }
-async function gravarLinhaConteudo(sql: Sql, chave: "chegar" | "ilha" | "eventos", dados: Record<string, unknown>) {
+async function gravarLinhaConteudo(sql: Sql, chave: "chegar" | "ilha" | "eventos", dados: Record<string, unknown>, ctx: ContextoAcao) {
+  await ctx.tocar("conteudo_editavel", chave);
   await sql`
     INSERT INTO conteudo_editavel (chave, dados, atualizado_em)
     VALUES (${chave}, ${sql.json(dados as never)}, now())
@@ -78,11 +83,12 @@ const politicas: Acao = {
     if (d.diaria_minima_padrao) { const n = Number(d.diaria_minima_padrao); p.push(`estadia mínima de ${n} ${n === 1 ? "noite" : "noites"}`); }
     return `mudar nas políticas: ${p.join("; ")}`;
   },
-  async executar(sql, d) {
+  async executar(sql, d, _autor, ctx) {
     const { formas_pagamento, ...campos } = d;
     const [linha] = await sql<{ id: string }[]>`SELECT id FROM politicas LIMIT 1`;
     let id = linha?.id;
-    if (!id) [{ id }] = await sql<{ id: string }[]>`INSERT INTO politicas DEFAULT VALUES RETURNING id`;
+    if (id) await ctx.tocar("politicas", id);
+    else { [{ id }] = await sql<{ id: string }[]>`INSERT INTO politicas DEFAULT VALUES RETURNING id`; ctx.criou("politicas", id!); }
     if (Object.keys(campos).length) await sql`UPDATE politicas SET ${sql(campos as Record<string, string | number | boolean>)}, atualizado_em = now() WHERE id = ${id!}`;
     if (formas_pagamento) await sql`UPDATE politicas SET formas_pagamento = ${sql.json(formas_pagamento as string[])}, atualizado_em = now() WHERE id = ${id!}`;
     return { ok: true, resumo: "Políticas atualizadas. Já valem no site e para a Marina." };
@@ -105,46 +111,14 @@ const faq: Acao = {
   async descrever(_sql, d) {
     return `pôr nas perguntas frequentes do site: "${texto(d.pergunta, 100)}"`;
   },
-  async executar(sql, d) {
+  async executar(sql, d, _autor, ctx) {
     const [{ max }] = await sql<{ max: number }[]>`SELECT COALESCE(MAX(ordem), -1)::int AS max FROM faq`;
-    await sql`
+    const [novo] = await sql<{ id: string }[]>`
       INSERT INTO faq (pergunta, resposta, ordem, ativo, visivel_agente)
-      VALUES (${String(d.pergunta)}, ${String(d.resposta)}, ${max + 1}, true, ${d.visivel_agente !== false})`;
+      VALUES (${String(d.pergunta)}, ${String(d.resposta)}, ${max + 1}, true, ${d.visivel_agente !== false})
+      RETURNING id`;
+    ctx.criou("faq", novo.id);
     return { ok: true, resumo: `Pus "${texto(d.pergunta, 80)}" nas perguntas frequentes do site.` };
-  },
-};
-
-const faqEditar: Acao = {
-  rotulo: "Mudar ou desligar uma pergunta frequente",
-  caminhos: ["/admin/faq", "/faq"],
-  comoUsar:
-    'mudar uma pergunta frequente que já existe, ou tirá-la do site (desligar, reversível). dados: {"alvo":"parte da pergunta","pergunta":"nova" (opcional),"resposta":"nova" (opcional),"ativo":true|false (opcional)}',
-  validar(d) {
-    const alvo = texto(d.alvo, 160);
-    if (!alvo) return { ok: false, erro: "Diga qual pergunta frequente mudar (parte do texto dela)." };
-    const out: Dados = { alvo };
-    const p = texto(d.pergunta, 500); if (p) out.pergunta = p;
-    const r = texto(d.resposta, 4000); if (r) out.resposta = r;
-    const a = simNao(d.ativo); if (a !== null) out.ativo = a;
-    if (Object.keys(out).length === 1) return { ok: false, erro: "Diga o que mudar: a pergunta, a resposta, ou tirar do site." };
-    return { ok: true, dados: out };
-  },
-  async descrever(sql, d) {
-    const a = await acharUm<{ id: string; pergunta: string }>(sql, "faq", String(d.alvo), "pergunta frequente");
-    if (!a.ok) return a.erro;
-    const p = [ligaDesliga(d.ativo) === "desligar" ? "tirar do site" : ligaDesliga(d.ativo) === "ligar" ? "voltar ao site" : null,
-      d.pergunta ? "trocar a pergunta" : null, d.resposta ? "trocar a resposta" : null].filter(Boolean);
-    return `${p.join(" e ")} — "${a.linha.pergunta.slice(0, 90)}"`;
-  },
-  async executar(sql, d) {
-    const a = await acharUm<{ id: string; pergunta: string; resposta: string; ativo: boolean }>(sql, "faq", String(d.alvo), "pergunta frequente");
-    if (!a.ok) return { ok: false, erro: a.erro };
-    const l = a.linha;
-    await sql`
-      UPDATE faq SET pergunta = ${(d.pergunta as string) ?? l.pergunta}, resposta = ${(d.resposta as string) ?? l.resposta},
-        ativo = ${typeof d.ativo === "boolean" ? d.ativo : l.ativo}
-      WHERE id = ${l.id}`;
-    return { ok: true, resumo: d.ativo === false ? `Tirei "${l.pergunta.slice(0, 60)}" do site (dá para voltar).` : `Atualizei a pergunta "${l.pergunta.slice(0, 60)}".` };
   },
 };
 
@@ -192,7 +166,7 @@ const cardapioItem: Acao = {
       d.secao ? `mudar para a seção ${d.secao}` : null].filter(Boolean);
     return `mudar o prato "${a.linha.nome}": ${p.join(", ")}`;
   },
-  async executar(sql, d) {
+  async executar(sql, d, _autor, ctx) {
     let categoria: string | null = null;
     if (d.secao) {
       const s = await acharSecao(sql, String(d.secao));
@@ -203,6 +177,7 @@ const cardapioItem: Acao = {
       const a = await acharUm<Prato>(sql, "cardapio_itens", String(d.alvo), "prato");
       if (!a.ok) return { ok: false, erro: a.erro };
       const l = a.linha;
+      await ctx.tocar("cardapio_itens", l.id);
       await sql`
         UPDATE cardapio_itens SET
           nome = ${(d.nome as string) ?? l.nome}, categoria_id = ${categoria ?? l.categoria_id},
@@ -214,38 +189,15 @@ const cardapioItem: Acao = {
       return { ok: true, resumo: `Atualizei "${(d.nome as string) ?? l.nome}" no cardápio.` };
     }
     const [{ max }] = await sql<{ max: number }[]>`SELECT COALESCE(MAX(ordem), -1)::int AS max FROM cardapio_itens WHERE categoria_id = ${categoria!}`;
-    await sql`
+    const [criado] = await sql<{ id: string }[]>`
       INSERT INTO cardapio_itens (categoria_id, nome, descricao, preco, preco_promocional, porcao, marcadores, destaque, ordem)
       VALUES (${categoria!}, ${String(d.nome)}, ${(d.descricao as string) ?? null},
         ${typeof d.preco === "number" ? d.preco.toFixed(2) : null},
         ${d.preco_promocional == null ? null : Number(d.preco_promocional).toFixed(2)},
-        ${(d.porcao as string) ?? null}, ${sql.json([])}, ${d.destaque === true}, ${max + 1})`;
+        ${(d.porcao as string) ?? null}, ${sql.json([])}, ${d.destaque === true}, ${max + 1})
+      RETURNING id`;
+    ctx.criou("cardapio_itens", criado.id);
     return { ok: true, resumo: `Pus "${d.nome}" no cardápio. Já aparece no site e para a Marina.` };
-  },
-};
-
-const cardapioDisponivel: Acao = {
-  rotulo: "Marcar prato como esgotado (ou repor)",
-  caminhos: ["/admin/cardapio", "/restaurante"],
-  comoUsar:
-    'marcar um prato como esgotado hoje, ou voltar a oferecer. dados: {"alvo":"nome do prato","disponivel":false (esgotou) | true (repor)}',
-  validar(d) {
-    const alvo = texto(d.alvo, 160);
-    const disponivel = simNao(d.disponivel);
-    if (!alvo) return { ok: false, erro: "Diga qual prato." };
-    if (disponivel === null) return { ok: false, erro: "Diga se esgotou ou se voltou." };
-    return { ok: true, dados: { alvo, disponivel } };
-  },
-  async descrever(sql, d) {
-    const a = await acharUm<Prato>(sql, "cardapio_itens", String(d.alvo), "prato");
-    if (!a.ok) return a.erro;
-    return d.disponivel ? `voltar a oferecer "${a.linha.nome}"` : `marcar "${a.linha.nome}" como esgotado hoje`;
-  },
-  async executar(sql, d) {
-    const a = await acharUm<Prato>(sql, "cardapio_itens", String(d.alvo), "prato");
-    if (!a.ok) return { ok: false, erro: a.erro };
-    await sql`UPDATE cardapio_itens SET disponivel = ${d.disponivel === true}, atualizado_em = now() WHERE id = ${a.linha.id}`;
-    return { ok: true, resumo: d.disponivel ? `"${a.linha.nome}" voltou ao cardápio.` : `"${a.linha.nome}" marcado como esgotado hoje.` };
   },
 };
 
@@ -288,11 +240,12 @@ const pacote: Acao = {
     if (p.length === 1 && (p[0] === "ligar" || p[0] === "desligar")) return `${p[0]} o pacote "${a.linha.nome}"`;
     return `mudar o pacote "${a.linha.nome}": ${p.join(", ")}`;
   },
-  async executar(sql, d) {
+  async executar(sql, d, _autor, ctx) {
     if (d.alvo) {
       const a = await acharUm<Pacote>(sql, "pacotes", String(d.alvo), "pacote");
       if (!a.ok) return { ok: false, erro: a.erro };
       const l = a.linha;
+      await ctx.tocar("pacotes", l.id);
       await sql`
         UPDATE pacotes SET
           nome = ${(d.nome as string) ?? l.nome}, descricao = ${(d.descricao as string) ?? l.descricao},
@@ -309,50 +262,14 @@ const pacote: Acao = {
     let slug = base;
     for (let n = 2; usados.has(slug); n++) slug = `${base}-${n}`;
     const [{ max }] = await sql<{ max: number }[]>`SELECT COALESCE(MAX(ordem), -1)::int AS max FROM pacotes`;
-    await sql`
+    const [criado] = await sql<{ id: string }[]>`
       INSERT INTO pacotes (nome, slug, descricao, inclusos, vigencia_inicio, vigencia_fim, diaria_minima, ordem, ativo)
       VALUES (${String(d.nome)}, ${slug}, ${(d.descricao as string) ?? null}, ${sql.json(((d.inclusos as string[]) ?? []) as never)},
         ${d.vigencia_inicio ? dataDoBanco(String(d.vigencia_inicio)) : null}, ${d.vigencia_fim ? dataDoBanco(String(d.vigencia_fim)) : null},
-        ${(d.diaria_minima as number) ?? 1}, ${max + 1}, ${d.ativo !== false})`;
+        ${(d.diaria_minima as number) ?? 1}, ${max + 1}, ${d.ativo !== false})
+      RETURNING id`;
+    ctx.criou("pacotes", criado.id);
     return { ok: true, resumo: `Criei o pacote "${d.nome}". ${d.ativo === false ? "Está desligado até você ligar." : "Já aparece em Pacotes no site."}` };
-  },
-};
-
-/* ── banners (só textos e ligar/desligar: a imagem é pela tela) ──── */
-
-type Banner = { id: string; titulo: string | null; subtitulo: string | null; texto: string | null; cta_texto: string | null; ativo: boolean };
-
-const banner: Acao = {
-  rotulo: "Ligar, desligar ou mudar o texto de um banner",
-  caminhos: ["/admin/banners", "/"],
-  comoUsar:
-    'ligar/desligar um banner do topo do site ou mudar os textos dele (a imagem só pela tela Banners). dados: {"alvo":"título do banner","ativo":true|false,"titulo":"...","subtitulo":"...","texto":"...","cta_texto":"texto do botão"}',
-  validar(d) {
-    const alvo = texto(d.alvo, 160);
-    if (!alvo) return { ok: false, erro: "Diga qual banner (pelo título dele)." };
-    const out: Dados = { alvo };
-    for (const k of ["titulo", "subtitulo", "texto", "cta_texto"]) { const t = texto(d[k], k === "texto" ? 600 : 200); if (t) out[k] = t; }
-    const a = simNao(d.ativo); if (a !== null) out.ativo = a;
-    if (Object.keys(out).length === 1) return { ok: false, erro: "Diga o que fazer com o banner (ligar, desligar ou trocar um texto)." };
-    return { ok: true, dados: out };
-  },
-  async descrever(sql, d) {
-    const a = await acharUm<Banner>(sql, "banners", String(d.alvo), "banner");
-    if (!a.ok) return a.erro;
-    const p = [ligaDesliga(d.ativo), d.titulo || d.subtitulo || d.texto || d.cta_texto ? "trocar o texto" : null].filter(Boolean);
-    return `${p.join(" e ")} do banner "${a.linha.titulo ?? "sem título"}"`;
-  },
-  async executar(sql, d) {
-    const a = await acharUm<Banner>(sql, "banners", String(d.alvo), "banner");
-    if (!a.ok) return { ok: false, erro: a.erro };
-    const l = a.linha;
-    await sql`
-      UPDATE banners SET
-        titulo = ${(d.titulo as string) ?? l.titulo}, subtitulo = ${(d.subtitulo as string) ?? l.subtitulo},
-        texto = ${(d.texto as string) ?? l.texto}, cta_texto = ${(d.cta_texto as string) ?? l.cta_texto},
-        ativo = ${typeof d.ativo === "boolean" ? d.ativo : l.ativo}
-      WHERE id = ${l.id}::uuid`;
-    return { ok: true, resumo: d.ativo === false ? `Desliguei o banner "${l.titulo ?? "sem título"}".` : d.ativo === true ? `Liguei o banner "${l.titulo ?? "sem título"}".` : `Atualizei o banner "${(d.titulo as string) ?? l.titulo ?? "sem título"}".` };
   },
 };
 
@@ -395,7 +312,7 @@ const atracao: Acao = {
     const a = acharAtracao(lista, String(d.alvo));
     return a.ok ? `mudar a atração "${lista[a.i].nome}"` : a.erro;
   },
-  async executar(sql, d) {
+  async executar(sql, d, _autor, ctx) {
     const linha = await lerLinhaConteudo(sql, "ilha");
     const lista = [...(await lerConteudo(sql)).ATRACOES];
     if (d.alvo) {
@@ -407,7 +324,7 @@ const atracao: Acao = {
         nome: (d.nome as string) ?? atual.nome, resumo: (d.resumo as string) ?? atual.resumo, texto: (d.texto as string) ?? atual.texto,
         distanciaTexto: (d.distancia as string) ?? atual.distanciaTexto, destaque: typeof d.destaque === "boolean" ? d.destaque : atual.destaque,
       };
-      await gravarLinhaConteudo(sql, "ilha", { ...linha, ATRACOES: lista });
+      await gravarLinhaConteudo(sql, "ilha", { ...linha, ATRACOES: lista }, ctx);
       return { ok: true, resumo: `Atualizei a atração "${lista[a.i].nome}". Já vale no site e para a Marina.` };
     }
     const usados = new Set(lista.map((a) => a.slug));
@@ -416,7 +333,7 @@ const atracao: Acao = {
     for (let n = 2; usados.has(slug); n++) slug = `${base}-${n}`;
     const corpo = (d.texto as string) ?? (d.resumo as string);
     lista.push({ slug, nome: String(d.nome), resumo: (d.resumo as string) ?? primeiraFrase(corpo), texto: corpo, distanciaTexto: (d.distancia as string) ?? "", destaque: d.destaque === true });
-    await gravarLinhaConteudo(sql, "ilha", { ...linha, ATRACOES: lista });
+    await gravarLinhaConteudo(sql, "ilha", { ...linha, ATRACOES: lista }, ctx);
     return { ok: true, resumo: `Criei a atração "${d.nome}". Já aparece na página Ilha do Mel e para a Marina.` };
   },
 };
@@ -444,7 +361,7 @@ const travessia: Acao = {
       d.operadora ? `operadora ${d.operadora}` : null, d.gratuidade ? "quem não paga" : null, d.estacionamento ? "estacionamento" : null].filter(Boolean);
     return `mudar a travessia de barco: ${p.join(", ")}`;
   },
-  async executar(sql, d) {
+  async executar(sql, d, _autor, ctx) {
     const linha = await lerLinhaConteudo(sql, "chegar");
     const atual = (await lerConteudo(sql)).TRAVESSIA;
     const precos = { ...atual.precos };
@@ -460,7 +377,7 @@ const travessia: Acao = {
       ...(d.estacionamento ? { estacionamento: String(d.estacionamento) } : {}),
       precos,
     };
-    await gravarLinhaConteudo(sql, "chegar", { ...linha, TRAVESSIA: travessiaNova, CHEGADA_ETAPAS: linha.CHEGADA_ETAPAS ?? (await lerConteudo(sql)).CHEGADA_ETAPAS });
+    await gravarLinhaConteudo(sql, "chegar", { ...linha, TRAVESSIA: travessiaNova, CHEGADA_ETAPAS: linha.CHEGADA_ETAPAS ?? (await lerConteudo(sql)).CHEGADA_ETAPAS }, ctx);
     return { ok: true, resumo: "Travessia atualizada. A Marina já passa os valores novos (com a data de hoje)." };
   },
 };
@@ -485,7 +402,7 @@ const eventos: Acao = {
       "capacidade" in d ? (d.capacidade ? `capacidade "${d.capacidade}"` : "capacidade sob consulta") : null].filter(Boolean);
     return `mudar a página de Eventos: ${p.join("; ")}`;
   },
-  async executar(sql, d) {
+  async executar(sql, d, _autor, ctx) {
     const linha = await lerLinhaConteudo(sql, "eventos");
     const atual = (await lerConteudo(sql)).EVENTOS;
     const novo = {
@@ -494,7 +411,7 @@ const eventos: Acao = {
       ...(d.espacos ? { espacos: d.espacos as string[] } : {}),
       ...("capacidade" in d ? { capacidade: (d.capacidade as string | null) || null } : {}),
     };
-    await gravarLinhaConteudo(sql, "eventos", { ...linha, EVENTOS: novo });
+    await gravarLinhaConteudo(sql, "eventos", { ...linha, EVENTOS: novo }, ctx);
     return { ok: true, resumo: "Página de Eventos atualizada." };
   },
 };
@@ -517,25 +434,158 @@ const depoimento: Acao = {
   async descrever(_sql, d) {
     return `pôr no site o depoimento de ${d.autor}${d.origem ? ` (${d.origem})` : ""}, nota ${d.nota}`;
   },
-  async executar(sql, d) {
+  async executar(sql, d, _autor, ctx) {
     const [{ max }] = await sql<{ max: number }[]>`SELECT COALESCE(MAX(ordem), -1)::int AS max FROM depoimentos`;
-    await sql`
+    const [novo] = await sql<{ id: string }[]>`
       INSERT INTO depoimentos (autor, origem, nota, texto, ordem, ativo)
-      VALUES (${String(d.autor)}, ${(d.origem as string) ?? null}, ${Number(d.nota)}, ${String(d.texto)}, ${max + 1}, true)`;
+      VALUES (${String(d.autor)}, ${(d.origem as string) ?? null}, ${Number(d.nota)}, ${String(d.texto)}, ${max + 1}, true)
+      RETURNING id`;
+    ctx.criou("depoimentos", novo.id);
     return { ok: true, resumo: `Pus o depoimento de ${d.autor} no site.` };
+  },
+};
+
+
+/* ── aparência, modelo do site e chat (moram na linha da pousada) ── */
+
+async function linhaPousada(sql: Sql) {
+  const [p] = await sql<{ id: string; tema: Record<string, unknown> | null; modelo_site: Record<string, unknown> | null; chat_ativo: boolean | null }[]>`
+    SELECT id, tema, modelo_site, chat_ativo FROM pousada LIMIT 1`;
+  return p ?? null;
+}
+
+const aparencia: Acao = {
+  rotulo: "Mudar a aparência do site",
+  caminhos: ["/admin/identidade-visual", "/admin/modelo-site", "/"],
+  comoUsar:
+    'ligar/desligar a abertura (o vídeo do pôr do sol), trocar o estilo dela, ligar/desligar as animações e o céu que muda com a hora. dados (só o que mudar): {"abertura":true|false,"estilo_abertura":"video"|"logo","animacoes":true|false,"ceu_por_hora":true|false}',
+  validar(d) {
+    const out: Dados = {};
+    for (const k of ["abertura", "animacoes", "ceu_por_hora"]) { const b = simNao(d[k]); if (b !== null) out[k] = b; }
+    if (d.estilo_abertura != null) {
+      const e = String(d.estilo_abertura).toLowerCase();
+      if (!["video", "logo"].includes(e)) return { ok: false, erro: "O estilo da abertura é vídeo ou logo." };
+      out.estilo_abertura = e;
+    }
+    return Object.keys(out).length ? { ok: true, dados: out } : { ok: false, erro: "Diga o que mudar: abertura, estilo da abertura, animações ou céu por hora." };
+  },
+  async descrever(_sql, d) {
+    const p: string[] = [];
+    if (typeof d.abertura === "boolean") p.push(`${d.abertura ? "ligar" : "desligar"} a abertura`);
+    if (d.estilo_abertura) p.push(`abertura com ${d.estilo_abertura === "video" ? "o vídeo" : "a logo animada"}`);
+    if (typeof d.animacoes === "boolean") p.push(`${d.animacoes ? "ligar" : "desligar"} as animações`);
+    if (typeof d.ceu_por_hora === "boolean") p.push(`${d.ceu_por_hora ? "ligar" : "desligar"} o céu por hora`);
+    return `mudar a aparência do site: ${p.join(", ")}`;
+  },
+  async executar(sql, d, autor, ctx) {
+    const p = await linhaPousada(sql);
+    if (!p) return { ok: false, erro: "A pousada ainda não tem cadastro." };
+    await ctx.tocar("pousada", p.id);
+    const tema = { ...(p.tema ?? {}) } as Record<string, unknown>;
+    const mov = { ...((tema.movimento as Record<string, unknown>) ?? {}) };
+    if (typeof d.abertura === "boolean") mov.abertura = d.abertura;
+    if (d.estilo_abertura) mov.aberturaEstilo = d.estilo_abertura;
+    if (typeof d.animacoes === "boolean") tema.animacoes = d.animacoes;
+    tema.movimento = mov;
+    await sql`UPDATE pousada SET tema = ${sql.json(tema as never)}, atualizado_em = now() WHERE id = ${p.id}`;
+    if (typeof d.ceu_por_hora === "boolean") {
+      const m = { ...(p.modelo_site ?? {}), ceu_por_hora: d.ceu_por_hora, alterado_em: new Date().toISOString(), alterado_por: autor };
+      await sql`UPDATE pousada SET modelo_site = ${sql.json(m as never)} WHERE id = ${p.id}`;
+    }
+    return { ok: true, resumo: "Aparência do site atualizada. Vale na próxima página aberta." };
+  },
+};
+
+const modeloSite: Acao = {
+  rotulo: "Trocar o site dos visitantes (Clássico ou Novo)",
+  tecnico: true,
+  caminhos: ["/admin/modelo-site", "/"],
+  comoUsar: 'trocar o que os VISITANTES veem: o site Clássico ou o Novo (só perfil Administração). dados: {"modelo":"classico"|"novo"}',
+  validar(d) {
+    const m = String(d.modelo ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    if (!["classico", "novo"].includes(m)) return { ok: false, erro: "Diga Clássico ou Novo." };
+    return { ok: true, dados: { modelo: m } };
+  },
+  async descrever(_sql, d) {
+    return `mostrar o site ${d.modelo === "novo" ? "Novo" : "Clássico"} para todos os visitantes`;
+  },
+  async executar(sql, d, autor, ctx) {
+    if (d.modelo === "novo" && !todasProntas()) return { ok: false, erro: "O site novo ainda tem páginas em construção; só vai para todos quando estiver completo." };
+    await garantirColunaModeloSite(sql);
+    const p = await linhaPousada(sql);
+    if (!p) return { ok: false, erro: "A pousada ainda não tem cadastro." };
+    await ctx.tocar("pousada", p.id);
+    const atual = lerConfigModelo(p);
+    const m = { modelo: d.modelo, ceu_por_hora: atual.ceuPorHora, alterado_em: new Date().toISOString(), alterado_por: autor };
+    await sql`UPDATE pousada SET modelo_site = ${sql.json(m as never)} WHERE id = ${p.id}`;
+    return { ok: true, resumo: d.modelo === "novo" ? "Pronto: os visitantes já veem o site Novo." : "Pronto: os visitantes voltaram ao site Clássico." };
+  },
+};
+
+const chatSite: Acao = {
+  rotulo: "Ligar ou desligar o chat da Marina no site",
+  tecnico: true,
+  caminhos: ["/admin/integracoes", "/"],
+  comoUsar: 'ligar ou desligar o chat da Marina no site (consome crédito; só perfil Administração). dados: {"ligado":true|false}',
+  validar(d) {
+    const b = simNao(d.ligado);
+    return b === null ? { ok: false, erro: "Diga se é para ligar ou desligar o chat." } : { ok: true, dados: { ligado: b } };
+  },
+  async descrever(_sql, d) {
+    return `${d.ligado ? "ligar" : "desligar"} o chat da Marina no site`;
+  },
+  async executar(sql, d, _autor, ctx) {
+    const p = await linhaPousada(sql);
+    if (!p) return { ok: false, erro: "A pousada ainda não tem cadastro." };
+    await ctx.tocar("pousada", p.id);
+    await sql`UPDATE pousada SET chat_ativo = ${d.ligado === true} WHERE id = ${p.id}`;
+    return { ok: true, resumo: d.ligado ? "Chat da Marina ligado no site." : "Chat da Marina desligado no site." };
+  },
+};
+
+/* ── textos da ilha (linha "ilha", sem mexer nas atrações) ───────── */
+
+const ilha: Acao = {
+  rotulo: "Mudar os textos da Ilha do Mel",
+  caminhos: ["/admin/conteudo", "/ilha-do-mel", "/como-chegar"],
+  comoUsar:
+    'mudar os textos da página Ilha do Mel. dados (só o que mudar): {"acesso":"como se anda na ilha","bagagem":"…","cuidados":["…","…"],"aviso_distancias":"…"}',
+  validar(d) {
+    const out: Dados = {};
+    const acesso = texto(d.acesso, 2000); if (acesso) out.acesso = acesso;
+    const bagagem = texto(d.bagagem, 2000); if (bagagem) out.bagagem = bagagem;
+    if ("cuidados" in d) { const l = listaDeTexto(d.cuidados); if (l.length) out.cuidados = l; }
+    const aviso = texto(d.aviso_distancias, 600); if (aviso) out.aviso_distancias = aviso;
+    return Object.keys(out).length ? { ok: true, dados: out } : { ok: false, erro: "Diga o que mudar: acesso, bagagem, cuidados ou aviso das distâncias." };
+  },
+  async descrever(_sql, d) {
+    const nomes: Record<string, string> = { acesso: "como se anda na ilha", bagagem: "bagagem", cuidados: "cuidados ambientais", aviso_distancias: "aviso das distâncias" };
+    return `mudar na página Ilha do Mel: ${Object.keys(d).map((k) => nomes[k] ?? k).join(", ")}`;
+  },
+  async executar(sql, d, _autor, ctx) {
+    const linha = await lerLinhaConteudo(sql, "ilha");
+    const atual = await lerConteudo(sql);
+    await gravarLinhaConteudo(sql, "ilha", {
+      ...linha,
+      SOBRE_A_ILHA: { acesso: (d.acesso as string) ?? atual.SOBRE_A_ILHA.acesso, bagagem: (d.bagagem as string) ?? atual.SOBRE_A_ILHA.bagagem },
+      CUIDADOS_AMBIENTAIS: (d.cuidados as string[]) ?? atual.CUIDADOS_AMBIENTAIS,
+      AVISO_DISTANCIAS: (d.aviso_distancias as string) ?? atual.AVISO_DISTANCIAS,
+    }, ctx);
+    return { ok: true, resumo: "Textos da Ilha do Mel atualizados." };
   },
 };
 
 export const ACOES_PAINEL: Record<string, Acao> = {
   politicas,
   faq,
-  faq_editar: faqEditar,
   cardapio_item: cardapioItem,
-  cardapio_disponivel: cardapioDisponivel,
   pacote,
-  banner,
   atracao,
   travessia,
   eventos,
   depoimento,
+  aparencia,
+  modelo_site: modeloSite,
+  chat_site: chatSite,
+  ilha,
 };

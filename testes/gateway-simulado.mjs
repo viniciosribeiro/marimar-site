@@ -90,7 +90,12 @@ function responder(corpo) {
     }
     const esgotou = pergunta.match(/acabou (?:o |a |os |as )?(.+?)\s*(?:hoje)?[.!]?$/i);
     if (esgotou) {
-      return `[[acao]]{"nome":"cardapio_disponivel","dados":{"alvo":${JSON.stringify(esgotou[1].trim())},"disponivel":false},"fala":"Vou marcar como esgotado hoje, confirma?"}[[/acao]]`;
+      return `[[acao]]{"nome":"alterar","dados":{"area":"cardapio","alvo":${JSON.stringify(esgotou[1].trim())},"campos":{"disponivel":false}},"fala":"Vou marcar como esgotado hoje, confirma?"}[[/acao]]`;
+    }
+    /* "cadastra <nome> na equipe, <número>" → criar na área equipe. */
+    const equipe = pergunta.match(/cadastra (?:a |o )?(\S+) na equipe,?\s*([\d\s()-]{10,})/i);
+    if (equipe) {
+      return `[[acao]]{"nome":"criar","dados":{"area":"equipe","campos":{"nome":${JSON.stringify(equipe[1])},"numero":${JSON.stringify(equipe[2].trim())}}},"fala":"Vou cadastrar na equipe, confirma?"}[[/acao]]`;
     }
     const m = pergunta.match(/(?:anota|ensina|guarda)(?:\s+(?:que|aí|isso:?))?\s+(.+)/i);
     if (m) {

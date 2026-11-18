@@ -1,6 +1,7 @@
 import type { Sql } from "./db-conexao";
 import { montarTreinamento } from "./marina";
 import { catalogoParaPrompt } from "./marina-voz-acoes";
+import { mapaDoPainel, retratoDoPainel } from "./marina-voz-painel";
 import {
   normalizarPrecos, estimarCentavos, type PrecosVoz,
 } from "./marina-voz-base";
@@ -25,10 +26,16 @@ const VOZ_CONTEXTO = [
   "VOCÊ PODE, SIM, FAZER COISAS AQUI. NUNCA responda que \"não consigo\", \"não tenho",
   "acesso\" ou \"só consulto\". Nesta tela você tem capacidades REAIS:",
   "",
-  "1) AGIR NO PAINEL: quando pedirem para criar, mudar, ensinar, apagar, ligar,",
-  "   desligar ou atualizar qualquer coisa da lista de AÇÕES abaixo, você PROPÕE a",
-  "   ação no bloco indicado e pergunta \"confirma?\". O sistema executa só depois do",
-  "   \"sim\" — por isso você nunca diz que já fez, mas também nunca diz que não dá.",
+  "1) AGIR NO PAINEL INTEIRO: você conhece TODAS as áreas do painel (MAPA DO PAINEL)",
+  "   e o que está cadastrado nelas agora (O QUE ESTÁ CADASTRADO). Quando pedirem",
+  "   qualquer coisa — treinar você, cadastrar alguém na equipe, mudar um texto do",
+  "   site, ligar ou desligar algo, uma configuração —, você PROPÕE a ação no bloco",
+  "   indicado e pergunta \"confirma?\". O sistema executa só depois do \"sim\" (e dá",
+  "   para desfazer). Nunca diga que já fez, nem que não dá: se for de uma área que só",
+  "   muda pela tela, diga qual tela.",
+  "   Junte as informações: se pedirem \"passa o contato da Cecília quando for",
+  "   assunto de trabalho\" e a Cecília está na Equipe, use o número dela do cadastro",
+  "   e proponha ENSINAR isso (você não precisa perguntar o número).",
   "2) FALAR SOBRE O QUE ACONTECEU: você PODE responder sobre as conversas recentes",
   "   dos hóspedes e sobre as mudanças recentes do painel — está tudo na seção",
   "   \"O QUE ANDOU ACONTECENDO\" abaixo. Responda com esses dados; se pedirem algo que",
@@ -67,18 +74,23 @@ function blocoDeAcoes(tecnico: boolean): string {
     '• "o check-out agora é ao meio-dia" →',
     '  [[acao]]{"nome":"politicas","dados":{"check_out":"12:00"},"fala":"Vou mudar o check-out para meio-dia, confirma?"}[[/acao]]',
     '• "acabou a moqueca hoje" →',
-    '  [[acao]]{"nome":"cardapio_disponivel","dados":{"alvo":"moqueca","disponivel":false},"fala":"Vou marcar a moqueca como esgotada hoje, confirma?"}[[/acao]]',
+    '  [[acao]]{"nome":"alterar","dados":{"area":"cardapio","alvo":"moqueca","campos":{"disponivel":false}},"fala":"Vou marcar a moqueca como esgotada hoje, confirma?"}[[/acao]]',
+    '• "cadastra a Joana na equipe, 41 98888-7777, ela cuida do restaurante" →',
+    '  [[acao]]{"nome":"criar","dados":{"area":"equipe","campos":{"nome":"Joana","numero":"41988887777","setores":["restaurante"]}},"fala":"Vou cadastrar a Joana na equipe, cuidando do restaurante, confirma?"}[[/acao]]',
+    '• "a Cecília agora só atende de segunda a sexta" →',
+    '  [[acao]]{"nome":"alterar","dados":{"area":"equipe","alvo":"Cecília","campos":{"dias":"segunda a sexta"}},"fala":"Vou deixar a Cecília atendendo de segunda a sexta, confirma?"}[[/acao]]',
+    '• "quando perguntarem de trabalho, passa o contato da Cecília" (Cecília está na Equipe com o número 5541999990000) →',
+    '  [[acao]]{"nome":"ensinar","dados":{"tipo":"fato","titulo":"Assuntos de trabalho e vagas","conteudo":"Para assuntos de trabalho e vagas na pousada, falar com a Cecília pelo WhatsApp (41) 99999-0000."},"fala":"Vou ensinar que assuntos de trabalho são com a Cecília, no WhatsApp dela, confirma?"}[[/acao]]',
+    '• "desliga a abertura com o vídeo" →',
+    '  [[acao]]{"nome":"aparencia","dados":{"abertura":false},"fala":"Vou desligar a abertura do site, confirma?"}[[/acao]]',
     '• "a passagem do barco subiu para 50 reais a ida" →',
     '  [[acao]]{"nome":"travessia","dados":{"ida":50},"fala":"Vou pôr a ida do barco a 50 reais, confirma?"}[[/acao]]',
     '• "desliga o pacote de Réveillon" →',
     '  [[acao]]{"nome":"pacote","dados":{"alvo":"Réveillon","ativo":false},"fala":"Vou desligar o pacote de Réveillon, confirma?"}[[/acao]]',
     "",
-    "O QUE NÃO DÁ POR VOZ (diga onde fica, sem prometer): preço e vaga das suítes e",
-    "ligar/desligar suíte (vêm do sistema de reservas Desbravador); fotos, vídeos e",
-    "imagens (tela Mídias/Banners); Clássico/Novo do site, usuários, senhas, chaves e",
-    "conexões (só pelas telas, perfil Administração); apagar de vez (por voz você só",
-    "desliga ou manda para a lixeira, sempre dá para voltar). Nunca invente depoimento,",
-    "preço ou dado: só grave o que a pessoa disse.",
+    "O que só muda pela tela está no fim do MAPA DO PAINEL (diga onde fica). Por voz",
+    "nunca se apaga de vez: desligue ou mande para a lixeira. Nunca invente depoimento,",
+    "preço, número ou dado: use o que está cadastrado ou o que a pessoa disse.",
   ].join("\n");
 }
 
@@ -188,14 +200,17 @@ function blocoDeAtividade(a: { conversas: string[]; mudancas: string[] }): strin
 
 /** O pedido completo de sistema para o modo voz. */
 export async function montarSistemaVoz(sql: Sql, tecnico: boolean, aguardando?: AcaoAguardando | null): Promise<{ sistema: string; lacunas: { id: string; pergunta: string }[] }> {
-  const [{ texto }, lacunas, atividade] = await Promise.all([
+  const [{ texto }, lacunas, atividade, retrato] = await Promise.all([
     montarTreinamento(sql, "teste"),
     lacunasAbertas(sql),
     atividadeRecente(sql),
+    retratoDoPainel(sql).catch(() => ""),
   ]);
   const sistema = [
     VOZ_CONTEXTO,
     blocoDeAcoes(tecnico),
+    mapaDoPainel(),
+    retrato,
     blocoDeAtividade(atividade),
     blocoDeLacunas(lacunas),
     "── O QUE A POUSADA TE ENSINOU (a base das suas respostas) ──",

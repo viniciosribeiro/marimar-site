@@ -37,7 +37,8 @@ import { classificarResposta, mesmaAcao } from "@/lib/marina-voz-base";
  */
 
 type Papel = "voce" | "marina" | "sistema";
-type Fala = { papel: Papel; texto: string };
+type Fala = { id: number; papel: Papel; texto: string; editado?: boolean };
+type Pilha = { desfazer: string | null; refazer: string | null };
 type Gasto = { usoCentavos: number; limiteCentavos: number; nivel: "ok" | "aviso" | "estourou"; pct: number };
 type Pendente = { nome: string; dados: Record<string, unknown>; descricao: string };
 type Estado = "parado" | "ouvindo" | "pensando" | "salvando" | "falando";
@@ -53,6 +54,8 @@ const MAX_FALA_MS = 30_000;
 const ESPERA_MAX_MS = 45_000;
 /** Enquanto espera, o gravador recomeça a cada tantos ms — o áudio enviado não carrega silêncio longo (e o custo). */
 const RECICLAR_MS = 8_000;
+/** Arrastar o botão de gravar: tanto para a esquerda cancela, tanto para a direita trava (como no WhatsApp). */
+const ARRASTO_PX = 70;
 const AUDIO_MUDO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 /** Nunca deixa um fetch travar: aborta depois de `ms` (inclusive a leitura do corpo). */
@@ -87,6 +90,10 @@ export function VozTreino() {
   const [cap, setCap] = useState<{ gateway: boolean; voz: boolean } | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [digitado, setDigitado] = useState("");
+  const [pilha, setPilha] = useState<Pilha>({ desfazer: null, refazer: null });
+  const [editando, setEditando] = useState<{ id: number; texto: string } | null>(null);
+  /** Gravando no botão (segurando ou travado), com o arrasto e os segundos. */
+  const [gravacao, setGravacao] = useState<{ dx: number; travado: boolean; seg: number } | null>(null);
   // Como a Marina responde: falando (voz) ou só por texto (economiza TTS).
   const [vozResposta, setVozResposta] = useState<boolean>(() => {
     try { return localStorage.getItem("marimar_voz_resposta") !== "texto"; } catch { return true; }
@@ -130,6 +137,8 @@ export function VozTreino() {
   const arrastarRef = useRef<{ dx: number; dy: number } | null>(null);
   const redimRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const corpoRolagem = useRef<HTMLDivElement | null>(null);
+  const proxId = useRef(1);
+  const arrastoRef = useRef<{ x0: number; travado: boolean } | null>(null);
 
   useEffect(() => { modoRef.current = modo; }, [modo]);
   useEffect(() => { capRef.current = cap; }, [cap]);
@@ -146,7 +155,7 @@ export function VozTreino() {
 
   const log = useCallback((papel: Papel, texto: string) => {
     if (!texto) return;
-    setFalas((f) => [...f, { papel, texto }].slice(-40));
+    setFalas((f) => [...f, { id: proxId.current++, papel, texto }].slice(-40));
     if (papel !== "sistema") histRef.current = [...histRef.current, { papel, conteudo: texto }].slice(-12);
   }, []);
 
@@ -163,6 +172,7 @@ export function VozTreino() {
       const d = await r.json();
       if (!r.ok) { setAviso(d?.erro ?? "Não consegui abrir o modo voz."); return; }
       setCap({ gateway: d.gateway, voz: d.voz });
+      if (d.pilha) setPilha(d.pilha);
       setGasto(d.gasto); setReais(d.reais);
       if (!d.gateway) setAviso("A Marina ainda não está ligada a este site. Fale com quem cuida da Vercel.");
       else if (!d.voz) setAviso("A voz ainda não está configurada. Você pode treinar por texto; para ouvir e falar, configure em Marina → Voz.");
@@ -175,7 +185,7 @@ export function VozTreino() {
       if (turnos.length) {
         histRef.current = turnos.map((t) => ({ papel: t.papel as "voce" | "marina", conteudo: t.texto })).slice(-12);
         const quando = d.ultima?.quando ? new Date(d.ultima.quando).toLocaleDateString("pt-BR") : "";
-        setFalas([{ papel: "sistema", texto: quando ? `— retomando a conversa de ${quando} —` : "— retomando a conversa anterior —" }, ...turnos]);
+        setFalas([{ id: proxId.current++, papel: "sistema", texto: quando ? `— retomando a conversa de ${quando} —` : "— retomando a conversa anterior —" }, ...turnos.map((t) => ({ ...t, id: proxId.current++ }))]);
       }
     } catch {
       setAviso("Não consegui abrir o modo voz agora. Feche e abra de novo daqui a pouco.");
@@ -381,6 +391,7 @@ export function VozTreino() {
       r = resp.status === 401
         ? { ok: false, mensagem: "Sua entrada no painel expirou. Entre de novo e repita." }
         : { ok: Boolean(d?.ok), mensagem: typeof d?.mensagem === "string" ? d.mensagem : "Não consegui gravar agora." };
+      if (d?.pilha) setPilha(d.pilha);
     } catch {
       r = { ok: false, mensagem: "Demorou demais para gravar. Confira na tela se mudou e, se não, peça de novo." };
     }
@@ -407,11 +418,42 @@ export function VozTreino() {
     if (!lacoAtivoRef.current && epocaRef.current === epoca) mudarEstado("parado");
   }, [falar, log, mudarEstado, definirPendente]);
 
+  /* ── desfazer / refazer (botões do topo e "desfaz isso" falado) ── */
+  const executarDesfazer = useCallback(async (sentido: "desfazer" | "refazer") => {
+    const epoca = epocaRef.current;
+    mudarEstado("salvando");
+    let r: { ok: boolean; mensagem: string };
+    try {
+      const resp = await buscar("/api/admin/marina/voz/desfazer", {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sentido }),
+      }, 20000);
+      const d = await resp.json().catch(() => null);
+      if (d?.pilha) setPilha(d.pilha);
+      r = { ok: Boolean(d?.ok), mensagem: typeof d?.mensagem === "string" ? d.mensagem : "Não consegui agora." };
+    } catch {
+      r = { ok: false, mensagem: "Demorou demais. Confira na tela e tente de novo." };
+    }
+    log("marina", r.mensagem);
+    if (r.ok) {
+      setFeito((f) => [...f, `${sentido === "desfazer" ? "↶" : "↷"} ${r.mensagem}`]);
+      startTransition(() => router.refresh());
+    }
+    if (epocaRef.current === epoca) await falar(r.ok ? (sentido === "desfazer" ? "Pronto, desfiz." : "Pronto, refiz.") : "Não consegui.");
+    if (!lacoAtivoRef.current && epocaRef.current === epoca) mudarEstado("parado");
+  }, [falar, log, router, mudarEstado]);
+
   /* ── um turno com a Marina ───────────────────────────────────────── */
-  const conversar = useCallback(async (texto: string) => {
+  const conversar = useCallback(async (texto: string, opc?: { registrar?: boolean }) => {
     const epoca = epocaRef.current;
     const historico = histRef.current.slice(); // ANTES de registrar a fala nova (senão ela ia duas vezes)
-    log("voce", texto);
+    if (opc?.registrar === false) histRef.current = [...histRef.current, { papel: "voce" as const, conteudo: texto }].slice(-12);
+    else log("voce", texto);
+
+    /* "desfaz isso" / "refaz": os mesmos botões do topo, falados. */
+    const comando = /^\s*(desfaz|desfazer|desfa[cç]a|volta atr[aá]s|anula)\b/i.test(texto) ? "desfazer"
+      : /^\s*(refaz|refazer|refa[cç]a)\b/i.test(texto) ? "refazer" : null;
+    if (comando === "desfazer" && pendenteRef.current) { await cancelarPendente(texto); return; }
+    if (comando) { await executarDesfazer(comando); return; }
 
     /* Havia um "confirma?" no ar: sim/não claros resolvem aqui, sem ida à Marina. */
     const p = pendenteRef.current;
@@ -453,7 +495,7 @@ export function VozTreino() {
     } catch {
       if (epocaRef.current === epoca) log("marina", "Demorei demais para responder. Pode falar de novo?");
     }
-  }, [confirmar, cancelarPendente, falar, log, mudarEstado, definirPendente]);
+  }, [confirmar, cancelarPendente, executarDesfazer, falar, log, mudarEstado, definirPendente]);
 
   /* ── viva voz: ouvir → entender → responder, em ciclo ───────────── */
   const laco = useCallback(async () => {
@@ -524,13 +566,33 @@ export function VozTreino() {
     });
   }, [digitado, operar, conversar, mudarEstado]);
 
-  /* ── apertar para falar ──────────────────────────────────────────── */
+  /** Corrigir o texto de uma fala já enviada (a transcrição errou uma palavra). */
+  const corrigirFala = useCallback((id: number, novo: string) => {
+    const f = falas.find((x) => x.id === id);
+    const t = novo.trim();
+    setEditando(null);
+    if (!f || !t || t === f.texto) return;
+    setFalas((lista) => lista.map((x) => (x.id === id ? { ...x, texto: t, editado: true } : x)));
+    definirPendente(null); // o que ela propôs veio do texto errado
+    operar(async () => {
+      const epoca = epocaRef.current;
+      await conversar(`Corrigindo o que eu disse antes («${f.texto}»): ${t}`, { registrar: false });
+      if (!lacoAtivoRef.current && epocaRef.current === epoca) mudarEstado("parado");
+    });
+  }, [falas, operar, conversar, mudarEstado, definirPendente]);
+
+  /* ── segurar para falar (como o áudio do WhatsApp) ──────────────────
+     Segura e fala; solta → envia. Arrasta para a ESQUERDA → cancela.
+     Arrasta para a DIREITA → trava (pode soltar o dedo); depois toca em
+     Enviar (ou na lixeira). */
   const inicioApertar = useRef(0);
   const comecarApertar = useCallback(async () => {
     if (estadoCaixa.current !== "parado") return;
     setAviso(null);
     destravarAudio();
-    if (!(await garantirMic())) return;
+    if (!(await garantirMic())) { arrastoRef.current = null; setGravacao(null); return; }
+    /* Soltou (ou cancelou) enquanto o navegador pedia o microfone: não começa. */
+    if (!arrastoRef.current) return;
     acRef.current?.resume().catch(() => {});
     const epoca = epocaRef.current;
     const stream = streamRef.current!;
@@ -544,7 +606,7 @@ export function VozTreino() {
       if (mrRef.current === mr) mrRef.current = null;
       if (canceladoRef.current || epocaRef.current !== epoca) return;
       const seg = (Date.now() - inicioApertar.current) / 1000;
-      if (seg < MIN_FALA_MS / 1000) { mudarEstado("parado"); return; }
+      if (seg < 0.5) { setAviso("Segure o botão enquanto fala e solte para enviar."); mudarEstado("parado"); return; }
       mudarEstado("pensando");
       const texto = await transcrever(new Blob(partes, { type: tipo || "audio/webm" }), seg);
       if (texto && epocaRef.current === epoca) await conversar(texto);
@@ -557,6 +619,60 @@ export function VozTreino() {
   const soltarApertar = useCallback(() => {
     try { mrRef.current?.stop(); } catch {}
   }, []);
+
+  const cancelarGravacao = useCallback(() => {
+    arrastoRef.current = null;
+    setGravacao(null);
+    canceladoRef.current = true;
+    try { mrRef.current?.stop(); } catch {}
+    try { navigator.vibrate?.(30); } catch {}
+    mudarEstado("parado");
+  }, [mudarEstado]);
+
+  const enviarGravacao = useCallback(() => {
+    arrastoRef.current = null;
+    setGravacao(null);
+    soltarApertar();
+  }, [soltarApertar]);
+
+  const aoSegurar = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    if (estadoCaixa.current !== "parado" || arrastoRef.current) return;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+    arrastoRef.current = { x0: e.clientX, travado: false };
+    inicioApertar.current = Date.now();
+    setGravacao({ dx: 0, travado: false, seg: 0 });
+    comecarApertar();
+  }, [comecarApertar]);
+
+  const aoArrastarGravando = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    const a = arrastoRef.current;
+    if (!a || a.travado) return;
+    const dx = e.clientX - a.x0;
+    if (dx < -ARRASTO_PX) { cancelarGravacao(); return; }
+    if (dx > ARRASTO_PX) {
+      a.travado = true;
+      try { navigator.vibrate?.(20); } catch {}
+      setGravacao((g) => (g ? { ...g, dx: 0, travado: true } : g));
+      return;
+    }
+    setGravacao((g) => (g ? { ...g, dx } : g));
+  }, [cancelarGravacao]);
+
+  const aoSoltar = useCallback(() => {
+    const a = arrastoRef.current;
+    if (!a || a.travado) return; // travado: continua gravando até tocar em Enviar
+    enviarGravacao();
+  }, [enviarGravacao]);
+
+  /* relógio da gravação */
+  const gravando = gravacao !== null;
+  useEffect(() => {
+    if (!gravando) return;
+    const t = setInterval(() => {
+      setGravacao((g) => (g ? { ...g, seg: Math.max(0, Math.floor((Date.now() - inicioApertar.current) / 1000)) } : g));
+    }, 250);
+    return () => clearInterval(t);
+  }, [gravando]);
 
   /* ── abrir / fechar ──────────────────────────────────────────────── */
   const abrir = useCallback(async () => {
@@ -640,12 +756,10 @@ export function VozTreino() {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1" onPointerDown={semParar}>
-        <div className="mr-1 flex rounded-full p-0.5 text-[11px] font-medium" style={{ background: "#f1f3f5" }}>
-          <button type="button" onClick={() => { pararTudo(); setModo("vivavoz"); }}
-            className="rounded-full px-2 py-1" style={modo === "vivavoz" ? { background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,.12)" } : { color: "#6b7280" }}>Viva voz</button>
-          <button type="button" onClick={() => { pararTudo(); setModo("apertar"); }}
-            className="rounded-full px-2 py-1" style={modo === "apertar" ? { background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,.12)" } : { color: "#6b7280" }}>Apertar</button>
-        </div>
+        <BotaoJanela titulo={pilha.desfazer ? `Desfazer: ${pilha.desfazer}` : "Nada para desfazer"} desligado={!pilha.desfazer || ocupada}
+          onClick={() => operar(() => executarDesfazer("desfazer"))}><IconeDesfazer /></BotaoJanela>
+        <BotaoJanela titulo={pilha.refazer ? `Refazer: ${pilha.refazer}` : "Nada para refazer"} desligado={!pilha.refazer || ocupada}
+          onClick={() => operar(() => executarDesfazer("refazer"))}><IconeDesfazer refazer /></BotaoJanela>
         {!celular && (
           <>
             <BotaoJanela titulo="Minimizar" onClick={() => setMin((v) => !v)}><IconeMenos /></BotaoJanela>
@@ -675,13 +789,33 @@ export function VozTreino() {
             {modo === "vivavoz" ? "Toque no microfone e fale. A Marina ouve, responde e vai te perguntando o que falta." : "Segure o botão e fale. Solte quando terminar."}
           </p>
         )}
-        {falas.map((f, i) => (
+        {falas.map((f) => (
           f.papel === "sistema" ? (
-            <div key={i} className="py-1 text-center text-[11px]" style={{ color: "#9aa3ab" }}>{f.texto}</div>
+            <div key={f.id} className="py-1 text-center text-[11px]" style={{ color: "#9aa3ab" }}>{f.texto}</div>
+          ) : f.papel === "voce" && editando?.id === f.id ? (
+            <div key={f.id} className="ml-auto max-w-[92%] rounded-2xl p-2" style={{ background: "#f0f9ff", border: "1px solid #bae6fd" }}>
+              <label className="sr-only" htmlFor={`editar-${f.id}`}>Corrigir o que você disse</label>
+              <textarea id={`editar-${f.id}`} autoFocus rows={2} value={editando.texto}
+                onChange={(e) => setEditando({ id: f.id, texto: e.target.value })}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); corrigirFala(f.id, editando.texto); } if (e.key === "Escape") setEditando(null); }}
+                className="w-full resize-none rounded-xl px-2.5 py-1.5 text-[13px] outline-none" style={{ border: "1px solid #e5e7eb", background: "#fff", color: TINTA }} />
+              <div className="mt-1.5 flex justify-end gap-2">
+                <button type="button" onClick={() => setEditando(null)} className="rounded-full px-3 py-1 text-[12px]" style={{ background: "#fff", color: "#4b5563", border: "1px solid #e5e7eb" }}>Cancelar</button>
+                <button type="button" onClick={() => corrigirFala(f.id, editando.texto)} className="rounded-full px-3 py-1 text-[12px] font-semibold text-white" style={{ background: "#0284c7" }}>Enviar correção</button>
+              </div>
+            </div>
           ) : (
-            <div key={i} className={f.papel === "voce" ? "text-right" : "text-left"}>
-              <span className="inline-block max-w-[85%] rounded-2xl px-3 py-1.5 text-[13px]"
-                style={f.papel === "voce" ? { background: "#0284c7", color: "#fff" } : { background: "#eef1f4", color: TINTA }}>{f.texto}</span>
+            <div key={f.id} className={f.papel === "voce" ? "group flex items-end justify-end gap-1" : "text-left"}>
+              {f.papel === "voce" && (
+                <button type="button" onClick={() => setEditando({ id: f.id, texto: f.texto })}
+                  aria-label="Corrigir o que eu disse" title="Corrigir o texto"
+                  className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full opacity-70 transition hover:opacity-100 focus-visible:opacity-100"
+                  style={{ color: "#64748b" }}><IconeLapis /></button>
+              )}
+              <span className="inline-block max-w-[85%] rounded-2xl px-3 py-1.5 text-left text-[13px]"
+                style={f.papel === "voce" ? { background: "#0284c7", color: "#fff" } : { background: "#eef1f4", color: TINTA }}>
+                {f.texto}{f.editado && <span className="ml-1 text-[10px] opacity-75">(corrigido)</span>}
+              </span>
             </div>
           )
         ))}
@@ -708,15 +842,24 @@ export function VozTreino() {
 
       <div className="p-3" style={{ borderTop: "1px solid rgba(12,38,56,.1)" }}>
         {cap?.voz && (
-          <button type="button" role="switch" aria-checked={vozResposta} onClick={() => setVozResposta((v) => !v)}
-            className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-[12px]"
-            style={{ background: "#f1f5f9", color: "#475569" }}>
-            <span className="min-w-0">{vozResposta ? "A Marina responde falando" : "A Marina responde só por texto (economiza)"}</span>
-            <span className="shrink-0 rounded-full px-2.5 py-1 font-semibold"
-              style={vozResposta ? { background: "#0ea5a3", color: "#fff" } : { background: "#e2e8f0", color: "#334155" }}>
-              {vozResposta ? "Voz" : "Texto"}
-            </span>
-          </button>
+          /* Como VOCÊ fala (viva voz ou segurando) e como ELA responde (voz ou texto). */
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex rounded-full p-0.5 text-[12px] font-medium" style={{ background: "#f1f3f5" }} role="group" aria-label="Como você fala">
+              <button type="button" onClick={() => { pararTudo(); setModo("vivavoz"); }} aria-pressed={modo === "vivavoz"}
+                className="rounded-full px-2.5 py-1.5" style={modo === "vivavoz" ? { background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,.12)", color: TINTA } : { color: "#6b7280" }}>Viva voz</button>
+              <button type="button" onClick={() => { pararTudo(); setModo("apertar"); }} aria-pressed={modo === "apertar"}
+                className="rounded-full px-2.5 py-1.5" style={modo === "apertar" ? { background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,.12)", color: TINTA } : { color: "#6b7280" }}>Apertar</button>
+            </div>
+            <button type="button" role="switch" aria-checked={vozResposta} onClick={() => setVozResposta((v) => !v)}
+              title={vozResposta ? "A Marina responde falando" : "A Marina responde só por texto (economiza)"}
+              className="flex min-w-0 items-center gap-1.5 rounded-full py-1 pl-3 pr-1 text-[12px]" style={{ background: "#f1f5f9", color: "#475569" }}>
+              <span className="truncate">Resposta</span>
+              <span className="shrink-0 rounded-full px-2.5 py-1 font-semibold"
+                style={vozResposta ? { background: "#0ea5a3", color: "#fff" } : { background: "#e2e8f0", color: "#334155" }}>
+                {vozResposta ? "Voz" : "Texto"}
+              </span>
+            </button>
+          </div>
         )}
         {cap?.voz && modo === "vivavoz" && (
           <button type="button" onClick={() => (estado === "parado" ? iniciarVivaVoz() : pararTudo())}
@@ -725,13 +868,41 @@ export function VozTreino() {
             <IconeMic small /> {rotuloBotao(estado)}
           </button>
         )}
-        {cap?.voz && modo === "apertar" && (
+        {cap?.voz && modo === "apertar" && gravacao?.travado && (
+          <div className="flex h-12 w-full items-center gap-2" role="group" aria-label="Gravação travada">
+            <button type="button" onClick={cancelarGravacao} aria-label="Cancelar a gravação"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: "#fee2e2", color: "#b91c1c" }}><IconeLixeira /></button>
+            <div className="flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl text-sm font-semibold" style={{ background: "#fef2f2", color: "#b91c1c" }}>
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full" style={{ background: "#dc2626" }} aria-hidden />
+              Gravando {relogio(gravacao.seg)}
+            </div>
+            <button type="button" onClick={enviarGravacao} aria-label="Enviar o áudio"
+              className="flex h-12 shrink-0 items-center gap-1.5 rounded-2xl px-4 text-sm font-semibold text-white" style={{ background: "#0ea5a3" }}>Enviar <IconeEnviar /></button>
+          </div>
+        )}
+        {cap?.voz && modo === "apertar" && !gravacao?.travado && (
           <button type="button"
-            onPointerDown={comecarApertar} onPointerUp={soltarApertar} onPointerLeave={soltarApertar}
-            className="flex h-12 w-full select-none items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white"
-            style={{ background: estado === "ouvindo" ? "#dc2626" : "#0ea5a3", touchAction: "none" }}>
-            <IconeMic small /> {estado === "ouvindo" ? "Gravando… solte para enviar" : estado === "salvando" ? "Salvando…" : ocupada ? "Um instante…" : "Segure para falar"}
+            onPointerDown={aoSegurar} onPointerMove={aoArrastarGravando} onPointerUp={aoSoltar} onPointerCancel={cancelarGravacao}
+            onContextMenu={(e) => e.preventDefault()}
+            disabled={!gravacao && ocupada}
+            className="relative flex h-12 w-full select-none items-center justify-center gap-2 overflow-hidden rounded-2xl text-sm font-semibold text-white disabled:opacity-70"
+            style={{ background: gravacao ? "#dc2626" : "#0ea5a3", touchAction: "none", WebkitTouchCallout: "none", WebkitUserSelect: "none" }}>
+            {gravacao ? (
+              <>
+                <span className="absolute left-3 text-[12px] font-medium" aria-hidden style={{ opacity: gravacao.dx < -20 ? 1 : 0.8 }}>‹ cancelar</span>
+                <span className="flex items-center gap-1.5 rounded-full px-3 py-1" style={{ background: "rgba(255,255,255,.2)", transform: `translateX(${Math.max(-ARRASTO_PX, Math.min(ARRASTO_PX, gravacao.dx))}px)` }}>
+                  <IconeMic small /> {relogio(gravacao.seg)}
+                </span>
+                <span className="absolute right-3 text-[12px] font-medium" aria-hidden style={{ opacity: gravacao.dx > 20 ? 1 : 0.8 }}>travar ›</span>
+                <span className="sr-only">Gravando. Solte para enviar, arraste para a esquerda para cancelar ou para a direita para travar.</span>
+              </>
+            ) : (
+              <><IconeMic small /> {estado === "salvando" ? "Salvando…" : ocupada ? "Um instante…" : "Segure para falar"}</>
+            )}
           </button>
+        )}
+        {cap?.voz && modo === "apertar" && !gravacao && !ocupada && (
+          <p className="mt-1 text-center text-[11px]" style={{ color: "#94a3b8" }}>Solte para enviar · arraste ‹ para cancelar · arraste › para travar</p>
         )}
         <div className="mt-2 flex items-center gap-2">
           <input value={digitado} onChange={(e) => setDigitado(e.target.value)}
@@ -815,10 +986,10 @@ function rotuloBotao(e: Estado): string {
   return "Pensando… (toque para parar)";
 }
 
-function BotaoJanela({ titulo, onClick, children }: { titulo: string; onClick: () => void; children: React.ReactNode }) {
+function BotaoJanela({ titulo, onClick, children, desligado }: { titulo: string; onClick: () => void; children: React.ReactNode; desligado?: boolean }) {
   return (
-    <button type="button" title={titulo} aria-label={titulo} onClick={onClick}
-      className="flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-black/5"
+    <button type="button" title={titulo} aria-label={titulo} onClick={onClick} disabled={desligado}
+      className="flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-black/5 disabled:opacity-30 disabled:hover:bg-transparent"
       style={{ color: "#4b5563" }}>
       {children}
     </button>
@@ -842,4 +1013,24 @@ function IconeMenos() {
 }
 function IconeQuadrado() {
   return (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="4" y="4" width="16" height="16" rx="2" /></svg>);
+}
+function IconeDesfazer({ refazer }: { refazer?: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+      style={refazer ? { transform: "scaleX(-1)" } : undefined}>
+      <path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    </svg>
+  );
+}
+function IconeLapis() {
+  return (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>);
+}
+function IconeLixeira() {
+  return (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /></svg>);
+}
+function IconeEnviar() {
+  return (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4Z" /></svg>);
+}
+function relogio(seg: number): string {
+  return `${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, "0")}`;
 }

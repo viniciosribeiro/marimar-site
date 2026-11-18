@@ -32,36 +32,61 @@ seu login e registrado no Histórico — dá para voltar atrás.
 
 ## O que ela consegue fazer por voz (hoje)
 
-Desde 18/11 (parte 7) ela age no **painel inteiro**, não só no treinamento.
-Toda ação é confirmada antes ("confirma?") e é **reversível** (desligar ou
-lixeira — nunca apagar de vez). A lista cresce fácil — ver "Como acrescentar
-uma ação".
+Desde 18/11 (parte 9) ela **conhece e mexe no painel inteiro**, por treino ou
+por pedido direto ("cadastra a Joana na equipe", "desliga a abertura",
+"acabou a moqueca"). Toda ação é confirmada antes ("confirma?"), pode ser
+**desfeita** (↶ no topo ou "desfaz") e nunca apaga de vez.
 
-| Área | Ação | O que faz |
-|---|---|---|
-| Treino | **ensinar** | Guarda uma informação, uma pergunta-e-resposta ou um limite novo. Se veio de uma pergunta sem resposta, fecha a pendência junto. |
-| Treino | **editar_conhecimento** | Muda um item que ela já sabe (texto, nome, ligar/desligar), achado por parte do nome. |
-| Treino | **excluir_item / restaurar_item** | Manda para a lixeira / tira da lixeira. |
-| Treino | **ajustar_personalidade** | Muda o jeito dela falar (substitui ou acrescenta). |
-| Hospedagem | **regra_criancas** | Idade de colo, criança paga como adulto, cobrança de bebê. |
-| Hospedagem | **adicional** | Cria um adicional (berço, café no quarto…). |
-| Pousada | **dados_pousada** | WhatsApp, telefone, e-mail, endereço, horário da recepção, descrição, como chegar. |
-| Site | **politicas** | Check-in, check-out, cancelamento, pets, crianças, regras gerais, formas de pagamento, estadia mínima. |
-| Site | **faq / faq_editar** | Cria pergunta frequente; muda ou tira do site (reversível). |
-| Restaurante | **cardapio_item** | Cria prato numa seção ou muda preço/descrição/porção/destaque. |
-| Restaurante | **cardapio_disponivel** | "Acabou a moqueca hoje" / "voltou". |
-| Site | **pacote** | Cria pacote (Réveillon, Carnaval…) ou muda/liga/desliga. Sem preço (vem do motor). |
-| Site | **banner** | Liga/desliga ou troca os textos de um banner (a imagem só pela tela). |
-| Ilha | **atracao** | Cria ou muda uma atração da Ilha do Mel. |
-| Ilha | **travessia** | Preço da passagem (ida, volta, ida e volta), duração, operadora, estacionamento — a data "consultado em" muda sozinha. |
-| Site | **eventos** | Tipos de evento, espaços, capacidade. |
-| Site | **depoimento** | Põe no site um depoimento **real que a pessoa ditar** (a Marina é instruída a nunca inventar). |
+### Mapa do painel (`src/lib/marina-voz-painel.ts`)
 
-**De propósito fora da voz** (a Marina diz onde fica, sem prometer): preço e
-vaga das suítes e **ligar/desligar suíte** (vêm do Desbravador; a sincronização
-desfaria na rodada seguinte); fotos, vídeos e imagem de banner (precisam de
-arquivo); Clássico/Novo do site, usuários, senhas, chaves e conexões; apagar de
-vez.
+Cada área é descrita uma vez em `AREAS`: tabela, colunas para achar pelo nome,
+colunas que pode mudar (com tipo), se dá para criar e quais telas atualizar.
+Daí saem, a cada fala:
+
+- o **mapa** (`mapaDoPainel`): o que cada área faz e como mexer, mais as áreas
+  que só mudam pela tela;
+- o **retrato** (`retratoDoPainel`): o que está cadastrado agora — equipe (nome,
+  número, assuntos, dias e horário), suítes, categorias, comodidades, passeios,
+  blocos e cartões da home, banners, seções e itens do cardápio, adicionais,
+  pacotes, FAQ, depoimentos, dados da pousada, políticas, crianças, travessia,
+  atrações, eventos, aparência, modelo do site, chat e escalonamento. De
+  fotos, contatos recebidos e chamados vai **só a contagem** (sem dado de hóspede).
+
+Ações:
+
+| Ação | O que faz |
+|---|---|
+| **criar** | cria um registro numa área do mapa que aceita criar (equipe, categorias de suítes, comodidades, passeios, seções do cardápio) |
+| **alterar** | muda, liga ou desliga qualquer registro do mapa (equipe, suítes — textos, blocos, cartões, banners, cardápio, adicionais, FAQ, depoimentos, fotos — título/descrição/visível para a Marina, escalonamento) |
+| ensinar, editar_conhecimento, excluir_item, restaurar_item, ajustar_personalidade | o treinamento |
+| dados_pousada, politicas, regra_criancas, adicional | pousada, políticas, crianças, adicional novo |
+| travessia, eventos, atracao, ilha | conteúdo das páginas da ilha |
+| pacote, faq, cardapio_item, depoimento | criar (e, no pacote, mudar) |
+| aparencia | abertura em vídeo, estilo, animações, céu por hora |
+| modelo_site, chat_site | Clássico/Novo e chat do site — só perfil Administração |
+
+**De propósito fora:** usuários e senhas, chaves e conexões (voz, WhatsApp,
+Meta), fotos/vídeos novos e imagem de banner (precisam de arquivo), pontos do
+mapa da rota, preço/vaga e ligar/desligar suíte (Desbravador), dados de
+hóspedes, apagar de vez. A Marina sabe que existem e diz qual tela usar.
+
+### Desfazer/refazer (`src/lib/marina-voz-desfazer.ts`)
+
+Cada ação chama `ctx.tocar(tabela, chave)` antes de mudar uma linha e
+`ctx.criou` depois de inserir; o executor (rota `acao`) fotografa a linha
+antes e depois e grava em `marina_voz_desfazer` (criada pelo site). A rota
+`POST /api/admin/marina/voz/desfazer` desfaz ou refaz a **última ação da
+pessoa**, numa transação: linha criada sai (ensino vai para a lixeira), linha
+mudada volta. **Recusa** se a linha mudou depois pela tela ou por outra
+pessoa. Pilha por pessoa, 7 dias; ação nova limpa o refazer.
+
+### Gravar e corrigir
+
+- **Apertar** (como o áudio do WhatsApp): segura e fala, **solta → envia**;
+  arrasta para a **esquerda → cancela**; arrasta para a **direita → trava**
+  (pode soltar; aparecem lixeira, relógio e Enviar).
+- **✎ em cada fala sua:** corrige o texto transcrito e envia a correção à
+  Marina; a proposta feita sobre o texto errado é descartada.
 
 ## Como funciona (para quem desenvolve)
 
@@ -130,11 +155,14 @@ navegador (painel, sessão de admin)
 | `src/lib/marina-voz-base.ts` | puro: leitor do bloco de ação, conta de custo (navegador e servidor) |
 | `src/lib/marina-voz-acoes.ts` | o **registro**: ações do treinamento + junta as do painel (`ACOES`) |
 | `src/lib/marina-voz-acoes-painel.ts` | ações do resto do painel (políticas, FAQ, cardápio, pacotes, banners, atrações, travessia, eventos, depoimentos) |
+| `src/lib/marina-voz-painel.ts` | **mapa do painel**: áreas, retrato, ações `criar`/`alterar` |
+| `src/lib/marina-voz-desfazer.ts` | fotos antes/depois, pilha e desfazer/refazer |
+| `src/lib/mesma-origem.ts` | conferência de mesma origem das rotas POST |
 | `src/lib/marina-voz-util.ts` | limpeza (texto, dinheiro, horário, data, sim/não) e `acharUm` (busca por nome, lista fechada de tabelas) |
 | `src/lib/marina-voz.ts` | pedido à Marina (contexto de voz + treino + ações + lacunas), teto de gasto, sessão |
 | `src/lib/marina-gateway.ts` | falar com o gateway do OpenClaw (SSE) — compartilhado |
 | `src/lib/esquema-voz-treino.ts` | cria `marina_voz_sessao` pelo site |
-| `src/app/api/admin/marina/voz/{estado,ouvir,conversar,falar,acao}/route.ts` | as rotas (`acao` executa ou registra a recusa) |
+| `src/app/api/admin/marina/voz/{estado,ouvir,conversar,falar,acao,desfazer}/route.ts` | as rotas (`acao` executa ou registra a recusa; `desfazer` desfaz/refaz) |
 | `src/app/api/admin/marina/melhorar/route.ts` | o botão "✨ Melhorar texto" |
 | `src/components/admin/VozTreino.tsx` | botão flutuante + janela de voz |
 | `src/components/admin/BotaoMelhorar.tsx` | o "✨ Melhorar texto" dos campos |
