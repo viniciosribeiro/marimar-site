@@ -64,6 +64,49 @@ function blocoDeAcoes(tecnico: boolean): string {
     '  [[acao]]{"nome":"regra_criancas","dados":{"idade_colo_max":5},"fala":"Vou pôr criança de colo até 5 anos, confirma?"}[[/acao]]',
     '• "cria um adicional de café no quarto por 30 reais" →',
     '  [[acao]]{"nome":"adicional","dados":{"nome":"Café no quarto","preco":30,"cobranca":"por_unidade"},"fala":"Vou criar o adicional Café no quarto por 30 reais, confirma?"}[[/acao]]',
+    '• "o check-out agora é ao meio-dia" →',
+    '  [[acao]]{"nome":"politicas","dados":{"check_out":"12:00"},"fala":"Vou mudar o check-out para meio-dia, confirma?"}[[/acao]]',
+    '• "acabou a moqueca hoje" →',
+    '  [[acao]]{"nome":"cardapio_disponivel","dados":{"alvo":"moqueca","disponivel":false},"fala":"Vou marcar a moqueca como esgotada hoje, confirma?"}[[/acao]]',
+    '• "a passagem do barco subiu para 50 reais a ida" →',
+    '  [[acao]]{"nome":"travessia","dados":{"ida":50},"fala":"Vou pôr a ida do barco a 50 reais, confirma?"}[[/acao]]',
+    '• "desliga o pacote de Réveillon" →',
+    '  [[acao]]{"nome":"pacote","dados":{"alvo":"Réveillon","ativo":false},"fala":"Vou desligar o pacote de Réveillon, confirma?"}[[/acao]]',
+    "",
+    "O QUE NÃO DÁ POR VOZ (diga onde fica, sem prometer): preço e vaga das suítes e",
+    "ligar/desligar suíte (vêm do sistema de reservas Desbravador); fotos, vídeos e",
+    "imagens (tela Mídias/Banners); Clássico/Novo do site, usuários, senhas, chaves e",
+    "conexões (só pelas telas, perfil Administração); apagar de vez (por voz você só",
+    "desliga ou manda para a lixeira, sempre dá para voltar). Nunca invente depoimento,",
+    "preço ou dado: só grave o que a pessoa disse.",
+  ].join("\n");
+}
+
+/** Havia um "confirma?" no ar e a pessoa respondeu algo que não foi um sim/não claro. */
+export type AcaoAguardando = { nome: string; descricao: string; dados: string; situacao: "outra" | "corrige" };
+
+function blocoAguardando(a: AcaoAguardando | null | undefined): string {
+  if (!a) return "";
+  const comum = [
+    "── AÇÃO QUE VOCÊ PROPÔS E ESTÁ ESPERANDO RESPOSTA ──",
+    `Você propôs: ${a.descricao}`,
+    `Bloco que você mandou: [[acao]]{"nome":"${a.nome}","dados":${a.dados}}[[/acao]]`,
+  ];
+  if (a.situacao === "corrige") {
+    return [...comum,
+      "A pessoa disse NÃO e corrigiu na fala a seguir. Proponha a ação CORRIGIDA (bloco",
+      "novo, com os dados certos) e pergunte \"confirma?\". Se não der para entender a",
+      "correção, pergunte em uma frase o que mudar.",
+    ].join("\n");
+  }
+  return [...comum,
+    "A fala a seguir é a resposta da pessoa a essa proposta:",
+    "- Se ela está CONFIRMANDO, mesmo com outras palavras ou repetindo o pedido: mande",
+    "  DE NOVO exatamente o MESMO bloco (o sistema entende como sim e grava). Não",
+    "  pergunte de novo \"confirma?\" com outras palavras.",
+    "- Se está CORRIGINDO algo: mande o bloco corrigido.",
+    "- Se é outra pergunta ou outro assunto: responda sem bloco (a proposta continua",
+    "  esperando na tela).",
   ].join("\n");
 }
 
@@ -88,17 +131,20 @@ export async function lacunasAbertas(sql: Sql, limite = 8): Promise<{ id: string
  * Pega a sessão de voz mais recente com fala e devolve os últimos turnos.
  */
 export async function ultimaConversa(sql: Sql, autor: string, limite = 6): Promise<{ turnos: { papel: "voce" | "marina"; texto: string }[]; quando: string | null }> {
+  /* As 3 últimas sessões, da mais antiga para a mais nova: uma sessão curta
+     (abriu, falou uma coisa, fechou) não apaga o contexto de antes. */
   const linhas = await sql<{ transcricao: unknown; criado_em: Date }[]>`
     SELECT transcricao, criado_em FROM marina_voz_sessao
     WHERE autor = ${autor} AND jsonb_array_length(transcricao) > 0
-    ORDER BY criado_em DESC LIMIT 1`.catch(() => []);
-  const l = linhas[0];
-  if (!l || !Array.isArray(l.transcricao)) return { turnos: [], quando: null };
-  const turnos = (l.transcricao as { papel?: unknown; texto?: unknown }[])
+    ORDER BY criado_em DESC LIMIT 3`.catch(() => []);
+  if (!linhas.length) return { turnos: [], quando: null };
+  const turnos = [...linhas].reverse()
+    .flatMap((l) => (Array.isArray(l.transcricao) ? l.transcricao : []) as { papel?: unknown; texto?: unknown }[])
     .filter((t) => (t.papel === "voce" || t.papel === "marina") && typeof t.texto === "string")
     .map((t) => ({ papel: t.papel as "voce" | "marina", texto: (t.texto as string).slice(0, 400) }))
     .slice(-limite);
-  return { turnos, quando: l.criado_em ? new Date(l.criado_em).toISOString() : null };
+  const quando = linhas[0].criado_em ? new Date(linhas[0].criado_em).toISOString() : null;
+  return { turnos, quando };
 }
 
 /* ── o que andou acontecendo (para ela responder sobre conversas e ações) ── */
@@ -141,7 +187,7 @@ function blocoDeAtividade(a: { conversas: string[]; mudancas: string[] }): strin
 }
 
 /** O pedido completo de sistema para o modo voz. */
-export async function montarSistemaVoz(sql: Sql, tecnico: boolean): Promise<{ sistema: string; lacunas: { id: string; pergunta: string }[] }> {
+export async function montarSistemaVoz(sql: Sql, tecnico: boolean, aguardando?: AcaoAguardando | null): Promise<{ sistema: string; lacunas: { id: string; pergunta: string }[] }> {
   const [{ texto }, lacunas, atividade] = await Promise.all([
     montarTreinamento(sql, "teste"),
     lacunasAbertas(sql),
@@ -154,6 +200,8 @@ export async function montarSistemaVoz(sql: Sql, tecnico: boolean): Promise<{ si
     blocoDeLacunas(lacunas),
     "── O QUE A POUSADA TE ENSINOU (a base das suas respostas) ──",
     texto,
+    /* Por último, colado na fala da pessoa: é o que ela está respondendo agora. */
+    blocoAguardando(aguardando),
   ].filter(Boolean).join("\n\n");
   return { sistema, lacunas };
 }

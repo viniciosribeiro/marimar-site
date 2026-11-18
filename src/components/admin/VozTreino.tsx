@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { executarAcaoVoz } from "@/app/(admin)/admin/marina/voz-acoes";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { classificarResposta, mesmaAcao } from "@/lib/marina-voz-base";
 
 /**
  * Treinar a Marina POR VOZ, de qualquer tela do painel.
@@ -14,36 +15,58 @@ import { executarAcaoVoz } from "@/app/(admin)/admin/marina/voz-acoes";
  *  • Viva voz  — ela ouve sozinha, espera você parar de falar e responde.
  *  • Apertar   — segure o botão para falar (bom para lugar barulhento).
  *
+ * Regras que impedem travar (docs/modo-voz-treino.md, "Não trava"):
+ *  - um contador de "época": Parar/Fechar invalida tudo o que estava no ar
+ *    (resposta que chega depois não fala nem muda a tela) e nunca ficam dois
+ *    ciclos de escuta rodando juntos;
+ *  - todo pedido tem prazo (inclusive baixar o áudio) e toda reprodução tem
+ *    teto; o estado SEMPRE volta (parado, ou ouvindo no viva voz);
+ *  - confirmar é uma ROTA leve (/api/admin/marina/voz/acao), não Server Action:
+ *    a resposta sai assim que grava e a página de trás atualiza sozinha depois;
+ *  - "sim"/"não" claros são decididos aqui, sem ida à Marina; o resto vai a ela
+ *    com a ação pendente, e se ela repropõe a MESMA ação vale como sim (fim do
+ *    loop "confirma?" → "sim" → "confirma?");
+ *  - tocar em Confirmar/Agora não durante o viva voz cala a Marina, descarta o
+ *    que o microfone estava gravando e volta a ouvir depois.
+ *
  * A janela é SÓLIDA (o painel tem uma regra que deixa todo `bg-white`
  * translúcido — por isso aqui o fundo é posto em estilo, não por classe),
  * arrastável, com minimizar/maximizar/redimensionar no computador e folha
- * responsiva no celular.
- *
- * O que muda no painel passa pela MESMA gravação das telas (Server Action
- * `executarAcaoVoz`), com o seu login e registrado. A voz custa por fora
- * (ElevenLabs): há um teto de gasto no mês; se estourar, a voz pausa e o
- * treino segue por texto.
+ * responsiva no celular. A voz custa por fora (ElevenLabs): há um teto de
+ * gasto no mês; se estourar, a voz pausa e o treino segue por texto.
  */
 
 type Papel = "voce" | "marina" | "sistema";
 type Fala = { papel: Papel; texto: string };
 type Gasto = { usoCentavos: number; limiteCentavos: number; nivel: "ok" | "aviso" | "estourou"; pct: number };
 type Pendente = { nome: string; dados: Record<string, unknown>; descricao: string };
-type Estado = "parado" | "ouvindo" | "pensando" | "falando";
+type Estado = "parado" | "ouvindo" | "pensando" | "salvando" | "falando";
+type Gravacao = { blob: Blob | null; segundos: number; motivo: "fala" | "silencio" | "interrompido" | "parado" };
 
+/** Silêncio que encerra uma fala (ms). */
 const SILENCIO_MS = 1100;
 const LIMIAR = 0.02;
 const MIN_FALA_MS = 250;
-const MAX_FALA_MS = 15_000;
+/** Teto de UMA fala, contado de quando a pessoa COMEÇA a falar (antes contava do início da escuta e cortava frases). */
+const MAX_FALA_MS = 30_000;
+/** Sem ninguém falar por este tempo, o viva voz descansa (microfone não fica aberto à toa). */
+const ESPERA_MAX_MS = 45_000;
+/** Enquanto espera, o gravador recomeça a cada tantos ms — o áudio enviado não carrega silêncio longo (e o custo). */
+const RECICLAR_MS = 8_000;
+const AUDIO_MUDO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
-// Depois de "confirma?": só um "não/muda/espera" cancela; qualquer outra coisa
-// (inclusive repetir o pedido com outras palavras) conta como SIM — assim a
-// confirmação não entra em loop e não gasta outra ida à Marina.
-const CANCELAR = /\b(n[ãa]o|nao|negativo|cancela|cancelar|deixa|esquece|espera|para|parar|errado|muda|mudar|troca|trocar|na verdade|melhor\s+n[ãa]o|outro|outra|diferente)\b/i;
-
-/** Nunca deixa um await travar para sempre: resolve com `aoVencer()` após `ms`. */
-function comPrazo<T>(p: Promise<T>, ms: number, aoVencer: () => T): Promise<T> {
-  return Promise.race([p, new Promise<T>((r) => setTimeout(() => r(aoVencer()), ms))]);
+/** Nunca deixa um fetch travar: aborta depois de `ms` (inclusive a leitura do corpo). */
+async function buscar(url: string, init: RequestInit, ms: number, externo?: AbortController): Promise<Response> {
+  const controle = externo ?? new AbortController();
+  const t = setTimeout(() => controle.abort(), ms);
+  try {
+    const r = await fetch(url, { ...init, signal: controle.signal });
+    /* Lê o corpo DENTRO do prazo: o travamento antigo era o corpo do áudio que nunca terminava. */
+    const corpo = await r.arrayBuffer();
+    return new Response(corpo, { status: r.status, headers: r.headers });
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 const LARGURA_INICIAL = 384;
@@ -52,6 +75,7 @@ const SUPERFICIE = "#ffffff";
 const TINTA = "#1f2937";
 
 export function VozTreino() {
+  const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [modo, setModo] = useState<"vivavoz" | "apertar">("vivavoz");
   const [estado, setEstado] = useState<Estado>("parado");
@@ -81,15 +105,26 @@ export function VozTreino() {
   const [tam, setTam] = useState({ w: LARGURA_INICIAL, h: ALTURA_INICIAL });
 
   const sessaoRef = useRef<string>("");
-  const histRef = useRef<{ papel: Papel; conteudo: string }[]>([]);
+  const histRef = useRef<{ papel: "voce" | "marina"; conteudo: string }[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const acRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const mrRef = useRef<MediaRecorder | null>(null);
+  const capRef = useRef<{ gateway: boolean; voz: boolean } | null>(null);
+  /** Cada Parar/Fechar avança a época; o que começou antes dela não fala nem mexe na tela. */
+  const epocaRef = useRef(0);
+  const abertoRef = useRef(false);
   const pararRef = useRef(false);
   const canceladoRef = useRef(false);
+  const interrompidoRef = useRef(false);
   const pendenteRef = useRef<Pendente | null>(null);
   const lacoAtivoRef = useRef(false);
+  /** Confirmar/Agora não/Enviar texto em andamento: o viva voz espera por ele antes de voltar a ouvir. */
+  const operacaoRef = useRef<Promise<void> | null>(null);
+  const pedidoRef = useRef<AbortController | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioLiberado = useRef(false);
+  const tocandoRef = useRef<(() => void) | null>(null);
   const modoRef = useRef(modo);
   const estadoCaixa = useRef<Estado>("parado");
   const arrastarRef = useRef<{ dx: number; dy: number } | null>(null);
@@ -97,8 +132,9 @@ export function VozTreino() {
   const corpoRolagem = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { modoRef.current = modo; }, [modo]);
-  useEffect(() => { pendenteRef.current = pendente; }, [pendente]);
-  const mudarEstado = (e: Estado) => { estadoCaixa.current = e; setEstado(e); };
+  useEffect(() => { capRef.current = cap; }, [cap]);
+  const mudarEstado = useCallback((e: Estado) => { estadoCaixa.current = e; setEstado(e); }, []);
+  const definirPendente = useCallback((p: Pendente | null) => { pendenteRef.current = p; setPendente(p); }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)");
@@ -111,7 +147,7 @@ export function VozTreino() {
   const log = useCallback((papel: Papel, texto: string) => {
     if (!texto) return;
     setFalas((f) => [...f, { papel, texto }].slice(-40));
-    histRef.current = [...histRef.current, { papel, conteudo: texto }].slice(-12);
+    if (papel !== "sistema") histRef.current = [...histRef.current, { papel, conteudo: texto }].slice(-12);
   }, []);
 
   /* rola a conversa para o fim quando chega fala nova */
@@ -123,7 +159,7 @@ export function VozTreino() {
   /* ── estado inicial ao abrir ─────────────────────────────────────── */
   const carregarEstado = useCallback(async () => {
     try {
-      const r = await fetch("/api/admin/marina/voz/estado");
+      const r = await buscar("/api/admin/marina/voz/estado", {}, 12000);
       const d = await r.json();
       if (!r.ok) { setAviso(d?.erro ?? "Não consegui abrir o modo voz."); return; }
       setCap({ gateway: d.gateway, voz: d.voz });
@@ -137,13 +173,30 @@ export function VozTreino() {
         ? d.ultima.turnos.filter((t: Fala) => t && (t.papel === "voce" || t.papel === "marina") && typeof t.texto === "string")
         : [];
       if (turnos.length) {
-        histRef.current = turnos.map((t) => ({ papel: t.papel, conteudo: t.texto })).slice(-12);
+        histRef.current = turnos.map((t) => ({ papel: t.papel as "voce" | "marina", conteudo: t.texto })).slice(-12);
         const quando = d.ultima?.quando ? new Date(d.ultima.quando).toLocaleDateString("pt-BR") : "";
         setFalas([{ papel: "sistema", texto: quando ? `— retomando a conversa de ${quando} —` : "— retomando a conversa anterior —" }, ...turnos]);
       }
     } catch {
-      setAviso("Não consegui abrir o modo voz agora.");
+      setAviso("Não consegui abrir o modo voz agora. Feche e abra de novo daqui a pouco.");
     }
+  }, []);
+
+  /* ── áudio de saída: um só elemento, liberado num toque (iPhone) ─── */
+  const destravarAudio = useCallback(() => {
+    if (!audioRef.current) audioRef.current = new Audio();
+    if (audioLiberado.current) return;
+    audioLiberado.current = true;
+    const a = audioRef.current;
+    try { a.src = AUDIO_MUDO; a.play().then(() => a.pause()).catch(() => {}); } catch {}
+  }, []);
+
+  /** Cala a Marina na hora (e libera quem esperava o fim da fala). */
+  const calarMarina = useCallback(() => {
+    const fim = tocandoRef.current;
+    tocandoRef.current = null;
+    try { audioRef.current?.pause(); } catch {}
+    fim?.();
   }, []);
 
   /* ── microfone + medidor de volume ───────────────────────────────── */
@@ -178,206 +231,328 @@ export function VozTreino() {
     return Math.sqrt(soma / buf.length);
   }, []);
 
-  const gravarUmaFala = useCallback((): Promise<Blob | null> => {
+  /** Um trecho de gravação. Sem fala em RECICLAR_MS, devolve "reciclar" (o chamador recomeça). */
+  const gravarTrecho = useCallback((): Promise<Gravacao | "reciclar"> => {
     return new Promise((resolve) => {
       const stream = streamRef.current;
-      if (!stream) return resolve(null);
+      if (!stream) return resolve({ blob: null, segundos: 0, motivo: "parado" });
       const tipo = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
-      const mr = new MediaRecorder(stream, tipo ? { mimeType: tipo } : undefined);
+      let mr: MediaRecorder;
+      try { mr = new MediaRecorder(stream, tipo ? { mimeType: tipo } : undefined); }
+      catch { return resolve({ blob: null, segundos: 0, motivo: "parado" }); }
       mrRef.current = mr;
       canceladoRef.current = false;
       const partes: Blob[] = [];
-      let teveFala = false;
+      let teveFala = false, reciclar = false;
       const inicio = Date.now();
-      let ultimaFala = Date.now();
+      let inicioFala = 0, ultimaFala = Date.now();
 
       mr.ondataavailable = (e) => { if (e.data.size) partes.push(e.data); };
       mr.onstop = () => {
         clearInterval(timer);
-        mrRef.current = null;
-        if (canceladoRef.current || !teveFala) return resolve(null);
-        resolve(new Blob(partes, { type: tipo || "audio/webm" }));
+        if (mrRef.current === mr) mrRef.current = null;
+        const segundos = (Date.now() - inicio) / 1000;
+        if (interrompidoRef.current) { interrompidoRef.current = false; return resolve({ blob: null, segundos, motivo: "interrompido" }); }
+        if (canceladoRef.current || pararRef.current) return resolve({ blob: null, segundos, motivo: "parado" });
+        if (reciclar) return resolve("reciclar");
+        if (!teveFala) return resolve({ blob: null, segundos, motivo: "silencio" });
+        resolve({ blob: new Blob(partes, { type: tipo || "audio/webm" }), segundos, motivo: "fala" });
       };
 
       const timer = setInterval(() => {
         if (pararRef.current) { try { mr.stop(); } catch {} return; }
-        const v = volume();
         const agora = Date.now();
-        if (v > LIMIAR) { teveFala = true; ultimaFala = agora; }
-        const duracao = agora - inicio;
-        const silencio = agora - ultimaFala;
-        if ((teveFala && silencio > SILENCIO_MS && duracao > MIN_FALA_MS) || duracao > MAX_FALA_MS) {
-          try { mr.stop(); } catch {}
-        }
+        if (volume() > LIMIAR) { if (!teveFala) inicioFala = agora; teveFala = true; ultimaFala = agora; }
+        const terminou = teveFala && agora - ultimaFala > SILENCIO_MS && agora - inicioFala > MIN_FALA_MS;
+        const longaDemais = teveFala && agora - inicioFala > MAX_FALA_MS;
+        if (terminou || longaDemais) { try { mr.stop(); } catch {} return; }
+        if (!teveFala && agora - inicio > RECICLAR_MS) { reciclar = true; try { mr.stop(); } catch {} }
       }, 60);
 
-      try { mr.start(); } catch { clearInterval(timer); resolve(null); }
+      try { mr.start(); } catch { clearInterval(timer); resolve({ blob: null, segundos: 0, motivo: "parado" }); }
     });
   }, [volume]);
 
+  /** Grava até a pessoa falar e parar. Sem ninguém falar por ESPERA_MAX_MS → "silencio". */
+  const gravarUmaFala = useCallback(async (): Promise<Gravacao> => {
+    const inicio = Date.now();
+    for (;;) {
+      if (pararRef.current) return { blob: null, segundos: 0, motivo: "parado" };
+      const r = await gravarTrecho();
+      if (r !== "reciclar") return r;
+      if (Date.now() - inicio > ESPERA_MAX_MS) return { blob: null, segundos: 0, motivo: "silencio" };
+    }
+  }, [gravarTrecho]);
+
+  /** Para o que o microfone estava gravando, SEM encerrar o viva voz. */
+  const interromperGravacao = useCallback(() => {
+    if (!mrRef.current) return;
+    interrompidoRef.current = true;
+    try { mrRef.current.stop(); } catch {}
+  }, []);
+
+  /* ── parar tudo (o botão vermelho e o fechar) ───────────────────── */
+  const pararTudo = useCallback(() => {
+    epocaRef.current += 1;
+    lacoAtivoRef.current = false;
+    pararRef.current = true;
+    canceladoRef.current = true;
+    try { mrRef.current?.stop(); } catch {}
+    try { pedidoRef.current?.abort(); } catch {}
+    calarMarina();
+    mudarEstado("parado");
+  }, [calarMarina, mudarEstado]);
+
+  /* ── ouvir (fala → texto) ────────────────────────────────────────── */
   const transcrever = useCallback(async (blob: Blob, segundos: number): Promise<string | null> => {
     const fd = new FormData();
     fd.append("audio", blob, "fala.webm");
     fd.append("sessao", sessaoRef.current);
     fd.append("segundos", String(Math.round(segundos)));
+    const epoca = epocaRef.current;
     const controle = new AbortController();
-    const limite = setTimeout(() => controle.abort(), 20000);
+    pedidoRef.current = controle;
     try {
-      const r = await fetch("/api/admin/marina/voz/ouvir", { method: "POST", body: fd, signal: controle.signal });
-      const d = await r.json();
-      if (r.status === 402) { setGasto(d.gasto); setAviso("A voz atingiu o teto do mês. Continue por texto."); return null; }
+      const r = await buscar("/api/admin/marina/voz/ouvir", { method: "POST", body: fd }, 20000, controle);
+      const d = await r.json().catch(() => ({}));
+      if (r.status === 402) {
+        if (d.gasto) setGasto(d.gasto);
+        setAviso("A voz atingiu o teto do mês. Continue por texto.");
+        pararTudo();
+        return null;
+      }
       if (!r.ok) { setAviso(d?.erro ?? "Não entendi o áudio."); return null; }
-      return typeof d.texto === "string" ? d.texto : null;
-    } catch { setAviso("Não consegui entender o áudio. Pode repetir?"); return null; }
-    finally { clearTimeout(limite); }
-  }, []);
+      return typeof d.texto === "string" && d.texto.trim() ? d.texto.trim() : null;
+    } catch {
+      if (epocaRef.current === epoca) setAviso("Não consegui entender o áudio. Pode repetir?"); // parar não é erro
+      return null;
+    }
+  }, [pararTudo]);
 
+  /* ── falar (texto → áudio) ───────────────────────────────────────── */
   const falar = useCallback(async (texto: string): Promise<void> => {
     // Em modo "só texto" a resposta aparece escrita e nenhum áudio é gerado (sem custo de TTS).
-    if (!cap?.voz || !vozRespostaRef.current) return;
-    const controle = new AbortController();
-    const limiteRede = setTimeout(() => controle.abort(), 15000);
+    if (!capRef.current?.voz || !vozRespostaRef.current || !abertoRef.current || !texto) return;
+    const epoca = epocaRef.current;
     try {
-      const r = await fetch("/api/admin/marina/voz/falar", {
+      const r = await buscar("/api/admin/marina/voz/falar", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessao: sessaoRef.current, texto }), signal: controle.signal,
-      });
-      clearTimeout(limiteRede);
+        body: JSON.stringify({ sessao: sessaoRef.current, texto }),
+      }, 15000);
       if (r.status === 402) { setAviso("A voz atingiu o teto do mês. Continue por texto."); return; }
-      if (!r.ok) return;
-      const blob = await r.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
+      if (!r.ok || epocaRef.current !== epoca || !abertoRef.current) return;
+      const url = URL.createObjectURL(await r.blob());
+      if (!audioRef.current) audioRef.current = new Audio();
+      const audio = audioRef.current;
       mudarEstado("falando");
-      // Nunca trava na reprodução: um prazo garante que o fluxo siga mesmo se o
-      // navegador não disparar "onended" (áudio bloqueado, blob estranho…).
+      // Nunca trava na reprodução: um teto (pelo tamanho do texto) garante que o
+      // fluxo siga mesmo se o navegador não disparar "ended" (áudio bloqueado…).
       await new Promise<void>((resolve) => {
-        let feito = false;
-        const fim = () => { if (feito) return; feito = true; clearTimeout(t); resolve(); };
-        const t = setTimeout(fim, 20000);
+        let acabou = false;
+        const fim = () => {
+          if (acabou) return;
+          acabou = true; clearTimeout(t);
+          audio.onended = null; audio.onerror = null;
+          if (tocandoRef.current === fim) tocandoRef.current = null;
+          resolve();
+        };
+        const t = setTimeout(fim, Math.min(60000, 6000 + texto.length * 90));
+        tocandoRef.current = fim;
         audio.onended = fim; audio.onerror = fim;
+        audio.src = url;
         audio.play().catch(fim);
       });
       URL.revokeObjectURL(url);
     } catch { /* fica só o texto na tela */ }
-    finally { clearTimeout(limiteRede); }
-  }, [cap]);
+  }, [mudarEstado]);
 
-  const confirmar = useCallback(async (p: Pendente) => {
-    setPendente(null);
-    pendenteRef.current = null;
-    mudarEstado("pensando");
+  /* ── a resposta a um "confirma?" ─────────────────────────────────── */
+  const confirmar = useCallback(async (p: Pendente, fala: string) => {
+    const epoca = epocaRef.current;
+    definirPendente(null);
+    mudarEstado("salvando");
+    let r: { ok: boolean; mensagem: string };
     try {
-      const r = await comPrazo(
-        executarAcaoVoz(sessaoRef.current, p.nome, p.dados),
-        25000,
-        () => ({ ok: false, mensagem: "Demorou demais. Confira no painel se foi salvo e tente de novo." }),
-      );
-      log("marina", r.mensagem);
-      if (r.ok) setFeito((f) => [...f, r.mensagem]);
-      // Confirmação CURTA, para já passar para a próxima (o detalhe fica no texto).
-      await falar(r.ok ? "Pronto!" : "Não consegui agora.");
+      const resp = await buscar("/api/admin/marina/voz/acao", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessao: sessaoRef.current, nome: p.nome, dados: p.dados, fala }),
+      }, 20000);
+      const d = await resp.json().catch(() => null);
+      r = resp.status === 401
+        ? { ok: false, mensagem: "Sua entrada no painel expirou. Entre de novo e repita." }
+        : { ok: Boolean(d?.ok), mensagem: typeof d?.mensagem === "string" ? d.mensagem : "Não consegui gravar agora." };
     } catch {
-      log("marina", "Não consegui fazer isso agora.");
-      await falar("Não consegui agora.");
+      r = { ok: false, mensagem: "Demorou demais para gravar. Confira na tela se mudou e, se não, peça de novo." };
     }
-  }, [falar, log]);
+    // O resultado SEMPRE aparece (mesmo se a pessoa parou no meio): é o registro do que mudou.
+    log("marina", r.mensagem);
+    if (r.ok) {
+      setFeito((f) => [...f, r.mensagem]);
+      startTransition(() => router.refresh()); // a tela de trás mostra a mudança, sem prender a conversa
+    }
+    if (epocaRef.current === epoca) await falar(r.ok ? "Pronto!" : "Não consegui agora.");
+    if (!lacoAtivoRef.current && epocaRef.current === epoca) mudarEstado("parado");
+  }, [falar, log, router, mudarEstado, definirPendente]);
 
-  const cancelarPendente = useCallback(async () => {
-    setPendente(null);
-    pendenteRef.current = null;
+  const cancelarPendente = useCallback(async (fala: string) => {
+    const epoca = epocaRef.current;
+    definirPendente(null);
     log("marina", "Tudo bem, não vou mexer nisso.");
-    await falar("Tudo bem, não vou mexer nisso.");
-  }, [falar, log]);
+    // Fica na conversa (para a Marina lembrar), sem esperar.
+    fetch("/api/admin/marina/voz/acao", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ sessao: sessaoRef.current, cancelar: true, fala }),
+    }).catch(() => {});
+    if (epocaRef.current === epoca) await falar("Tudo bem, não vou mexer nisso.");
+    if (!lacoAtivoRef.current && epocaRef.current === epoca) mudarEstado("parado");
+  }, [falar, log, mudarEstado, definirPendente]);
 
+  /* ── um turno com a Marina ───────────────────────────────────────── */
   const conversar = useCallback(async (texto: string) => {
+    const epoca = epocaRef.current;
+    const historico = histRef.current.slice(); // ANTES de registrar a fala nova (senão ela ia duas vezes)
     log("voce", texto);
 
+    /* Havia um "confirma?" no ar: sim/não claros resolvem aqui, sem ida à Marina. */
     const p = pendenteRef.current;
+    let contexto: { pendente: Pendente; situacao: "outra" | "corrige" } | null = null;
     if (p) {
-      if (CANCELAR.test(texto)) { await cancelarPendente(); return; }
-      await confirmar(p); return; // qualquer coisa que não seja "não/muda" confirma
+      const c = classificarResposta(texto);
+      if (c === "sim") { await confirmar(p, texto); return; }
+      if (c === "nao") { await cancelarPendente(texto); return; }
+      if (c === "corrige") definirPendente(null);
+      contexto = { pendente: p, situacao: c === "corrige" ? "corrige" : "outra" };
     }
 
     mudarEstado("pensando");
     const controle = new AbortController();
-    const limite = setTimeout(() => controle.abort(), 38000);
+    pedidoRef.current = controle;
     try {
-      const r = await fetch("/api/admin/marina/voz/conversar", {
+      const r = await buscar("/api/admin/marina/voz/conversar", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessao: sessaoRef.current, mensagem: texto, historico: histRef.current }),
-        signal: controle.signal,
-      });
-      const d = await r.json();
+        body: JSON.stringify({
+          sessao: sessaoRef.current, mensagem: texto, historico,
+          ...(contexto ? { pendente: contexto.pendente, situacao: contexto.situacao } : {}),
+        }),
+      }, 40000, controle);
+      if (epocaRef.current !== epoca) return; // a pessoa parou no meio: não fala nem muda a tela
+      const d = await r.json().catch(() => ({}));
       if (!r.ok) { const m = d?.erro ?? "Não consegui falar com a Marina."; log("marina", m); setAviso(m); return; }
+      setAviso(null);
       if (d.gasto) { setGasto(d.gasto); if (d.gasto.nivel === "aviso") setAviso("Atenção: a voz já passou de " + d.gasto.pct + "% do teto do mês."); }
+      const nova: Pendente | null = d.acao && d.acao.valido ? { nome: d.acao.nome, dados: d.acao.dados ?? {}, descricao: d.acao.descricao } : null;
+
+      /* Fim do loop: ela repropôs a MESMA ação depois de a pessoa responder → é um sim. */
+      if (contexto?.situacao === "outra" && nova && mesmaAcao(nova, contexto.pendente)) {
+        if (pendenteRef.current === contexto.pendente) await confirmar(contexto.pendente, texto);
+        return;
+      }
       log("marina", d.resposta);
-      if (d.acao && d.acao.valido) { const nova = { nome: d.acao.nome, dados: d.acao.dados, descricao: d.acao.descricao }; setPendente(nova); pendenteRef.current = nova; }
+      if (nova) definirPendente(nova);
       await falar(d.resposta);
     } catch {
-      log("marina", "Demorei demais para responder. Pode falar de novo?");
-    } finally { clearTimeout(limite); }
-  }, [confirmar, cancelarPendente, falar, log]);
+      if (epocaRef.current === epoca) log("marina", "Demorei demais para responder. Pode falar de novo?");
+    }
+  }, [confirmar, cancelarPendente, falar, log, mudarEstado, definirPendente]);
 
+  /* ── viva voz: ouvir → entender → responder, em ciclo ───────────── */
   const laco = useCallback(async () => {
-    pararRef.current = false;
+    if (lacoAtivoRef.current) return; // nunca dois ciclos juntos
+    const epoca = epocaRef.current;
     lacoAtivoRef.current = true;
+    pararRef.current = false;
     try {
-      while (!pararRef.current && modoRef.current === "vivavoz") {
+      while (epocaRef.current === epoca && modoRef.current === "vivavoz") {
+        if (operacaoRef.current) { await operacaoRef.current; continue; } // um botão está agindo: espera
         mudarEstado("ouvindo");
-        const t0 = Date.now();
-        const blob = await gravarUmaFala();
-        if (pararRef.current || !blob) break;
-        const texto = await transcrever(blob, (Date.now() - t0) / 1000);
-        if (pararRef.current) break;
-        if (texto) await conversar(texto);
+        const pendenteAntes = pendenteRef.current;
+        const g = await gravarUmaFala();
+        if (epocaRef.current !== epoca) break;
+        if (g.motivo === "interrompido") continue;
+        if (g.motivo === "silencio") { log("sistema", "Fiquei sem ouvir nada por um tempo e pausei. Toque no microfone para continuar."); break; }
+        if (!g.blob) break;
+        mudarEstado("pensando");
+        const texto = await transcrever(g.blob, g.segundos);
+        if (epocaRef.current !== epoca) break;
+        if (!texto) continue;
+        // A fala respondia a um "confirma?" que um botão já resolveu enquanto ela falava: descarta.
+        if (pendenteAntes && pendenteRef.current !== pendenteAntes) continue;
+        await conversar(texto);
       }
     } finally {
-      lacoAtivoRef.current = false;
-      mudarEstado("parado");
+      if (epocaRef.current === epoca) { lacoAtivoRef.current = false; mudarEstado("parado"); }
     }
-  }, [gravarUmaFala, transcrever, conversar]);
+  }, [gravarUmaFala, transcrever, conversar, log, mudarEstado]);
 
   const iniciarVivaVoz = useCallback(async () => {
     setAviso(null);
+    destravarAudio();
     if (!(await garantirMic())) return;
     acRef.current?.resume().catch(() => {});
     laco();
-  }, [garantirMic, laco]);
+  }, [destravarAudio, garantirMic, laco]);
 
-  const pararTudo = useCallback(() => {
-    pararRef.current = true;
-    canceladoRef.current = true;
-    try { mrRef.current?.stop(); } catch {}
-    mudarEstado("parado");
-  }, []);
+  /* ── botões Confirmar / Agora não, e o campo de texto ───────────── */
+  /** Roda uma operação "por fora" do viva voz: cala a Marina, descarta a gravação em curso e o ciclo espera. */
+  const operar = useCallback((op: () => Promise<void>) => {
+    destravarAudio();
+    calarMarina();
+    if (lacoAtivoRef.current) interromperGravacao();
+    // Se já havia uma em curso, esta entra na fila (nunca é ignorada).
+    const anterior = operacaoRef.current ?? Promise.resolve();
+    const feita: Promise<void> = anterior.then(op).catch(() => {}).finally(() => {
+      if (operacaoRef.current === feita) operacaoRef.current = null;
+    });
+    operacaoRef.current = feita;
+  }, [destravarAudio, calarMarina, interromperGravacao]);
 
+  const responderPeloBotao = useCallback((sim: boolean) => {
+    const p = pendenteRef.current;
+    if (!p) return;
+    definirPendente(null); // o cartão some no 1º toque: não há segundo "Confirmar"
+    operar(() => (sim ? confirmar(p, "(confirmou pelo botão)") : cancelarPendente("(recusou pelo botão)")));
+  }, [operar, confirmar, cancelarPendente, definirPendente]);
+
+  const enviarDigitado = useCallback(() => {
+    const t = digitado.trim();
+    if (!t) return;
+    setDigitado("");
+    operar(async () => {
+      const epoca = epocaRef.current;
+      await conversar(t);
+      if (!lacoAtivoRef.current && epocaRef.current === epoca) mudarEstado("parado");
+    });
+  }, [digitado, operar, conversar, mudarEstado]);
+
+  /* ── apertar para falar ──────────────────────────────────────────── */
   const inicioApertar = useRef(0);
   const comecarApertar = useCallback(async () => {
     if (estadoCaixa.current !== "parado") return;
     setAviso(null);
+    destravarAudio();
     if (!(await garantirMic())) return;
     acRef.current?.resume().catch(() => {});
+    const epoca = epocaRef.current;
     const stream = streamRef.current!;
     const tipo = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
     const mr = new MediaRecorder(stream, tipo ? { mimeType: tipo } : undefined);
-    mrRef.current = mr; canceladoRef.current = false;
+    mrRef.current = mr; canceladoRef.current = false; pararRef.current = false;
     const partes: Blob[] = [];
     inicioApertar.current = Date.now();
     mr.ondataavailable = (e) => { if (e.data.size) partes.push(e.data); };
     mr.onstop = async () => {
-      mrRef.current = null;
-      if (canceladoRef.current) return;
-      const blob = new Blob(partes, { type: tipo || "audio/webm" });
+      if (mrRef.current === mr) mrRef.current = null;
+      if (canceladoRef.current || epocaRef.current !== epoca) return;
       const seg = (Date.now() - inicioApertar.current) / 1000;
+      if (seg < MIN_FALA_MS / 1000) { mudarEstado("parado"); return; }
       mudarEstado("pensando");
-      const texto = await transcrever(blob, seg);
-      if (texto) await conversar(texto);
-      mudarEstado("parado");
+      const texto = await transcrever(new Blob(partes, { type: tipo || "audio/webm" }), seg);
+      if (texto && epocaRef.current === epoca) await conversar(texto);
+      if (epocaRef.current === epoca) mudarEstado("parado");
     };
     mr.start();
     mudarEstado("ouvindo");
-  }, [garantirMic, transcrever, conversar]);
+  }, [destravarAudio, garantirMic, transcrever, conversar, mudarEstado]);
 
   const soltarApertar = useCallback(() => {
     try { mrRef.current?.stop(); } catch {}
@@ -387,7 +562,8 @@ export function VozTreino() {
   const abrir = useCallback(async () => {
     sessaoRef.current = crypto.randomUUID();
     histRef.current = [];
-    setFalas([]); setFeito([]); setPendente(null); setAviso(null);
+    abertoRef.current = true;
+    setFalas([]); setFeito([]); definirPendente(null); setAviso(null);
     setMin(false); setMax(false);
     if (typeof window !== "undefined" && !window.matchMedia("(max-width: 639px)").matches) {
       const w = LARGURA_INICIAL, h = ALTURA_INICIAL;
@@ -396,9 +572,10 @@ export function VozTreino() {
     }
     setAberto(true);
     await carregarEstado();
-  }, [carregarEstado]);
+  }, [carregarEstado, definirPendente]);
 
   const fechar = useCallback(() => {
+    abertoRef.current = false;
     pararTudo();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -407,15 +584,13 @@ export function VozTreino() {
     setAberto(false);
   }, [pararTudo]);
 
-  useEffect(() => () => { streamRef.current?.getTracks().forEach((t) => t.stop()); acRef.current?.close().catch(() => {}); }, []);
-
-  const enviarDigitado = useCallback(async () => {
-    const t = digitado.trim();
-    if (!t) return;
-    setDigitado("");
-    await conversar(t);
-    if (!lacoAtivoRef.current) mudarEstado("parado");
-  }, [digitado, conversar]);
+  useEffect(() => () => {
+    abertoRef.current = false;
+    epocaRef.current += 1;
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    acRef.current?.close().catch(() => {});
+    try { audioRef.current?.pause(); } catch {}
+  }, []);
 
   /* ── arrastar e redimensionar (computador) ──────────────────────── */
   const aoArrastar = (e: React.PointerEvent) => {
@@ -446,7 +621,7 @@ export function VozTreino() {
   const soltarRedim = () => { redimRef.current = null; };
 
   /* ── visual ──────────────────────────────────────────────────────── */
-  const ocupada = estado === "pensando" || estado === "falando";
+  const ocupada = estado === "pensando" || estado === "salvando" || estado === "falando";
   const semParar = (e: React.PointerEvent) => e.stopPropagation();
 
   const cabecalho = (
@@ -516,8 +691,8 @@ export function VozTreino() {
         <div className="mx-4 mb-2 rounded-2xl p-3" style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
           <p className="text-[12px]" style={{ color: "#065f46" }}>A Marina quer <strong>{pendente.descricao}</strong>. Confirma?</p>
           <div className="mt-2 flex gap-2">
-            <button type="button" onClick={() => confirmar(pendente)} className="rounded-full px-3 py-1 text-[12px] font-semibold text-white" style={{ background: "#0d9488" }}>Confirmar</button>
-            <button type="button" onClick={cancelarPendente} className="rounded-full px-3 py-1 text-[12px] font-medium" style={{ background: "#fff", color: "#4b5563", border: "1px solid #e5e7eb" }}>Agora não</button>
+            <button type="button" onClick={() => responderPeloBotao(true)} className="rounded-full px-3 py-1 text-[12px] font-semibold text-white" style={{ background: "#0d9488" }}>Confirmar</button>
+            <button type="button" onClick={() => responderPeloBotao(false)} className="rounded-full px-3 py-1 text-[12px] font-medium" style={{ background: "#fff", color: "#4b5563", border: "1px solid #e5e7eb" }}>Agora não</button>
           </div>
         </div>
       )}
@@ -547,7 +722,7 @@ export function VozTreino() {
           <button type="button" onClick={() => (estado === "parado" ? iniciarVivaVoz() : pararTudo())}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white transition"
             style={{ background: estado === "parado" ? "#0ea5a3" : "#dc2626" }}>
-            <IconeMic small /> {estado === "parado" ? "Começar a falar" : estado === "ouvindo" ? "Ouvindo… (toque para parar)" : ocupada ? "Pensando… (toque para parar)" : "Parar"}
+            <IconeMic small /> {rotuloBotao(estado)}
           </button>
         )}
         {cap?.voz && modo === "apertar" && (
@@ -555,7 +730,7 @@ export function VozTreino() {
             onPointerDown={comecarApertar} onPointerUp={soltarApertar} onPointerLeave={soltarApertar}
             className="flex h-12 w-full select-none items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white"
             style={{ background: estado === "ouvindo" ? "#dc2626" : "#0ea5a3", touchAction: "none" }}>
-            <IconeMic small /> {estado === "ouvindo" ? "Gravando… solte para enviar" : ocupada ? "Um instante…" : "Segure para falar"}
+            <IconeMic small /> {estado === "ouvindo" ? "Gravando… solte para enviar" : estado === "salvando" ? "Salvando…" : ocupada ? "Um instante…" : "Segure para falar"}
           </button>
         )}
         <div className="mt-2 flex items-center gap-2">
@@ -629,7 +804,15 @@ export function VozTreino() {
 }
 
 function rotuloEstado(e: Estado): string {
-  return e === "ouvindo" ? "Ouvindo você…" : e === "pensando" ? "Pensando…" : e === "falando" ? "Falando…" : "Pronta quando você quiser";
+  return e === "ouvindo" ? "Ouvindo você…" : e === "pensando" ? "Pensando…" : e === "salvando" ? "Salvando no painel…" : e === "falando" ? "Falando…" : "Pronta quando você quiser";
+}
+
+function rotuloBotao(e: Estado): string {
+  if (e === "parado") return "Começar a falar";
+  if (e === "ouvindo") return "Ouvindo… (toque para parar)";
+  if (e === "salvando") return "Salvando… (toque para parar)";
+  if (e === "falando") return "Falando… (toque para parar)";
+  return "Pensando… (toque para parar)";
 }
 
 function BotaoJanela({ titulo, onClick, children }: { titulo: string; onClick: () => void; children: React.ReactNode }) {

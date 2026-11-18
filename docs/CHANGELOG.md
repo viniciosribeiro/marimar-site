@@ -1,5 +1,23 @@
 # Changelog — Marimar Site
 
+## 18/11/2026 (parte 7) — Modo voz: Marina age no painel inteiro e não trava mais ao aprovar
+**Autor:** Claude (Claude Code). **Migration:** nenhuma. **Hostinger:** nada (não reinstalar skill). Pedido do proprietário: "ela precisa tomar ações total no painel, não só no aprendizado" e "quando eu aprovo um conhecimento ela fica pensando e não sai disso".
+
+- **Causas do travamento ao aprovar (achadas na revisão de ponta a ponta):**
+  1. o botão **Confirmar/Agora não** rodava fora do ciclo do viva voz e **não devolvia o estado** → "Pensando…" para sempre;
+  2. a confirmação era uma **Server Action com `revalidatePath`**: pelo Next 16 ela **re-renderiza a página do painel aberta antes de responder** e as Server Actions de um navegador **andam em fila** — a resposta esperava a página inteira;
+  3. **Parar com a Marina falando** não calava o áudio; ao tocar "Começar" de novo ficavam **dois ciclos de escuta** juntos;
+  4. o teto de 15 s contava **do início da escuta** (quem pensava 10 s tinha a frase cortada);
+  5. a confirmação por voz lia **"para"** (preposição) como "não": "sim, pode salvar para mim" cancelava;
+  6. o corpo do áudio baixado **não tinha prazo**; e a fala atual ia **duas vezes** para a Marina (histórico + mensagem).
+- **Correções (`src/components/admin/VozTreino.tsx`, reescrita só da lógica; visual igual):** contador de época (Parar/Fechar invalida o que estava no ar; um ciclo só); prazos em todo pedido inclusive leitura do corpo (`buscar()`); teto de reprodução; Parar cala na hora; botões e texto viram "operação" que o viva voz espera; botão durante o viva voz descarta a gravação em curso; teto de 30 s a partir do início da fala, pausa após 45 s de silêncio, gravador recicla a cada 8 s; um único elemento de áudio liberado no 1º toque (iPhone); estado "Salvando no painel…".
+- **Confirmação sem loop:** `classificarResposta()` e `mesmaAcao()` em `src/lib/marina-voz-base.ts`. Sim/não claros resolvem no painel (sem ida à Marina); correção cancela e a Marina repropõe; o resto vai a ela com a ação pendente no contexto (bloco "ESPERANDO RESPOSTA" em `montarSistemaVoz`), e se ela repropõe a mesma ação vale como sim.
+- **Rota nova `POST /api/admin/marina/voz/acao`** (substitui a Server Action `executarAcaoVoz`, arquivo removido): login, mesma origem, valida de novo, grava assinado e responde na hora; a conversa e o "feito" vão para a sessão com `after()`; o painel atualiza a tela de trás com `router.refresh()` em segundo plano. Recusas também ficam na conversa (a retomada não "esquece" o não).
+- **Mais rápido em cada fala:** `ouvir`, `conversar` e `falar` leem em paralelo (o postgres.js manda as consultas juntas na mesma conexão) e gravam custo/conversa **depois** de responder (`after()`). Retomada junta as 3 últimas sessões.
+- **Ações no painel inteiro (`src/lib/marina-voz-acoes-painel.ts`, 11 novas):** `politicas`, `faq`, `faq_editar`, `cardapio_item`, `cardapio_disponivel`, `pacote`, `banner`, `atracao`, `travessia`, `eventos`, `depoimento` — mesmas tabelas e regras das telas, sempre reversíveis. Fora de propósito: preço/vaga e ligar/desligar suíte (Desbravador), fotos/vídeos, Clássico/Novo, usuários/senhas/chaves, apagar de vez. Utilidades em `src/lib/marina-voz-util.ts` (`acharUm` com lista fechada de tabelas; `dinheiro` não transforma mais "cinquenta" em R$ 0).
+- **Testes:** `npm test` 233 (232 ok, 1 pulado sem banco) com `voz-confirmacao.test.ts` (39 casos); `voz-acoes-painel.test.ts` no banco local 9/9 (executa cada ação e confere o gravado; limpa no fim); `e2e-voz-treino.mjs` 25/25 em build de produção local com simuladores, incluindo **pela tela**: Confirmar volta a "Pronta", "sim, pode salvar para mim" grava sem nova ida à Marina, "não" cancela; rota `acao` em 69 ms; com a voz ligada, Confirmar → "Pronta" em 1,6 s com o áudio "Pronto!". `tsc` e lint limpos; build limpo.
+- **Não verificado:** Marina de produção emitindo os blocos das ações novas (depende do modelo; pode pedir ajuste em `montarSistemaVoz`) e iPhone/Android de verdade. Situação de publicação: ver PR desta entrega.
+
 ## 18/11/2026 (parte 6) — Modo voz: não trava mais (prazos em tudo) e "salvar" mais ágil
 **Autor:** Claude (Claude Code). **Migration:** nenhuma. Revisão de ponta a ponta do chat de voz a pedido do proprietário ("Um instante…" não destravava ao gravar).
 

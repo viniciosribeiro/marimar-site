@@ -32,20 +32,36 @@ seu login e registrado no Histórico — dá para voltar atrás.
 
 ## O que ela consegue fazer por voz (hoje)
 
-Começa por quatro ações seguras e reversíveis (a lista cresce fácil — ver
-"Como acrescentar uma ação"):
+Desde 18/11 (parte 7) ela age no **painel inteiro**, não só no treinamento.
+Toda ação é confirmada antes ("confirma?") e é **reversível** (desligar ou
+lixeira — nunca apagar de vez). A lista cresce fácil — ver "Como acrescentar
+uma ação".
 
-| Ação | O que faz |
-|---|---|
-| **ensinar** | Guarda uma informação, uma pergunta-e-resposta ou um limite novo. Se veio de uma pergunta sem resposta, fecha a pendência junto. |
-| **editar_conhecimento** | Muda um item que ela já sabe (texto, nome, ligar/desligar), achado por parte do nome. |
-| **ajustar_personalidade** | Muda o jeito dela falar (tom/estilo), substituindo ou acrescentando. |
-| **dados_pousada** | Muda WhatsApp, telefone ou e-mail da pousada. |
+| Área | Ação | O que faz |
+|---|---|---|
+| Treino | **ensinar** | Guarda uma informação, uma pergunta-e-resposta ou um limite novo. Se veio de uma pergunta sem resposta, fecha a pendência junto. |
+| Treino | **editar_conhecimento** | Muda um item que ela já sabe (texto, nome, ligar/desligar), achado por parte do nome. |
+| Treino | **excluir_item / restaurar_item** | Manda para a lixeira / tira da lixeira. |
+| Treino | **ajustar_personalidade** | Muda o jeito dela falar (substitui ou acrescenta). |
+| Hospedagem | **regra_criancas** | Idade de colo, criança paga como adulto, cobrança de bebê. |
+| Hospedagem | **adicional** | Cria um adicional (berço, café no quarto…). |
+| Pousada | **dados_pousada** | WhatsApp, telefone, e-mail, endereço, horário da recepção, descrição, como chegar. |
+| Site | **politicas** | Check-in, check-out, cancelamento, pets, crianças, regras gerais, formas de pagamento, estadia mínima. |
+| Site | **faq / faq_editar** | Cria pergunta frequente; muda ou tira do site (reversível). |
+| Restaurante | **cardapio_item** | Cria prato numa seção ou muda preço/descrição/porção/destaque. |
+| Restaurante | **cardapio_disponivel** | "Acabou a moqueca hoje" / "voltou". |
+| Site | **pacote** | Cria pacote (Réveillon, Carnaval…) ou muda/liga/desliga. Sem preço (vem do motor). |
+| Site | **banner** | Liga/desliga ou troca os textos de um banner (a imagem só pela tela). |
+| Ilha | **atracao** | Cria ou muda uma atração da Ilha do Mel. |
+| Ilha | **travessia** | Preço da passagem (ida, volta, ida e volta), duração, operadora, estacionamento — a data "consultado em" muda sozinha. |
+| Site | **eventos** | Tipos de evento, espaços, capacidade. |
+| Site | **depoimento** | Põe no site um depoimento **real que a pessoa ditar** (a Marina é instruída a nunca inventar). |
 
-**De propósito fora da voz:** preço e disponibilidade (são do motor, nunca de
-cadastro) e **ativar/desativar suíte** (desde 04/11 a sincronização com o
-Desbravador é que liga/desliga suíte; um comando de voz seria desfeito na
-rodada seguinte).
+**De propósito fora da voz** (a Marina diz onde fica, sem prometer): preço e
+vaga das suítes e **ligar/desligar suíte** (vêm do Desbravador; a sincronização
+desfaria na rodada seguinte); fotos, vídeos e imagem de banner (precisam de
+arquivo); Clássico/Novo do site, usuários, senhas, chaves e conexões; apagar de
+vez.
 
 ## Como funciona (para quem desenvolve)
 
@@ -60,8 +76,9 @@ navegador (painel, sessão de admin)
    │       monta o pedido: contexto de voz + MESMO treinamento do chat
    │       + catálogo de AÇÕES + as lacunas abertas; lê o bloco de ação
    ├─▶ /api/admin/marina/voz/falar     texto → áudio   (mesma voz do WhatsApp)
-   └─▶ executarAcaoVoz (Server Action) ── só depois do "sim"
-           exigirSessao() → valida de novo → grava assinado → Histórico
+   └─▶ /api/admin/marina/voz/acao      ── só depois do "sim"
+           login → mesma origem → valida de novo → grava assinado → responde
+           (a conversa e o "feito" vão para a sessão DEPOIS da resposta, `after()`)
 ```
 
 - **A Marina propõe a ação** devolvendo um bloco no meio da resposta:
@@ -69,9 +86,39 @@ navegador (painel, sessão de admin)
   O `fala` é o que vira áudio; o resto não é lido. O leitor é tolerante
   (`extrairAcao`, `src/lib/marina-voz-base.ts`): aceita o bloco com marcadores
   e, se faltarem, um objeto JSON solto com `nome`/`dados`.
-- **A execução nunca confia no navegador:** `executarAcaoVoz`
-  (`src/app/(admin)/admin/marina/voz-acoes.ts`) revalida a ação pelo registro
-  e roda a gravação no servidor, com o autor assinado.
+- **A execução nunca confia no navegador:** a rota `acao` revalida a ação
+  pelo registro e roda a gravação no servidor, com o autor assinado.
+- **Por que rota e não Server Action (18/11, parte 7):** Server Action com
+  `revalidatePath` re-renderiza no servidor a página do painel aberta ANTES de
+  responder, e as Server Actions do navegador andam em fila (doc do Next 16,
+  "Sequential dispatch" e "A single response carries data and UI"). Era isso
+  que deixava o "Confirmar" pensando. A rota responde assim que grava (69 ms no
+  teste local) e o painel chama `router.refresh()` em segundo plano.
+
+### Não trava (regras do `VozTreino.tsx`)
+
+- **Época:** Parar/Fechar avança um contador; tudo o que começou antes não fala
+  nem mexe na tela, e nunca ficam dois ciclos de escuta juntos (antes, Parar
+  com a Marina falando + Começar de novo criava dois ciclos).
+- **Prazos em tudo** (`buscar()` lê o corpo dentro do prazo — o áudio que nunca
+  terminava de baixar era um travamento) e **teto de reprodução** pelo tamanho
+  do texto. Parar também **cala** a Marina na hora.
+- **Estado sempre volta:** Confirmar/Agora não/Enviar texto rodam como
+  "operação"; fora do viva voz terminam em "Pronta", dentro dele o ciclo espera
+  a operação e volta a ouvir. Tocar num botão durante o viva voz descarta o que
+  o microfone estava gravando (não grava a própria Marina).
+- **Escuta:** o teto de 30 s conta de quando a pessoa **começa** a falar (antes
+  contava do início da escuta e cortava frases); 45 s sem ninguém falar pausa o
+  viva voz com aviso; o gravador recomeça a cada 8 s de silêncio (o áudio
+  enviado não carrega silêncio longo).
+- **"Confirma?":** `classificarResposta()` (`marina-voz-base.ts`) decide
+  sim/não claros **sem ir à Marina** ("para" no meio da frase não é "não");
+  correção cancela e a Marina repropõe; o que fica em dúvida vai a ela **com a
+  ação pendente no contexto**, e se ela repropõe a MESMA ação (`mesmaAcao()`)
+  vale como sim — fim do loop "confirma?" → "sim" → "confirma?".
+- **iPhone:** um único elemento de áudio, liberado no primeiro toque.
+- **Histórico:** a fala atual não vai mais duplicada (estava no histórico E
+  como mensagem); a retomada junta as 3 últimas sessões.
 - **A sessão** (conversa falada + o que foi feito + custo) fica em
   `marina_voz_sessao`, criada pelo **próprio site** na primeira vez
   (`garantirEsquemaVoz`, igual à 0022 — sem `db:migrate`).
@@ -81,22 +128,26 @@ navegador (painel, sessão de admin)
 | Arquivo | Papel |
 |---|---|
 | `src/lib/marina-voz-base.ts` | puro: leitor do bloco de ação, conta de custo (navegador e servidor) |
-| `src/lib/marina-voz-acoes.ts` | o **registro** de ações (validar/descrever/executar) |
+| `src/lib/marina-voz-acoes.ts` | o **registro**: ações do treinamento + junta as do painel (`ACOES`) |
+| `src/lib/marina-voz-acoes-painel.ts` | ações do resto do painel (políticas, FAQ, cardápio, pacotes, banners, atrações, travessia, eventos, depoimentos) |
+| `src/lib/marina-voz-util.ts` | limpeza (texto, dinheiro, horário, data, sim/não) e `acharUm` (busca por nome, lista fechada de tabelas) |
 | `src/lib/marina-voz.ts` | pedido à Marina (contexto de voz + treino + ações + lacunas), teto de gasto, sessão |
 | `src/lib/marina-gateway.ts` | falar com o gateway do OpenClaw (SSE) — compartilhado |
 | `src/lib/esquema-voz-treino.ts` | cria `marina_voz_sessao` pelo site |
-| `src/app/api/admin/marina/voz/{estado,ouvir,conversar,falar}/route.ts` | as rotas |
+| `src/app/api/admin/marina/voz/{estado,ouvir,conversar,falar,acao}/route.ts` | as rotas (`acao` executa ou registra a recusa) |
 | `src/app/api/admin/marina/melhorar/route.ts` | o botão "✨ Melhorar texto" |
-| `src/app/(admin)/admin/marina/voz-acoes.ts` | `executarAcaoVoz` (Server Action) |
 | `src/components/admin/VozTreino.tsx` | botão flutuante + janela de voz |
 | `src/components/admin/BotaoMelhorar.tsx` | o "✨ Melhorar texto" dos campos |
 
 ### Como acrescentar uma ação
 
-Em `src/lib/marina-voz-acoes.ts`, acrescente uma entrada em `ACOES` com
-`rotulo`, `comoUsar` (a linha que vai no catálogo para a Marina), `validar`
-(confere a forma, sem tocar no banco), `descrever` (a frase do cartão, só lê) e
-`executar` (grava, assinado). Reaproveite a gravação da tela correspondente.
+Em `src/lib/marina-voz-acoes-painel.ts` (ou `marina-voz-acoes.ts`, se for do
+treinamento), acrescente uma entrada com `rotulo`, `comoUsar` (a linha que vai
+no catálogo para a Marina), `caminhos` (telas e páginas a marcar como
+atualizadas), `validar` (confere a forma, sem tocar no banco), `descrever` (a
+frase do cartão, só lê) e `executar` (grava, assinado). Grave **do mesmo jeito
+que a tela correspondente** (mesmas colunas, mesma regra) e prefira desligar a
+apagar. Busca por nome: `acharUm` (acrescente a tabela à lista fechada).
 Marque `tecnico: true` para ações que só o perfil Administração pode. Pronto —
 a Marina passa a poder propô-la, e o resto (confirmação, execução, registro) já
 funciona.
@@ -131,9 +182,16 @@ ficam em `integracoes.voz_treino_config`; sem nada gravado valem os padrões
 
 ## Testes
 
-- Unitário: `testes/unit/marina-voz.test.ts` (leitor do bloco de ação, custo).
-- Ponta a ponta: `testes/e2e-voz-treino.mjs` (login → estado → conversar com
-  proposta de ação → falar → ouvir → sessão gravada), com os simuladores
+- Unitário: `testes/unit/marina-voz.test.ts` (leitor do bloco de ação, custo) e
+  `testes/unit/voz-confirmacao.test.ts` (39 casos de sim/não/corrige/outra,
+  `mesmaAcao`).
+- No banco local: `testes/unit/voz-acoes-painel.test.ts` (executa as ações do
+  painel e confere o que foi gravado; limpa tudo no fim) —
+  `DATABASE_URL=postgres://postgres@localhost:5433/marimar npm test`.
+- Ponta a ponta: `testes/e2e-voz-treino.mjs` (25 verificações: login → estado →
+  conversar com proposta de ação → falar → ouvir → sessão gravada → rota `acao`
+  rápida → fim do loop → **pela tela**: Confirmar volta a "Pronta", "sim, pode
+  salvar para mim" grava sem nova ida à Marina, "não" cancela), com os simuladores
   `testes/gateway-simulado.mjs` (porta 4010, emite o bloco de ação para
   "anota/ensina/guarda que …") e `testes/voz-simulada.mjs` (porta 4020, agora
   com `/v1/speech-to-text`). Receita do ambiente local no HANDOFF.
