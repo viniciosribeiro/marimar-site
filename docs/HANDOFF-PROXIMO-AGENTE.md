@@ -6,7 +6,7 @@
 - **Não fazer:** pôr senhas, chaves, telefones/nome de hóspedes no retrato; aceitar coluna/área que não está no mapa; desfazer por cima de mudança feita pela tela (a conferência existe de propósito).
 - **Testes:** `DATABASE_URL=postgres://postgres@localhost:5433/marimar npx tsx --test testes/unit/voz-acoes-painel.test.ts` (7) e `testes/e2e-voz-treino.mjs` (36; o navegador sobe com microfone simulado). Receita do ambiente: seção de 17/11.
 - **Para o proprietário conferir:** "cadastra a Joana na equipe…" → confirmar → ↶ desfaz; "passa o contato da Cecília quando for assunto de trabalho" → ela deve propor ensinar com o número do cadastro. Segurar o botão no modo Apertar num iPhone/Android de verdade.
-- Situação de publicação: CHANGELOG (parte 9).
+- **Publicado (PR #118, `d7d5485`)**; em produção a rota `desfazer` responde 401 sem login (no ar).
 
 ## ESTADO ATUAL — 18/11/2026 (parte 8): botão "Entrar no painel" no rodapé
 - Componente `src/components/site/EntrarPainel.tsx`, usado no rodapé do Clássico (`src/app/(site)/layout.tsx`) e do Novo (`src/components/site-novo/RodapeNovo.tsx`).
