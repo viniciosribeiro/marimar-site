@@ -81,8 +81,18 @@ export async function POST(req: Request) {
 function mesmaOrigem(req: Request): boolean {
   const origem = req.headers.get("origin");
   if (!origem) return true; // sem Origin: o cookie de sessão (SameSite=Lax) já não viaja de outro site
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  try { return !host || new URL(origem).host === host; } catch { return false; }
+  let deOnde: string;
+  try { deOnde = new URL(origem).host.toLowerCase(); } catch { return false; }
+  /* Atrás do proxy da Vercel o host pode vir em mais de um cabeçalho (e em lista):
+     vale se a origem bater com qualquer um deles — a mesma ideia da conferência
+     das Server Actions, só que sem depender de um cabeçalho só. */
+  let daUrl = "";
+  try { daUrl = new URL(req.url).host; } catch { /* sem URL completa */ }
+  const hosts = [req.headers.get("x-forwarded-host"), req.headers.get("host"), daUrl]
+    .flatMap((h) => (h ?? "").split(","))
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean);
+  return hosts.length === 0 || hosts.includes(deOnde);
 }
 
 /** Grava a conversa e o que foi feito DEPOIS de responder (não atrasa a tela). */
