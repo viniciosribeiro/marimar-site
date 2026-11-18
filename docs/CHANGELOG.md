@@ -1,5 +1,12 @@
 # Changelog — Marimar Site
 
+## 18/11/2026 (parte 4) — Modo voz: retomar a conversa anterior + janela centralizada no computador
+**Autor:** Claude (Claude Code). **Migration:** nenhuma.
+
+- **Memória da conversa:** ao reabrir o modo voz, o site **carrega a última conversa de treino** desta pessoa (os últimos turnos entram no contexto que vai à Marina e aparecem na tela com "— retomando a conversa de <data> —"). Assim dá para sair, atender um cliente, voltar e continuar de onde parou — a Marina lembra. Servidor: `ultimaConversa()` em `src/lib/marina-voz.ts`, devolvida por `/api/admin/marina/voz/estado`; cliente seme­ia `histRef`/`falas` ao abrir. Escopo: a última sessão (onde paramos), não histórico infinito.
+- **Janela centralizada no computador:** antes abria no canto inferior direito; agora abre **no centro da tela** (combina com o fundo desfocado). No celular segue como folha de baixo.
+- **Evidência:** `tsc`/lint/`build` limpos; a consulta nova (`ultimaConversa`) conferida contra o banco local (retoma os turnos corretamente).
+
 ## 18/11/2026 (parte 3) — Modo voz: fundo desfocado atrás da janela (imersão)
 **Autor:** Claude (Claude Code). **Migration:** nenhuma.
 

@@ -25,7 +25,7 @@ import { executarAcaoVoz } from "@/app/(admin)/admin/marina/voz-acoes";
  * treino segue por texto.
  */
 
-type Papel = "voce" | "marina";
+type Papel = "voce" | "marina" | "sistema";
 type Fala = { papel: Papel; texto: string };
 type Gasto = { usoCentavos: number; limiteCentavos: number; nivel: "ok" | "aviso" | "estourou"; pct: number };
 type Pendente = { nome: string; dados: Record<string, unknown>; descricao: string };
@@ -123,6 +123,16 @@ export function VozTreino() {
       if (!d.gateway) setAviso("A Marina ainda não está ligada a este site. Fale com quem cuida da Vercel.");
       else if (!d.voz) setAviso("A voz ainda não está configurada. Você pode treinar por texto; para ouvir e falar, configure em Marina → Voz.");
       else if (d.gasto?.nivel === "estourou") setAviso("A voz atingiu o teto de gasto do mês. Dá para continuar por texto.");
+
+      // Retoma a conversa anterior (a Marina lembra onde paramos).
+      const turnos: Fala[] = Array.isArray(d.ultima?.turnos)
+        ? d.ultima.turnos.filter((t: Fala) => t && (t.papel === "voce" || t.papel === "marina") && typeof t.texto === "string")
+        : [];
+      if (turnos.length) {
+        histRef.current = turnos.map((t) => ({ papel: t.papel, conteudo: t.texto })).slice(-12);
+        const quando = d.ultima?.quando ? new Date(d.ultima.quando).toLocaleDateString("pt-BR") : "";
+        setFalas([{ papel: "sistema", texto: quando ? `— retomando a conversa de ${quando} —` : "— retomando a conversa anterior —" }, ...turnos]);
+      }
     } catch {
       setAviso("Não consegui abrir o modo voz agora.");
     }
@@ -347,7 +357,7 @@ export function VozTreino() {
     if (typeof window !== "undefined" && !window.matchMedia("(max-width: 639px)").matches) {
       const w = LARGURA_INICIAL, h = ALTURA_INICIAL;
       setTam({ w, h });
-      setPos({ x: Math.max(16, window.innerWidth - w - 24), y: Math.max(16, window.innerHeight - h - 24) });
+      setPos({ x: Math.max(16, Math.round((window.innerWidth - w) / 2)), y: Math.max(16, Math.round((window.innerHeight - h) / 2)) });
     }
     setAberto(true);
     await carregarEstado();
@@ -455,10 +465,14 @@ export function VozTreino() {
           </p>
         )}
         {falas.map((f, i) => (
-          <div key={i} className={f.papel === "voce" ? "text-right" : "text-left"}>
-            <span className="inline-block max-w-[85%] rounded-2xl px-3 py-1.5 text-[13px]"
-              style={f.papel === "voce" ? { background: "#0284c7", color: "#fff" } : { background: "#eef1f4", color: TINTA }}>{f.texto}</span>
-          </div>
+          f.papel === "sistema" ? (
+            <div key={i} className="py-1 text-center text-[11px]" style={{ color: "#9aa3ab" }}>{f.texto}</div>
+          ) : (
+            <div key={i} className={f.papel === "voce" ? "text-right" : "text-left"}>
+              <span className="inline-block max-w-[85%] rounded-2xl px-3 py-1.5 text-[13px]"
+                style={f.papel === "voce" ? { background: "#0284c7", color: "#fff" } : { background: "#eef1f4", color: TINTA }}>{f.texto}</span>
+            </div>
+          )
         ))}
       </div>
 
