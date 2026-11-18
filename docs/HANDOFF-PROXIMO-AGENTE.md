@@ -1,5 +1,11 @@
 # Handoff — continuar de onde paramos
 
+## ESTADO ATUAL — 18/11/2026 (parte 8): botão "Entrar no painel" no rodapé
+- Componente `src/components/site/EntrarPainel.tsx`, usado no rodapé do Clássico (`src/app/(site)/layout.tsx`) e do Novo (`src/components/site-novo/RodapeNovo.tsx`).
+- **Não trocar o destino para `/admin/login`:** no `www` essa rota não é redirecionada (é pública no middleware) e a sessão ficaria no `www`; `/admin` leva ao `admin.` e o login acontece lá.
+- **Não mover para a direita:** os botões flutuantes (WhatsApp no Clássico, "Falar com a Marina" no Novo) ficam à direita e cobrem o que estiver lá no computador.
+- Situação de publicação: CHANGELOG (parte 8).
+
 ## ESTADO ATUAL — 18/11/2026 (parte 7): modo voz age no painel inteiro e não trava ao aprovar
 > O **incidente de 14/11 (site sem preços / 403 do Desbravador) continua ABERTO** — ver a seção dele abaixo. Esta entrega é independente.
 
@@ -12,6 +18,7 @@
   - `ouvir`/`conversar`/`falar` leem em paralelo e gravam custo/conversa com `after()`.
 - **Não fazer:** voltar a confirmar por Server Action; pôr preço/vaga de suíte ou ligar/desligar suíte na voz (é do Desbravador); deixar a voz apagar de vez; tirar o "nunca invente" do depoimento.
 - **Evidência local:** `npm test` 233 (232 ok, 1 pulado); `DATABASE_URL=postgres://postgres@localhost:5433/marimar npx tsx --test testes/unit/voz-acoes-painel.test.ts` 9/9; `testes/e2e-voz-treino.mjs` 25/25 em `npm run build && npm start` local com `gateway-simulado` (4010, agora repete o bloco pendente quando a pessoa confirma com outras palavras e entende "acabou a …") e `voz-simulada` (4020). Receita do ambiente: seção de 17/11 abaixo (Postgres 16 na 5433 — subir com `pg_ctl … start`).
+- **Publicado:** PR #115 (squash `b161066`); em produção a rota `acao` responde 401 sem login (no ar).
 - **Para conferir em produção (proprietário):** abrir o microfone no painel e pedir, por exemplo, "o check-out agora é ao meio-dia" → cartão → "sim" → tela volta a "Pronta" e Políticas mostra 12:00. Se a Marina de produção não propuser a ação nova (só conversar), ajustar exemplos em `blocoDeAcoes` (`src/lib/marina-voz.ts`). Falta também iPhone/Android de verdade.
 
 ## ESTADO ATUAL — 17/11/2026: modo voz do treinamento da Marina (ela fala e AGE no painel)

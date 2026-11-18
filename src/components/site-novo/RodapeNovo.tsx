@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EntrarPainel } from "@/components/site/EntrarPainel";
 import { COLUNAS_RODAPE } from "@/lib/navegacao";
 import { COMPLEXO, ENDERECO, IDENTIDADE } from "@/lib/conteudo-pousada";
 
@@ -62,7 +63,11 @@ export function RodapeNovo({ nome, logoUrl, whatsapp, whatsappDigitos, telefone,
           </div>
         </div>
 
-        <p className="mt-8 text-[0.85rem] text-white/55">© {ano} {nome}</p>
+        {/* Botão à esquerda, junto do ©: à direita fica o "Falar com a Marina" flutuante. */}
+        <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <p className="text-[0.85rem] text-white/55">© {ano} {nome}</p>
+          <EntrarPainel className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 px-4 text-[0.85rem] text-white/70 transition-colors hover:border-white/45 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" />
+        </div>
       </div>
     </footer>
   );
