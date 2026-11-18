@@ -1,5 +1,13 @@
 # Changelog — Marimar Site
 
+## 18/11/2026 (parte 5) — Modo voz: fim do loop de confirmação (e mais rápido)
+**Autor:** Claude (Claude Code). **Migration:** nenhuma.
+
+- **Bug:** depois de "confirma?", se a pessoa confirmava **repetindo o pedido** (em vez de um "sim" seco), o texto não batia com o `SIM` e caía num `setPendente(null)` que reenviava à Marina → ela propunha a ação **de novo**. Loop de confirmação.
+- **Correção (`src/components/admin/VozTreino.tsx`):** inverti a regra — com uma ação pendente, **só "não/muda/espera/na verdade…" cancela; qualquer outra coisa confirma**. A confirmação agora **não faz outra ida à Marina** (executa direto), então também fica mais rápida. A referência da ação pendente passa a ser atualizada na hora (`pendenteRef`), eliminando a corrida que às vezes perdia o "sim".
+- **Mais leve:** a memória retomada ao abrir caiu de 10 para **6 turnos** (`ultimaConversa`), reduzindo o tamanho do pedido que vai à Marina a cada fala.
+- `tsc`/lint/`build` limpos.
+
 ## 18/11/2026 (parte 4) — Modo voz: retomar a conversa anterior + janela centralizada no computador
 **Autor:** Claude (Claude Code). **Migration:** nenhuma.
 

@@ -87,7 +87,7 @@ export async function lacunasAbertas(sql: Sql, limite = 8): Promise<{ id: string
  * A última conversa de treino DESTA pessoa, para retomar de onde parou.
  * Pega a sessão de voz mais recente com fala e devolve os últimos turnos.
  */
-export async function ultimaConversa(sql: Sql, autor: string, limite = 10): Promise<{ turnos: { papel: "voce" | "marina"; texto: string }[]; quando: string | null }> {
+export async function ultimaConversa(sql: Sql, autor: string, limite = 6): Promise<{ turnos: { papel: "voce" | "marina"; texto: string }[]; quando: string | null }> {
   const linhas = await sql<{ transcricao: unknown; criado_em: Date }[]>`
     SELECT transcricao, criado_em FROM marina_voz_sessao
     WHERE autor = ${autor} AND jsonb_array_length(transcricao) > 0
