@@ -41,6 +41,11 @@ const MAX_FALA_MS = 15_000;
 // confirmação não entra em loop e não gasta outra ida à Marina.
 const CANCELAR = /\b(n[ãa]o|nao|negativo|cancela|cancelar|deixa|esquece|espera|para|parar|errado|muda|mudar|troca|trocar|na verdade|melhor\s+n[ãa]o|outro|outra|diferente)\b/i;
 
+/** Nunca deixa um await travar para sempre: resolve com `aoVencer()` após `ms`. */
+function comPrazo<T>(p: Promise<T>, ms: number, aoVencer: () => T): Promise<T> {
+  return Promise.race([p, new Promise<T>((r) => setTimeout(() => r(aoVencer()), ms))]);
+}
+
 const LARGURA_INICIAL = 384;
 const ALTURA_INICIAL = 592;
 const SUPERFICIE = "#ffffff";
@@ -84,6 +89,7 @@ export function VozTreino() {
   const pararRef = useRef(false);
   const canceladoRef = useRef(false);
   const pendenteRef = useRef<Pendente | null>(null);
+  const lacoAtivoRef = useRef(false);
   const modoRef = useRef(modo);
   const estadoCaixa = useRef<Estado>("parado");
   const arrastarRef = useRef<{ dx: number; dy: number } | null>(null);
@@ -214,36 +220,47 @@ export function VozTreino() {
     fd.append("audio", blob, "fala.webm");
     fd.append("sessao", sessaoRef.current);
     fd.append("segundos", String(Math.round(segundos)));
+    const controle = new AbortController();
+    const limite = setTimeout(() => controle.abort(), 20000);
     try {
-      const r = await fetch("/api/admin/marina/voz/ouvir", { method: "POST", body: fd });
+      const r = await fetch("/api/admin/marina/voz/ouvir", { method: "POST", body: fd, signal: controle.signal });
       const d = await r.json();
       if (r.status === 402) { setGasto(d.gasto); setAviso("A voz atingiu o teto do mês. Continue por texto."); return null; }
       if (!r.ok) { setAviso(d?.erro ?? "Não entendi o áudio."); return null; }
       return typeof d.texto === "string" ? d.texto : null;
-    } catch { setAviso("Falha ao enviar o áudio."); return null; }
+    } catch { setAviso("Não consegui entender o áudio. Pode repetir?"); return null; }
+    finally { clearTimeout(limite); }
   }, []);
 
   const falar = useCallback(async (texto: string): Promise<void> => {
     // Em modo "só texto" a resposta aparece escrita e nenhum áudio é gerado (sem custo de TTS).
     if (!cap?.voz || !vozRespostaRef.current) return;
+    const controle = new AbortController();
+    const limiteRede = setTimeout(() => controle.abort(), 15000);
     try {
       const r = await fetch("/api/admin/marina/voz/falar", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessao: sessaoRef.current, texto }),
+        body: JSON.stringify({ sessao: sessaoRef.current, texto }), signal: controle.signal,
       });
+      clearTimeout(limiteRede);
       if (r.status === 402) { setAviso("A voz atingiu o teto do mês. Continue por texto."); return; }
       if (!r.ok) return;
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       mudarEstado("falando");
+      // Nunca trava na reprodução: um prazo garante que o fluxo siga mesmo se o
+      // navegador não disparar "onended" (áudio bloqueado, blob estranho…).
       await new Promise<void>((resolve) => {
-        audio.onended = () => resolve();
-        audio.onerror = () => resolve();
-        audio.play().catch(() => resolve());
+        let feito = false;
+        const fim = () => { if (feito) return; feito = true; clearTimeout(t); resolve(); };
+        const t = setTimeout(fim, 20000);
+        audio.onended = fim; audio.onerror = fim;
+        audio.play().catch(fim);
       });
       URL.revokeObjectURL(url);
     } catch { /* fica só o texto na tela */ }
+    finally { clearTimeout(limiteRede); }
   }, [cap]);
 
   const confirmar = useCallback(async (p: Pendente) => {
@@ -251,13 +268,18 @@ export function VozTreino() {
     pendenteRef.current = null;
     mudarEstado("pensando");
     try {
-      const r = await executarAcaoVoz(sessaoRef.current, p.nome, p.dados);
+      const r = await comPrazo(
+        executarAcaoVoz(sessaoRef.current, p.nome, p.dados),
+        25000,
+        () => ({ ok: false, mensagem: "Demorou demais. Confira no painel se foi salvo e tente de novo." }),
+      );
       log("marina", r.mensagem);
       if (r.ok) setFeito((f) => [...f, r.mensagem]);
-      await falar(r.ok ? r.mensagem : "Não consegui fazer: " + r.mensagem);
+      // Confirmação CURTA, para já passar para a próxima (o detalhe fica no texto).
+      await falar(r.ok ? "Pronto!" : "Não consegui agora.");
     } catch {
       log("marina", "Não consegui fazer isso agora.");
-      await falar("Não consegui fazer isso agora.");
+      await falar("Não consegui agora.");
     }
   }, [falar, log]);
 
@@ -278,10 +300,13 @@ export function VozTreino() {
     }
 
     mudarEstado("pensando");
+    const controle = new AbortController();
+    const limite = setTimeout(() => controle.abort(), 38000);
     try {
       const r = await fetch("/api/admin/marina/voz/conversar", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ sessao: sessaoRef.current, mensagem: texto, historico: histRef.current }),
+        signal: controle.signal,
       });
       const d = await r.json();
       if (!r.ok) { const m = d?.erro ?? "Não consegui falar com a Marina."; log("marina", m); setAviso(m); return; }
@@ -289,21 +314,28 @@ export function VozTreino() {
       log("marina", d.resposta);
       if (d.acao && d.acao.valido) { const nova = { nome: d.acao.nome, dados: d.acao.dados, descricao: d.acao.descricao }; setPendente(nova); pendenteRef.current = nova; }
       await falar(d.resposta);
-    } catch { log("marina", "Falha ao falar com a Marina."); }
+    } catch {
+      log("marina", "Demorei demais para responder. Pode falar de novo?");
+    } finally { clearTimeout(limite); }
   }, [confirmar, cancelarPendente, falar, log]);
 
   const laco = useCallback(async () => {
     pararRef.current = false;
-    while (!pararRef.current && modoRef.current === "vivavoz") {
-      mudarEstado("ouvindo");
-      const t0 = Date.now();
-      const blob = await gravarUmaFala();
-      if (pararRef.current || !blob) break;
-      const texto = await transcrever(blob, (Date.now() - t0) / 1000);
-      if (pararRef.current) break;
-      if (texto) await conversar(texto);
+    lacoAtivoRef.current = true;
+    try {
+      while (!pararRef.current && modoRef.current === "vivavoz") {
+        mudarEstado("ouvindo");
+        const t0 = Date.now();
+        const blob = await gravarUmaFala();
+        if (pararRef.current || !blob) break;
+        const texto = await transcrever(blob, (Date.now() - t0) / 1000);
+        if (pararRef.current) break;
+        if (texto) await conversar(texto);
+      }
+    } finally {
+      lacoAtivoRef.current = false;
+      mudarEstado("parado");
     }
-    mudarEstado("parado");
   }, [gravarUmaFala, transcrever, conversar]);
 
   const iniciarVivaVoz = useCallback(async () => {
@@ -382,6 +414,7 @@ export function VozTreino() {
     if (!t) return;
     setDigitado("");
     await conversar(t);
+    if (!lacoAtivoRef.current) mudarEstado("parado");
   }, [digitado, conversar]);
 
   /* ── arrastar e redimensionar (computador) ──────────────────────── */
@@ -514,7 +547,7 @@ export function VozTreino() {
           <button type="button" onClick={() => (estado === "parado" ? iniciarVivaVoz() : pararTudo())}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white transition"
             style={{ background: estado === "parado" ? "#0ea5a3" : "#dc2626" }}>
-            <IconeMic small /> {estado === "parado" ? "Começar a falar" : estado === "ouvindo" ? "Ouvindo… (toque para parar)" : ocupada ? "Um instante…" : "Parar"}
+            <IconeMic small /> {estado === "parado" ? "Começar a falar" : estado === "ouvindo" ? "Ouvindo… (toque para parar)" : ocupada ? "Pensando… (toque para parar)" : "Parar"}
           </button>
         )}
         {cap?.voz && modo === "apertar" && (
