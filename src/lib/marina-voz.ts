@@ -83,6 +83,24 @@ export async function lacunasAbertas(sql: Sql, limite = 8): Promise<{ id: string
     WHERE status = 'aberta' ORDER BY criado_em DESC LIMIT ${limite}`.catch(() => []);
 }
 
+/**
+ * A última conversa de treino DESTA pessoa, para retomar de onde parou.
+ * Pega a sessão de voz mais recente com fala e devolve os últimos turnos.
+ */
+export async function ultimaConversa(sql: Sql, autor: string, limite = 10): Promise<{ turnos: { papel: "voce" | "marina"; texto: string }[]; quando: string | null }> {
+  const linhas = await sql<{ transcricao: unknown; criado_em: Date }[]>`
+    SELECT transcricao, criado_em FROM marina_voz_sessao
+    WHERE autor = ${autor} AND jsonb_array_length(transcricao) > 0
+    ORDER BY criado_em DESC LIMIT 1`.catch(() => []);
+  const l = linhas[0];
+  if (!l || !Array.isArray(l.transcricao)) return { turnos: [], quando: null };
+  const turnos = (l.transcricao as { papel?: unknown; texto?: unknown }[])
+    .filter((t) => (t.papel === "voce" || t.papel === "marina") && typeof t.texto === "string")
+    .map((t) => ({ papel: t.papel as "voce" | "marina", texto: (t.texto as string).slice(0, 400) }))
+    .slice(-limite);
+  return { turnos, quando: l.criado_em ? new Date(l.criado_em).toISOString() : null };
+}
+
 /* ── o que andou acontecendo (para ela responder sobre conversas e ações) ── */
 
 const rotuloAcao = (a: string): string => (({
