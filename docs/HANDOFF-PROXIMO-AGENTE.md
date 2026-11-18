@@ -1,5 +1,19 @@
 # Handoff — continuar de onde paramos
 
+## ESTADO ATUAL — 18/11/2026 (parte 7): modo voz age no painel inteiro e não trava ao aprovar
+> O **incidente de 14/11 (site sem preços / 403 do Desbravador) continua ABERTO** — ver a seção dele abaixo. Esta entrega é independente.
+
+- **Pedido do proprietário:** a Marina, no treinamento por voz, "precisa tomar ações total no painel, não só no aprendizado"; e "quando eu aprovo algum conhecimento ela fica pensando e não sai disso".
+- **O que mudou (detalhes no CHANGELOG, parte 7, e em `docs/modo-voz-treino.md`):**
+  - 11 ações novas em `src/lib/marina-voz-acoes-painel.ts` (políticas, FAQ, cardápio, esgotou/repor, pacote, banner, atração, travessia, eventos, depoimento), gravando nas mesmas tabelas e do mesmo jeito que as telas; sempre reversível.
+  - Confirmar virou a rota `POST /api/admin/marina/voz/acao` (a Server Action `executarAcaoVoz` foi removida: com `revalidatePath` ela esperava a página do painel ser re-renderizada e entrava na fila de Server Actions).
+  - `VozTreino.tsx`: lógica reescrita (visual igual) com época, prazos em tudo, um ciclo só, operações que o viva voz espera, teto de 30 s a partir do início da fala, pausa após 45 s de silêncio, áudio único liberado no 1º toque (iPhone).
+  - "Confirma?" sem loop: `classificarResposta()` e `mesmaAcao()` (`marina-voz-base.ts`); bloco "ESPERANDO RESPOSTA" no pedido (`montarSistemaVoz`).
+  - `ouvir`/`conversar`/`falar` leem em paralelo e gravam custo/conversa com `after()`.
+- **Não fazer:** voltar a confirmar por Server Action; pôr preço/vaga de suíte ou ligar/desligar suíte na voz (é do Desbravador); deixar a voz apagar de vez; tirar o "nunca invente" do depoimento.
+- **Evidência local:** `npm test` 233 (232 ok, 1 pulado); `DATABASE_URL=postgres://postgres@localhost:5433/marimar npx tsx --test testes/unit/voz-acoes-painel.test.ts` 9/9; `testes/e2e-voz-treino.mjs` 25/25 em `npm run build && npm start` local com `gateway-simulado` (4010, agora repete o bloco pendente quando a pessoa confirma com outras palavras e entende "acabou a …") e `voz-simulada` (4020). Receita do ambiente: seção de 17/11 abaixo (Postgres 16 na 5433 — subir com `pg_ctl … start`).
+- **Para conferir em produção (proprietário):** abrir o microfone no painel e pedir, por exemplo, "o check-out agora é ao meio-dia" → cartão → "sim" → tela volta a "Pronta" e Políticas mostra 12:00. Se a Marina de produção não propuser a ação nova (só conversar), ajustar exemplos em `blocoDeAcoes` (`src/lib/marina-voz.ts`). Falta também iPhone/Android de verdade.
+
 ## ESTADO ATUAL — 17/11/2026: modo voz do treinamento da Marina (ela fala e AGE no painel)
 > O **incidente de 14/11 (site sem preços / 403 do Desbravador) continua ABERTO** — a seção logo abaixo é a que vale para isso. Esta entrega é independente dele.
 

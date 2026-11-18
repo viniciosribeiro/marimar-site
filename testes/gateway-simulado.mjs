@@ -82,6 +82,16 @@ function responder(corpo) {
   /* Modo voz (o sistema traz a lista de AÇÕES): "anota/ensina/guarda que ..."
      vira um bloco de ação ensinar, como a Marina proporia. */
   if (/\[\[acao\]\]/.test(sistema)) {
+    /* Há um "confirma?" no ar e a pessoa respondeu com outras palavras: a
+       Marina de verdade, seguindo a regra, manda DE NOVO o mesmo bloco. */
+    const esperando = sistema.match(/ESPERANDO RESPOSTA ──[\s\S]*?Bloco que você mandou: (\[\[acao\]\][\s\S]*?\[\[\/acao\]\])/);
+    if (esperando && /Se ela está CONFIRMANDO/.test(sistema) && /^(isso|pode|é isso)/i.test(pergunta.trim())) {
+      return esperando[1].replace(/\}\[\[\/acao\]\]$/, `,"fala":"Vou guardar isso, confirma?"}[[/acao]]`);
+    }
+    const esgotou = pergunta.match(/acabou (?:o |a |os |as )?(.+?)\s*(?:hoje)?[.!]?$/i);
+    if (esgotou) {
+      return `[[acao]]{"nome":"cardapio_disponivel","dados":{"alvo":${JSON.stringify(esgotou[1].trim())},"disponivel":false},"fala":"Vou marcar como esgotado hoje, confirma?"}[[/acao]]`;
+    }
     const m = pergunta.match(/(?:anota|ensina|guarda)(?:\s+(?:que|aí|isso:?))?\s+(.+)/i);
     if (m) {
       const frase = m[1].trim();

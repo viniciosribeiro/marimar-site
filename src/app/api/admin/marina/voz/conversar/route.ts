@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { auth } from "@/lib/auth";
 import { comSql } from "@/lib/db-conexao";
 import { gatewayConfigurado } from "@/lib/chat";
@@ -40,10 +41,26 @@ export async function POST(req: Request) {
     : [];
   if (!mensagem) return Response.json({ erro: "Não ouvi nada. Pode falar de novo?" }, { status: 400 });
 
+  /* Havia um "confirma?" no ar e a resposta não foi um sim/não claro: a
+     Marina recebe a ação pendente para decidir (repetir = confirmar). */
+  const p = corpo?.pendente;
+  const aguardando = p && typeof p.nome === "string" && p.nome.length <= 40
+    ? {
+        nome: p.nome,
+        descricao: String(p.descricao ?? "").slice(0, 300),
+        dados: JSON.stringify(p.dados ?? {}).slice(0, 2000),
+        situacao: corpo?.situacao === "corrige" ? ("corrige" as const) : ("outra" as const),
+      }
+    : null;
+
   try {
     return await comSql(async (sql) => {
       await garantirEsquemaVoz(sql);
-      const { sistema } = await montarSistemaVoz(sql, tecnico);
+      /* Em paralelo (o postgres.js manda as consultas juntas na mesma conexão). */
+      const [{ sistema }, gasto] = await Promise.all([
+        montarSistemaVoz(sql, tecnico, aguardando),
+        lerPrecosVoz(sql).then(async (precos) => estadoGasto(await usoDoMesCentavos(sql, precos), precos)),
+      ]);
       const { texto: bruto, cortada } = await perguntarAoGateway(`painel-voz:${sessao || "sem-sessao"}`, sistema, historico, mensagem);
       const { texto: fala, acao } = extrairAcao(bruto);
 
@@ -59,13 +76,14 @@ export async function POST(req: Request) {
         }
       }
 
+      /* A conversa fica guardada DEPOIS de responder: não atrasa a fala. */
       if (UUID.test(sessao)) {
-        await garantirSessao(sql, sessao, autor).catch(() => {});
-        await anexarTranscricao(sql, sessao, [{ papel: "voce", texto: mensagem }, { papel: "marina", texto: fala }]).catch(() => {});
+        after(() => comSql(async (s2) => {
+          await garantirSessao(s2, sessao, autor);
+          await anexarTranscricao(s2, sessao, [{ papel: "voce", texto: mensagem }, { papel: "marina", texto: fala }]);
+        }).catch((e) => console.error("[voz/conversar] registro", (e as Error).message)));
       }
 
-      const precos = await lerPrecosVoz(sql);
-      const gasto = estadoGasto(await usoDoMesCentavos(sql, precos), precos);
       return Response.json({
         ok: true,
         resposta: fala || "(a Marina não respondeu nada)",

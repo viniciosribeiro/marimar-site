@@ -87,6 +87,93 @@ try {
   } else {
     console.log("· (sem DATABASE_URL: pulei a conferência da tabela)");
   }
+
+  // 6. confirmar é uma ROTA leve (não Server Action): grava e responde na hora
+  {
+    const t0 = Date.now();
+    const r = await (await pag.request.post(`${BASE}/api/admin/marina/voz/acao`, {
+      data: { sessao, nome: conv.acao.nome, dados: conv.acao.dados, fala: "sim" },
+    })).json();
+    const ms = Date.now() - t0;
+    ok(r.ok === true, "acao: a rota gravou o que foi confirmado");
+    ok(ms < 5000, `acao: respondeu rápido (${ms} ms), sem esperar a página do painel`);
+  }
+
+  // 7. fim do loop: com a ação pendente no contexto, "isso, pode guardar…" faz a
+  //    Marina mandar a MESMA ação (o painel trata como sim, sem novo "confirma?")
+  {
+    const r = await (await pag.request.post(`${BASE}/api/admin/marina/voz/conversar`, {
+      data: {
+        sessao, mensagem: "isso, pode guardar", historico: [],
+        pendente: { nome: conv.acao.nome, dados: conv.acao.dados, descricao: conv.acao.descricao }, situacao: "outra",
+      },
+    })).json();
+    ok(r.acao?.nome === conv.acao.nome && JSON.stringify(r.acao?.dados) === JSON.stringify(conv.acao.dados),
+      "conversar: com a ação pendente no contexto, a Marina repropõe a MESMA (vira sim no painel)");
+  }
+
+  // 8–10. pela TELA: abrir o painel de voz, ensinar por texto e responder
+  const sqlUi = process.env.DATABASE_URL ? postgres(process.env.DATABASE_URL, { max: 1, prepare: false }) : null;
+  const marcas = [];
+  try {
+    await pag.goto(`${BASE}/admin`);
+    await pag.getByRole("button", { name: "Treinar a Marina por voz" }).click();
+    const dialogo = pag.getByRole("dialog", { name: "Treinar a Marina por voz" });
+    await dialogo.waitFor();
+    const campo = dialogo.getByPlaceholder("…ou escreva aqui");
+    await pag.waitForFunction(() => !document.querySelector('[role=dialog] input')?.disabled);
+    const chave = dialogo.getByRole("switch");
+    if ((await chave.count()) && (await chave.getAttribute("aria-checked")) === "true") await chave.click(); // só texto: o teste não depende de tocar áudio
+
+    const ensinar = async (marca) => {
+      marcas.push(marca);
+      await campo.fill(`anota que ${marca}`);
+      await campo.press("Enter");
+      await dialogo.getByRole("button", { name: "Confirmar" }).waitFor({ timeout: 20000 });
+    };
+    const pronta = () => dialogo.getByText("Pronta quando você quiser").waitFor({ timeout: 10000 });
+    const noBanco = async (marca) => sqlUi ? Number((await sqlUi`SELECT count(*)::int AS n FROM marina_conhecimento WHERE conteudo = ${marca} AND excluido_em IS NULL`)[0].n) : -1;
+
+    // 8. botão Confirmar: grava e a tela VOLTA (o travamento relatado)
+    const m1 = `e2e voz botao ${Date.now()}`;
+    await ensinar(m1);
+    ok(true, "UI: a Marina propôs e o cartão Confirmar apareceu");
+    await dialogo.getByRole("button", { name: "Confirmar" }).click();
+    await pronta();
+    ok(true, "UI: depois de Confirmar a tela volta a 'Pronta' (não fica em Pensando/Salvando)");
+    ok(await dialogo.getByText("Feito nesta conversa").isVisible(), "UI: aparece em 'Feito nesta conversa'");
+    if (sqlUi) ok((await noBanco(m1)) === 1, "UI: Confirmar gravou no banco");
+
+    // 9. responder "sim" escrito: confirma SEM outra ida à Marina
+    const m2 = `e2e voz sim ${Date.now()}`;
+    await ensinar(m2);
+    await campo.fill("Sim, pode salvar para mim.");
+    await campo.press("Enter");
+    await pronta();
+    const ultima = await (await fetch("http://localhost:4010/__ultima")).json().catch(() => null);
+    const ultimaFala = JSON.stringify(ultima ?? {});
+    ok(!ultimaFala.includes("pode salvar para mim"), "UI: o 'sim' foi resolvido no painel (a Marina não foi chamada de novo)");
+    if (sqlUi) ok((await noBanco(m2)) === 1, "UI: o 'sim, pode salvar PARA mim' gravou (o 'para' não cancelou)");
+
+    // 10. responder "não": cancela, nada muda
+    const m3 = `e2e voz nao ${Date.now()}`;
+    await ensinar(m3);
+    await campo.fill("Não, obrigado.");
+    await campo.press("Enter");
+    await dialogo.getByText("Tudo bem, não vou mexer nisso.").last().waitFor({ timeout: 10000 });
+    await pronta();
+    ok(true, "UI: o 'não' cancelou e a tela voltou");
+    if (sqlUi) ok((await noBanco(m3)) === 0, "UI: depois do 'não' nada foi gravado");
+  } finally {
+    if (sqlUi) {
+      marcas.push(String(conv.acao?.dados?.conteudo ?? "")); // o item que o passo 6 gravou pela rota
+      for (const m of marcas.filter(Boolean)) {
+        await sqlUi`DELETE FROM marina_historico WHERE conhecimento_id IN (SELECT id FROM marina_conhecimento WHERE conteudo = ${m})`.catch(() => {});
+        await sqlUi`DELETE FROM marina_conhecimento WHERE conteudo = ${m}`.catch(() => {});
+      }
+      await sqlUi.end();
+    }
+  }
 } catch (e) {
   ok(false, "erro inesperado: " + e.message);
 } finally {

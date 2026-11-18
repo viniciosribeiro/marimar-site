@@ -1,6 +1,8 @@
 import type { Sql } from "./db-conexao";
 import { tipoValido, categoriaValida } from "./marina-base";
 import { sugerirCategoria, registrarHistorico } from "./marina";
+import { texto, listaDeTexto, soDigitos, dinheiro, type Dados } from "./marina-voz-util";
+import { ACOES_PAINEL } from "./marina-voz-acoes-painel";
 
 /**
  * O que a Marina PODE fazer no painel pela voz.
@@ -21,7 +23,6 @@ import { sugerirCategoria, registrarHistorico } from "./marina";
  */
 
 export type ResultadoAcao = { ok: true; resumo: string } | { ok: false; erro: string };
-type Dados = Record<string, unknown>;
 
 export type Acao = {
   rotulo: string;
@@ -29,29 +30,14 @@ export type Acao = {
   comoUsar: string;
   /** Exige perfil Administração (papel "master"). */
   tecnico?: boolean;
+  /** Telas do painel e páginas do site que mostram o que esta ação muda. */
+  caminhos?: string[];
   validar(dados: Dados): { ok: true; dados: Dados } | { ok: false; erro: string };
   descrever(sql: Sql, dados: Dados): Promise<string>;
   executar(sql: Sql, dados: Dados, autor: string): Promise<ResultadoAcao>;
 };
 
-/* ── utilidades ──────────────────────────────────────────────────── */
-
-const texto = (v: unknown, max: number) =>
-  typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
-
-const listaDeTexto = (v: unknown) =>
-  Array.isArray(v)
-    ? [...new Set(v.filter((x): x is string => typeof x === "string" && x.trim() !== "").map((x) => x.trim()))].slice(0, 20)
-    : [];
-
-const soDigitos = (v: unknown) => (typeof v === "string" ? v.replace(/[^\d]/g, "") : "");
-
-/** "35", "35,50", "R$ 35,50" → 35.5. Vazio/ inválido → null. */
-const dinheiro = (v: unknown): number | null => {
-  if (v == null || v === "") return null;
-  const n = Number(String(v).replace(/[^\d,.]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
-  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
-};
+/* ── utilidades: ver marina-voz-util.ts ──────────────────────────── */
 
 type ItemAchado = { id: string; tipo: string; categoria: string; titulo: string; conteudo: string; variacoes: unknown; ativo: boolean };
 
@@ -104,9 +90,10 @@ const CAMPOS_POUSADA: { chave: string; rotulo: string; tipo: "texto" | "digitos"
 
 /* ── as ações ────────────────────────────────────────────────────── */
 
-export const ACOES: Record<string, Acao> = {
+const ACOES_TREINO: Record<string, Acao> = {
   ensinar: {
     rotulo: "Ensinar algo novo",
+    caminhos: ["/admin/marina", "/admin/cerebro"],
     comoUsar:
       'guardar uma informação, uma pergunta-e-resposta ou um limite. dados: {"tipo":"fato"|"pergunta"|"limite","titulo":"...","conteudo":"...","variacoes":["..."] (só se tipo pergunta),"lacuna_id":"..." (só se veio de uma pergunta que faltava)}',
     validar(d) {
@@ -139,6 +126,7 @@ export const ACOES: Record<string, Acao> = {
 
   editar_conhecimento: {
     rotulo: "Mudar algo que ela já sabe",
+    caminhos: ["/admin/marina", "/admin/cerebro"],
     comoUsar:
       'mudar um item que já existe. dados: {"alvo":"parte do nome do item","conteudo":"novo texto" (opcional),"titulo":"novo nome" (opcional),"ativo":true|false (opcional, para ligar/desligar)}',
     validar(d) {
@@ -180,6 +168,7 @@ export const ACOES: Record<string, Acao> = {
 
   excluir_item: {
     rotulo: "Mandar um item para a lixeira",
+    caminhos: ["/admin/marina", "/admin/cerebro"],
     comoUsar: 'mandar um item do conhecimento para a lixeira (reversível). dados: {"alvo":"parte do nome do item"}',
     validar(d) {
       const alvo = texto(d.alvo, 160);
@@ -200,6 +189,7 @@ export const ACOES: Record<string, Acao> = {
 
   restaurar_item: {
     rotulo: "Tirar um item da lixeira",
+    caminhos: ["/admin/marina", "/admin/cerebro"],
     comoUsar: 'restaurar um item que está na lixeira. dados: {"alvo":"parte do nome do item"}',
     validar(d) {
       const alvo = texto(d.alvo, 160);
@@ -220,6 +210,7 @@ export const ACOES: Record<string, Acao> = {
 
   ajustar_personalidade: {
     rotulo: "Mudar o jeito dela falar",
+    caminhos: ["/admin/marina"],
     comoUsar:
       'mudar o tom/estilo da Marina. dados: {"tom":"como ela deve falar","modo":"substituir"|"acrescentar" (padrão acrescentar)}',
     validar(d) {
@@ -244,6 +235,7 @@ export const ACOES: Record<string, Acao> = {
 
   regra_criancas: {
     rotulo: "Regra de crianças e bebês",
+    caminhos: ["/admin/marina", "/reservar", "/quartos"],
     comoUsar:
       'mudar a regra de crianças/bebês (afeta o preço). dados: {"idade_colo_max":número de 0 a 12 ou null (desliga a regra),"crianca_paga_como_adulto":true|false,"bebe_cobranca":"gratis"|"por_noite"|"por_estadia","bebe_valor":número,"observacao":"..."} — só o que mudar',
     validar(d) {
@@ -294,6 +286,7 @@ export const ACOES: Record<string, Acao> = {
 
   dados_pousada: {
     rotulo: "Mudar dados da pousada",
+    caminhos: ["/admin/pousada", "/", "/contato", "/como-chegar"],
     comoUsar:
       'mudar dados da pousada. dados (só o que mudar): {"whatsapp":"...","telefone":"...","email":"...","nome":"...","endereco":"...","cidade":"...","horario_recepcao":"...","descricao_curta":"...","como_chegar":"..."}',
     validar(d) {
@@ -329,6 +322,7 @@ export const ACOES: Record<string, Acao> = {
 
   adicional: {
     rotulo: "Criar um adicional",
+    caminhos: ["/admin/marina", "/reservar"],
     comoUsar:
       'criar um adicional que o hóspede pode pedir (berço, café no quarto, late checkout...). dados: {"nome":"...","preco":número ou null,"cobranca":"por_estadia"|"por_noite"|"por_pessoa_noite"|"por_unidade","descricao":"..."}',
     validar(d) {
@@ -349,6 +343,9 @@ export const ACOES: Record<string, Acao> = {
     },
   },
 };
+
+/** Todas as ações: as do treinamento e as do resto do painel. */
+export const ACOES: Record<string, Acao> = { ...ACOES_TREINO, ...ACOES_PAINEL };
 
 /** Catálogo em texto para o pedido à Marina. Oculta as ações técnicas de quem não é Administração. */
 export function catalogoParaPrompt(tecnico: boolean): string {

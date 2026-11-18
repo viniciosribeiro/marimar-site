@@ -103,6 +103,100 @@ function montarAcao(json: string): AcaoVozProposta | null {
   return { nome, dados, fala };
 }
 
+/* ── a resposta da pessoa a um "confirma?" ───────────────────────────
+   Decidida AQUI, sem ida à Marina, quando é clara (sim/não) — é o caminho
+   rápido e o que impede o loop de confirmação. Só o que fica em dúvida
+   (repetir o pedido com outras palavras, corrigir, perguntar outra coisa)
+   volta à Marina, com a ação pendente no contexto.
+
+   Cuidado de português: "para" e "muda" no MEIO da frase são comuns ("pode
+   salvar para mim", "sim, muda") e NÃO querem dizer não — por isso só
+   valem no começo da fala. */
+
+/**
+ * "sim"     — confirma (executa a ação pendente, sem ida à Marina).
+ * "nao"     — cancela e pronto.
+ * "corrige" — "não, é às 15h" / "sim, mas muda…": cancela e a Marina propõe de novo.
+ * "outra"   — repetir o pedido, ensinar outra coisa, perguntar: vai à Marina COM
+ *             a ação pendente no contexto (se ela repropuser a mesma, vale como sim).
+ */
+export type RespostaConfirmacao = "sim" | "nao" | "corrige" | "outra";
+
+const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+const palavras = (texto: string) => semAcento((texto ?? "").toLowerCase()).split(/[^a-z0-9]+/).filter(Boolean);
+const conjunto = (s: string) => new Set(s.split(" "));
+
+/** Primeira palavra que, sozinha, já é um "sim". */
+const SIM_1 = conjunto("sim s isso pode confirma confirmo confirmado confirmada claro ok okay oquei beleza blz certo certinho correto perfeito exato exatamente manda faz faca salva salvar salve grava gravar grave guarda guardar guarde anota anotar positivo afirmativo ta uhum aham bora segue show top maravilha otimo legal fechado combinado concordo aprovado aprovo autorizo yes pronto tranquilo");
+/** Primeira palavra que, sozinha, já é um "não". "para" só no começo da fala. */
+const NAO_1 = conjunto("nao n negativo cancela cancelar cancelado cancele esquece esqueca para pare parar espera espere errado errada");
+/** Inícios de duas palavras. */
+const SIM_2 = ["e isso", "e sim", "com certeza", "de acordo"];
+const NAO_2 = ["deixa pra", "deixa para", "deixa quieto", "deixa assim", "nada disso", "nem pensar", "agora nao", "melhor nao", "de jeito"];
+
+/** O que pode vir depois de um sim sem mudar nada ("sim, pode salvar pra mim"). */
+const ENCHIMENTO_SIM = conjunto("pode sim s salva salvar salve grava gravar grave guarda guardar guarde confirma confirmo confirmar confirmado faz fazer faca isso mesmo por favor obrigado obrigada valeu claro ok okay oquei beleza blz certo certinho ser manda vai la ai entao tudo bem perfeito otimo show e marina ja agora senhor senhora com certeza exato exatamente positivo uhum aham ta bom yes top legal pronto combinado fechado segue bora anota anotar aqui pra para mim gente nos muito tranquilo correto obg vlw isso");
+/** O que pode vir depois de um não sem trazer correção ("não, obrigado, por enquanto"). */
+const ENCHIMENTO_NAO = conjunto("obrigado obrigada valeu tudo bem ta bom por enquanto agora ainda nao nada deixa precisa quero mesmo obg vlw e marina pode cancelar cancela esquece isso assim melhor so ok beleza certo pra para la quieto nem pensar disso jeito nenhum ai um pouco momento minuto segundo");
+/** Depois de um sim, isto anuncia uma correção. */
+const RESSALVA = conjunto("mas porem exceto menos troca trocar muda mudar corrige corrigir altera alterar verdade vez");
+/** Pergunta: vai à Marina (nunca confirma nada sozinho). */
+const PERGUNTA_1 = conjunto("como quando quanto quanta quantos quantas qual quais onde quem sera repete repetir explica explicar");
+
+function comeca(p: string[], lista: string[]): number {
+  for (const f of lista) {
+    const ps = f.split(" ");
+    if (ps.every((x, i) => p[i] === x)) return ps.length;
+  }
+  return 0;
+}
+
+export function classificarResposta(texto: string): RespostaConfirmacao {
+  const p = palavras(texto);
+  if (p.length === 0) return "outra";
+  const ePergunta = /\?/.test(texto) || PERGUNTA_1.has(p[0]) || (p[0] === "o" && p[1] === "que") || (p[0] === "por" && p[1] === "que")
+    || p.some((x) => x.startsWith("repet") || x.startsWith("explic"));
+
+  const nao = comeca(p, NAO_2) || (NAO_1.has(p[0]) ? 1 : 0);
+  if (nao) {
+    const resto = p.slice(nao);
+    return resto.every((x) => ENCHIMENTO_NAO.has(x)) ? "nao" : "corrige";
+  }
+  if (ePergunta) return "outra";
+
+  const sim = comeca(p, SIM_2) || (SIM_1.has(p[0]) ? 1 : 0);
+  if (sim) {
+    const resto = p.slice(sim);
+    if (resto.every((x) => ENCHIMENTO_SIM.has(x))) return "sim";
+    if (resto.some((x) => RESSALVA.has(x))) return "corrige";
+    return "outra";
+  }
+  return "outra";
+}
+
+/** Normaliza para comparar: minúsculas, sem acento, sem pontuação. */
+function normalizarValor(v: unknown): unknown {
+  if (typeof v === "string") {
+    return v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  }
+  if (Array.isArray(v)) return v.map(normalizarValor);
+  if (v && typeof v === "object") {
+    return Object.keys(v as Record<string, unknown>).sort()
+      .filter((k) => (v as Record<string, unknown>)[k] != null && (v as Record<string, unknown>)[k] !== "")
+      .map((k) => [k, normalizarValor((v as Record<string, unknown>)[k])]);
+  }
+  return v;
+}
+
+/** A Marina repropôs a MESMA ação (mesmo nome e mesmos dados, sem contar acento/caixa)? */
+export function mesmaAcao(
+  a: { nome: string; dados?: Record<string, unknown> } | null | undefined,
+  b: { nome: string; dados?: Record<string, unknown> } | null | undefined,
+): boolean {
+  if (!a || !b || a.nome !== b.nome) return false;
+  return JSON.stringify(normalizarValor(a.dados ?? {})) === JSON.stringify(normalizarValor(b.dados ?? {}));
+}
+
 /* ── custo (estimativa) ──────────────────────────────────────────────
    A voz é a única coisa aqui que custa por fora: a ElevenLabs cobra a
    síntese por caractere e a transcrição por minuto. O OpenClaw (o "cérebro")
