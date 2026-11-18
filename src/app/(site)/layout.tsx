@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EntrarPainel } from "@/components/site/EntrarPainel";
 import { lerPousada, digitosWhatsApp } from "@/lib/pousada";
 import { MenuPrincipal } from "@/components/site/MenuPrincipal";
 import { MarcaLockup } from "@/components/site/MarcaLockup";
@@ -154,9 +155,14 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-            <p>© {new Date().getFullYear()} {nome}</p>
-            <p>{p?.endereco || "Praia de Encantadas, s/n — Ilha do Mel, Paranaguá/PR"}</p>
+          {/* No computador o botão fica à ESQUERDA, junto do ©: à direita ficam os
+              botões flutuantes (WhatsApp, Marina), que o cobririam. No celular,
+              tudo centralizado e empilhado. sm:pr-20 deixa o endereço fora do
+              círculo do WhatsApp. */}
+          <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center gap-3 sm:gap-5 sm:pr-20 text-xs text-gray-500">
+            <p className="order-1">© {new Date().getFullYear()} {nome}</p>
+            <EntrarPainel className="order-3 sm:order-2 inline-flex min-h-11 sm:min-h-9 items-center gap-1.5 rounded-full border border-gray-700 px-3.5 text-xs text-gray-400 hover:text-white hover:border-gray-500 transition-marca focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" />
+            <p className="order-2 sm:order-3 sm:ml-auto text-center sm:text-right">{p?.endereco || "Praia de Encantadas, s/n — Ilha do Mel, Paranaguá/PR"}</p>
           </div>
         </div>
       </footer>

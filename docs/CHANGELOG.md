@@ -1,5 +1,13 @@
 # Changelog — Marimar Site
 
+## 18/11/2026 (parte 8) — Botão "Entrar no painel" no rodapé (Clássico e Novo)
+**Autor:** Claude (Claude Code). **Migration:** nenhuma. Pedido do proprietário: botão de login do painel no rodapé, no computador e no celular.
+
+- **O quê:** link discreto com cadeado, "Entrar no painel", na última linha do rodapé dos **dois modelos** do site (`src/components/site/EntrarPainel.tsx`, usado em `src/app/(site)/layout.tsx` e `src/components/site-novo/RodapeNovo.tsx`).
+- **Para onde leva:** `/admin`, e não `/admin/login`. Pelo domínio público o middleware leva `/admin` ao endereço do painel (`admin.`), que pede o login lá; `/admin/login` no `www` NÃO é redirecionado e a pessoa entraria no `www` e teria de entrar de novo no `admin.`. Quem já está logado cai direto no painel. `<a>` comum (sem pré-carregar) e `rel="nofollow"`.
+- **Posição:** à **esquerda**, junto do "©". Na primeira versão ele ficou à direita e o WhatsApp flutuante (Clássico) e o "Falar com a Marina" (Novo) o cobriam no computador; corrigido antes de publicar. No Clássico o endereço continua à direita, com folga para o WhatsApp. No celular: centralizado e empilhado (Clássico) / ao lado do © (Novo). Altura de toque de 44 px no celular.
+- **Testado local (build de produção, Playwright):** Clássico e Novo × computador (1280), tablet (768) e iPhone 13: botão presente, `href=/admin`, `rel=nofollow`, sem rolagem lateral, **não coberto** por nenhum botão flutuante e clicável no centro; clique → `/admin/login` (local, mesma origem). `tsc` limpo; lint sem erro novo (os 2 `any` antigos do layout continuam).
+
 ## 18/11/2026 (parte 7) — Modo voz: Marina age no painel inteiro e não trava mais ao aprovar
 **Autor:** Claude (Claude Code). **Migration:** nenhuma. **Hostinger:** nada (não reinstalar skill). Pedido do proprietário: "ela precisa tomar ações total no painel, não só no aprendizado" e "quando eu aprovo um conhecimento ela fica pensando e não sai disso".
 
@@ -16,7 +24,8 @@
 - **Mais rápido em cada fala:** `ouvir`, `conversar` e `falar` leem em paralelo (o postgres.js manda as consultas juntas na mesma conexão) e gravam custo/conversa **depois** de responder (`after()`). Retomada junta as 3 últimas sessões.
 - **Ações no painel inteiro (`src/lib/marina-voz-acoes-painel.ts`, 11 novas):** `politicas`, `faq`, `faq_editar`, `cardapio_item`, `cardapio_disponivel`, `pacote`, `banner`, `atracao`, `travessia`, `eventos`, `depoimento` — mesmas tabelas e regras das telas, sempre reversíveis. Fora de propósito: preço/vaga e ligar/desligar suíte (Desbravador), fotos/vídeos, Clássico/Novo, usuários/senhas/chaves, apagar de vez. Utilidades em `src/lib/marina-voz-util.ts` (`acharUm` com lista fechada de tabelas; `dinheiro` não transforma mais "cinquenta" em R$ 0).
 - **Testes:** `npm test` 233 (232 ok, 1 pulado sem banco) com `voz-confirmacao.test.ts` (39 casos); `voz-acoes-painel.test.ts` no banco local 9/9 (executa cada ação e confere o gravado; limpa no fim); `e2e-voz-treino.mjs` 25/25 em build de produção local com simuladores, incluindo **pela tela**: Confirmar volta a "Pronta", "sim, pode salvar para mim" grava sem nova ida à Marina, "não" cancela; rota `acao` em 69 ms; com a voz ligada, Confirmar → "Pronta" em 1,6 s com o áudio "Pronto!". `tsc` e lint limpos; build limpo.
-- **Não verificado:** Marina de produção emitindo os blocos das ações novas (depende do modelo; pode pedir ajuste em `montarSistemaVoz`) e iPhone/Android de verdade. Situação de publicação: ver PR desta entrega.
+- **Publicado:** [PR #115](https://github.com/viniciosribeiro/marimar-site/pull/115), squash `b161066`, prévia da Vercel com sucesso; em produção, às ~12:08 UTC, `POST /api/admin/marina/voz/acao` sem login responde **401** (a rota nova está no ar; antes seria 404) e a home responde 200.
+- **Não verificado:** Marina de produção emitindo os blocos das ações novas (depende do modelo; pode pedir ajuste em `montarSistemaVoz`) e iPhone/Android de verdade.
 
 ## 18/11/2026 (parte 6) — Modo voz: não trava mais (prazos em tudo) e "salvar" mais ágil
 **Autor:** Claude (Claude Code). **Migration:** nenhuma. Revisão de ponta a ponta do chat de voz a pedido do proprietário ("Um instante…" não destravava ao gravar).
