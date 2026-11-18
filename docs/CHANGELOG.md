@@ -1,5 +1,10 @@
 # Changelog — Marimar Site
 
+## 18/11/2026 (parte 3) — Modo voz: fundo desfocado atrás da janela (imersão)
+**Autor:** Claude (Claude Code). **Migration:** nenhuma.
+
+- Ao abrir a janela de voz, o restante da página fica **escurecido e desfocado** (véu `fixed` em `z-65`, abaixo da janela em `z-70`), para focar no chat. Vale em celular e computador (`-webkit-backdrop-filter` para iOS/Safari). **Some ao minimizar** a janela no computador, para voltar a usar a página. `src/components/admin/VozTreino.tsx`. `tsc`/lint/`build` limpos.
+
 ## 18/11/2026 (parte 2) — Modo voz: escolher se a Marina responde em voz ou só por texto
 **Autor:** Claude (Claude Code). **Migration:** nenhuma.
 

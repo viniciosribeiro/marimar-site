@@ -535,6 +535,12 @@ export function VozTreino() {
         </button>
       )}
 
+      {/* Fundo desfocado: dá foco ao chat. Some ao minimizar, para ver a página. */}
+      {aberto && !min && (
+        <div aria-hidden className="fixed inset-0 z-[65]"
+          style={{ background: "rgba(8,28,40,0.34)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} />
+      )}
+
       {aberto && celular && (
         <div role="dialog" aria-label="Treinar a Marina por voz"
           className="fixed inset-x-0 bottom-0 z-[70] flex max-h-[86vh] flex-col overflow-hidden"
