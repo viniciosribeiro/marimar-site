@@ -32,7 +32,8 @@ const falhas = [];
 const ok = (cond, msg) => { console.log(`${cond ? "✓" : "✗"} ${msg}`); if (!cond) falhas.push(msg); };
 
 const sessao = randomUUID();
-const nav = await chromium.launch({ executablePath: process.env.CHROMIUM ?? undefined });
+/* microfone simulado: o navegador aceita sozinho e grava um tom de teste */
+const nav = await chromium.launch({ executablePath: process.env.CHROMIUM ?? undefined, args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
 const pag = await nav.newPage({ viewport: { width: 1440, height: 900 } });
 pag.setDefaultTimeout(30000);
 
@@ -115,6 +116,7 @@ try {
   // 8–10. pela TELA: abrir o painel de voz, ensinar por texto e responder
   const sqlUi = process.env.DATABASE_URL ? postgres(process.env.DATABASE_URL, { max: 1, prepare: false }) : null;
   const marcas = [];
+  let equipeTeste = null;
   try {
     await pag.goto(`${BASE}/admin`);
     await pag.getByRole("button", { name: "Treinar a Marina por voz" }).click();
@@ -164,9 +166,67 @@ try {
     await pronta();
     ok(true, "UI: o 'não' cancelou e a tela voltou");
     if (sqlUi) ok((await noBanco(m3)) === 0, "UI: depois do 'não' nada foi gravado");
+
+    // 11. painel inteiro + desfazer/refazer: cadastrar alguém na equipe pela conversa
+    const nomeEq = `TesteVoz${Date.now()}`;
+    equipeTeste = nomeEq;
+    const naEquipe = async () => (sqlUi ? Number((await sqlUi`SELECT count(*)::int AS n FROM equipe_contatos WHERE nome = ${nomeEq}`)[0].n) : -1);
+    await campo.fill(`cadastra ${nomeEq} na equipe, 41 97777-6666`);
+    await campo.press("Enter");
+    await dialogo.getByRole("button", { name: "Confirmar" }).waitFor({ timeout: 20000 });
+    await dialogo.getByRole("button", { name: "Confirmar" }).click();
+    await pronta();
+    if (sqlUi) ok((await naEquipe()) === 1, "UI: 'cadastra … na equipe' criou o contato (ação geral criar)");
+    const desfazer = dialogo.getByRole("button", { name: /^Desfazer:/ });
+    ok(await desfazer.isEnabled(), "UI: o botão ↶ Desfazer ficou disponível");
+    await desfazer.click();
+    await pronta();
+    if (sqlUi) ok((await naEquipe()) === 0, "UI: ↶ Desfazer tirou o contato");
+    await dialogo.getByRole("button", { name: /^Refazer:/ }).click();
+    await pronta();
+    if (sqlUi) ok((await naEquipe()) === 1, "UI: ↷ Refazer pôs de volta");
+    await campo.fill("desfaz");
+    await campo.press("Enter");
+    await pronta();
+    if (sqlUi) ok((await naEquipe()) === 0, "UI: dizer 'desfaz' também desfaz");
+
+    // 12. corrigir o texto de uma fala já enviada
+    await dialogo.getByRole("button", { name: "Corrigir o que eu disse" }).last().click();
+    await dialogo.getByLabel("Corrigir o que você disse").fill("o café da manhã vai até as 10 horas");
+    await dialogo.getByRole("button", { name: "Enviar correção" }).click();
+    await pronta();
+    ok(await dialogo.getByText("(corrigido)").first().isVisible(), "UI: a fala corrigida aparece marcada como corrigida");
+    const ultimaCorr = JSON.stringify(await (await fetch("http://localhost:4010/__ultima")).json().catch(() => ({})));
+    ok(ultimaCorr.includes("Corrigindo o que eu disse antes"), "UI: a correção foi enviada à Marina");
+
+    // 13. segurar para falar, como o áudio do WhatsApp
+    await dialogo.getByRole("button", { name: "Apertar" }).click();
+    const falasEnviadas = () => dialogo.locator("span", { hasText: /^quero ensinar uma coisa$/ }).count();
+    const botaoGravar = dialogo.getByRole("button", { name: /Segure para falar/ });
+    await botaoGravar.waitFor();
+    const cx0 = await botaoGravar.boundingBox();
+    const cx = cx0.x + cx0.width / 2, cy = cx0.y + cx0.height / 2;
+    const n0 = await falasEnviadas();
+    await pag.mouse.move(cx, cy); await pag.mouse.down(); await pag.waitForTimeout(1300); await pag.mouse.up();
+    await pronta();
+    ok((await falasEnviadas()) === n0 + 1, "UI: segurar e soltar gravou, transcreveu e enviou");
+    await pag.mouse.move(cx, cy); await pag.mouse.down(); await pag.waitForTimeout(900);
+    await pag.mouse.move(cx - 140, cy, { steps: 8 }); await pag.mouse.up();
+    await pag.waitForTimeout(1500);
+    ok((await falasEnviadas()) === n0 + 1, "UI: arrastar para a esquerda cancelou (nada foi enviado)");
+    await pag.mouse.move(cx, cy); await pag.mouse.down(); await pag.waitForTimeout(900);
+    await pag.mouse.move(cx + 140, cy, { steps: 8 }); await pag.mouse.up();
+    await dialogo.getByRole("group", { name: "Gravação travada" }).waitFor({ timeout: 5000 });
+    ok(true, "UI: arrastar para a direita travou a gravação (dá para soltar o dedo)");
+    await pag.waitForTimeout(900);
+    await dialogo.getByRole("button", { name: "Enviar o áudio" }).click();
+    await pronta();
+    ok((await falasEnviadas()) === n0 + 2, "UI: travada → Enviar mandou o áudio");
   } finally {
     if (sqlUi) {
       marcas.push(String(conv.acao?.dados?.conteudo ?? "")); // o item que o passo 6 gravou pela rota
+      if (equipeTeste) await sqlUi`DELETE FROM equipe_contatos WHERE nome = ${equipeTeste}`.catch(() => {});
+      await sqlUi`DELETE FROM marina_voz_desfazer WHERE autor LIKE '%teste%'`.catch(() => {});
       for (const m of marcas.filter(Boolean)) {
         await sqlUi`DELETE FROM marina_historico WHERE conhecimento_id IN (SELECT id FROM marina_conhecimento WHERE conteudo = ${m})`.catch(() => {});
         await sqlUi`DELETE FROM marina_conhecimento WHERE conteudo = ${m}`.catch(() => {});

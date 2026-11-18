@@ -1,10 +1,12 @@
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { mesmaOrigem } from "@/lib/mesma-origem";
 import { comSql } from "@/lib/db-conexao";
 import { ACOES, acaoExiste } from "@/lib/marina-voz-acoes";
 import { garantirSessao, anexarAcaoFeita, anexarTranscricao } from "@/lib/marina-voz";
 import { garantirEsquemaVoz } from "@/lib/esquema-voz-treino";
+import { novoContexto, registrarFeita, estadoPilha, type EstadoPilha } from "@/lib/marina-voz-desfazer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,44 +57,31 @@ export async function POST(req: Request) {
   const validacao = acao.validar(dados);
   if (!validacao.ok) return Response.json({ ok: false, mensagem: validacao.erro });
 
-  let resultado: { ok: boolean; mensagem: string };
+  let resultado: { ok: boolean; mensagem: string; caminhos: string[]; pilha: EstadoPilha | null };
   try {
     resultado = await comSql(async (sql) => {
-      const r = await acao.executar(sql, validacao.dados, autor);
-      return r.ok ? { ok: true, mensagem: r.resumo } : { ok: false, mensagem: r.erro };
+      await garantirEsquemaVoz(sql);
+      /* Foto de cada linha antes/depois: é o que o botão Desfazer usa. */
+      const ctx = novoContexto(sql);
+      const r = await acao.executar(sql, validacao.dados, autor, ctx);
+      if (!r.ok) return { ok: false, mensagem: r.erro, caminhos: [], pilha: null };
+      await registrarFeita(sql, autor, sessao, nome, r.resumo, await ctx.mudancas());
+      return { ok: true, mensagem: r.resumo, caminhos: [...(acao.caminhos ?? []), ...(r.caminhos ?? [])], pilha: await estadoPilha(sql, autor) };
     });
   } catch (e) {
     console.error("[voz/acao]", nome, (e as Error).message);
-    resultado = { ok: false, mensagem: "Não consegui gravar agora. Nada foi alterado; tente de novo daqui a pouco." };
+    resultado = { ok: false, mensagem: "Não consegui gravar agora. Confira na tela se algo mudou e tente de novo.", caminhos: [], pilha: null };
   }
 
   if (resultado.ok) {
     /* Só marca as páginas como velhas (numa rota isto não re-renderiza nada). */
-    for (const p of new Set(["/admin/marina", ...(acao.caminhos ?? [])])) revalidatePath(p);
+    for (const p of new Set(["/admin/marina", ...resultado.caminhos])) revalidatePath(p);
   }
   if (sessao) {
     registrar(sessao, autor, [{ papel: "voce", texto: fala || "(confirmou)" }, { papel: "marina", texto: resultado.mensagem }],
       resultado.ok ? { nome, resumo: resultado.mensagem } : null);
   }
-  return Response.json({ ...resultado, caminhos: resultado.ok ? acao.caminhos ?? [] : [] });
-}
-
-/** Mesma origem: as Server Actions conferem isso sozinhas; aqui é à mão. */
-function mesmaOrigem(req: Request): boolean {
-  const origem = req.headers.get("origin");
-  if (!origem) return true; // sem Origin: o cookie de sessão (SameSite=Lax) já não viaja de outro site
-  let deOnde: string;
-  try { deOnde = new URL(origem).host.toLowerCase(); } catch { return false; }
-  /* Atrás do proxy da Vercel o host pode vir em mais de um cabeçalho (e em lista):
-     vale se a origem bater com qualquer um deles — a mesma ideia da conferência
-     das Server Actions, só que sem depender de um cabeçalho só. */
-  let daUrl = "";
-  try { daUrl = new URL(req.url).host; } catch { /* sem URL completa */ }
-  const hosts = [req.headers.get("x-forwarded-host"), req.headers.get("host"), daUrl]
-    .flatMap((h) => (h ?? "").split(","))
-    .map((h) => h.trim().toLowerCase())
-    .filter(Boolean);
-  return hosts.length === 0 || hosts.includes(deOnde);
+  return Response.json(resultado);
 }
 
 /** Grava a conversa e o que foi feito DEPOIS de responder (não atrasa a tela). */

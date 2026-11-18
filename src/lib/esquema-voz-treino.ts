@@ -26,16 +26,32 @@ const SQL_VOZ = [
      "encerrado_em"   timestamp
    )`,
   `CREATE INDEX IF NOT EXISTS "marina_voz_sessao_criado_idx" ON "marina_voz_sessao" ("criado_em")`,
+  /* 18/11 (parte 9): o desfazer/refazer das ações por voz. Cada linha é uma
+     ação com a foto de antes e de depois de cada registro que ela mexeu. */
+  `CREATE TABLE IF NOT EXISTS "marina_voz_desfazer" (
+     "id"        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+     "sessao"    uuid,
+     "autor"     text NOT NULL,
+     "nome"      text NOT NULL,
+     "resumo"    text NOT NULL,
+     "mudancas"  jsonb NOT NULL DEFAULT '[]'::jsonb,
+     "estado"    text NOT NULL DEFAULT 'feita',
+     "criado_em" timestamp NOT NULL DEFAULT now(),
+     "mudado_em" timestamp NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS "marina_voz_desfazer_autor_idx" ON "marina_voz_desfazer" ("autor", "estado", "criado_em")`,
 ];
 
 let garantido = false;
 
 export async function garantirEsquemaVoz(sql: Sql): Promise<void> {
   if (garantido) return;
+  /* As DUAS tabelas: em produção a da sessão já existia antes do desfazer. */
   const [t] = await sql<{ existe: boolean }[]>`
-    SELECT to_regclass('public.marina_voz_sessao') IS NOT NULL AS existe`;
+    SELECT to_regclass('public.marina_voz_sessao') IS NOT NULL
+       AND to_regclass('public.marina_voz_desfazer') IS NOT NULL AS existe`;
   if (t?.existe) { garantido = true; return; }
   for (const comando of SQL_VOZ) await sql.unsafe(comando);
   garantido = true;
-  console.info("[voz-treino] tabela marina_voz_sessao criada pelo site.");
+  console.info("[voz-treino] tabelas do modo voz criadas/conferidas pelo site.");
 }
