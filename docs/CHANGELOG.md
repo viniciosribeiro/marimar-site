@@ -1,5 +1,12 @@
 # Changelog — Marimar Site
 
+## 18/11/2026 (parte 2) — Modo voz: escolher se a Marina responde em voz ou só por texto
+**Autor:** Claude (Claude Code). **Migration:** nenhuma.
+
+- Interruptor no painel de voz (`src/components/admin/VozTreino.tsx`): **"A Marina responde: Voz / Texto"**. Em **Texto**, o site **não gera áudio** (pula o TTS) e mostra a resposta escrita — **economiza** os caracteres da ElevenLabs. Você continua falando por voz; ela só não fala de volta.
+- Padrão: Voz. A escolha fica guardada no aparelho (`localStorage`, por viewer) e vale nos dois modos (viva voz e apertar). A barreira fica no `falar()`, então nenhuma chamada de TTS sai no modo Texto.
+- `tsc`/lint/`build` limpos.
+
 ## 18/11/2026 — Modo voz: a Marina volta a propor ações e a falar sobre as conversas
 **Autor:** Claude (Claude Code). **Migration:** nenhuma.
 
