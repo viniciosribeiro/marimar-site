@@ -81,7 +81,7 @@ function responder(corpo) {
   const pergunta = [...corpo.messages].reverse().find((m) => m.role === "user")?.content ?? "";
   /* Modo voz (o sistema traz a lista de AÇÕES): "anota/ensina/guarda que ..."
      vira um bloco de ação ensinar, como a Marina proporia. */
-  if (/AÇÕES QUE VOCÊ PODE PROPOR/.test(sistema)) {
+  if (/\[\[acao\]\]/.test(sistema)) {
     const m = pergunta.match(/(?:anota|ensina|guarda)(?:\s+(?:que|aí|isso:?))?\s+(.+)/i);
     if (m) {
       const frase = m[1].trim();

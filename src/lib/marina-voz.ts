@@ -1,6 +1,5 @@
 import type { Sql } from "./db-conexao";
 import { montarTreinamento } from "./marina";
-import { CONTEXTO_CANAL } from "./chat";
 import { catalogoParaPrompt } from "./marina-voz-acoes";
 import {
   normalizarPrecos, estimarCentavos, type PrecosVoz,
@@ -18,25 +17,28 @@ import {
 /* ── o pedido à Marina ───────────────────────────────────────────── */
 
 const VOZ_CONTEXTO = [
-  "Você está numa conversa POR VOZ com a equipe da Pousada Marimar. É a central de",
-  "treinamento: quem fala com você trabalha na pousada e está te ensinando e te",
-  "pedindo ajustes. NÃO é um hóspede.",
+  "VOCÊ ESTÁ NO MODO DE TREINAMENTO E OPERAÇÃO POR VOZ. Esqueça, NESTA conversa, a",
+  "persona de atendimento de hóspede: aqui você NÃO fala com um hóspede e NÃO é só a",
+  "atendente do site. Você fala com a EQUIPE da Pousada Marimar, que te ensina e te",
+  "pede para mexer no painel. Trate quem fala como um colega da pousada.",
   "",
-  "Fale CURTO e natural, como numa ligação: no máximo uma ou duas frases por vez.",
-  "Nada de listas, títulos, markdown, asteriscos, emojis nem links/endereços — tudo",
-  "o que você escrever (fora do bloco de ação) vira ÁUDIO e será ouvido.",
+  "VOCÊ PODE, SIM, FAZER COISAS AQUI. NUNCA responda que \"não consigo\", \"não tenho",
+  "acesso\" ou \"só consulto\". Nesta tela você tem capacidades REAIS:",
   "",
-  "Seu papel aqui tem dois lados:",
-  "1) APRENDER: ajude a preencher o que falta. Há perguntas que você não soube",
-  "   responder antes (lista abaixo) — puxe UMA de cada vez, de forma leve, confirme",
-  "   o que ouviu e ofereça guardar.",
-  "2) AGIR NO PAINEL: quando pedirem para mudar algo que está na lista de AÇÕES, não",
-  "   descreva o passo a passo — PROPONHA a ação no formato abaixo e termine",
-  "   perguntando \"confirma?\". NUNCA diga que já fez: quem confirma é a pessoa, e o",
-  "   sistema só executa depois do \"sim\".",
+  "1) AGIR NO PAINEL: quando pedirem para criar, mudar, ensinar, apagar, ligar,",
+  "   desligar ou atualizar qualquer coisa da lista de AÇÕES abaixo, você PROPÕE a",
+  "   ação no bloco indicado e pergunta \"confirma?\". O sistema executa só depois do",
+  "   \"sim\" — por isso você nunca diz que já fez, mas também nunca diz que não dá.",
+  "2) FALAR SOBRE O QUE ACONTECEU: você PODE responder sobre as conversas recentes",
+  "   dos hóspedes e sobre as mudanças recentes do painel — está tudo na seção",
+  "   \"O QUE ANDOU ACONTECENDO\" abaixo. Responda com esses dados; se pedirem algo que",
+  "   não está ali, diga o que você tem e ofereça abrir a tela certa.",
+  "3) APRENDER: há perguntas que você não soube responder (lista abaixo) — puxe UMA",
+  "   de cada vez, confirme o que ouviu e ofereça guardar (ação ensinar).",
   "",
-  "Se pedirem algo que não está na lista de ações, diga com naturalidade que por voz",
-  "ainda não dá para fazer isso, e siga ajudando (dá para ensinar/anotar mesmo assim).",
+  "COMO FALAR: curto e natural, como numa ligação — uma ou duas frases por vez. Nada",
+  "de listas, títulos, markdown, asteriscos, emojis nem links/endereços: tudo o que",
+  "você escrever fora do bloco de ação vira ÁUDIO e será ouvido.",
 ].join("\n");
 
 function blocoDeAcoes(tecnico: boolean): string {
@@ -81,19 +83,59 @@ export async function lacunasAbertas(sql: Sql, limite = 8): Promise<{ id: string
     WHERE status = 'aberta' ORDER BY criado_em DESC LIMIT ${limite}`.catch(() => []);
 }
 
+/* ── o que andou acontecendo (para ela responder sobre conversas e ações) ── */
+
+const rotuloAcao = (a: string): string => (({
+  criou: "ensinou", editou: "editou", ligou: "ligou", desligou: "desligou",
+  excluiu: "mandou p/ lixeira", restaurou: "restaurou", "voltou-versao": "voltou versão", testou: "testou",
+} as Record<string, string>)[a] ?? a);
+
+/** Últimas perguntas de hóspedes e últimas mudanças no painel. */
+export async function atividadeRecente(sql: Sql): Promise<{ conversas: string[]; mudancas: string[] }> {
+  const [conversas, mudancas] = await Promise.all([
+    sql<{ conteudo: string }[]>`
+      SELECT conteudo FROM chat_mensagens
+      WHERE papel = 'visitante' AND length(conteudo) > 2
+      ORDER BY criado_em DESC LIMIT 8`.catch(() => []),
+    sql<{ acao: string; autor: string | null; titulo: string | null }[]>`
+      SELECT h.acao, h.autor, c.titulo
+      FROM marina_historico h LEFT JOIN marina_conhecimento c ON c.id = h.conhecimento_id
+      ORDER BY h.criado_em DESC LIMIT 8`.catch(() => []),
+  ]);
+  return {
+    conversas: conversas.map((c) => c.conteudo.replace(/\s+/g, " ").trim().slice(0, 120)),
+    mudancas: mudancas.map((m) => `${rotuloAcao(m.acao)} "${(m.titulo ?? "item").slice(0, 60)}"${m.autor ? ` — ${m.autor}` : ""}`),
+  };
+}
+
+function blocoDeAtividade(a: { conversas: string[]; mudancas: string[] }): string {
+  if (!a.conversas.length && !a.mudancas.length) return "";
+  const linhas = ["── O QUE ANDOU ACONTECENDO (use para responder quando perguntarem sobre conversas ou mudanças) ──"];
+  if (a.conversas.length) {
+    linhas.push("Últimas perguntas de hóspedes no chat do site:");
+    linhas.push(...a.conversas.map((c) => `- ${c}`));
+  }
+  if (a.mudancas.length) {
+    linhas.push("Últimas mudanças no treinamento/painel:");
+    linhas.push(...a.mudancas.map((m) => `- ${m}`));
+  }
+  return linhas.join("\n");
+}
+
 /** O pedido completo de sistema para o modo voz. */
 export async function montarSistemaVoz(sql: Sql, tecnico: boolean): Promise<{ sistema: string; lacunas: { id: string; pergunta: string }[] }> {
-  const [{ texto }, lacunas] = await Promise.all([
+  const [{ texto }, lacunas, atividade] = await Promise.all([
     montarTreinamento(sql, "teste"),
     lacunasAbertas(sql),
+    atividadeRecente(sql),
   ]);
   const sistema = [
     VOZ_CONTEXTO,
-    "Contexto dos canais (vale também aqui, menos a parte de fotos, que a voz não envia):",
-    CONTEXTO_CANAL,
-    texto,
     blocoDeAcoes(tecnico),
+    blocoDeAtividade(atividade),
     blocoDeLacunas(lacunas),
+    "── O QUE A POUSADA TE ENSINOU (a base das suas respostas) ──",
+    texto,
   ].filter(Boolean).join("\n\n");
   return { sistema, lacunas };
 }

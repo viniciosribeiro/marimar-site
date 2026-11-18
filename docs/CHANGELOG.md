@@ -1,5 +1,13 @@
 # Changelog — Marimar Site
 
+## 18/11/2026 — Modo voz: a Marina volta a propor ações e a falar sobre as conversas
+**Autor:** Claude (Claude Code). **Migration:** nenhuma.
+
+- **Sintoma:** por voz, a Marina respondia que "não consegue" criar ações nem pesquisar conversas. Causa: no pedido ao gateway, as instruções de operador vinham DEPOIS de todo o treinamento e junto do contexto de **atendente de hóspede** (`CONTEXTO_CANAL`) — a persona de "só consulto" vencia; e ela não tinha dado nenhum das conversas/mudanças para pesquisar.
+- **Correção (`src/lib/marina-voz.ts`):** o pedido passou a **liderar com o papel de operador** (enfático: "você PODE agir e PODE falar do que aconteceu; nunca diga que não consegue"), com o catálogo de ações no topo; **removido o `CONTEXTO_CANAL`** (contexto de hóspede, que atrapalhava); o treinamento foi para o fim. Nova seção **"O QUE ANDOU ACONTECENDO"**: últimas perguntas de hóspedes (`chat_mensagens`) e últimas mudanças do painel (`marina_historico`) entram no pedido, para ela **responder sobre conversas e ações**.
+- Simulador do gateway passou a detectar o modo voz pelo marcador estável `[[acao]]` (o cabeçalho mudou).
+- **Evidência:** `tsc`/lint/`build` limpos; `npm test` 193 (192 ok, 1 skip); verificação das consultas novas contra o banco local (montam o pedido sem estourar, sem o contexto de hóspede). **A resposta final depende da Marina de produção** (a skill dela ainda tem a persona de hóspede); se ainda resistir, o próximo passo é a skill na Hostinger.
+
 ## 17/11/2026 (parte 2) — Modo voz: janela sólida e mais ações da Marina
 **Autor:** Claude (Claude Code). **Migration:** nenhuma.
 
