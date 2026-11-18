@@ -4,7 +4,7 @@
 - Componente `src/components/site/EntrarPainel.tsx`, usado no rodapé do Clássico (`src/app/(site)/layout.tsx`) e do Novo (`src/components/site-novo/RodapeNovo.tsx`).
 - **Não trocar o destino para `/admin/login`:** no `www` essa rota não é redirecionada (é pública no middleware) e a sessão ficaria no `www`; `/admin` leva ao `admin.` e o login acontece lá.
 - **Não mover para a direita:** os botões flutuantes (WhatsApp no Clássico, "Falar com a Marina" no Novo) ficam à direita e cobrem o que estiver lá no computador.
-- Situação de publicação: CHANGELOG (parte 8).
+- **Publicado (PR #116, `bb1d91c`) e conferido no domínio público** (computador e celular, modelo Novo); `/admin` no `www` → 307 para o `admin.`.
 
 ## ESTADO ATUAL — 18/11/2026 (parte 7): modo voz age no painel inteiro e não trava ao aprovar
 > O **incidente de 14/11 (site sem preços / 403 do Desbravador) continua ABERTO** — ver a seção dele abaixo. Esta entrega é independente.
