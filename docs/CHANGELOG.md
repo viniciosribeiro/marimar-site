@@ -1,5 +1,18 @@
 # Changelog — Marimar Site
 
+## 18/11/2026 (parte 6) — Modo voz: não trava mais (prazos em tudo) e "salvar" mais ágil
+**Autor:** Claude (Claude Code). **Migration:** nenhuma. Revisão de ponta a ponta do chat de voz a pedido do proprietário ("Um instante…" não destravava ao gravar).
+
+- **Causa raiz do travamento:** `await` sem prazo. O pior era o **`falar()` (TTS)**: se o navegador não dispara `onended` (áudio bloqueado, blob estranho), a promessa **nunca resolvia** e o fluxo congelava em "Um instante…" — exatamente ao confirmar um "gravar". Também `enviarDigitado` **não devolvia o estado** (ficava "pensando" para sempre no caminho por texto).
+- **Correção (`src/components/admin/VozTreino.tsx`):**
+  - `falar()`: prazo de rede (15 s) e **prazo de reprodução (20 s)** — nunca trava no áudio;
+  - `/ouvir` (STT) e `/conversar`: `AbortController` com prazo (20 s e 38 s) e mensagem clara ao vencer, em vez de congelar;
+  - `executarAcaoVoz` (salvar): prazo de 25 s via `comPrazo()`; se estourar, avisa "confira no painel" e segue;
+  - o laço da viva voz e `enviarDigitado` **sempre devolvem o estado** ao fim (`lacoAtivoRef`), então não fica mais preso em "pensando".
+- **Salvar mais ágil:** ao confirmar uma ação, a Marina fala só **"Pronto!"** (o detalhe fica no texto) e **já passa para a próxima** — era o pedido ("grava e pula para a próxima pergunta").
+- **Interface:** o botão ocupado agora diz **"Pensando… (toque para parar)"** — fica claro que dá para interromper se demorar.
+- A lentidão de a Marina *pensar* a resposta é do cérebro dela (OpenClaw) e não dá para acelerar daqui; o que dependia do site (travas e idas extras) foi removido. `tsc`/lint/`build` limpos.
+
 ## 18/11/2026 (parte 5) — Modo voz: fim do loop de confirmação (e mais rápido)
 **Autor:** Claude (Claude Code). **Migration:** nenhuma.
 
