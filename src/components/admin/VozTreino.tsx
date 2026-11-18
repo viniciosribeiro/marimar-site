@@ -56,6 +56,15 @@ export function VozTreino() {
   const [cap, setCap] = useState<{ gateway: boolean; voz: boolean } | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [digitado, setDigitado] = useState("");
+  // Como a Marina responde: falando (voz) ou só por texto (economiza TTS).
+  const [vozResposta, setVozResposta] = useState<boolean>(() => {
+    try { return localStorage.getItem("marimar_voz_resposta") !== "texto"; } catch { return true; }
+  });
+  const vozRespostaRef = useRef(true);
+  useEffect(() => {
+    vozRespostaRef.current = vozResposta;
+    try { localStorage.setItem("marimar_voz_resposta", vozResposta ? "voz" : "texto"); } catch {}
+  }, [vozResposta]);
 
   // janela
   const [celular, setCelular] = useState(false);
@@ -203,7 +212,8 @@ export function VozTreino() {
   }, []);
 
   const falar = useCallback(async (texto: string): Promise<void> => {
-    if (!cap?.voz) return;
+    // Em modo "só texto" a resposta aparece escrita e nenhum áudio é gerado (sem custo de TTS).
+    if (!cap?.voz || !vozRespostaRef.current) return;
     try {
       const r = await fetch("/api/admin/marina/voz/falar", {
         method: "POST", headers: { "content-type": "application/json" },
@@ -472,6 +482,17 @@ export function VozTreino() {
       )}
 
       <div className="p-3" style={{ borderTop: "1px solid rgba(12,38,56,.1)" }}>
+        {cap?.voz && (
+          <button type="button" role="switch" aria-checked={vozResposta} onClick={() => setVozResposta((v) => !v)}
+            className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-[12px]"
+            style={{ background: "#f1f5f9", color: "#475569" }}>
+            <span className="min-w-0">{vozResposta ? "A Marina responde falando" : "A Marina responde só por texto (economiza)"}</span>
+            <span className="shrink-0 rounded-full px-2.5 py-1 font-semibold"
+              style={vozResposta ? { background: "#0ea5a3", color: "#fff" } : { background: "#e2e8f0", color: "#334155" }}>
+              {vozResposta ? "Voz" : "Texto"}
+            </span>
+          </button>
+        )}
         {cap?.voz && modo === "vivavoz" && (
           <button type="button" onClick={() => (estado === "parado" ? iniciarVivaVoz() : pararTudo())}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white transition"
