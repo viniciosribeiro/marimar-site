@@ -103,6 +103,25 @@ function responder(corpo) {
       return `[[acao]]{"nome":"ensinar","dados":{"tipo":"fato","titulo":${JSON.stringify(frase.slice(0, 60))},"conteudo":${JSON.stringify(frase)}},"fala":"Vou guardar isso, confirma?"}[[/acao]]`;
     }
   }
+  /* "[teste-fotos]": uma Marina DESCUIDADA pedindo fotos. Ela usa a lista
+     "FOTOS E VÍDEOS DISPONÍVEIS AGORA" que o site manda no pedido, mas formata
+     fora do combinado (marcador de lista, legenda na mesma linha, endereço
+     solto) e escreve o endereço técnico da Vercel — os casos vistos em
+     produção em 25/11. O site tem de mostrar as fotos e o endereço oficial
+     mesmo assim. Sem a lista no pedido, responde como respondia antes. */
+  if (/\[teste-fotos\]/.test(pergunta)) {
+    const suite = sistema.match(/página: (https:\/\/\S+\/quartos\/(\S+))\n\s+fotos \(\d+\): (.+)/);
+    if (!/FOTOS E VÍDEOS DISPONÍVEIS AGORA/.test(sistema) || !suite) return "No momento, não consigo exibir as fotos aqui.";
+    const fotos = suite[3].trim().split(/\s+/);
+    const tecnico = (u) => u.replace(/^https:\/\/[^/]+/, "https://marimar-site.vercel.app");
+    return [
+      "Claro! Aqui estão as fotos:",
+      `- ![Foto 1](${fotos[0]})`,
+      `**Por dentro** ![Foto 2](${tecnico(fotos[1] ?? fotos[0])})`,
+      tecnico(fotos[2] ?? fotos[0]),
+      `Veja todas as fotos: ${tecnico(suite[1])}.`,
+    ].join("\n");
+  }
   const chaves = palavras(pergunta);
   const linhas = sistema.split("\n").filter((l) => {
     const n = normal(l);

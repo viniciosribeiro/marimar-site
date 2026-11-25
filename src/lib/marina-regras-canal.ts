@@ -11,8 +11,10 @@
  * Só para o WhatsApp: no chat do site não há áudio, a ferramenta `message`
  * não existe e as fotos vão em markdown (`CONTEXTO_CANAL`, src/lib/chat.ts).
  */
+import { SITE_OFICIAL } from "./endereco-oficial";
+
 export const REGRAS_CANAL_WHATSAPP = [
-  "REGRAS DO CANAL WHATSAPP (atualizadas pelo site em 14/11/2026; valem por cima da habilidade instalada):",
+  "REGRAS DO CANAL WHATSAPP (atualizadas pelo site em 25/11/2026; valem por cima da habilidade instalada):",
   "",
   "1. ÁUDIO CURTO. Toda resposta final que tenha link, preço ou mais de duas frases",
   "   termina com um bloco [[tts:text]]frase curta[[/tts:text]]: menos de 180",
@@ -51,4 +53,11 @@ export const REGRAS_CANAL_WHATSAPP = [
   "   de /api/agent/disponibilidade; se não vier, o link geral da habilidade) e",
   "   ofereça chamar a equipe. Só diga que não há vaga quando a consulta trouxer",
   "   as suítes e elas vierem como esgotadas.",
+  "",
+  `5. ENDEREÇO DO SITE. Para o hóspede, o site é ${SITE_OFICIAL}:`,
+  "   toda página que você mandar (suíte, reservar, como chegar) vai com esse",
+  "   endereço. Nunca escreva marimar-site.vercel.app numa mensagem ao hóspede: é",
+  "   um endereço técnico, que serve só para as suas consultas às rotas /api/agent.",
+  "   Se uma rota devolver um link com o endereço técnico, troque só o começo pelo",
+  "   oficial; o resto do link fica igual. O link de reserva do Desbravador não muda.",
 ].join("\n");

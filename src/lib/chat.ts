@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { SITE_OFICIAL } from "./endereco-oficial";
 
 /**
  * Chat de atendimento do site.
@@ -69,27 +70,47 @@ export function cabecalhosGateway(): Record<string, string> {
  * responde "enviei as fotos". Aqui nada disso sai — o canal é texto puro.
  * Um atendimento que diz ter enviado o que não enviou é pior que um que
  * diz não poder enviar: o hóspede fica esperando.
+ *
+ * 25/11/2026: a regra de LINKS dizia o contrário do que vale hoje ("só
+ * marimar-site.vercel.app; nunca pousadamarimarilhadomel.com.br"). Era certa
+ * em setembro, quando o domínio da pousada ainda mostrava o site antigo. Como
+ * as fotos são servidas justamente pelo domínio oficial, a Marina ficava com
+ * duas ordens contraditórias: ora mostrava as fotos, ora respondia "não
+ * consigo exibir as fotos aqui" e mandava um link da Vercel. Agora o oficial é
+ * o único endereço do hóspede e a lista de fotos vai junto no pedido
+ * (`montarCatalogoMidia`, src/lib/marina-catalogo.ts).
  */
 export const CONTEXTO_CANAL = [
   "Você está atendendo pelo CHAT DE TEXTO DO SITE da pousada. Não é o WhatsApp.",
   "",
-  "FOTOS E VÍDEOS: você CONSEGUE mostrar fotos e vídeos aqui. Escreva em",
-  "markdown — ![descrição](url) — numa linha sozinha; se a url for de vídeo",
-  "(.mp4, .webm), aparece um player. Use somente URLs que vieram da rota",
-  "/api/agent/quartos (campos `fotos` e `videos`) ou dos ROTEIROS DE ORIENTAÇÃO",
-  "do treinamento. Pediram fotos de um quarto: até três fotos e, se houver,",
-  "ofereça os vídeos (\"quer ver o vídeo da suíte por dentro?\"); pediram",
-  "vídeo: mande os vídeos na ordem da rota. Para ver todas as fotos, mande o",
-  "link do quarto (campo `url` da mesma rota).",
+  "FOTOS E VÍDEOS: você CONSEGUE mostrar fotos e vídeos aqui, e deve mostrar",
+  "sempre que pedirem. Escreva cada mídia em markdown — ![descrição](endereço) —",
+  "numa linha sozinha, sem marcador de lista e sem texto na mesma linha; se o",
+  "endereço for de vídeo (.mp4, .webm), aparece um player. Aqui não existe a",
+  "ferramenta `message`: a foto é o markdown escrito na própria resposta.",
+  "Os endereços estão na lista \"FOTOS E VÍDEOS DISPONÍVEIS AGORA\", mais abaixo:",
+  "copie de lá, inteiros e sem mudar nada. Também valem os que vierem das rotas",
+  "/api/agent/quartos e /api/agent/fotos (campo `url_whatsapp`) e dos ROTEIROS",
+  "DE ORIENTAÇÃO do treinamento. Nunca monte um endereço de foto de cabeça.",
+  "Pediram fotos de uma suíte: até três fotos e, se houver vídeo, ofereça",
+  "(\"quer ver o vídeo da suíte por dentro?\"); pediram vídeo: mande os vídeos",
+  "na ordem da lista. Pediram fotos do restaurante, do café da manhã, da praia,",
+  "da pousada ou de eventos: use as daquela seção. Para ver todas as fotos de",
+  "uma suíte, mande a página dela.",
   "",
-  "Se a rota não trouxer foto ou vídeo daquele quarto, diga isso e ofereça o",
-  "WhatsApp. Nunca diga que enviou uma mídia que você não escreveu na resposta.",
+  "Nunca responda \"não consigo exibir as fotos aqui\": se a foto está na lista,",
+  "mostre. Se a lista disser que não há foto daquela suíte ou daquela parte,",
+  "diga que a pousada ainda não cadastrou fotos disso e ofereça descrever ou o",
+  "WhatsApp; nunca mande foto de outra coisa no lugar. Nunca diga que enviou",
+  "uma mídia que você não escreveu na resposta.",
   "",
-  "LINKS: só existem dois destinos válidos — páginas do NOSSO site",
-  "(marimar-site.vercel.app) e o link oficial de reserva do motor",
-  "Desbravador. NUNCA aponte para pousadamarimarilhadomel.com.br nem para",
-  "pousadamarimar.com.br: é o site antigo, não faz parte do nosso sistema e",
-  "sai do ar. Se não tiver o link certo em mãos, não invente um.",
+  `LINKS: o endereço do site para o hóspede é ${SITE_OFICIAL} — o único`,
+  "que ele deve ver. Página do site é sempre nesse endereço (por exemplo,",
+  `${SITE_OFICIAL}/quartos/suite-queen). NUNCA escreva`,
+  "marimar-site.vercel.app numa resposta: é um endereço técnico, que serve só",
+  "para as suas consultas às rotas /api/agent. O outro destino válido é o link",
+  "oficial de reserva do motor Desbravador, exatamente como veio da consulta.",
+  "Se não tiver o link certo em mãos, não invente um.",
   "",
   "Áudio e arquivos não passam por este canal. Não prometa mandar nenhum.",
   "",

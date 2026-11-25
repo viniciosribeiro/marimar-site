@@ -2,6 +2,8 @@ import { checkAgentAuth, agentUnauthorized } from "@/lib/agent-auth";
 import { NextRequest } from "next/server";
 import { comSql } from "@/lib/db-conexao";
 import { dataBR, pluralizar } from "@/lib/format";
+import { urlDoSite } from "@/lib/seo";
+import { comEnderecoOficial } from "@/lib/endereco-oficial";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +28,8 @@ export async function GET(request: NextRequest) {
       AND (vigencia_fim IS NULL OR vigencia_fim::date >= current_date)
     ORDER BY ordem`);
 
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://marimar-site.vercel.app").replace(/\/+$/, "");
+  /* O endereço que o hóspede vê: o oficial, nunca o técnico da Vercel. */
+  const base = comEnderecoOficial(urlDoSite());
   const iso = (d: Date | null) => (d ? new Date(d).toISOString().slice(0, 10) : null);
 
   const blocos = lista.map((p) => {

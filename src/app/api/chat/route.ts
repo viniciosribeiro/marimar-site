@@ -9,6 +9,8 @@ import { montarTreinamento, pareceSemResposta, registrarLacuna } from "@/lib/mar
 import { abrirChamado, lerConfigEscalonamento, talvezProcessarPrazos, vinculoDaAbertura } from "@/lib/escalonamento";
 import { registrarUso } from "@/lib/aprendizado";
 import { talvezVigiar } from "@/lib/whatsapp-vigia";
+import { montarCatalogoMidia } from "@/lib/marina-catalogo";
+import { comEnderecoOficial } from "@/lib/endereco-oficial";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -94,6 +96,10 @@ export async function POST(req: Request) {
        ensinar uma vez tem que valer nos dois lugares, senão o painel vira
        mais um lugar para manter em sincronia à mão. */
     const { texto: ensinado } = await montarTreinamento(sql, "site");
+    /* As fotos, os vídeos e as páginas que ela pode mostrar vão escritos no
+       pedido: mostrar foto não depende de ela consultar a rota por conta
+       própria (era quando respondia "não consigo exibir as fotos aqui"). */
+    const midias = await montarCatalogoMidia(sql);
     /* Com o escalonamento ligado, "não sei" vira pergunta para a equipe — e
        a resposta volta aqui mesmo, no chat. A Marina precisa saber disso
        para prometer a coisa certa. */
@@ -103,10 +109,11 @@ export async function POST(req: Request) {
       : "";
 
     const mensagens = [
-      { role: "system", content: CONTEXTO_CANAL + sobreEquipe + (ensinado ? "\n\n" + ensinado : "") },
+      { role: "system", content: CONTEXTO_CANAL + sobreEquipe + (midias ? "\n\n" + midias : "") + (ensinado ? "\n\n" + ensinado : "") },
       ...anteriores.reverse().map((m) => ({
         role: m.papel === "visitante" ? "user" : "assistant",
-        content: m.conteudo,
+        /* Resposta antiga dela com o endereço técnico não volta como exemplo. */
+        content: m.papel === "visitante" ? m.conteudo : comEnderecoOficial(m.conteudo),
       })),
     ];
 
@@ -178,7 +185,9 @@ export async function POST(req: Request) {
                  pergunta que o provocou. */
               const semResposta = pareceSemResposta(completa);
               /* A revisão do painel lê o que a pessoa leu: sem o bloco de fala. */
-              const gravar = textoSemBlocoDeFala(completa) || completa.trim();
+              /* Com o endereço oficial: é o que a tela mostrou (Marcacao troca o
+                 técnico da Vercel) e o que volta para ela como contexto. */
+              const gravar = comEnderecoOficial(textoSemBlocoDeFala(completa) || completa.trim());
               await conexao`
                 INSERT INTO chat_mensagens (sessao, ip_hash, papel, conteudo, sem_resposta)
                 VALUES (${sessao}, ${ip}, 'marina', ${gravar}, ${semResposta})`

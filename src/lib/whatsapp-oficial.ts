@@ -6,6 +6,8 @@ import { prepararFalaDaMarina, textoSemBlocoDeFala } from "./voz-fala";
 import { abrirChamado, lerConfigEscalonamento, responderChamado, talvezProcessarPrazos, vinculoDaAbertura } from "./escalonamento";
 import type { ConfigEscalonamento } from "./escalonamento-base";
 import { registrarUso } from "./aprendizado";
+import { montarCatalogoMidia } from "./marina-catalogo";
+import { comEnderecoOficial } from "./endereco-oficial";
 import { CONTEXTO_WHATSAPP_OFICIAL, lerEntrada, partirResposta, type MensagemRecebida } from "./whatsapp-meta-base";
 import { baixarMidiaMeta, enviarAudioMeta, enviarMidiaMeta, enviarTextoMeta, marcarLidaMeta } from "./whatsapp-meta";
 
@@ -169,12 +171,13 @@ async function atender(sql: Sql, cfg: ConfigEscalonamento, m: MensagemRecebida) 
   const anteriores = await sql<{ papel: string; conteudo: string }[]>`
     SELECT papel, conteudo FROM chat_mensagens WHERE sessao = ${sessao} ORDER BY criado_em DESC LIMIT ${CONTEXTO_MENSAGENS}`;
   const { texto: ensinado } = await montarTreinamento(sql, "whatsapp");
+  const midias = await montarCatalogoMidia(sql);   // a mesma lista de fotos do chat do site
   const sobreEquipe = cfg.ativo
     ? "\n\nQUANDO VOCÊ NÃO SOUBER: diga com naturalidade que vai confirmar com a equipe da pousada e que responde por aqui mesmo, no WhatsApp, assim que eles responderem. Não invente a resposta enquanto isso."
     : "";
   const quem = m.nome ? `\n\nNome no perfil do WhatsApp do cliente: ${m.nome}.` : "";
   const resposta = await perguntarMarina([
-    { role: "system", content: CONTEXTO_WHATSAPP_OFICIAL + quem + sobreEquipe + (ensinado ? "\n\n" + ensinado : "") },
+    { role: "system", content: CONTEXTO_WHATSAPP_OFICIAL + quem + sobreEquipe + (midias ? "\n\n" + midias : "") + (ensinado ? "\n\n" + ensinado : "") },
     ...anteriores.reverse().map((x) => ({
       role: x.papel === "visitante" ? "user" : "assistant",
       content: x.papel === "equipe" ? `[A equipe da pousada respondeu pelo celular:] ${x.conteudo}` : x.conteudo,
@@ -184,7 +187,7 @@ async function atender(sql: Sql, cfg: ConfigEscalonamento, m: MensagemRecebida) 
   if (!resposta) { await enviarTextoMeta(m.de, INDISPONIVEL_WA); return; }
 
   /* O bloco [[tts:text]] vai só para o áudio; a pessoa lê a resposta sem ele. */
-  const legivel = textoSemBlocoDeFala(resposta) || resposta;
+  const legivel = comEnderecoOficial(textoSemBlocoDeFala(resposta) || resposta);
   for (const parte of partirResposta(legivel)) {
     const envio = parte.tipo === "texto" ? await enviarTextoMeta(m.de, parte.texto) : await enviarMidiaMeta(m.de, parte);
     if (!envio.ok) console.error("[whatsapp-oficial] não saiu:", envio.erro);
