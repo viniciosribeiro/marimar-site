@@ -3,7 +3,7 @@
 ## ESTADO ATUAL — 25/11/2026: chat do site (links da Vercel, fotos), preços de volta, banco no plano pago
 > Três coisas desde 18/11. Leia as três antes de mexer.
 
-**1. Chat da Marina no site (25/11) — corrigido no código; PUBLICAÇÃO: ver a última linha deste bloco.**
+**1. Chat da Marina no site (25/11) — corrigido, publicado (PR #120) e conferido em produção.**
 - **Relato:** com a Marina fora do WhatsApp (o proprietário desconectou de propósito, para melhorar a plataforma — **não religar por conta própria**), no chat do site ela mandava links `marimar-site.vercel.app` e às vezes não mostrava as fotos.
 - **Causa:** regra de setembro em `CONTEXTO_CANAL` ("só marimar-site.vercel.app; nunca pousadamarimarilhadomel.com.br") + fotos servidas pelo domínio oficial = ordens contraditórias. Reproduzido em produção: mesma pergunta, ora fotos, ora "não consigo exibir as fotos aqui" + link da Vercel.
 - **O que mudou:** `src/lib/chat.ts` e `src/lib/whatsapp-meta-base.ts` (regras), `src/lib/marina-regras-canal.ts` (regra 5, WhatsApp QR), `src/lib/marina-catalogo.ts` (lista "FOTOS E VÍDEOS DISPONÍVEIS AGORA" no pedido: chat, área de teste, WhatsApp oficial), `src/lib/endereco-oficial.ts` + `src/lib/marcacao-chat.ts` + `src/components/site/Marcacao.tsx` (endereço da Vercel vira o oficial; foto aparece mesmo fora do formato), rotas `/api/agent/quartos` e `/pacotes` (padrão = domínio oficial), skill no repositório.
@@ -12,7 +12,7 @@
 - **Como conferir em produção (depois de publicado):** abrir o chat em aba nova e pedir "fotos da Suíte Queen" e "fotos do restaurante" algumas vezes: as fotos têm de aparecer sempre e o link "ver todas" tem de ser `https://www.pousadamarimarilhadomel.com.br/quartos/…`. Se a Marina ainda escrever o endereço da Vercel, a tela troca; se ela ainda disser que não consegue mostrar fotos, reforçar o texto em `CONTEXTO_CANAL`.
 - **Aberto:** respostas levam 20–70 s (medido em 25/11; é do servidor da Marina/OpenClaw, não investigado); café da manhã e praia sem foto cadastrada; as 5 conversas de teste de 25/11 estão em Conversas (sessões `teste-claude…` e duas do navegador).
 - **Skill na Hostinger:** preparada no GitHub; **não instalada** (não é necessária: as regras vão pelo site). Se um dia reinstalar: `openclaw skills install ./agente/skills/marimar-pousada --force`.
-- **Publicação:** versionado na branch `claude/sleepy-mccarthy-62jmwj`; **NÃO publicado** (sem PR ainda): o proprietário pediu para ser avisado antes. Com o OK dele: abrir o PR, esperar a prévia da Vercel, merge, conferir em produção e atualizar esta linha com PR, commit e o resultado.
+- **Publicação:** com o OK do proprietário, [PR #120](https://github.com/viniciosribeiro/marimar-site/pull/120) (squash `7c3545e`) no ar em 25/11. **Conferido em produção às ~06:03 UTC:** fotos da Suíte Queen em 3 de 3 pedidos, fotos do restaurante e da pousada, aviso certo para o café sem foto, links só no domínio oficial, nenhum `vercel.app`; no navegador (tamanho de celular) as imagens carregaram. Falta o proprietário confirmar no uso dele e, quando reconectar, o WhatsApp.
 
 **2. Preços de volta (23/11) — mudança do proprietário, fora do repositório.**
 - O site consulta um serviço `marimar-api` (versão 1.0.0); 10 suítes com preço em 09–12/12. Nenhum commit do site. Ele perguntou se tinha voltado sozinho: não, foi a alteração dele.
