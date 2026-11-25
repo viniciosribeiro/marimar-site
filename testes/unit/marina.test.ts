@@ -98,7 +98,11 @@ test("whatsapp le as regras do canal pelo treinamento, sem reinstalar a habilida
   assert.match(w, /\[\[tts:text\]\]frase curta\[\[\/tts:text\]\]/);
   assert.match(w, /\/api\/agent\/fotos\?secao=cafe/);
   assert.match(w, /link_reserva|deep_link/);
-  assert.doesNotMatch(w, /https?:\/\//, "as regras nao trazem URL para a Marina copiar");
+  /* O único endereço escrito nas regras é o do site oficial (regra 5, de 25/11:
+     a Marina mandava hóspede para o endereço técnico da Vercel). Link de
+     reserva, de foto ou de página continua vindo só das rotas. */
+  assert.match(w, /ENDEREÇO DO SITE/);
+  assert.doesNotMatch(w.replaceAll("https://www.pousadamarimarilhadomel.com.br", ""), /https?:\/\//, "as regras nao trazem URL para a Marina copiar");
 });
 
 test("o chat do site nao recebe as regras do WhatsApp (sem audio, sem ferramenta message)", () => {

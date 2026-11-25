@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { comSql } from "@/lib/db-conexao";
+import { montarCatalogoMidia } from "@/lib/marina-catalogo";
 import { CONTEXTO_CANAL, gatewayConfigurado, urlGateway, cabecalhosGateway } from "@/lib/chat";
 import {
   montarTreinamento, PEDIDO_FONTES, separarFontes, codigoItem, registrarHistorico,
@@ -150,7 +151,10 @@ export async function POST(req: Request) {
       }
       if (!mensagem) return Response.json({ erro: "Escreva uma pergunta." }, { status: 400 });
 
-      const sistema = [CONTEXTO_CANAL, texto, PEDIDO_FONTES].filter(Boolean).join("\n\n");
+      /* A mesma lista de fotos que o chat do site manda: senão o teste do
+         painel passaria com um pedido diferente do que o hóspede recebe. */
+      const midias = await montarCatalogoMidia(sql);
+      const sistema = [CONTEXTO_CANAL, midias, texto, PEDIDO_FONTES].filter(Boolean).join("\n\n");
       const t0 = Date.now();
       const { texto: bruto, cortada } = await perguntarAoGateway(`painel-teste:${sessaoTeste}`, sistema, verificar ? [] : historico, mensagem);
       const { resposta, codigos } = separarFontes(bruto);

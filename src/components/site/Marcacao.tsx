@@ -1,10 +1,9 @@
 "use client";
 
+import { blocosDaLinha, semPontuacaoFinal } from "@/lib/marcacao-chat";
+
 /* Usado no chat do site e na área de teste do painel: a Cecília vê a
    resposta exatamente como o hóspede veria, com foto e vídeo. */
-
-const ehVideoNosso = (url: string) =>
-  /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/\S+\.(mp4|webm|mov|m4v)(\?\S*)?$/i.test(url);
 
 /* ── o pouco de markdown que a Marina usa ───────────────────────────
    Ela escreve **negrito**, links e imagens. Sem isto a pessoa lê
@@ -14,38 +13,48 @@ const ehVideoNosso = (url: string) =>
    E um analisador minusculo de proposito: uma biblioteca de markdown
    inteira num widget de chat traz tabela, HTML embutido e um vetor de
    injecao que nao precisamos. Aqui nada vira HTML — tudo vira elemento
-   React, e so `https://` passa. */
+   React, e so `https://` passa.
+
+   O que é foto, vídeo ou texto em cada linha é decidido em
+   `src/lib/marcacao-chat.ts` (com teste): a foto aparece mesmo quando a
+   Marina põe marcador de lista, legenda na mesma linha ou o endereço solto,
+   e o endereço técnico da Vercel vira o oficial antes de ir para a tela. */
 export function Marcacao({ texto }: { texto: string }) {
   return (
     <>
       {texto.split("\n").map((linha, i) => {
-        const imagem = linha.trim().match(/^!\[([^\]]*)\]\((https:\/\/[^\s)]+)\)$/);
-        /* Vídeo: a mesma sintaxe de imagem, com arquivo .mp4/.webm/.mov —
-           ou o endereço sozinho na linha. Só do nosso armazenamento: um
-           player aberto para qualquer site seria convite a abuso. */
-        const video = (imagem && ehVideoNosso(imagem[2]) && { alt: imagem[1], url: imagem[2] })
-          || (ehVideoNosso(linha.trim()) && { alt: "", url: linha.trim() });
-        if (video) {
+        const blocos = blocosDaLinha(linha);
+        return blocos.map((b, j) => {
+          const chave = `${i}-${j}`;
+          if (b.tipo === "video") {
+            /* Só do nosso armazenamento: um player aberto para qualquer site
+               seria convite a abuso (quem decide é `ehVideoNosso`). */
+            return (
+              <video key={chave} src={b.url} controls playsInline preload="metadata" aria-label={b.alt || "Vídeo da pousada"}
+                className="block w-full max-w-[18rem] rounded-marca my-1.5 border border-linha bg-black" />
+            );
+          }
+          if (b.tipo === "imagem") {
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={chave}
+                src={b.url}
+                alt={b.alt || "Foto da pousada"}
+                loading="lazy"
+                className="block w-full max-w-[16rem] rounded-marca my-1.5 border border-linha"
+              />
+            );
+          }
+          /* "### Título" vira negrito: os jogos-da-velha não dizem nada ao hóspede. */
+          const titulo = b.texto.match(/^\s{0,3}#{1,6}\s+(.+)$/);
+          if (titulo) {
+            return <strong key={chave} className="block font-semibold">{pedacos(titulo[1].replace(/\*\*/g, ""))}</strong>;
+          }
           return (
-            <video key={i} src={video.url} controls playsInline preload="metadata" aria-label={video.alt || "Vídeo da pousada"}
-              className="block w-full max-w-[18rem] rounded-marca my-1.5 border border-linha bg-black" />
+            <span key={chave} className="block min-h-[1px]">{pedacos(b.texto)}</span>
           );
-        }
-        if (imagem) {
-          return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={i}
-              src={imagem[2]}
-              alt={imagem[1] || "Foto da pousada"}
-              loading="lazy"
-              className="block w-full max-w-[16rem] rounded-marca my-1.5 border border-linha"
-            />
-          );
-        }
-        return (
-          <span key={i} className="block min-h-[1px]">{pedacos(linha)}</span>
-        );
+        });
       })}
     </>
   );
@@ -63,16 +72,21 @@ function pedacos(linha: string): React.ReactNode[] {
     if (m.index > ultimo) saida.push(linha.slice(ultimo, m.index));
     if (m[1] !== undefined) {
       saida.push(<strong key={n++} className="font-semibold">{m[1]}</strong>);
-    } else {
-      const texto = m[2] ?? m[4];
-      const href = m[3] ?? m[4];
-      saida.push(
-        <a key={n++} href={href} target="_blank" rel="noopener noreferrer"
-          className="underline decoration-current/40 underline-offset-2 break-all hover:decoration-current">
-          {texto}
-        </a>,
-      );
+      ultimo = m.index + m[0].length;
+      continue;
     }
+    /* Endereço solto: o ponto final da frase não faz parte do link
+       ("…/quartos/suite-queen." abria uma página que não existe). */
+    const solto = m[4] !== undefined ? semPontuacaoFinal(m[4]) : null;
+    const texto = m[2] ?? solto!.url;
+    const href = m[3] ?? solto!.url;
+    saida.push(
+      <a key={n++} href={href} target="_blank" rel="noopener noreferrer"
+        className="underline decoration-current/40 underline-offset-2 break-all hover:decoration-current">
+        {texto}
+      </a>,
+    );
+    if (solto?.resto) saida.push(solto.resto);
     ultimo = m.index + m[0].length;
   }
   if (ultimo < linha.length) saida.push(linha.slice(ultimo));

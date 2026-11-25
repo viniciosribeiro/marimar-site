@@ -1,5 +1,28 @@
 # Handoff — continuar de onde paramos
 
+## ESTADO ATUAL — 25/11/2026: chat do site (links da Vercel, fotos), preços de volta, banco no plano pago
+> Três coisas desde 18/11. Leia as três antes de mexer.
+
+**1. Chat da Marina no site (25/11) — corrigido no código; PUBLICAÇÃO: ver a última linha deste bloco.**
+- **Relato:** com a Marina fora do WhatsApp (o proprietário desconectou de propósito, para melhorar a plataforma — **não religar por conta própria**), no chat do site ela mandava links `marimar-site.vercel.app` e às vezes não mostrava as fotos.
+- **Causa:** regra de setembro em `CONTEXTO_CANAL` ("só marimar-site.vercel.app; nunca pousadamarimarilhadomel.com.br") + fotos servidas pelo domínio oficial = ordens contraditórias. Reproduzido em produção: mesma pergunta, ora fotos, ora "não consigo exibir as fotos aqui" + link da Vercel.
+- **O que mudou:** `src/lib/chat.ts` e `src/lib/whatsapp-meta-base.ts` (regras), `src/lib/marina-regras-canal.ts` (regra 5, WhatsApp QR), `src/lib/marina-catalogo.ts` (lista "FOTOS E VÍDEOS DISPONÍVEIS AGORA" no pedido: chat, área de teste, WhatsApp oficial), `src/lib/endereco-oficial.ts` + `src/lib/marcacao-chat.ts` + `src/components/site/Marcacao.tsx` (endereço da Vercel vira o oficial; foto aparece mesmo fora do formato), rotas `/api/agent/quartos` e `/pacotes` (padrão = domínio oficial), skill no repositório.
+- **Não fazer:** voltar a escrever `marimar-site.vercel.app` em texto que a Marina lê como endereço do hóspede (ele continua sendo a base das CONSULTAS dela às rotas `/api/agent`, isso está certo); deixar endereço solto de qualquer site virar imagem no chat (só foto nossa: `ehFotoNossa`); tirar a lista de fotos do pedido.
+- **Testes a rodar em qualquer mudança no chat:** `npm test` (inclui `testes/unit/chat-marcacao.test.ts`); com o ambiente local da receita de 17/11 (Postgres 5433 + `gateway-simulado`), `SITE_URL=http://localhost:3000 node testes/e2e-chat-fotos.mjs` (16), `EMAIL=admin@teste.local SENHA=teste1234567 node testes/e2e-marina.mjs` (12) e, com `meta-simulada` e as `WHATSAPP_META_*` de teste, `node testes/e2e-whatsapp-oficial.mjs` (21). O `gateway-simulado` responde ao pedido `[teste-fotos]` como uma Marina descuidada, usando a lista do pedido.
+- **Como conferir em produção (depois de publicado):** abrir o chat em aba nova e pedir "fotos da Suíte Queen" e "fotos do restaurante" algumas vezes: as fotos têm de aparecer sempre e o link "ver todas" tem de ser `https://www.pousadamarimarilhadomel.com.br/quartos/…`. Se a Marina ainda escrever o endereço da Vercel, a tela troca; se ela ainda disser que não consegue mostrar fotos, reforçar o texto em `CONTEXTO_CANAL`.
+- **Aberto:** respostas levam 20–70 s (medido em 25/11; é do servidor da Marina/OpenClaw, não investigado); café da manhã e praia sem foto cadastrada; as 5 conversas de teste de 25/11 estão em Conversas (sessões `teste-claude…` e duas do navegador).
+- **Skill na Hostinger:** preparada no GitHub; **não instalada** (não é necessária: as regras vão pelo site). Se um dia reinstalar: `openclaw skills install ./agente/skills/marimar-pousada --force`.
+- **Publicação:** versionado na branch `claude/sleepy-mccarthy-62jmwj`; **NÃO publicado** (sem PR ainda): o proprietário pediu para ser avisado antes. Com o OK dele: abrir o PR, esperar a prévia da Vercel, merge, conferir em produção e atualizar esta linha com PR, commit e o resultado.
+
+**2. Preços de volta (23/11) — mudança do proprietário, fora do repositório.**
+- O site consulta um serviço `marimar-api` (versão 1.0.0); 10 suítes com preço em 09–12/12. Nenhum commit do site. Ele perguntou se tinha voltado sozinho: não, foi a alteração dele.
+- **Não sei como esse serviço lê o Desbravador** (código fora daqui). A regra continua: não contornar o bloqueio do Desbravador. Antes de mexer em tarifas, perguntar a ele qual é a origem (acesso oficial?). As seções de 14–15/11 abaixo são histórico.
+
+**3. Banco bloqueado (21/11) — resolvido pelo proprietário.**
+- O Neon gratuito estourou o limite ("exceeded the quota"); o site, sem banco, caiu no Clássico sem logo/cores/chat/suítes. Ele passou para o plano Launch (por uso) pela Vercel; voltou às 18:17 UTC no Novo.
+- **Diagnóstico rápido se repetir:** Vercel → Logs → buscar `banco` (linha `[pousada] banco indisponivel: …`); `/api/saude/status` com Neon em atenção e tabelas "não verificado"; páginas com as cores padrão `#B45309/#0E7490`.
+- **Pendente, só com aprovação dele:** achar o que consome o banco (candidatos: uma conexão nova por página e por rota, sondas de saúde, agendadores, modo voz) e reduzir; e o site lembrar o último modelo escolhido quando o banco falhar.
+
 ## ESTADO ATUAL — 18/11/2026 (parte 9): modo voz com o painel inteiro, desfazer/refazer e áudio como no WhatsApp
 - **Leia `docs/modo-voz-treino.md`** (seções "Mapa do painel", "Desfazer/refazer" e "Gravar e corrigir").
 - **Acrescentar uma área do painel:** uma entrada em `AREAS` (`src/lib/marina-voz-painel.ts`) e a tabela em `TABELAS_DESFAZER` (`src/lib/marina-voz-desfazer.ts`). Acrescentar ação própria: chamar `ctx.tocar(tabela, chave)` ANTES de mudar e `ctx.criou` depois de inserir — sem isso o desfazer não enxerga a mudança.

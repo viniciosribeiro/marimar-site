@@ -75,7 +75,13 @@ test("meta: resposta vira texto, foto e vídeo na ordem; markdown no jeito do Wh
     { tipo: "imagem", url: "https://blob.example.com/suite.jpg", legenda: "Suíte Mar" },
     { tipo: "texto", texto: "E o vídeo:" },
     { tipo: "video", url: "https://blob.example.com/suite.mp4", legenda: "Por dentro" },
-    { tipo: "texto", texto: "Reserve em nosso site: https://marimar-site.vercel.app/reservar." },
+    /* O endereço técnico da Vercel nunca chega ao hóspede: sai o oficial. */
+    { tipo: "texto", texto: "Reserve em nosso site: https://www.pousadamarimarilhadomel.com.br/reservar." },
+  ]);
+  /* Foto com marcador de lista e legenda na mesma linha também sai como foto. */
+  assert.deepEqual(partirResposta("- Suíte Queen: ![Queen](https://marimar-site.vercel.app/api/midia-quarto/suite-queen/0)"), [
+    { tipo: "texto", texto: "- Suíte Queen:" },
+    { tipo: "imagem", url: "https://www.pousadamarimarilhadomel.com.br/api/midia-quarto/suite-queen/0", legenda: "Queen" },
   ]);
   assert.equal(paraWhatsapp("## Título\n\n\n\nfim"), "Título\n\nfim");
 });

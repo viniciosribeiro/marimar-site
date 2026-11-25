@@ -3,6 +3,8 @@ import { NextRequest } from "next/server";
 import { comSql } from "@/lib/db-conexao";
 import { midiaParaWhatsapp } from "@/lib/roteiros";
 import { urlFotoWhatsapp } from "@/lib/foto-whatsapp";
+import { urlDoSite } from "@/lib/seo";
+import { comEnderecoOficial } from "@/lib/endereco-oficial";
 
 export const dynamic = "force-dynamic";
 
@@ -91,8 +93,8 @@ export async function GET(request: NextRequest) {
     }]);
   }
 
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://marimar-site.vercel.app")
-    .replace(/\/+$/, "");
+  /* O endereço que o hóspede vê: o oficial, nunca o técnico da Vercel. */
+  const base = comEnderecoOficial(urlDoSite());
 
   type Quarto = Record<string, unknown> & { id: string; slug: string; nome: string; ocupacao_max: number };
 

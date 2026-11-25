@@ -1,4 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { SITE_OFICIAL } from "./endereco-oficial";
+import { blocosDaLinha } from "./marcacao-chat";
 
 /**
  * API oficial do WhatsApp (Meta, WhatsApp Business Platform / Cloud API):
@@ -172,12 +174,16 @@ export function partirResposta(resposta: string): Parte[] {
     for (const t of fatiar(paraWhatsapp(bloco.join("\n")))) partes.push({ tipo: "texto", texto: t });
     bloco = [];
   };
+  /* A mesma leitura do chat do site (src/lib/marcacao-chat.ts): a foto sai
+     como foto mesmo com marcador de lista ou legenda na mesma linha, e o
+     endereço técnico da Vercel vira o oficial antes de ir para o hóspede. */
   for (const linha of resposta.split("\n")) {
-    const m = linha.match(/^\s*!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)\s*$/);
-    if (!m) { bloco.push(linha); continue; }
-    fecharTexto();
-    const video = /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(m[2]);
-    partes.push({ tipo: video ? "video" : "imagem", url: m[2], legenda: m[1].trim() || null });
+    for (const b of blocosDaLinha(linha)) {
+      if (b.tipo === "texto") { bloco.push(b.texto); continue; }
+      fecharTexto();
+      const video = b.tipo === "video" || /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(b.url);
+      partes.push({ tipo: video ? "video" : "imagem", url: b.url, legenda: b.alt || null });
+    }
   }
   fecharTexto();
   return partes;
@@ -208,19 +214,24 @@ export function erroDaMeta(corpo: unknown, status: number): string {
 export const CONTEXTO_WHATSAPP_OFICIAL = [
   "Você está atendendo pelo WHATSAPP OFICIAL da pousada (API da Meta).",
   "",
-  "FOTOS E VÍDEOS: para mandar, escreva em markdown — ![descrição](url) — numa",
-  "linha sozinha; o sistema envia como foto (ou vídeo, se a url for .mp4).",
-  "Use somente URLs que vieram da rota /api/agent/quartos (campos `fotos` e",
-  "`videos`) ou dos ROTEIROS DE ORIENTAÇÃO do treinamento. Até três fotos por",
-  "vez. Nunca diga que enviou uma mídia que você não escreveu na resposta.",
+  "FOTOS E VÍDEOS: para mandar, escreva em markdown — ![descrição](endereço) —",
+  "numa linha sozinha; o sistema envia como foto (ou vídeo, se for .mp4). Os",
+  "endereços estão na lista \"FOTOS E VÍDEOS DISPONÍVEIS AGORA\", mais abaixo:",
+  "copie de lá, inteiros. Também valem os das rotas /api/agent/quartos e",
+  "/api/agent/fotos (campo `url_whatsapp`) e dos ROTEIROS DE ORIENTAÇÃO do",
+  "treinamento. Até três fotos por vez. Se a lista disser que não há foto",
+  "daquela parte, diga que a pousada ainda não cadastrou. Nunca diga que enviou",
+  "uma mídia que você não escreveu na resposta.",
   "",
   "ÁUDIO: quando o cliente manda áudio, ele chega aqui já transcrito, entre",
   "[Áudio do cliente: ...]. Responda normalmente, em texto; o sistema pode",
   "mandar a sua resposta também em áudio.",
   "",
-  "LINKS: só páginas do NOSSO site (marimar-site.vercel.app) e o link oficial",
-  "de reserva do motor Desbravador. Nunca aponte para pousadamarimarilhadomel.com.br",
-  "nem pousadamarimar.com.br. Sem o link certo, não invente.",
+  `LINKS: o endereço do site para o hóspede é ${SITE_OFICIAL};`,
+  "páginas do site sempre nesse endereço. Nunca escreva marimar-site.vercel.app",
+  "numa mensagem (é endereço técnico, só das suas consultas às rotas /api/agent).",
+  "O outro destino válido é o link oficial de reserva do motor Desbravador, como",
+  "veio da consulta. Sem o link certo, não invente.",
   "",
   "Nunca afirme escassez (\"últimas vagas\") sem esse dado ter vindo da",
   "consulta de disponibilidade nesta mesma conversa.",
